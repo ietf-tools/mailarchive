@@ -1,0 +1,17 @@
+  <div id="advanced-search">
+      <form name="advanced-search-form" class="advanced" action="../search" method="get">
+          <table id='advanced-search-table' class="no-zebra">
+            <tr><td>Keywords:</td><td colspan="3"><input id="id_q" type="text" name="q"></td></tr>
+            <tr><td>From:</td><td><input id="frm" type="text" name="frm" size="35"></td><td><select name="header_field" disabled="disabled"><option value="1">message-id</option></select></td><td><input id="header_value" type="text" name="header_value" size="35" disabled="disabled"></td></tr>
+            <tr><td>Subject:</td><td><input id="subject" type="text" name="subject" size="35"></td><td>Header Text:</td><td><input id="header_text" type="text" name="header_text" size="35" disabled="disabled"></td></tr>
+            <tr><td>Email List:</td><td><input id="email_list_search" type="text" name="email_list_search" size="35"><input type="hidden" name="email_list" id="email_list" /><br />Type an email list name</td><td>Date Between:</td><td><input id="start_date" class="date" type="text" name="start_date"> and <input id="end_date" class="date" type="text" name="end_date"><br />(YYYY-MM-DD)</td></tr>
+            <tr><td></td><td><ul id="email_list_list"></ul></td></tr>
+          </table>
+          
+          <div class="button-group">
+            <ul>
+              <li><button type="submit" name="submit" value="Search">Search</button></li>
+            </ul>
+          </div> <!-- button-group -->
+      </form>
+  </div> <!-- advanced-search-->

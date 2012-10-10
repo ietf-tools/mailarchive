@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/browse.js"></script>
+{% endblock %} 
+
+{% block title %}Mail Archive{% endblock %}
+
+{% block content %}
+
+<div id="search-container">
+<form id="id_browse_form" name="browse-form" action="" method="post">
+    {{ form.as_p }}
+    <input class="search_button" type="submit" value="Go" title="Go" name="commit" alt="Go">
+</form>
+<ul class="search-links">
+<li class="last"><a href="{% url archive %}">Back to Search</a></li>
+</ul>
+
+</div>
+
+
+{% endblock %}
+
+

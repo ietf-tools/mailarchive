@@ -1,0 +1,36 @@
+  <div id="basic-search">
+      <form name="search-form" id="id_search_form" action="search" method="get">
+        {{ form.so }} 
+        <table id='search-table' class="no-zebra">
+          <tr>
+            <td colspan="3">{{ form.q }}</td>
+            <!-- <td><button type="submit" name="submit" value="Search">Search</button></td> -->
+            <td><input type="submit" value="Submit" /></td>
+            <td><a id="asShow" href="#">Advanced Search</a></td>
+          </tr>
+        </table>
+      </form>
+  </div> <!-- basic-search -->
+  
+  <!--
+  <div id="advanced-search">
+      <a id="asHide" href="#">Basic Search</a>
+      <form name="advanced-search-form" action="search" method="get">
+          <table id='advanced-search-table' class="no-zebra">
+            <tr><td>Keywords:</td><td colspan="3"><input id="q" type="text" name="q" size="109"></td></tr>
+            <tr><td>From:</td><td><input id="frm" type="text" name="frm" size="35"></td><td><select name="header_field" disabled="disabled"><option value="1">message-id</option></select></td><td><input id="header_value" type="text" name="header_value" size="35" disabled="disabled"></td></tr>
+            <tr><td>Subject:</td><td><input id="subject" type="text" name="subject" size="35"></td><td>Date Between:</td><td><input id="start_date" type="text" name="start_date" size="10"> and <input id="end_date" type="text" name="end_date" size="10"></td></tr>
+            <tr><td>Header Text:</td><td><input id="header_text" type="text" name="header_text" size="35" disabled="disabled"></td><td>Message Text:</td><td><input id="message_text" type="text" name="message_text" size="35" disabled="disabled"></td></tr>
+            <tr><td>Email List:</td><td><input id="email_list_search" type="text" name="email_list_search" size="35"><input type="hidden" name="email_list" id="email_list" /><br />Type an email list name</td></tr>
+            <tr><td></td><td><ul id="email_list_list"></ul></td></tr>
+          </table>
+          
+          <div class="button-group">
+            <ul>
+              <li><button type="submit" name="submit" value="Search">Search</button></li>
+            </ul>
+          </div> <!-- button-group 
+      </form>
+  </div> <!-- advanced-search
+  
+  -->

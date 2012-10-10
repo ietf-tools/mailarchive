@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Archive{% endblock %}
+
+{% block content %}
+
+<div>
+  <h2>Archive</h2>
+  <ul>
+    <li><a href="./haystack">Haystack</a></li>
+    <li><a href="./custom">Custom Haystack</a></li>
+    <li><a href="{% url archive_sqlsearch %}">SQLSearch</a></li>
+  </ul>
+
+</div> <!-- module -->
+
+{% endblock %}
+
+

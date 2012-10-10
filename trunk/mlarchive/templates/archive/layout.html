@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<title>Archive</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+
+<style>
+/* reset.css */
+html {margin:0;padding:0;border:0;}
+body, div, span, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, code, del, dfn, em, img, q, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, dialog, figure, footer, header, hgroup, nav, section {margin:0;padding:0;border:0;font-size:100%;font:inherit;vertical-align:baseline;}
+article, aside, details, figcaption, figure, dialog, footer, header, hgroup, menu, nav, section {display:block;}
+body {line-height:1.5;background:white;}
+table {border-collapse:separate;border-spacing:0;}
+caption, th, td {text-align:left;font-weight:normal;float:none !important;}
+table, th, td {vertical-align:middle;}
+blockquote:before, blockquote:after, q:before, q:after {content:'';}
+blockquote, q {quotes:"" "";}
+a img {border:none;}
+:focus {outline:0;}
+
+body, html {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+#container {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+}
+
+#header {
+    background: #417690;
+    color: #ffc;
+    overflow: hidden;
+}
+
+#content {
+    bottom: 30px;
+    left: 5em;
+    min-width: 600px;
+    position: absolute;
+    right: 5em;
+    top: 3em;
+}
+
+#msg-panes {
+    bottom: 30px;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 4em;
+}
+
+#msg-list {
+    display: block;
+    height: 15em;
+    left: 0;
+    overflow: auto;
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
+#msg-body {
+    bottom: 0;
+    left: 0;
+    overflow: auto;
+    position: absolute;
+    right: 0;
+    top: 16em;
+}
+
+#footer {
+    bottom: 0;
+    display: block;
+    width: 100%;
+    height: 1.8em;
+    z-index: 1;
+    position: absolute;
+}
+
+/* colors */
+#header {background: #417690;}
+#msg-headers {background: #76EEC6;}
+#msg-list {background: #FFE4C4;}
+#msg-body {background: #FFD39B;}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- Container -->
+<div id="container">
+
+    <div id="header">
+        <div id="header-text">Email Archive</div>
+        <div id="login">Logged in: {{ request.META.REMOTE_USER }}rcross</div>
+    </div> <!-- header -->
+    
+        <!-- Django Messages -->
+        {% if messages %}
+        <ul class="messages">
+          {% for message in messages %}
+          <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+
+    
+    <!-- Content -->
+    <div id="content">
+  
+    <div id="msg-headers"> 
+        <div id="search-header">
+        search box
+        </div> <!-- search-header -->
+        
+        <div id="tool-header">
+          Results for:  the query
+          <a href="{% url archive %}">Back to Search</a>&nbsp;
+          <button id="sort-date-button">Date</button>
+          <button id="sort-from-button">From</button>
+        </div>
+    </div> <!-- msg-headers -->
+        
+    <div id="msg-panes">    
+        <div id="msg-list">
+            {% include "includes/layout_data.html" %}
+ 
+            <div id="msg-list-controls">
+                Showing 1 of 4
+
+                    <span class="right">
+                        <a href="#">&laquo; Previous</a>
+                        |
+                        <a href="#">Next &raquo;</a>
+                    </span>
+                
+            </div> <!-- msg-list-controls -->
+        </div> <!-- msg-list -->
+    
+        <div id="msg-body">
+            {% include "includes/layout_data2.html" %}
+        </div>
+    
+    </div> <!-- msg-panes -->
+    </div> <!-- END Content -->
+
+
+    <div id="footer">
+      <div id="footer-extras">
+        <ul></ul>
+      </div>
+      <div id="footer-version">
+        <p>Email Archive v1.00 {{ version_num }}</p>
+      </div>
+     <div id="footer-logo">
+      <a href="http://www.ietf.org/"><img width="70" height="37" src="/images/ietflogo.png" alt="Logo" align="right" border="0" hspace="5" /></a>
+     </div>
+    </div> <!-- footer -->
+
+</div>
+<!-- END Container -->
+
+</body>
+</html>
+
+
+
+
+

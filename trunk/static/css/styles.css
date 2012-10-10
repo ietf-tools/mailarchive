@@ -1,0 +1,326 @@
+/* ==========================================================================
+   Core Styles
+   ========================================================================== */
+/* reset.css */
+html {margin:0;padding:0;border:0;}
+body, div, span, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, code, del, dfn, em, img, q, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, dialog, figure, footer, header, hgroup, nav, section {margin:0;padding:0;border:0;font-size:100%;font:inherit;vertical-align:baseline;}
+article, aside, details, figcaption, figure, dialog, footer, header, hgroup, menu, nav, section {display:block;}
+body {line-height:1.5;background:white;}
+table {border-collapse:separate;border-spacing:0;}
+caption, th, td {text-align:left;font-weight:normal;float:none !important;}
+table, th, td {vertical-align:middle;}
+blockquote:before, blockquote:after, q:before, q:after {content:'';}
+blockquote, q {quotes:"" "";}
+a img {border:none;}
+:focus {outline:0;}
+
+body, html {
+    height: 100%;
+}
+
+body {
+    font-family: "Lucida Grande","DejaVu Sans","Bitstream Vera Sans",Verdana,Arial,sans-serif
+}
+
+input[disabled='disabled'] {
+    background: none repeat scroll 0 0 #E5ECF9;
+}
+
+#header {
+    background: #417690;
+    color: #ffc;
+    overflow: hidden;
+}
+
+#header-text {
+    font-size: 1.5em;
+    padding-left: 1em;
+}
+
+#login {
+    color: white;
+    font-size: 0.85em;
+    position: absolute;
+    right: 10px;
+    top: 8px;
+}
+
+#footer {
+    /* background-color: #DDDDDD; 
+    background-color: #EEEEFF; */
+    border-top: 1px solid #CCCCCC;
+    bottom: 0;
+    color: #888888;
+    font-size: 10px;
+    height: 15px;
+    left: 0;
+    /* margin-top: 8px; */
+    padding: 6px 0;
+    position: absolute;
+    right: 0;
+    text-align: left;
+}
+
+#footer-logo {
+    border-top: 1px solid #DDDDDD;
+    padding-top: 9px;
+}
+
+#footer-version {
+    border-top: 1px solid #DDDDDD;
+    float: left;
+    padding-top: 9px;
+}
+
+#footer ul {
+    margin: 0;
+    padding: 0 0 9px;
+}
+
+#footer li {
+    font-size: 10px;
+    list-style-type: none;
+}
+
+.module {
+    background: none repeat scroll 0 0 white;
+    border: 1px solid #CCCCCC;
+    margin-bottom: 5px;
+}
+
+.module h2 {
+    background: url("../img/admin/default-bg.gif") repeat-x scroll left top #7CA0C7;
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    margin: 0;
+    padding: 2px 5px 3px;
+    text-align: left;
+}
+
+.button-group ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 7px;
+    text-align: center;
+}
+
+.right {
+    float: right;
+}
+
+
+table.no-zebra tbody tr:nth-child(even) td,
+table.no-zebra tbody tr.even td {
+  background: transparent;
+}
+
+td, th {
+    border-bottom: 1px solid #EEEEEE;
+    font-family: "Lucida Grande",Verdana,Arial,sans-serif;
+    font-size: 11px;
+    line-height: 13px;
+    padding: 5px;
+    vertical-align: top;
+}
+
+/* ==========================================================================
+   Search v1
+   ========================================================================== */
+/* 
+#search-module {
+    width: 80%;
+    margin: auto;
+}
+*/
+
+#search-module {
+    background-color: #F2F2E6;
+}
+
+div#msg-list-header {
+    padding: 5px;
+}
+
+/* ==========================================================================
+   Search v2
+   ========================================================================== */
+a#as-show {
+    font-size: 0.75em;
+}
+
+td.hidden {
+    display: none;
+}
+
+tr.hilite td {
+    background: #DDECFE;
+}
+
+table#msg-table {
+    cursor: pointer;
+    width: 100%;
+}
+
+#search-container {
+    margin: 150px auto;
+    width: 675px;
+}
+
+#search-container input#id_q {
+    font: 1.2em Arial, sans-serif;
+    padding: 4px;
+    vertical-align: middle;
+    width: 30em;
+}
+
+#search-header {
+    float: right;
+}
+
+#sort-header {
+    float: left;
+}
+
+#basic-search input#id_q {
+    width: 30em;
+}
+
+input.search_button {
+    background-color: #0060A5;
+    border-radius: 0 5px 5px 0;
+    color: #FFFFFF;
+    font-size: 14px;
+    height: 30px;
+    line-height: 18px;
+    padding: 4px 10px 5px;
+    /*position: absolute;
+    right: 15px; */
+    vertical-align: middle;
+}
+
+ul#navigation {
+    list-style-type: none;
+    margin: 10px auto;
+    width: 235px;
+}
+
+ul#navigation li { 
+    border-right: 1px solid #0000FF;
+    display: inline;
+    padding: 0 10px 0 10px;
+}
+
+ul#navigation li:last-child { 
+    border-right: none;
+}
+
+ul#navigation li a:link {
+    text-decoration: none;
+}
+
+ul#navigation li a:visited {
+    color: blue;
+}
+
+/* ==========================================================================
+   Position Layout
+   ========================================================================== */
+#adv-search-container {
+    margin: 0 auto;
+    width: 65%;
+}
+
+#advanced-search-table td {
+    border-bottom: 0;
+}
+
+#container {
+    height: 100%;
+    position: absolute;
+    width: 100%;
+}
+
+#content {
+    bottom: 27px;
+    left: 5em;
+    min-width: 600px;
+    position: absolute;
+    right: 5em;
+    top: 3em;
+}
+
+#msg-panes {
+    bottom: 0;
+    font-family: "DejaVu Sans Mono",Monaco,"Courier New",Courier;
+    font-family: Tahoma,Verdana,Arial,sans-serif;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 2.5em;
+}
+
+#msg-list {
+    border-left: 1px solid #CCCCCC;
+    border-right: 1px solid #CCCCCC;
+    border-top: 1px solid #CCCCCC;
+    display: block;
+    height: 9em;
+    left: 0;
+    overflow: auto;
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
+#msg-list-controls {
+    border: 1px solid #CCCCCC;
+    font-size: 0.75em;
+    left: 0;
+    padding: 3px 1em 3px 1em;
+    position: absolute;
+    right: 0;
+    top: 12em;
+}
+
+#msg-body {
+    border: 1px solid #CCCCCC;
+    bottom: 0;
+    font-size: 0.75em;
+    left: 0;
+    overflow: auto;
+    padding: 1em;
+    position: absolute;
+    right: 0;
+    top: 15em;
+}
+
+#msg-body h2 {
+    font-size: 1.5em;
+}
+
+/* ==========================================================================
+   Advanced Search
+   ========================================================================== */
+#adv-search-container {
+    margin: 0 auto;
+    width: 65%;
+}
+
+#adv-search-container h1 {
+    margin-bottom: 2em;
+    text-align: center;
+}
+
+#advanced-search-table td {
+    border-bottom: 0;
+}
+
+#advanced-search input#id_q {
+    width: 622px;
+}
+
+#advanced-search input.date {
+    width: 107px;
+}
+

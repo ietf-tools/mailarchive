@@ -1,0 +1,62 @@
+<pre>
+CCAMP] [PWE3] [mpls-tp] FW: Changes to PW ACH Channel Typeallocationpolicy
+
+From: Alexander.Vainshtein at ecitele.com (Alexander Vainshtein)
+Date: Mon, 6 Oct 2008 10:27:08 +0200
+Subject: [CCAMP] [PWE3] [mpls-tp] FW: Changes to PW ACH
+	Channel	Typeallocationpolicy
+In-Reply-To: <001701c92788$11a596b0$6d02a8c0@china.huawei.com>
+References: <16a42c48f46e6547a1c3ce65f8fee99a@mail.cph.tpack.net>
+	<001701c92788$11a596b0$6d02a8c0@china.huawei.com>
+Message-ID: <A3C5DF08D38B6049839A6F553B331C768E242E6565@ILPTMAIL02.ecitele.com>
+
+
+Maarten and all,
+Please see some comments inline below. The unrelated text has been snipped to improve readability.
+
+Regards,
+        Sasha
+> -----Original Message-----
+> From: pwe3-bounces at ietf.org [mailto:pwe3-bounces at ietf.org] On
+> Behalf Of Maarten Vissers
+> Sent: Monday, October 06, 2008 9:49 AM
+> To: 'Shahram Davari'; 'Thomas D. Nadeau'; 'Shane Amante'
+> Cc: l2vpn at ietf.org; mpls at ietf.org; 'BOCCI Matthew';
+> ccamp at ietf.org; mpls-tp at ietf.org; pwe3 at ietf.org; 'BUSI ITALO'
+> Subject: Re: [PWE3] [mpls-tp] FW: Changes to PW ACH Channel Type allocation policy
+>
+> Sharam,
+>
+> I agree.
+>
+> In my understanding the PW ACH Channel Type provides the same
+> function as the Ethertype in Ethernet networks. IEEE provides a means to buy an
+> Ethertype codepoint (http://standards.ieee.org/regauth/ethertype/eth.txt).
+> The requesting organization can decide to keep their associated application
+> private ("Protocol unavailable.") or to make it public.
+>
+> As far as I understand this Ethertype allocation policy is an industry
+> standard and could be copied for PW ACH Channel Type allocation policy.
+>
+[Sasha] IMHO and FWIW your description of the IEEE process is somewhat inaccurate.
+I am not an expert in the field, and Shahram (and others) will probably provide a much more accurate description
+of the process, but still:
+
+1. As you've mentioned, IEEE *SELLS* its Ethertype codepoints - at USD $2,500 per a *PUBLIC* codepoint.
+    AFAIK, the IETF does not charge anybody  for its codepoints (hopefully this will not result in any bright ideas:-)
+
+2. There is no such thing as a *PRIVATE* Ethertype codepoint at IEEE  (at least, I did not find any references
+    on their Web site). AFAIK, the only private values you can obtain from IEEE are OUIs,
+    and you must pay USD $1,650/year per private OUI to maintain privacy (that on top of USD $2,000 per a public OUI)
+
+3. IEEE still requires description of the protocol before it approves your registration request, and it takes at least 90
+    days before a new code point is granted. (From my experience when dealing with other SDOs IEEE requires an approved
+    protocol spec lacking just the new Ethertype value in order to grant a new Ethertype codepoint.)
+
+On top of all that, the most important issue here is that ACH has never been intended to be a new multiprotocol network layer.
+This point has been raised already by the others.
+
+Unfortunately your analogy between the ACH type and Ethertype only strengthens the suspicions that this can easily happen with an over-relaxed codepoint allocation policy.
+
+... snipped to the end...
+</pre>

@@ -20,6 +20,7 @@ body, html {
 
 body {
     font-family: "Lucida Grande","DejaVu Sans","Bitstream Vera Sans",Verdana,Arial,sans-serif
+    font-size: 100%;
 }
 
 input[disabled='disabled'] {
@@ -168,10 +169,12 @@ table#msg-table {
 }
 
 #search-container input#id_q {
-    font: 1.2em Arial, sans-serif;
-    padding: 4px;
+    /* font: 1.2em Arial, sans-serif; */
+    font-size: 16px;
+    font-family: Arial, sans-serif;
+    padding: 2px;
     vertical-align: middle;
-    width: 30em;
+    width: 35em;
 }
 
 #search-header {
@@ -324,3 +327,10 @@ ul#navigation li a:visited {
     width: 107px;
 }
 
+/* ==========================================================================
+   Browse
+   ========================================================================== */
+h1.title {
+    margin-bottom: 2em;
+    text-align: center;
+}

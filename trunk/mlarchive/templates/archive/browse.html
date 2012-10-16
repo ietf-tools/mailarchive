@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% load archive_extras %}
+
 {% block extrahead %}
 <script type="text/javascript" src="{{ STATIC_URL }}js/browse.js"></script>
 {% endblock %} 
@@ -8,13 +10,23 @@
 
 {% block content %}
 
-<div id="search-container">
-<form id="id_browse_form" name="browse-form" action="" method="post">
-    {{ form.as_p }}
-    <input class="search_button" type="submit" value="Go" title="Go" name="commit" alt="Go">
+<h1 class="title">Browse Archive</h1>
+<div id="browse-container">
+<form id="id_browse_form" name="browse-form" action="." method="post">{% csrf_token %}
+    <label for="id_list_name">Choose a List:</label> <input id="id_list_name" type="text" name="list_name" maxlength="100" />
+    <input type="submit" value="Go" title="Go" alt="Go">
 </form>
+
+{% comment %}
 <ul class="search-links">
-<li class="last"><a href="{% url archive %}">Back to Search</a></li>
+  <li class="last"><a href="{% url archive %}">Back to Search</a></li>
+</ul>
+{% endcomment %}
+
+<ul>
+{% for list in lists %}
+  <li><a href="{% append_to_get email_list=list %}">{{ list }}</a></li>
+{% endfor %}
 </ul>
 
 </div>

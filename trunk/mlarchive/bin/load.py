@@ -1,6 +1,7 @@
 #!/usr/bin/python
 '''
-This script loads messages into the archive db
+This script is a quick and dirty script to load messages into the archive db
+
 to run first do
 export DJANGO_SETTINGS_MODULE=mlarchive.settings
 '''
@@ -85,9 +86,10 @@ def import_mbox(group,path,mlist):
 def main():
     # the pipermail public mail directory with mbox files
     root = '/a/mailman/archives/public'
-    #dirs = os.listdir(root)
-    dirs = ('16ng','ccamp')
-    
+    all = os.listdir(root)
+    #dirs = ('16ng','ccamp')
+    #dirs = ('abfab','alto','ancp','autoconf','ccamp','dime','discuss','ipsec','netconf','sip')
+    dirs = [ d for d in all if d.startswith(('a','b','c','d','e','f','g','h')) ]
     r1 = re.compile(r'^\d{4}-.*.txt$')
     
     for dir in dirs:

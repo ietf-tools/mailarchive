@@ -3,6 +3,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
+from haystack.views import SearchView
 
 from models import *
 from forms import *
@@ -12,6 +13,23 @@ import mailbox
 import re
 import os
 
+# --------------------------------------------------
+# Classes
+# --------------------------------------------------
+class CustomSearchView(SearchView):
+    '''
+    A customized SearchView to add extra context
+    '''
+    def __name__(self):
+        return "CustomSearchView"
+
+    def extra_context(self):
+        extra = super(CustomSearchView, self).extra_context()
+
+        extra['test'] = 'test'
+        
+        return extra
+        
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
@@ -45,9 +63,11 @@ def advsearch(request):
 
 def browse(request):
     form = BrowseForm()
+    lists = EmailList.objects.filter(active=True,private=False).order_by('name')
     
     return render_to_response('archive/browse.html', {
-        'form': form},
+        'form': form,
+        'lists': lists},
         RequestContext(request, {}),
     )
 
@@ -99,10 +119,7 @@ def main(request):
         'form': form},
         RequestContext(request, {}),
     )
-'''    
-def search(request):
-    pass
-'''
+
 # --------------------------------------------------
 # TEST FUNCTIONS
 # --------------------------------------------------

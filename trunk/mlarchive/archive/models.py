@@ -1,10 +1,12 @@
 from django.db import models
 from django.conf import settings
 from django.core.urlresolvers import reverse
+
 #from ietf.group.models import Group
 #from ietf.name.models import RoleName
 #from ietf.person.models import Person
 
+import logging
 import os
 
 class Thread(models.Model):
@@ -35,8 +37,14 @@ class Message(models.Model):
     headers = models.TextField()
     @property
     def body(self):
-        with open(self.get_file_path()) as f:
-            return f.read()
+        try:
+            with open(self.get_file_path()) as f:
+                return f.read()
+        except IOError, e:
+            #logger = logging.getLogger(__name__)
+            #logger.warning('IOError %s' % e)
+            # TODO: handle this better
+            return ''
         
     inrt = models.CharField(max_length=255,blank=True)      # in-reply-to header field
     references = models.ManyToManyField('self',through='Reference',symmetrical=False)

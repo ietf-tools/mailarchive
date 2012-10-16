@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% load archive_extras %}
+
 {% block extrahead %}
 <script type="text/javascript" src="{{ STATIC_URL }}js/search.js"></script>
 {% endblock %}
@@ -47,9 +49,9 @@
             {% if page.has_previous or page.has_next %}
                 <span class="right">
                     {{ page|cut:"<"|cut:">" }}&nbsp;
-                    {% if page.has_previous %}<a href="?q={{ query }}&amp;page={{ page.previous_page_number }}">{% endif %}&laquo; Previous{% if page.has_previous %}</a>{% endif %}
+                    {% if page.has_previous %}<a href="{% append_to_get page=page.previous_page_number %}">{% endif %}&laquo; Previous{% if page.has_previous %}</a>{% endif %}
                     |
-                    {% if page.has_next %}<a href="?q={{ query }}&amp;page={{ page.next_page_number }}">{% endif %}Next &raquo;{% if page.has_next %}</a>{% endif %}
+                    {% if page.has_next %}<a href="{% append_to_get page=page.next_page_number %}">{% endif %}Next &raquo;{% if page.has_next %}</a>{% endif %}
                 </span>
             {% endif %}
         </div> <!-- msg-list-controls -->

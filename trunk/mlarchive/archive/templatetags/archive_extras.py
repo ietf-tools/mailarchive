@@ -5,7 +5,7 @@ register = template.Library()
 @register.simple_tag
 def get_params(params, exclude):
     '''
-    This is a custom template tag which takes a dictionary of parameters (requets.GET) and
+    This custom template tag takes a dictionary of parameters (requets.GET) and
     a list of keys to exclude and returns a urlencoded string for use in a link
     '''
     
@@ -17,6 +17,23 @@ def get_params(params, exclude):
     
     return template.defaultfilters.urlencode(url)
     
+
+@register.simple_tag
+def get_column(length,count):
+    '''
+    This custom tag two integers, the length of a ordered list and the count of the current
+    list item.  It returns col[1-4] to be used as a class to position the item in the 
+    correct column.
+    '''
+    col_length = length / 4
+    if count <= col_length:
+        return 'col1'
+    elif count <= 2 * col_length:
+        return 'col2'
+    elif count <= 3 * col_length:
+        return 'col3'
+    else:
+        return 'col4'
     
 """
 from: http://djangosnippets.org/snippets/1627/

@@ -124,6 +124,22 @@ td, th {
     padding: 5px;
     vertical-align: top;
 }
+/* ==========================================================================
+   Action Buttons
+   ========================================================================== */
+.addlink {
+    padding-left: 12px;
+    background: url(/static/admin/img/icon_addlink.gif) 0 .2em no-repeat;
+}
+
+a.addlink:link, a.addlink:visited {
+    color: #5b80b2;
+    text-decoration: none;
+}
+
+a.addlink:hover {
+    color: #036;
+}
 
 /* ==========================================================================
    Search v1
@@ -263,14 +279,22 @@ ul#navigation li a:visited {
     top: 2.5em;
 }
 
+#list-pane {
+    height: 250px;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
 #msg-list {
     border-left: 1px solid #CCCCCC;
     border-right: 1px solid #CCCCCC;
     border-top: 1px solid #CCCCCC;
-    display: block;
-    height: 9em;
+    bottom: 27px;
     left: 0;
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
     position: absolute;
     right: 0;
     top: 0;
@@ -283,10 +307,22 @@ ul#navigation li a:visited {
     padding: 3px 1em 3px 1em;
     position: absolute;
     right: 0;
-    top: 12em;
+    bottom: 0;
+    height: 20px;
 }
 
-#msg-body {
+#splitter-pane {
+    /* background: #aaa; */
+    cursor: row-resize;
+    height: 5px;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 250px;
+    z-index: 1;
+}
+
+#view-pane {
     border: 1px solid #CCCCCC;
     bottom: 0;
     font-size: 0.75em;
@@ -295,19 +331,24 @@ ul#navigation li a:visited {
     padding: 1em;
     position: absolute;
     right: 0;
-    top: 15em;
+    top: 256px;
 }
 
-#msg-body h2 {
+#view-pane h2 {
     font-size: 1.5em;
 }
+
+/* =============== splitter ================================================= */
+
+
 
 /* ==========================================================================
    Advanced Search
    ========================================================================== */
 #adv-search-container {
     margin: 0 auto;
-    width: 65%;
+    /* width: 65%; */
+    width: 760px;
 }
 
 #adv-search-container h1 {
@@ -327,6 +368,68 @@ ul#navigation li a:visited {
     width: 107px;
 }
 
+ul#email_list_list li {
+    list-style-type: none;
+}
+
+/* ==========================================================================
+   Advanced Search 2
+   ========================================================================== */
+
+#adv-search input {
+    margin: 0.5em 0;
+}
+
+#adv-search input.operand {
+    width: 42em;
+
+}
+#adv-search select.parameter {
+    margin: 0.5em 0;
+}
+
+#adv-search input#id_q {
+    width: 100%;
+    background: #E5ECF9;
+}
+
+#adv-search hr {
+    color: #CCC;
+    background-color: #CCC;
+}
+
+.removable a.remove_btn, .removable a.not_remove_btn {
+    display: inline;
+}
+
+a.remove_btn, a.not_remove_btn {
+    display: none;
+    height: 14px;
+    margin: 0.8em 0.25em;
+    /* position: absolute; */
+    width: 14px;
+}
+
+a.addParamBtn {
+    bottom: 3px;
+    position: absolute;
+    right: 10px;
+}
+
+fieldset#query_parts {
+    position: relative;
+}
+
+fieldset#not_parts {
+    position: relative;
+}
+
+label, .label {
+    display: block;
+    font-weight: bold;
+    margin: 1.5em 0 0.25em;
+}
+
 /* ==========================================================================
    Browse
    ========================================================================== */
@@ -334,3 +437,12 @@ h1.title {
     margin-bottom: 2em;
     text-align: center;
 }
+
+ol#browse-list li {
+    list-style-type: none;
+}
+
+ol#browse-list li.col1 { margin-left: 0em; }
+ol#browse-list li.col2 { margin-left: 10em; }
+ol#browse-list li.col3 { margin-left: 20em; }
+ol#browse-list li.col4 { margin-left: 30em; }

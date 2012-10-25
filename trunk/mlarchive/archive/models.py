@@ -10,7 +10,9 @@ import logging
 import os
 
 class Thread(models.Model):
-    pass
+    
+    def __unicode__(self):
+        return str(self.id)
     
 class EmailList(models.Model):
     active = models.BooleanField(default=True,db_index=True)

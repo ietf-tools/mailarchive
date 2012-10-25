@@ -4,6 +4,10 @@
 <title>Archive</title>
 <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
 
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery-1.8.0.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.8.23.custom.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/splitter.js"></script>
+
 <style>
 /* reset.css */
 html {margin:0;padding:0;border:0;}
@@ -46,24 +50,53 @@ body, html {
 }
 
 #msg-panes {
-    bottom: 30px;
+    bottom: 0;
     left: 0;
     position: absolute;
     right: 0;
     top: 4em;
 }
 
-#msg-list {
-    display: block;
-    height: 15em;
+#list-pane {
+    position: absolute;
+    top: 0;
     left: 0;
-    overflow: auto;
+    right: 0;
+    height: 250px;
+}
+
+#msg-list {
+    left: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
     position: absolute;
     right: 0;
     top: 0;
+    bottom: 25px
 }
 
-#msg-body {
+#msg-list-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    padding: 4px, 0;
+    border-top: 1px solid #CCCCCC;
+}
+
+#splitter-pane {
+    height: 5px;
+    background: #aaa;
+    cursor: n-resize;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 220px;
+    z-index: 1;
+}
+
+#body-pane {
     bottom: 0;
     left: 0;
     overflow: auto;
@@ -88,6 +121,23 @@ body, html {
 #msg-body {background: #FFD39B;}
 
 </style>
+
+<script type="text/javascript">
+
+    $(function() {
+        $("#splitter-pane").draggable({
+            axis:"y",
+            containment:"parent",
+            stop: function(event, ui){
+                var top = ui.position.top;
+                $("#body-pane").css("top",top+3);
+                $("#list-pane").css("height",top-3);
+                alert(ui.position.top);
+            }
+        });
+    });
+
+</script>
 
 </head>
 
@@ -128,22 +178,20 @@ body, html {
     </div> <!-- msg-headers -->
         
     <div id="msg-panes">    
-        <div id="msg-list">
-            {% include "includes/layout_data.html" %}
- 
+        <div id="list-pane">
+            <div id="msg-list">
+                {% include "includes/layout_data.html" %}
+            </div> <!-- msg-list -->
             <div id="msg-list-controls">
                 Showing 1 of 4
-
-                    <span class="right">
-                        <a href="#">&laquo; Previous</a>
-                        |
-                        <a href="#">Next &raquo;</a>
-                    </span>
-                
-            </div> <!-- msg-list-controls -->
-        </div> <!-- msg-list -->
+                    <span class="right"><a href="#">&laquo; Previous</a>|<a href="#">Next &raquo;</a></span>
+            </div>
+        
+        </div> <!-- list-pane -->
+        
+        <div id="splitter-pane"></div>
     
-        <div id="msg-body">
+        <div id="body-pane">
             {% include "includes/layout_data2.html" %}
         </div>
     

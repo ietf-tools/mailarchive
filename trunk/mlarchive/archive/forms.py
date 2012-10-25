@@ -7,12 +7,19 @@ from haystack.query import SearchQuerySet
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.getSQ import parse
 
+FIELD_CHOICES = (('text','Subject and Body'),
+                 ('subject','Subject'),
+                 ('frm','From'),
+                 ('msgid','Message-id'))
+                 
+# --------------------------------------------------------
 class AdvancedSearchForm(SearchForm):
     start_date = forms.DateField(required=False,help_text='YYYY-MM-DD')
     end_date = forms.DateField(required=False)
     email_list = forms.CharField(max_length=255,required=False)
     subject = forms.CharField(max_length=255,required=False)
     frm = forms.CharField(max_length=255,required=False)
+    msgid = forms.CharField(max_length=255,required=False)
     so = forms.CharField(max_length=25,required=False,widget=forms.HiddenInput)
 
     def search(self):
@@ -40,6 +47,7 @@ class AdvancedSearchForm(SearchForm):
         # use custom parser
         if q:
             sq = parse(q)
+            #assert False, sq
             sqs = self.searchqueryset.filter(sq)
         else:
             sqs = self.searchqueryset
@@ -58,6 +66,9 @@ class AdvancedSearchForm(SearchForm):
             
         if self.cleaned_data['frm']:
             sqs = sqs.filter(frm__icontains=self.cleaned_data['frm'])
+        
+        if self.cleaned_data['msgid']:
+            sqs = sqs.filter(msgid__icontains=self.cleaned_data['msgid'])
         
         # handle sort order if specified
         so = self.cleaned_data.get('so',None)
@@ -85,6 +96,15 @@ class AdvancedSearchForm(SearchForm):
         # error if all fields empty
         
         return cleaned_data
+
+class AdvancedSearchForm2(SearchForm):
+    operator = forms.ChoiceField(choices=(('AND','ALL'),('OR','ANY')))
+
+# ---------------------------------------------------------
+
+class RulesForm(forms.Form):
+    field = forms.ChoiceField(choices=FIELD_CHOICES,widget=forms.Select(attrs={'class':'parameter'}))
+    value = forms.CharField(max_length=40,widget=forms.TextInput(attrs={'class':'operand'}))
 
 class SqlSearchForm(forms.Form):
     start = forms.DateField(required=False)

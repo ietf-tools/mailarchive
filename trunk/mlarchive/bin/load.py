@@ -26,8 +26,13 @@ import MySQLdb
 import hashlib
 import base64
 
+# --------------------------------------------------
+# Globals
+# --------------------------------------------------
 LOADED = 0
 SKIPPED = 0
+MISSING_IRT = 0
+IRTS = 0
 
 # --------------------------------------------------
 # Helper Functions
@@ -39,7 +44,28 @@ def get_hash(list_post,msgid):
     sha = hashlib.sha1(msgid)
     sha.update(list_post)
     return base64.urlsafe_b64encode(sha.digest())
-            
+    
+def get_thread(msg):
+    '''
+    This is a very basic thread algorithm.  If 'In-Reply-To-' is set, look up that message 
+    and return it's thread id, otherwise return a new thread id.
+    '''
+    global MISSING_IRT
+    global IRTS
+    irt = msg.get('In-Reply-To','').strip('<>')
+    if irt:
+        IRTS += 1
+        try:
+            irt_msg = Message.objects.get(msgid=irt)
+            thread = irt_msg.thread
+        except (Message.DoesNotExist, Message.MultipleObjectsReturned):
+            MISSING_IRT += 1
+            thread = Thread.objects.create()
+            #print irt
+    else:
+        thread = Thread.objects.create()
+    return thread
+    
 def import_mbox(group,path,mlist):
     global LOADED
     global SKIPPED
@@ -51,19 +77,17 @@ def import_mbox(group,path,mlist):
         # this is a Q&D load.  The commands in the try block could result in various errors
         # just catch these and proceed to the next record
         try:
-            # save db object
             # convert date
             date = datetime.datetime.strptime(' '.join(parts),'%a %b %d %H:%M:%S %Y')
-            t1 = Thread.objects.create()
             hash = get_hash(mlist.name,m['Message-ID'])
             msg = Message(frm=m['From'],
                       date=date,
                       subject=m['Subject'],
                       hashcode=hash,
                       inrt=m.get('In-Reply-To',''),
-                      msgid=m['Message-ID'],
+                      msgid=m['Message-ID'].strip('<>'),
                       email_list=mlist,
-                      thread=t1,
+                      thread=get_thread(m),
                       headers = 'this is a test',
                       body=m.get_payload())
             msg.save()
@@ -78,7 +102,7 @@ def import_mbox(group,path,mlist):
             LOADED = LOADED + 1
         except (MySQLdb.Warning,MySQLdb.OperationalError,IntegrityError, ValueError):
             SKIPPED = SKIPPED + 1
-            
+    
 # --------------------------------------------------
 # MAIN
 # --------------------------------------------------
@@ -88,20 +112,24 @@ def main():
     root = '/a/mailman/archives/public'
     all = os.listdir(root)
     #dirs = ('16ng','ccamp')
-    #dirs = ('abfab','alto','ancp','autoconf','ccamp','dime','discuss','ipsec','netconf','sip')
-    dirs = [ d for d in all if d.startswith(('a','b','c','d','e','f','g','h')) ]
+    dirs = ('abfab','alto','ancp','autoconf','ccamp','dime','discuss','ipsec','netconf','sip','simple')
+    #dirs = [ d for d in all if d.startswith(('a','b','c','d','e','f','g','h')) ]
+    #dirs = all
     r1 = re.compile(r'^\d{4}-.*.txt$')
     
     for dir in dirs:
         print 'Loading: %s' % dir
         # create list object
         mlist,created = EmailList.objects.get_or_create(name=dir,description=dir)
-        for filename in os.listdir(os.path.join(root,dir)):
-            if r1.match(filename):
-                path = os.path.join(root,dir,filename)
-                import_mbox(dir,path,mlist)
+        
+        mboxs = [ f for f in os.listdir(os.path.join(root,dir)) if r1.match(f) ]
+        # we need to import the files in chronological order so thread resolution works
+        sorted_mboxs = sorted(mboxs, key=lambda a: datetime.datetime.strptime(a.split('.')[0], '%Y-%B'))
+        for filename in sorted_mboxs:
+            path = os.path.join(root,dir,filename)
+            import_mbox(dir,path,mlist)
                 
-    print "LOADED: %d, SKIPPED: %s" % (LOADED,SKIPPED)
+    print "LOADED: %d, SKIPPED: %s, IRTS %s, MISSING IRTs %s" % (LOADED,SKIPPED,IRTS,MISSING_IRT)
     
 if __name__ == "__main__":
     main()

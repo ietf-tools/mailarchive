@@ -11,7 +11,7 @@ $(function() {
     */
     
     function add_to_list(list, id, label) {
-        list.append('<li><a href="' + id + '"><img src="/img/delete.png" alt="delete"></a> ' + label + '</li>');
+        list.append('<li><a href="' + id + '"><img src="/static/admin/img/icon_deletelink.gif" alt="delete"></a> ' + label + '</li>');
     }
 
     function get_string(datastore) {
@@ -29,6 +29,17 @@ $(function() {
     function init_search() {
         $("#search-container input#id_q").focus();
         $("#advanced-search input#id_q").focus();
+        //$("#msg-panes").splitter({type: "h"});
+        $("#splitter-pane").draggable({
+            axis:"y",
+            //containment:"parent",
+            containment: [0,200,0,$(document).height()-100],
+            drag: function(event, ui){
+                var top = ui.position.top;
+                $("#list-pane").css("height",top-3);
+                $("#view-pane").css("top",top+3);
+            }
+        });
         /*
         $('#advanced-search').hide();
         
@@ -101,7 +112,7 @@ $(function() {
         row.css('background-color','#DDECFE');
         var msgId = row.find("td:last").html();
         /* TODO: this call needs auth */
-        $('#msg-body').load('/archive/ajax/msg/?term=' + msgId);
+        $('#view-pane').load('/archive/ajax/msg/?term=' + msgId);
     }
     
     /* handle message select from list */
@@ -111,7 +122,7 @@ $(function() {
         $(this).css('background-color','#DDECFE');
         var msgId = $(this).find("td:last").html();
         /* TODO: this call needs auth */
-        $('#msg-body').load('/archive/ajax/msg/?term=' + msgId);
+        $('#view-pane').load('/archive/ajax/msg/?term=' + msgId);
     });
     
     /* enable arrow key navigation of message list */

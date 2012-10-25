@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/search_form.js"></script>
+{% endblock %} 
+
+{% block title %}Mail Archive{% endblock %}
+
+{% block content %}
+
+<div id="adv-search-container">
+  <h1>Advanced Search</h1>
+  {% include "includes/advsearch_form2.html" %}
+</div>
+
+{% endblock %}
+
+

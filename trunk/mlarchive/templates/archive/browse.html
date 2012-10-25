@@ -23,11 +23,11 @@
 </ul>
 {% endcomment %}
 
-<ul>
+<ol id="browse-list">
 {% for list in lists %}
-  <li><a href="{% append_to_get email_list=list %}">{{ list }}</a></li>
+  <li class="{% get_column lists|length forloop.counter %}"><a href="{% append_to_get email_list=list %}">{{ list }}</a></li>
 {% endfor %}
-</ul>
+</ol>
 
 </div>
 

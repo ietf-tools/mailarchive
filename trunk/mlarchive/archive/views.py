@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.core.urlresolvers import reverse
+from django.forms.formsets import formset_factory
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
@@ -33,23 +34,8 @@ class CustomSearchView(SearchView):
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
-def import_mbox(group,path):
-    mb = mailbox.mbox(path)
-    for m in mb:
-        # convert date
-        stamp = m['Date']
-        parts = stamp.split()[:-1]
-        date = datetime.datetime.strptime(' '.join(parts),'%a, %d %b %Y %H:%M:%S')
-        
-        msg = Message(frm=m['From'],
-                      date=date,
-                      subject=m['Subject'],
-                      in_reply_to=m.get('In-Reply-To',''),
-                      message_id=m['Message-ID'],
-                      group=group,
-                      body=m.get_payload())
-        msg.save()
-        
+
+
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
@@ -61,6 +47,19 @@ def advsearch(request):
         RequestContext(request, {}),
     )
 
+def advsearch2(request):
+    form = AdvancedSearchForm2()
+    RulesFormset = formset_factory(RulesForm)
+    query_formset = RulesFormset(prefix='query')
+    not_formset = RulesFormset(prefix='not')
+    
+    return render_to_response('archive/advsearch2.html', {
+        'form': form,
+        'query_formset': query_formset,
+        'not_formset': not_formset},
+        RequestContext(request, {}),
+    )
+    
 def browse(request):
     form = BrowseForm()
     lists = EmailList.objects.filter(active=True,private=False).order_by('name')

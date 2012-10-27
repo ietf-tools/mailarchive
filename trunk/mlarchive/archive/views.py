@@ -11,6 +11,7 @@ from forms import *
 
 import datetime
 import mailbox
+import math
 import re
 import os
 
@@ -34,7 +35,12 @@ class CustomSearchView(SearchView):
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
-
+def chunks(l, n):
+    '''
+    Yield successive n-sized chunks from l.
+    '''
+    for i in xrange(0, len(l), n):
+        yield l[i:i+n]
 
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
@@ -61,12 +67,15 @@ def advsearch2(request):
     )
     
 def browse(request):
+    display_columns = 5
     form = BrowseForm()
     lists = EmailList.objects.filter(active=True,private=False).order_by('name')
+    columns = chunks(lists,int(math.ceil(lists.count()/float(display_columns))))
     
     return render_to_response('archive/browse.html', {
         'form': form,
-        'lists': lists},
+        'lists': lists,
+        'columns':columns},
         RequestContext(request, {}),
     )
 
@@ -100,7 +109,7 @@ def browse_date(request, list_name):
         RequestContext(request, {}),
     )
 
-def detail(request, id):
+def detail(request, list_name, id):
     message = get_object_or_404(Message, hashcode=id)
 
     return render_to_response('archive/detail.html', {

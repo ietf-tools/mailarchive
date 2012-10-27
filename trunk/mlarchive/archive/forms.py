@@ -74,7 +74,9 @@ class AdvancedSearchForm(SearchForm):
         so = self.cleaned_data.get('so',None)
         if so and so in ('date','email_list','frm','score'):
             sqs = sqs.order_by(so)
-            
+        else:
+            sqs = sqs.order_by('-date')
+        
         if self.load_all:
             sqs = sqs.load_all()
                 

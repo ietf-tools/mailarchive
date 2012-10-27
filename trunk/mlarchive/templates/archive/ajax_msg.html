@@ -1,2 +1,5 @@
-<h2>{{ msg.subject }}</h2>
-<pre>{{ msg.body }}</pre>
+<div id="msg-body">
+    <h2>{{ msg.subject }}</h2>
+    <pre>{{ msg.body }}</pre>
+</div>
+<div id="msg-link">http://{{ request.META.HTTP_HOST }}{% url archive_detail list_name=msg.email_list.name id=msg.hashcode %}</div>

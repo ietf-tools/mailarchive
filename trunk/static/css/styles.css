@@ -19,7 +19,7 @@ body, html {
 }
 
 body {
-    font-family: "Lucida Grande","DejaVu Sans","Bitstream Vera Sans",Verdana,Arial,sans-serif
+    font-family: "Lucida Grande","DejaVu Sans","Bitstream Vera Sans",Verdana,Arial,sans-serif;
     font-size: 100%;
 }
 
@@ -221,13 +221,14 @@ input.search_button {
 ul#navigation {
     list-style-type: none;
     margin: 10px auto;
-    width: 235px;
+    width: 300px;
 }
 
 ul#navigation li { 
     border-right: 1px solid #0000FF;
     display: inline;
     padding: 0 10px 0 10px;
+    font-size: 0.75em;
 }
 
 ul#navigation li:last-child { 
@@ -338,6 +339,16 @@ ul#navigation li a:visited {
     font-size: 1.5em;
 }
 
+#msg-link {
+    /* background: #FFF4C8; */
+    border-bottom: 1px solid #CCC;
+    border-left: 1px solid #CCC; 
+    padding: 2px 5px;
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
 /* =============== splitter ================================================= */
 
 
@@ -393,7 +404,7 @@ ul#email_list_list li {
     background: #E5ECF9;
 }
 
-#adv-search hr {
+hr {
     color: #CCC;
     background-color: #CCC;
 }
@@ -438,11 +449,16 @@ h1.title {
     text-align: center;
 }
 
-ol#browse-list li {
+ul.browse_list li {
     list-style-type: none;
 }
 
-ol#browse-list li.col1 { margin-left: 0em; }
-ol#browse-list li.col2 { margin-left: 10em; }
-ol#browse-list li.col3 { margin-left: 20em; }
-ol#browse-list li.col4 { margin-left: 30em; }
+div.browse_column {
+    width: 178px;
+    float: left;
+}
+
+div#browse_columns {
+    width: 960px;
+    margin: 0 auto;
+}

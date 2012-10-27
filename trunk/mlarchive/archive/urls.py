@@ -18,7 +18,8 @@ urlpatterns += patterns('mlarchive.archive.views',
     url(r'^advsearch2/', 'advsearch2', name='archive_advsearch2'),
     url(r'^browse/$', 'browse', name='archive_browse'),
     url(r'^browse/(?P<list_name>\w+)/', 'browse_list', name='archive_browse_list'),
-    url(r'^detail/(?P<id>.+)/$', 'detail', name='archive_detail'),
+    #url(r'^detail/(?P<id>.+)/$', 'detail', name='archive_detail'),
+    url(r'^detail/(?P<list_name>\w+)/(?P<id>.+)/$', 'detail', name='archive_detail'),
     url(r'^haystack/', include('haystack.urls'), name='archive_haystack'),
     url(r'^help/$', direct_to_template, {'template':'archive/help.html'}),
     #url(r'^search', 'search', name='archive_search'),
@@ -26,6 +27,7 @@ urlpatterns += patterns('mlarchive.archive.views',
                                          view_class=CustomSearchView,
                                          template='archive/search.html'), name='archive_search'),
     (r'^layout/$', direct_to_template, {'template':'archive/layout.html'}),
+    (r'^test/$', direct_to_template, {'template':'archive/test.html'}),
 )
 
 

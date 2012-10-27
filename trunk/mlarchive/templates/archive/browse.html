@@ -10,6 +10,7 @@
 
 {% block content %}
 
+<div id="browse_page">
 <h1 class="title">Browse Archive</h1>
 <div id="browse-container">
 <form id="id_browse_form" name="browse-form" action="." method="post">{% csrf_token %}
@@ -21,15 +22,30 @@
 <ul class="search-links">
   <li class="last"><a href="{% url archive %}">Back to Search</a></li>
 </ul>
-{% endcomment %}
 
 <ol id="browse-list">
 {% for list in lists %}
   <li class="{% get_column lists|length forloop.counter %}"><a href="{% append_to_get email_list=list %}">{{ list }}</a></li>
 {% endfor %}
 </ol>
+{% endcomment %}
 
+<hr />
+
+<div id="browse_columns">
+{% for col in columns %}
+  <div class="browse_column">
+    <ul class="browse_list">
+      {% for item in col %}
+        <li><a href="../search/?email_list={{ item }}">{{ item|truncatechars:20 }}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endfor %}
 </div>
+
+
+</div> <!-- browse_page -->
 
 
 {% endblock %}

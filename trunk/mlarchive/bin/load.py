@@ -112,11 +112,15 @@ def main():
     root = '/a/mailman/archives/public'
     all = os.listdir(root)
     #dirs = ('16ng','ccamp')
-    dirs = ('abfab','alto','ancp','autoconf','ccamp','dime','discuss','ipsec','netconf','sip','simple')
-    #dirs = [ d for d in all if d.startswith(('a','b','c','d','e','f','g','h')) ]
+    #dirs = ('abfab','alto','ancp','autoconf','ccamp','dime','discuss','ipsec','netconf','sip','simple')
+    dirs = [ d for d in all if d.startswith(('a','b','c')) ]
     #dirs = all
     r1 = re.compile(r'^\d{4}-.*.txt$')
     
+    # load all list names
+    for name in all:
+        EmailList.objects.create(name=name,description=name)
+        
     for dir in dirs:
         print 'Loading: %s' % dir
         # create list object

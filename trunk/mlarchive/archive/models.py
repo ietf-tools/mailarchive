@@ -65,6 +65,9 @@ class Message(models.Model):
         '''export this message'''
         pass
 
+    def friendly_from(self):
+        pass
+        
 class Attachment(models.Model):
     name = models.CharField(max_length=255)
     message = models.ForeignKey(Message)

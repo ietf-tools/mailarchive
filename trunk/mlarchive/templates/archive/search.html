@@ -4,7 +4,6 @@
 
 {% block extrahead %}
 <script type="text/javascript" src="{{ STATIC_URL }}js/search.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}js/splitter.js"></script>
 {% endblock %}
 
 {% block title %}Mail Archive{% endblock %}
@@ -15,9 +14,12 @@
   
     <div id="msg-headers"> 
         <div id="sort-header">
-          Sort By:
-          <button id="sort-date-button">Date</button>
-          <button id="sort-from-button">From</button>
+          Sort:
+          <button id="sort-date-button" class="unsorted small-button">Date</button>
+          <button id="sort-thread-button" class="unsorted small-button">Thread</button>
+          <button id="sort-from-button" class="unsorted small-button">From</button>
+          <button id="sort-list-button" class="unsorted small-button">List</button>
+          <button id="sort-score-button" class="unsorted small-button">Score</button>
         </div> <!-- sort_header -->
         
         <div id="search-header">
@@ -27,15 +29,16 @@
         
     <div id="msg-panes">    
         <div id="list-pane">
-            <div id="msg-list">
+            <div id="msg-list" tabindex="-1">
                 <table id="msg-table" class="no-zebra">
                 {% for result in page.object_list %}
                     <tr>
                         <td>{{ result.object.date|date:"m/d/Y" }}</td>
                         {# <td><a href="{% url archive_detail id=result.object.hashcode %}">{{ result.object.subject }}</a></td> #}
-                        <td>{{ result.object.subject }}</td>
-                        <td>{{ result.object.frm }}</td>
+                        <td class="nowrap">{{ result.object.subject|truncatechars:70 }}</td>
+                        <td>{{ result.object.friendly_frm|truncatechars:35 }}</td>
                         <td>{{ result.object.email_list }}</td>
+                        <td>{{ result.score }}</td>
                         <td class="hidden">{{ result.object.id }}</td>
                     </tr>
                 {% empty %}
@@ -51,9 +54,9 @@
                 {% if page.has_previous or page.has_next %}
                     <span class="right">
                         {{ page|cut:"<"|cut:">" }}&nbsp;
-                        {% if page.has_previous %}<a href="{% append_to_get page=page.previous_page_number %}">{% endif %}&laquo; Previous{% if page.has_previous %}</a>{% endif %}
+                        {% if page.has_previous %}<a class="msg-link" href="{% append_to_get page=page.previous_page_number %}">{% endif %}&laquo; Previous{% if page.has_previous %}</a>{% endif %}
                         |
-                        {% if page.has_next %}<a href="{% append_to_get page=page.next_page_number %}">{% endif %}Next &raquo;{% if page.has_next %}</a>{% endif %}
+                        {% if page.has_next %}<a class="msg-link" href="{% append_to_get page=page.next_page_number %}">{% endif %}Next &raquo;{% if page.has_next %}</a>{% endif %}
                     </span>
                 {% endif %}
             </div> <!-- msg-list-controls -->

@@ -65,8 +65,11 @@ class Message(models.Model):
         '''export this message'''
         pass
 
-    def friendly_from(self):
-        pass
+    @property
+    def friendly_frm(self):
+        #TODO use safer method 
+        parts = self.frm.split()
+        return '%s@%s' % (parts[0],parts[2])
         
 class Attachment(models.Model):
     name = models.CharField(max_length=255)

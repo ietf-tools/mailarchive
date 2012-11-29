@@ -1,4 +1,4 @@
-/* search.js */
+/* browse.js */
 
 $(function() {
     $('#id_list_name').autocomplete({
@@ -10,5 +10,5 @@ $(function() {
             return false;
         }
     });
-    $('input[type=text]').focus();
+    $('#id_list_name').val('').focus();
 });

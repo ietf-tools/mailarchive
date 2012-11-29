@@ -20,6 +20,7 @@ class AdvancedSearchForm(SearchForm):
     subject = forms.CharField(max_length=255,required=False)
     frm = forms.CharField(max_length=255,required=False)
     msgid = forms.CharField(max_length=255,required=False)
+    #operator = forms.ChoiceField(choices=(('AND','ALL'),('OR','ANY')))
     so = forms.CharField(max_length=25,required=False,widget=forms.HiddenInput)
 
     def search(self):
@@ -72,11 +73,16 @@ class AdvancedSearchForm(SearchForm):
         
         # handle sort order if specified
         so = self.cleaned_data.get('so',None)
-        if so and so in ('date','email_list','frm','score'):
+        if so in ('date','-date','email_list','-email_list','frm','-frm'):
             sqs = sqs.order_by(so)
+        elif so in ('score','-score'):
+            # order_by('score') doesn't work because its strings, but is default ordering
+            pass
         else:
-            sqs = sqs.order_by('-date')
-        
+            # default to
+            # sqs = sqs.order_by('-date')
+            pass
+            
         if self.load_all:
             sqs = sqs.load_all()
                 
@@ -98,9 +104,6 @@ class AdvancedSearchForm(SearchForm):
         # error if all fields empty
         
         return cleaned_data
-
-class AdvancedSearchForm2(SearchForm):
-    operator = forms.ChoiceField(choices=(('AND','ALL'),('OR','ANY')))
 
 # ---------------------------------------------------------
 

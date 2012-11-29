@@ -1,5 +1,5 @@
-  <div id="adv-search">
-      <form id="advanced-search-form" class="advanced" action="../search" method="get">
+  <div id="adv-search" class="adv-search">
+      <form id="rules-form" class="advanced" action="../search" method="get">
         
         <fieldset id="query_parts">
         <span class="label">Include {{ form.operator }}:</span>
@@ -36,14 +36,26 @@
         </fieldset>
       </form>
       
-      <form id="query_form" class="advanced" action="../search" method="get">
+      <form id="advanced-search-form" class="advanced" action="../search" method="get">
         <fieldset id="not_parts">
-        <span class="label">filter results by: </span>
-            Date Between: <input id="start_date" class="date" type="text" name="start_date"> and <input id="end_date" class="date" type="text" name="end_date">(YYYY-MM-DD)<br />
-            List: <input id="email_list_search" type="text" name="email_list_search" size="35">
-            <input type="hidden" name="email_list" id="email_list" /><br />
-            Type an email list name
-            <ul id="email_list_list"></ul>
+        <span class="label">filter results by:</span>
+            <table id="advanced-search-table" class="clean">
+                <tr>
+                    <td>Date Between:</td>
+                    <td><input id="start_date" class="date defaultText" type="text" name="start_date" title="YYYY-MM-DD"> and <input id="end_date" class="date defaultText" type="text" name="end_date" title="YYYY-MM-DD"></td>
+                </tr>
+                <tr>
+                    <td>List:</td>
+                    <td><input id="email_list_search" class="defaultText" type="text" name="email_list_search" size="35" title="Start typing name and pick from list"></td>
+                </tr>
+                <input type="hidden" name="email_list" id="email_list" />
+            </table>
+            
+            <fieldset id="list-fieldset2" class="list-fieldset">
+              <legend>Lists to Search</legend>
+              <ul id="email_list_list"></ul>
+            </fieldset>
+        
         </fieldset>
       
         <br />

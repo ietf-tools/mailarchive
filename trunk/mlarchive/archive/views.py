@@ -47,19 +47,11 @@ def chunks(l, n):
 # --------------------------------------------------
 def advsearch(request):
     form = AdvancedSearchForm()
-    
-    return render_to_response('archive/advsearch.html', {
-        'form': form},
-        RequestContext(request, {}),
-    )
-
-def advsearch2(request):
-    form = AdvancedSearchForm2()
     RulesFormset = formset_factory(RulesForm)
     query_formset = RulesFormset(prefix='query')
     not_formset = RulesFormset(prefix='not')
     
-    return render_to_response('archive/advsearch2.html', {
+    return render_to_response('archive/advsearch.html', {
         'form': form,
         'query_formset': query_formset,
         'not_formset': not_formset},

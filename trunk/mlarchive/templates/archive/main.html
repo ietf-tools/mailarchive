@@ -1,7 +1,11 @@
 {% extends "base.html" %}
 
 {% block extrahead %}
-<script type="text/javascript" src="{{ STATIC_URL }}js/search.js"></script>
+<script type="text/javascript">
+$(function() {
+    $('#id_q').focus();
+});
+</script>
 {% endblock %} 
 
 {% block title %}Mail Archive{% endblock %}
@@ -14,8 +18,7 @@
     <input class="search_button" type="submit" value="Search" title="Search" name="commit" alt="Search">
   </form>
   <ul id="navigation">
-    <li><a href="{% url archive_advsearch %}">Advanced A</a></li>
-    <li><a href="{% url archive_advsearch2 %}">Advanced B</a></li>
+    <li><a href="{% url archive_advsearch %}">Advanced Search</a></li>
     <li><a href="{% url archive_browse %}">Browse</a></li>
   </ul>
 </div>

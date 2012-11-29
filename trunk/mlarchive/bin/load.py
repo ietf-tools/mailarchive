@@ -80,16 +80,17 @@ def import_mbox(group,path,mlist):
             # convert date
             date = datetime.datetime.strptime(' '.join(parts),'%a %b %d %H:%M:%S %Y')
             hash = get_hash(mlist.name,m['Message-ID'])
-            msg = Message(frm=m['From'],
+            msg = Message(body=m.get_payload(),
                       date=date,
-                      subject=m['Subject'],
+                      email_list=mlist,
+                      frm=m['From'],
                       hashcode=hash,
+                      headers = 'this is a test',
                       inrt=m.get('In-Reply-To',''),
                       msgid=m['Message-ID'].strip('<>'),
-                      email_list=mlist,
+                      subject=m['Subject'],
                       thread=get_thread(m),
-                      headers = 'this is a test',
-                      body=m.get_payload())
+                      to=m['To'])
             msg.save()
             
             # save disk object

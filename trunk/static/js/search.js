@@ -1,14 +1,6 @@
 /* search.js */
 
 $(function() {
-    /*
-    $("input").keydown(function(event) {
-        if (event.keyCode == '13') {
-            event.preventDefault();
-            // go to next form field
-        }
-    });
-    */
     
     function add_to_list(list, id, label) {
         list.append('<li><a href="' + id + '"><img src="/static/admin/img/icon_deletelink.gif" alt="delete"></a> ' + label + '</li>');
@@ -22,14 +14,18 @@ $(function() {
         return values.join();
     }
     
+    function getURLParameter(name) {
+        return decodeURI(
+            (RegExp(name + '=' + '(.+?)(&|$)').exec(location.search)||[,null])[1]
+        );
+    }
+
     function jump_to(label) {
         window.location="/archive/browse/" + label;
     }
     
     function init_search() {
-        $("#search-container input#id_q").focus();
-        $("#advanced-search input#id_q").focus();
-        //$("#msg-panes").splitter({type: "h"});
+        // init splitter
         $("#splitter-pane").draggable({
             axis:"y",
             //containment:"parent",
@@ -40,18 +36,57 @@ $(function() {
                 $("#view-pane").css("top",top+3);
             }
         });
-        /*
-        $('#advanced-search').hide();
+        // optimize for 1024x768
+        $("#list-pane").css("height",175);
+        $("#view-pane").css("top",181);
+        $("#splitter-pane").css("top",175);
         
-        $('#asShow').click(function() {
-          $('#advanced-search').show();
-          $('#basic-search').hide();
+        // SETUP KEY BINDING
+        // set focus on msg-list pane
+        
+        function scrGrid(row){
+            // changed formula because rpos is always within clientheight
+            var ch = $('#msg-list')[0].clientHeight,
+            st = $('#msg-list').scrollTop(),
+            rpos = row.position().top,
+            rh = row.height();
+            if(rpos+rh >= ch) { $('#msg-list').scrollTop(rpos-(ch)+rh+st); }
+            else if(rpos < 0) {
+                $('#msg-list').scrollTop(st+rpos);
+            }
+        }
+        
+        
+        $('#msg-list').focus();
+        $('#msg-list').bind("keydown", function(event) {
+            var keyCode = event.keyCode || event.which,
+                arrow = {up: 38, down: 40 };
+            switch (keyCode) {
+                case arrow.up:
+                    event.preventDefault();
+                    var row = $('.row-selected', this);
+                    var prev = row.prev();
+                    if(prev.length > 0) {
+                        row.removeClass('row-selected');
+                        prev.addClass('row-selected');
+                        load_msg(prev);
+                        scrGrid(prev);
+                    }
+                break;
+                case arrow.down:
+                    event.preventDefault();
+                    var row = $('.row-selected', this);
+                    var next = row.next();
+                    if(next.length > 0) {
+                        row.removeClass('row-selected');
+                        next.addClass('row-selected');
+                        load_msg(next);
+                        scrGrid(next);
+                    }
+                break;
+            }
         });
-        $('#asHide').click(function() {
-          $('#advanced-search').hide();
-          $('#basic-search').show();
-        });
-        */
+        
     }
     
     function setup_ajax_browse(field, list, searchfield, url) {
@@ -64,79 +99,119 @@ $(function() {
             }
         });
     }
-    
-    function setup_ajax(field, list, searchfield, url) {
-        var datastore = {};
-        if(field.val() != '')
-            datastore = $.evalJSON(field.val())
-
-        $.each(datastore, function(k, v) {
-            add_to_list(list, k, v);
-        });
-        
-        searchfield.autocomplete({
-            source: url,
-            minLength: 1,
-            select: function( event, ui ) {
-                datastore[ui.item.id] = ui.item.label;
-                field.val(get_string(datastore));
-                searchfield.val('');
-                add_to_list(list, ui.item.id, ui.item.label);
-                return false;
-            }
-        });
-
-        list.delegate("a", "click", function() {
-            delete datastore[$(this).attr("href")];
-            field.val(get_string(datastore));
-            $(this).closest("li").remove();
-            return false;
-        });
-    }
 
     function setup_buttons() {
+        var so=getURLParameter("so");
         $('#sort-date-button').click(function() {
-            $('#id_so').val('date');
+            if(so=="date"){
+                $('#id_so').val('-date');
+            }
+            if(so=="-date"){
+                $('#id_so').val('date');
+            }
+            else {
+                $('#id_so').val('-date');
+            }
             $('form#id_search_form').submit();
         });
         $('#sort-from-button').click(function() {
-            $('#id_so').val('frm');
+            if(so=="frm"){
+                $('#id_so').val('-frm');
+            }
+            else if(so=="-frm"){
+                $('#id_so').val('frm');
+            }
+            else {
+                $('#id_so').val('frm');
+            }
             $('form#id_search_form').submit();
         });
+        $('#sort-list-button').click(function() {
+            if(so=="email_list"){
+                $('#id_so').val('-email_list');
+            }
+            else if(so=="-email_list"){
+                $('#id_so').val('email_list');
+            }
+            else {
+                $('#id_so').val('email_list');
+            }
+            $('form#id_search_form').submit();
+        });
+        $('#sort-score-button').click(function() {
+            $('#id_so').val('-score');
+            $('form#id_search_form').submit();
+        });
+        
+        $('button.unsorted').button();
+        
+        //if(so=="-date"||so=="null"){
+        if(so=="-date"){
+            $('#sort-date-button').button({
+                icons: {
+                    secondary: "ui-icon-triangle-1-s"
+                }
+            });
+        }
+        if(so=="date"){
+            $('#sort-date-button').button({
+                icons: {
+                    secondary: "ui-icon-triangle-1-n"
+                }
+            });
+        }
+        if(so=="-frm"){
+            $('#sort-from-button').button({
+                icons: {
+                    secondary: "ui-icon-triangle-1-s"
+                }
+            });
+        }
+        if(so=="frm"){
+            $('#sort-from-button').button({
+                icons: {
+                    secondary: "ui-icon-triangle-1-n"
+                }
+            });
+        }
+        if(so=="-email_list"){
+            $('#sort-list-button').button({
+                icons: {
+                    secondary: "ui-icon-triangle-1-s"
+                }
+            });
+        }
+        if(so=="email_list"){
+            $('#sort-list-button').button({
+                icons: {
+                    secondary: "ui-icon-triangle-1-n"
+                }
+            });
+        }
     }
     
-    /* auto select first item in result list */
-    function select_first_msg() {
-        var row = $('table#msg-table tr:first');
-        $('table#msg-table tr').css('background-color','#FFFFFF');
-        row.css('background-color','#DDECFE');
+    // given the row of the msg list, load the message text in the mag view pane
+    function load_msg(row) {
         var msgId = row.find("td:last").html();
         /* TODO: this call needs auth */
         $('#view-pane').load('/archive/ajax/msg/?term=' + msgId);
     }
     
-    /* handle message select from list */
-    $('table#msg-table tr').click(function () {
-        /* $(this).toggleClass('hilite'); */
-        $('table#msg-table tr').css('background-color','#FFFFFF');
-        $(this).css('background-color','#DDECFE');
-        var msgId = $(this).find("td:last").html();
-        /* TODO: this call needs auth */
-        $('#view-pane').load('/archive/ajax/msg/?term=' + msgId);
-    });
-    
-    /* enable arrow key navigation of message list */
-    $('table#msg-table').keypress(function (e) {
-        alert(e);
-    });
-
-    /* setup list widget */
-    if ( $("form.advanced").length > 0){
-      setup_ajax($("#email_list"), $("#email_list_list"), $("#email_list_search"), "archive/ajax/list/");
+    /* auto select first item in result list */
+    function select_first_msg() {
+        var row = $('table#msg-table tr:first');
+        row.addClass('row-selected');
+        load_msg(row);
     }
     
+    /* handle message select from list */
+    $('table#msg-table tr').click(function () {
+        $('table#msg-table tr').removeClass('row-selected');
+        $(this).addClass('row-selected');
+        load_msg($(this));
+    });
+    
     setup_buttons();
-    /* setup_ajax_browse($("#id_list_name"), $("#list_name_list"), $("#id_list_name_search"), "{% url ajax_get_list %}"); */
     init_search();
     select_first_msg();
 });

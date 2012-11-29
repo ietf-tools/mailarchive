@@ -4,17 +4,9 @@
 
 {% block content %}
 
-<div>
-  <h2>Archive</h2>
-  Subject: {{ message.subject }}
-  
-  <pre>
-  {{ message.body }}
-  </pre>
-
-
+<div id="msg-detail">
+  <span id="subject">{{ message.subject }}</span>
+  <pre>{{ message.body }}</pre>
 </div> <!-- module -->
 
 {% endblock %}
-
-

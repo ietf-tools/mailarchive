@@ -23,6 +23,10 @@ body {
     font-size: 100%;
 }
 
+h1 {
+    font-size: 1.5em;
+}
+
 input[disabled='disabled'] {
     background: none repeat scroll 0 0 #E5ECF9;
 }
@@ -49,6 +53,7 @@ input[disabled='disabled'] {
 #footer {
     /* background-color: #DDDDDD; 
     background-color: #EEEEFF; */
+    background-color: #FFF;
     border-top: 1px solid #CCCCCC;
     bottom: 0;
     color: #888888;
@@ -57,30 +62,14 @@ input[disabled='disabled'] {
     left: 0;
     /* margin-top: 8px; */
     padding: 6px 0;
-    position: absolute;
+    position: fixed;
     right: 0;
     text-align: left;
+    z-index: 1;
 }
 
-#footer-logo {
-    border-top: 1px solid #DDDDDD;
-    padding-top: 9px;
-}
-
-#footer-version {
-    border-top: 1px solid #DDDDDD;
-    float: left;
-    padding-top: 9px;
-}
-
-#footer ul {
-    margin: 0;
-    padding: 0 0 9px;
-}
-
-#footer li {
-    font-size: 10px;
-    list-style-type: none;
+#footer p {
+    padding-left: 2.5em;
 }
 
 .module {
@@ -124,21 +113,21 @@ td, th {
     padding: 5px;
     vertical-align: top;
 }
+
+a:link, a:visited {
+    color: #5b80b2;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #036;
+}
 /* ==========================================================================
    Action Buttons
    ========================================================================== */
 .addlink {
     padding-left: 12px;
     background: url(/static/admin/img/icon_addlink.gif) 0 .2em no-repeat;
-}
-
-a.addlink:link, a.addlink:visited {
-    color: #5b80b2;
-    text-decoration: none;
-}
-
-a.addlink:hover {
-    color: #036;
 }
 
 /* ==========================================================================
@@ -202,7 +191,7 @@ table#msg-table {
 }
 
 #basic-search input#id_q {
-    width: 30em;
+    width: 28em;
 }
 
 input.search_button {
@@ -225,7 +214,7 @@ ul#navigation {
 }
 
 ul#navigation li { 
-    border-right: 1px solid #0000FF;
+    border-right: 1px solid #5b80b2;;
     display: inline;
     padding: 0 10px 0 10px;
     font-size: 0.75em;
@@ -233,14 +222,6 @@ ul#navigation li {
 
 ul#navigation li:last-child { 
     border-right: none;
-}
-
-ul#navigation li a:link {
-    text-decoration: none;
-}
-
-ul#navigation li a:visited {
-    color: blue;
 }
 
 /* ==========================================================================
@@ -341,17 +322,69 @@ ul#navigation li a:visited {
 
 #msg-link {
     /* background: #FFF4C8; */
-    border-bottom: 1px solid #CCC;
-    border-left: 1px solid #CCC; 
+    background: #FFF;
+    border-left: 1px solid #CCC;
+    border-top: 1px solid #CCC;
+    bottom: 28px;
     padding: 2px 5px;
-    position: absolute;
-    right: 0;
-    top: 0;
+    position: fixed;
+    right: 96px;
+    z-index: 2;
 }
 
-/* =============== splitter ================================================= */
+#msg-body {
+    /* margin-top: 0.5em; */
+}
+
+/* Source: http://snipplr.com/view/10979/css-cross-browser-word-wrap */
+.wordwrap { 
+   white-space: pre-wrap;      /* CSS3 */   
+   white-space: -moz-pre-wrap; /* Firefox */    
+   white-space: -pre-wrap;     /* Opera <7 */   
+   white-space: -o-pre-wrap;   /* Opera 7 */    
+   word-wrap: break-word;      /* IE */
+}
 
 
+/* ==========================================================================
+   Search Results
+   ========================================================================== */
+
+/*   
+.ascending {
+    background: url(/static/admin/img/sorting-icons.gif) -5px -50px no-repeat;
+}
+
+table thead th.sorted .sortoptions a.ascending:hover {
+    background: url(../img/sorting-icons.gif) -5px -72px no-repeat;
+}
+
+table thead th.sorted .sortoptions a.descending {
+    background: url(../img/sorting-icons.gif) -5px -94px no-repeat;
+}
+
+table thead th.sorted .sortoptions a.descending:hover {
+    background: url(../img/sorting-icons.gif) -5px -115px no-repeat;
+}
+*/
+
+.small-button {
+   font-size: .8em;
+}
+
+.ui-button-text {
+   /* font-size: inherit !important; */
+   font-size: 11px;
+}
+
+input.hidden-submit {
+    left: -9999px;
+    position: absolute;
+}
+
+.row-selected {
+    background-color: #DDECFE;
+}
 
 /* ==========================================================================
    Advanced Search
@@ -372,7 +405,7 @@ ul#navigation li a:visited {
 }
 
 #advanced-search input#id_q {
-    width: 622px;
+    width: 609px;
 }
 
 #advanced-search input.date {
@@ -380,12 +413,43 @@ ul#navigation li a:visited {
 }
 
 ul#email_list_list li {
+    /* background-color: #6699CC; */
+    background-color: #87CEFA;
+    color: #ffffff;
+    display: inline;
     list-style-type: none;
+    margin: 3px 3px 3px 0;
+    padding: 2px 5px;
+}
+
+a.listlink:link, a.listlink:visited {
+    color: #fff;
+    text-decoration: none;
+}
+
+.list-fieldset {
+    border: 1px solid #cccccc;
+    margin-left: 75px;
+    margin-right: 71px;
+    padding: 3px;
+}
+
+#list-fieldset2 {
+    margin-left: 85px;
+    margin-right: 162px;
+}
+
+#delete-icon {
+    margin: 0 3px 0 3px;
 }
 
 /* ==========================================================================
    Advanced Search 2
    ========================================================================== */
+
+#adv-search {
+    margin-bottom: 3em;
+}
 
 #adv-search input {
     margin: 0.5em 0;
@@ -422,9 +486,9 @@ a.remove_btn, a.not_remove_btn {
 }
 
 a.addParamBtn {
-    bottom: 3px;
+    bottom: 6px;
     position: absolute;
-    right: 10px;
+    right: 25px;
 }
 
 fieldset#query_parts {
@@ -441,24 +505,102 @@ label, .label {
     margin: 1.5em 0 0.25em;
 }
 
+table.clean td {
+    padding: 5px 5px 5px 0;
+    vertical-align: middle;
+}
+    
 /* ==========================================================================
    Browse
    ========================================================================== */
+#content2 {
+    bottom: 27px;
+    left: 0;
+    min-width: 600px;
+    position: absolute;
+    right: 0;
+    top: 3em;
+}
+
 h1.title {
     margin-bottom: 2em;
     text-align: center;
 }
 
+div#browse_top h3 {
+    margin: 1em 0 1em 0;
+}
+
+div#browse_top {
+    margin: 0 auto 1em;
+    width: 960px;
+}
+
+div#browse_top hr {
+    background-color: #F8F8F8;
+    color: #F8F8F8;
+}
+
+div#browse_top label {
+    display: inline;
+    font-weight: normal;
+}
+
+#id_browse_form {
+    margin-bottom: 0.75em;
+}
+
 ul.browse_list li {
     list-style-type: none;
+    white-space: nowrap;
 }
 
 div.browse_column {
-    width: 178px;
     float: left;
+    margin-bottom: 5em;
+    padding-right: 1em;
+    width: 170px;
 }
 
 div#browse_columns {
     width: 960px;
     margin: 0 auto;
 }
+
+#browse_help {
+    margin-left: 2em;
+    font-size: small;
+}
+
+/* ==========================================================================
+   Detail
+   ========================================================================== */
+#msg-detail pre {
+    font-family: monospace;
+    margin-top: 1em;
+}
+
+#subject {
+    font-weight: bold;
+}
+
+/* ==========================================================================
+   Combined Advance Search CSS
+   ========================================================================== */
+.adv-search td, .adv-search th {
+    font-size: 12px;
+}
+
+.adv-search {
+    font-size: 12px;
+}
+
+.help_text {
+    padding-top: 3px;
+    color: #909090;
+}
+
+.defaultTextActive {
+    color: #909090;
+}
+

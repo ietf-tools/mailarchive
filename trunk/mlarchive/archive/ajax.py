@@ -44,6 +44,11 @@ def ajax_get_msg(request):
 '''
 
 def ajax_get_msg(request):
+    '''
+    Ajax method to retrieve message details.  One parameter expected, "term" which 
+    is the ID of the message.  We return the results of message.html, which is 
+    an HTML'ized presentation of the message.
+    '''
     if request.method != 'GET' or not request.GET.has_key('term'):
         return { 'success' : False, 'error' : 'No term submitted or not GET' }
     term = request.GET.get('term')
@@ -53,35 +58,22 @@ def ajax_get_msg(request):
     except Message.DoesNotExist:
         return { 'success' : False, 'error' : 'ID not found' }
     
-    return render_to_response('archive/ajax_msg.html', {
-        'msg': msg},
-        RequestContext(request, {}),
-    )
-"""
-def ajax_messages(request):
-    response_data = {}
-    response_data['success'] = True
-    response_data['messages'] = {'id':2,'subject':'about extjs'}
-    return HttpResponse(simplejson.dumps(response_data), mimetype="application/json")
+    #return render_to_response('archive/ajax_msg.html', {
+    #    'msg': msg},
+    #    RequestContext(request, {}),
+    #)
     
-"""
+    return HttpResponse(msg.html)
+
 @jsonapi
 def ajax_messages(request):
     '''
     Ajax function for use with ExtJS.  Supports pagination.
     '''
-    #if request.method != 'GET' or not request.GET.has_key('term'):
-    #    return { 'success' : False, 'error' : 'No term submitted or not GET' }
-    #term = request.GET.get('term')
-
-    #message_list = Message.objects.all()
-    
     kwargs = {}
     page = request.GET.get('page')
     sort = request.GET.get('sort',None)
     email_list = request.GET.get('email_list',None)
-    
-    #assert False, request.GET
     
     if email_list:
         # convert comma separated names into list of IDs

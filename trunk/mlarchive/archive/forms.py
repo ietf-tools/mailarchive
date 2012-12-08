@@ -10,7 +10,8 @@ from mlarchive.archive.getSQ import parse
 FIELD_CHOICES = (('text','Subject and Body'),
                  ('subject','Subject'),
                  ('frm','From'),
-                 ('msgid','Message-id'))
+                 ('to','To'),
+                 ('msgid','Message-ID'))
                  
 # --------------------------------------------------------
 class AdvancedSearchForm(SearchForm):
@@ -60,7 +61,14 @@ class AdvancedSearchForm(SearchForm):
             sqs = sqs.filter(date__lte=self.cleaned_data['end_date'])
             
         if self.cleaned_data['email_list']:
-            sqs = sqs.filter(email_list__in=self.cleaned_data['email_list'])
+            # don't allow inclusion of unauthorized lists
+            # TODO: handle bogus lists
+            private_ids = [ x.id for x in EmailList.objects.filter(private=True) ]
+            qset = set(self.cleaned_data['email_list'])
+            pset = set(private_ids)
+            nset = qset.difference(pset)
+            #assert False, nset
+            sqs = sqs.filter(email_list__in=nset)
         
         if self.cleaned_data['subject']:
             sqs = sqs.filter(subject__icontains=self.cleaned_data['subject'])

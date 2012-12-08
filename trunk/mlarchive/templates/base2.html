@@ -30,7 +30,15 @@
 
     <div id="header">
         <div id="header-text">Email Archive</div>
-        <div id="login">Logged in: {{ request.META.REMOTE_USER }}</div>
+        {% if user %}
+            <div id="login" class="noprint">
+            {% if user.is_authenticated %}
+                {{ user }}
+            {% else %}
+                <a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>
+            {% endif %}
+            </div>
+        {% endif %}  
     </div> <!-- header -->
     
         <!-- Django Messages -->

@@ -50,6 +50,14 @@ input[disabled='disabled'] {
     top: 8px;
 }
 
+#login a:link, #login a:visited {
+    color: white;
+}
+
+#login a:hover {
+    text-decoration: underline;
+}
+
 #footer {
     /* background-color: #DDDDDD; 
     background-color: #EEEEFF; */
@@ -386,6 +394,16 @@ input.hidden-submit {
     background-color: #DDECFE;
 }
 
+.pipe {
+    border-right: 1px solid #DDDDDD;
+    margin-right: 0.5em;
+    padding-right: 0.8em;
+}
+
+.darkgray {
+    color: #666666;
+}
+
 /* ==========================================================================
    Advanced Search
    ========================================================================== */
@@ -513,6 +531,14 @@ table.clean td {
 /* ==========================================================================
    Browse
    ========================================================================== */
+a.private:visited, a.private:link {
+    color: #FF7373;
+}
+
+a.private:hover {
+    color: #FF4040;
+}
+
 #content2 {
     bottom: 27px;
     left: 0;

@@ -8,12 +8,14 @@ BaseSearch = indexes.RealTimeSearchIndex if settings.HAYSTACK_USE_REALTIME_SEARC
 
 class MessageIndex(BaseSearch, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
-    subject = indexes.CharField(model_attr='subject')
+    
     date = indexes.DateTimeField(model_attr='date')
-    frm = indexes.CharField(model_attr='frm')
     email_list = indexes.IntegerField(model_attr='email_list_id')
+    frm = indexes.CharField(model_attr='frm')
     msgid = indexes.CharField(model_attr='msgid')
-
+    subject = indexes.CharField(model_attr='subject')
+    to = indexes.CharField(model_attr='to')
+    
     def get_model(self):
         return Message
 

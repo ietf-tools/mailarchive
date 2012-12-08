@@ -39,7 +39,7 @@
   <div class="browse_column">
     <ul class="browse_list">
       {% for item in col %}
-        <li><a class="browse-link" href="../search/?email_list={{ item }}">{{ item|truncatechars:19 }}</a></li>
+        <li><a class="browse-link{% if item.private %} private{% endif %}" href="../search/?email_list={{ item }}">{{ item|truncatechars:19 }}</a></li>
       {% endfor %}
     </ul>
   </div>

@@ -1,12 +1,11 @@
 from django.db import models
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
-
-#from ietf.group.models import Group
-#from ietf.name.models import RoleName
-#from ietf.person.models import Person
+from django.template.loader import render_to_string
 
 import logging
+import mailbox
 import os
 
 class Thread(models.Model):
@@ -21,22 +20,26 @@ class EmailList(models.Model):
     name = models.CharField(max_length=255,db_index=True)
     private = models.BooleanField(default=False,db_index=True)
     alias = models.CharField(max_length=255,blank=True)
+    members = models.ManyToManyField(User)
 
     def __unicode__(self):
         return self.name
     
 class Message(models.Model):
-    email_list = models.ForeignKey(EmailList,db_index=True)
-    legacy_number = models.IntegerField(blank=True,null=True,db_index=True)  # for mapping mhonarc
-    hashcode = models.CharField(max_length=28,db_index=True)
-    msgid = models.CharField(max_length=255,db_index=True)
-    date = models.DateTimeField(db_index=True)
-    frm = models.CharField(max_length=255,db_index=True)
-    to = models.CharField(max_length=255,blank=True)
     cc = models.CharField(max_length=255,blank=True)
-    subject = models.CharField(max_length=255)
-    
+    date = models.DateTimeField(db_index=True)
+    email_list = models.ForeignKey(EmailList,db_index=True)
+    frm = models.CharField(max_length=255,db_index=True)
+    hashcode = models.CharField(max_length=28,db_index=True)
     headers = models.TextField()
+    inrt = models.CharField(max_length=255,blank=True)      # in-reply-to header field
+    legacy_number = models.IntegerField(blank=True,null=True,db_index=True)  # for mapping mhonarc
+    msgid = models.CharField(max_length=255,db_index=True)
+    references = models.ManyToManyField('self',through='Reference',symmetrical=False)
+    subject = models.CharField(max_length=255)
+    thread = models.ForeignKey(Thread)
+    to = models.CharField(max_length=255,blank=True,default='')
+    
     @property
     def body(self):
         try:
@@ -48,9 +51,48 @@ class Message(models.Model):
             # TODO: handle this better
             return ''
         
-    inrt = models.CharField(max_length=255,blank=True)      # in-reply-to header field
-    references = models.ManyToManyField('self',through='Reference',symmetrical=False)
-    thread = models.ForeignKey(Thread)
+    @property
+    def html(self):
+        '''
+        Return HTML representation of the message.  The MaildirMessage object simulates
+        a dictionary.  As a result it's methods are not available to the Django template.
+        Therefore we need to pass these to the template individually.
+        '''
+        payload = ''
+        multipart = False
+        try:
+            with open(self.get_file_path()) as f:
+                maildirmessage = mailbox.MaildirMessage(f)
+                headers = maildirmessage.items()
+                # Build a list of tuples for use in the template
+                if maildirmessage.is_multipart():
+                    parts = [(x.get_content_type(),x.get_payload()) for x in maildirmessage.get_payload()]
+                else:
+                    parts = [(maildirmessage.get_content_type(),maildirmessage.get_payload())]
+                
+                """
+                if maildirmessage.is_multipart():
+                    multipart = True
+                    for part in maildirmessage.get_payload():
+                        if part.get_content_type() == 'text/plain':
+                            payload += '<pre class="wordwrap">{0}</pre>'.format(part.get_payload())
+                        elif part.get_content_type() == 'text/html':
+                            payload += '<p>{0}</p>'.format(part.get_payload())
+                else:
+                    payload = '<pre class="wordwrap">{0}</pre>'.format(maildirmessage.get_payload())
+                """
+                payload = maildirmessage.get_payload()
+                return render_to_string('archive/message.html', {
+                    'msg': self,
+                    'maildirmessage': maildirmessage,
+                    'headers': headers,
+                    'payload': payload,
+                    'multipart': multipart,
+                    'parts': parts}
+                )
+
+        except IOError, e:
+            return ''
     
     def __unicode__(self):
         return self.msgid
@@ -69,7 +111,11 @@ class Message(models.Model):
     def friendly_frm(self):
         #TODO use safer method 
         parts = self.frm.split()
-        return '%s@%s' % (parts[0],parts[2])
+        if len(parts) >= 3 and parts[1] == 'at':
+            return '%s@%s' % (parts[0],parts[2])
+        else:
+            part = [p for p in parts if '@' in p]
+            return part[0].strip('<>')
         
 class Attachment(models.Model):
     name = models.CharField(max_length=255)
@@ -92,12 +138,4 @@ class Reference(models.Model):
     class Meta:
         ordering = ('order',)
 
-class IetfRole(models.Model):
-    email_list = models.ForeignKey(EmailList)
-    group_id = models.IntegerField()
-    role_slug = models.CharField(max_length=8)
-    
-class IetfPerson(models.Model):
-    email_list = models.ForeignKey(EmailList)
-    person_id = models.IntegerField()
     

@@ -194,7 +194,14 @@ $(function() {
     function load_msg(row) {
         var msgId = row.find("td:last").html();
         /* TODO: this call needs auth */
-        $('#view-pane').load('/archive/ajax/msg/?term=' + msgId);
+        $('#view-pane').load('/archive/ajax/msg/?term=' + msgId, function() {
+            $('#msg-header').hide()
+            $('#msg-date').after('<a id="toggle" href="#">Show header</a>');
+            $('#toggle').click(function(ev) { 
+                $('#msg-header').toggle(); 
+                $(this).html(($('#toggle').text() == 'Show header') ? 'Hide header' : 'Show header');
+            });
+        });
     }
     
     /* auto select first item in result list */

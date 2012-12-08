@@ -1,0 +1,23 @@
+<div id="msg-body">
+    <h1>{{ msg.subject }}</h1>
+    <p id="msg-info" class="darkgray">
+      <span id="msg-from" class="pipe">{{ maildirmessage.from }}</span>
+      <span id="msg-date" class="pipe">{{ msg.date }}</span>
+    </p>
+    <div id="msg-header">
+      {% for k,v in headers %}
+        {{k}}: {{v}}<br />
+      {% endfor %}
+    </div>
+    <div id="msg-payload">
+      {% for part in parts %}
+          {% if part.0 == "text/plain" %}
+            <pre>{{ part.1 }}</pre>
+          {% else %}
+            {{ part.1|safe }}
+          {% endif %}
+      {% endfor %}
+    </div>
+    
+</div>
+<div id="msg-link"><a class="msg-link" href="http://{{ request.META.HTTP_HOST }}{% url archive_detail list_name=msg.email_list.name id=msg.hashcode %}">http://{{ request.META.HTTP_HOST }}{% url archive_detail list_name=msg.email_list.name id=msg.hashcode %}</a></div>

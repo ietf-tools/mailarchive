@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+{% endblock %} 
+
+{% block title %}Mail Archive{% endblock %}
+
+{% block content %}
+
+<ul>
+  {% for member in members %}
+    <li>{{ member }}</li>
+  {% endfor %}
+</ul>
+
+
+{% endblock %}
+
+

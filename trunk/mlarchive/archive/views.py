@@ -1,5 +1,7 @@
 from django.contrib import messages
+from django.contrib.auth import logout
 from django.core.urlresolvers import reverse
+from django.db.models import Q
 from django.forms.formsets import formset_factory
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
@@ -61,7 +63,11 @@ def advsearch(request):
 def browse(request):
     display_columns = 5
     form = BrowseForm()
-    lists = EmailList.objects.filter(active=True,private=False).order_by('name')
+    #assert False, request.user
+    if request.user.is_authenticated():
+        lists = EmailList.objects.filter(Q(active=True,private=False)|Q(members=request.user.pk)).order_by('name')
+    else:
+        lists = EmailList.objects.filter(active=True,private=False).order_by('name')
     columns = chunks(lists,int(math.ceil(lists.count()/float(display_columns))))
     
     return render_to_response('archive/browse.html', {
@@ -108,6 +114,23 @@ def detail(request, list_name, id):
         'message': message},
         RequestContext(request, {}),
     )
+
+# TODO: needs to be admin only
+def load(request):
+    '''
+    Load private list memebership.
+    '''
+    with open('/a/home/rcross/data/members') as f:
+        members = f.readlines()
+    
+    return render_to_response('archive/load.html', {
+        'members': members},
+        RequestContext(request, {}),
+    )
+
+def logout_view(request):
+    logout(request)
+    return HttpResponseRedirect('/archive/')
     
 def main(request):
     '''

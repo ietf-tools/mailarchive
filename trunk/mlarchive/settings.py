@@ -97,6 +97,7 @@ INSTALLED_APPS = (
     # 'django.contrib.admindocs',
     'haystack',
     'mlarchive.archive',
+    'htauth',
 )
 
 STATIC_URL = '/static/'
@@ -109,6 +110,11 @@ HAYSTACK_USE_REALTIME_SEARCH = False
 
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = '/a/home/rcross/data/archive'
+
+LOGIN_REDIRECT_URL = '/archive/'
+AUTHENTICATION_BACKENDS = (
+    'htauth.backend.HtauthBackend',
+    )
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.

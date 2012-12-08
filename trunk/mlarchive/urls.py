@@ -8,6 +8,7 @@ admin.autodiscover()
 urlpatterns = patterns('',
     # default to archive app
     (r'^$', redirect_to, {'url': '/archive/'}),
+    (r'^accounts/login/$', 'django.contrib.auth.views.login', {'template_name': 'archive/login.html'}),
     (r'^archive/', include('mlarchive.archive.urls')),
 
     # Uncomment the admin/doc line below to enable admin documentation:

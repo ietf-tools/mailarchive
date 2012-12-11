@@ -52,7 +52,9 @@ def get_hash(list_post,msgid):
 def get_thread(msg):
     '''
     This is a very basic thread algorithm.  If 'In-Reply-To-' is set, look up that message 
-    and return it's thread id, otherwise return a new thread id.
+    and return it's thread id, otherwise return a new thread id.  This is crude for many reasons.
+    ie. what if the referenced message isn't loaded yet?  We load message files in date order
+    to minimize this.
     '''
     global MISSING_IRT
     global IRTS
@@ -72,6 +74,7 @@ def get_thread(msg):
 def import_mbox(group,path,mlist):
     global LOADED
     global SKIPPED
+    
     mb = mailbox.mbox(path)
     for m in mb:
         # get date from "from" line
@@ -110,8 +113,9 @@ def import_mbox(group,path,mlist):
                 f.write(m.as_string())
             
             LOADED = LOADED + 1
-        except (MySQLdb.Warning,MySQLdb.OperationalError,IntegrityError, ValueError):
+        except (MySQLdb.Warning,MySQLdb.OperationalError,IntegrityError,ValueError,TypeError):
         #except IOError:   # uncomment for testing
+            # TypeError: if Message-ID is None, abfab
             SKIPPED = SKIPPED + 1
     
 def load(lists,private=False):
@@ -137,12 +141,12 @@ def load(lists,private=False):
 def main(): 
     # which email lists to load
     all = os.listdir(os.path.join(ARCHIVE_DIR,'text'))
-    public_lists = ('ccamp','alto')
-    #public_lists = ('abfab','alto','ancp','autoconf','ccamp','dime','discuss','ipsec','netconf','sip','simple')
+    #public_lists = ('ccamp','alto')
+    public_lists = ('abfab','alto','ancp','autoconf','ccamp','dime','discuss','ipsec','netconf','sip','simple')
     #public_lists = [ d for d in all if d.startswith(('a','b','c')) ]
     #public_lists = all
     
-    secure_lists = ('ietf84-team',)
+    secure_lists = ('ietf82-team','ietf83-team','ietf84-team','media','rsoc')
     
     load(public_lists)
     load(secure_lists,private=True)

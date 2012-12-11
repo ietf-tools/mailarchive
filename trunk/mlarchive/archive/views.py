@@ -27,6 +27,10 @@ class CustomSearchView(SearchView):
     def __name__(self):
         return "CustomSearchView"
 
+    def build_form(self, form_kwargs=None):
+        # add request to the form so we can use auth in processing
+        return super(self.__class__,self).build_form(form_kwargs={ 'request' : self.request }) 
+        
     def extra_context(self):
         extra = super(CustomSearchView, self).extra_context()
 
@@ -48,7 +52,7 @@ def chunks(l, n):
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
 def advsearch(request):
-    form = AdvancedSearchForm()
+    form = AdvancedSearchForm(request=request)
     RulesFormset = formset_factory(RulesForm)
     query_formset = RulesFormset(prefix='query')
     not_formset = RulesFormset(prefix='not')

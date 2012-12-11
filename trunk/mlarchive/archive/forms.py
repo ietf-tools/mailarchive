@@ -24,6 +24,10 @@ class AdvancedSearchForm(SearchForm):
     #operator = forms.ChoiceField(choices=(('AND','ALL'),('OR','ANY')))
     so = forms.CharField(max_length=25,required=False,widget=forms.HiddenInput)
 
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request')
+        super(self.__class__, self).__init__(*args, **kwargs)
+        
     def search(self):
         '''
         Custom search function.  This completely overrides the parent
@@ -61,14 +65,8 @@ class AdvancedSearchForm(SearchForm):
             sqs = sqs.filter(date__lte=self.cleaned_data['end_date'])
             
         if self.cleaned_data['email_list']:
-            # don't allow inclusion of unauthorized lists
-            # TODO: handle bogus lists
-            private_ids = [ x.id for x in EmailList.objects.filter(private=True) ]
-            qset = set(self.cleaned_data['email_list'])
-            pset = set(private_ids)
-            nset = qset.difference(pset)
-            #assert False, nset
-            sqs = sqs.filter(email_list__in=nset)
+            #assert False, self.cleaned_data['email_list']
+            sqs = sqs.filter(email_list__in=self.cleaned_data['email_list'])
         
         if self.cleaned_data['subject']:
             sqs = sqs.filter(subject__icontains=self.cleaned_data['subject'])
@@ -98,12 +96,27 @@ class AdvancedSearchForm(SearchForm):
     
     def clean_email_list(self):
         # take a comma separated list of email_list names and convert to list of ids
+        #assert False, (self.request.user, self.request.user.is_authenticated())
+        user = self.request.user
         ids = []
         email_list = self.cleaned_data['email_list']
-        if email_list:
-            for name in self.cleaned_data['email_list'].split(','):
+        for name in self.cleaned_data['email_list'].split(','):
+            try:
                 ids.append(EmailList.objects.get(name=name).id)
-        return ids
+            except EmailList.DoesNotExist:
+                pass
+        
+        # don't allow inclusion of unauthorized lists
+        # TODO: consider just adding exclude to sqs to restrict lists
+        if not user.is_authenticated():
+            noauth_ids = [ x.id for x in EmailList.objects.filter(private=True) ]
+        else:
+            noauth_ids = [ x.id for x in EmailList.objects.filter(private=True).exclude(members=user) ]
+        qset = set(ids)
+        restricted = set(noauth_ids)
+        # subtract restricted email_list ids
+        nset = qset.difference(restricted)
+        return list(nset)
 
     def clean(self):
         super(AdvancedSearchForm, self).clean()

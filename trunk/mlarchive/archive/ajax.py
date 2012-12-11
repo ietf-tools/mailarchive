@@ -1,4 +1,5 @@
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
@@ -6,6 +7,7 @@ from django.utils import simplejson
 from haystack.query import SearchQuerySet
 from mlarchive.archive.utils import jsonapi
 from mlarchive.archive.models import EmailList, Message
+from mlarchive.http import Http403
 
 import json
 
@@ -17,8 +19,14 @@ def ajax_get_list(request):
     if request.method != 'GET' or not request.GET.has_key('term'):
         return { 'success' : False, 'error' : 'No term submitted or not GET' }
     term = request.GET.get('term')
-
+    user = request.user
+    
     results = EmailList.objects.filter(name__startswith=term)
+    if not user.is_authenticated():
+        results = results.exclude(private=True)
+    else:
+        results = results.filter(Q(private=False)|Q(private=True,members=user))
+        
     if results.count() > 20:
         results = results[:20]
     elif results.count() == 0:
@@ -52,12 +60,19 @@ def ajax_get_msg(request):
     if request.method != 'GET' or not request.GET.has_key('term'):
         return { 'success' : False, 'error' : 'No term submitted or not GET' }
     term = request.GET.get('term')
+    user = request.user
     
     try:
         msg = Message.objects.get(id=term)
     except Message.DoesNotExist:
         return { 'success' : False, 'error' : 'ID not found' }
     
+    # authorize
+    if msg.email_list.private:
+        if not user.is_authenticated() or not msg.email_list.members.filter(id=user.id):
+            raise Http403
+            #return { 'success' : False, 'error' : 'Access Denied' }
+        
     #return render_to_response('archive/ajax_msg.html', {
     #    'msg': msg},
     #    RequestContext(request, {}),

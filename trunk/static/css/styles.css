@@ -135,7 +135,7 @@ a:hover {
    ========================================================================== */
 .addlink {
     padding-left: 12px;
-    background: url(/static/admin/img/icon_addlink.gif) 0 .2em no-repeat;
+    background: url("../admin/img/icon_addlink.gif") 0 .2em no-repeat;
 }
 
 /* ==========================================================================
@@ -152,9 +152,11 @@ a:hover {
     background-color: #F2F2E6;
 }
 
+/*
 div#msg-list-header {
     padding: 5px;
 }
+*/
 
 /* ==========================================================================
    Search v2
@@ -277,6 +279,25 @@ ul#navigation li:last-child {
     top: 0;
 }
 
+#msg-list-header {
+    background: url("smoothness/images/ui-bg_glass_75_e6e6e6_1x400.png") repeat-x scroll 50% 50% #E6E6E6;
+    border-left: 1px solid #CCCCCC;
+    border-right: 1px solid #CCCCCC;
+    border-top: 1px solid #CCCCCC;
+    font-size: 0.75em;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 24px;
+}
+
+#msg-list-header-table th {
+    border-bottom: none;
+    color: #555555;
+    font-weight: normal;
+}
+
 #msg-list {
     border-left: 1px solid #CCCCCC;
     border-right: 1px solid #CCCCCC;
@@ -287,7 +308,7 @@ ul#navigation li:last-child {
     overflow-y: auto;
     position: absolute;
     right: 0;
-    top: 0;
+    top: 25px;
 }
 
 #msg-list-controls {
@@ -342,6 +363,10 @@ ul#navigation li:last-child {
 
 #msg-body {
     /* margin-top: 0.5em; */
+}
+
+#msg-payload {
+    margin-top: 0.5em;
 }
 
 /* Source: http://snipplr.com/view/10979/css-cross-browser-word-wrap */
@@ -403,6 +428,32 @@ input.hidden-submit {
 .darkgray {
     color: #666666;
 }
+
+/* Header sort buttons
+   ========================================================================== */
+
+a.sortbutton:visited, a.sortbutton:link {
+    color: #555;
+    text-decoration: none;
+}
+
+.ui-button-text {
+    padding-left: 5px !important;
+}
+
+a.sortbutton:hover {
+    color: #555;
+}
+
+.sortbutton {
+    border: none !important;
+}
+
+table#msg-list-header-table th {
+    padding: 0;
+}
+
+a span.ui-icon { float: left; margin: 0 4px; }
 
 /* ==========================================================================
    Advanced Search

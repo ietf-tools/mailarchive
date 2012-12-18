@@ -8,6 +8,10 @@ $(function() {
             // window.location="/archive/browse/" + ui.item.label;
             window.location="/archive/search/?email_list=" + ui.item.label;
             return false;
+        },
+        open: function( event, ui ) {
+            //alert(ui);
+            console.log(ui);
         }
     });
     $('#id_list_name').val('').focus();

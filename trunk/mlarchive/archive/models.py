@@ -8,6 +8,45 @@ import logging
 import mailbox
 import os
 
+
+
+# --------------------------------------------------
+# Helper Functions
+# --------------------------------------------------
+def handle_plain(part):
+    #print "plain: %s" % part.get_payload()[:20]
+    return render_to_string('archive/message_plain.html', {'payload': part.get_payload})
+    
+def handle_html(part):
+    #print "html: %s" % part.get_payload()[:20]
+    return render_to_string('archive/message_html.html', {'payload': part.get_payload})
+    
+# a dictionary of supported mime types
+HANDLERS = {'text/plain':handle_plain,
+            'text/html':handle_html}
+            
+def parse(path):
+    '''
+    Parse message mime parts
+    '''
+    try:
+        with open(path) as f:
+            maildirmessage = mailbox.MaildirMessage(f)
+            headers = maildirmessage.items()
+            #get_parts(maildirmessage)
+            parts = []
+            for part in maildirmessage.walk():
+                handler = HANDLERS.get(part.get_content_type(),None)
+                if handler:
+                    parts.append(handler(part))
+            return parts
+    except IOError, e:
+        return ''
+
+# --------------------------------------------------
+# Models
+# --------------------------------------------------
+
 class Thread(models.Model):
     
     def __unicode__(self):
@@ -64,30 +103,17 @@ class Message(models.Model):
             with open(self.get_file_path()) as f:
                 maildirmessage = mailbox.MaildirMessage(f)
                 headers = maildirmessage.items()
-                # Build a list of tuples for use in the template
-                if maildirmessage.is_multipart():
-                    parts = [(x.get_content_type(),x.get_payload()) for x in maildirmessage.get_payload()]
-                else:
-                    parts = [(maildirmessage.get_content_type(),maildirmessage.get_payload())]
-                
-                """
-                if maildirmessage.is_multipart():
-                    multipart = True
-                    for part in maildirmessage.get_payload():
-                        if part.get_content_type() == 'text/plain':
-                            payload += '<pre class="wordwrap">{0}</pre>'.format(part.get_payload())
-                        elif part.get_content_type() == 'text/html':
-                            payload += '<p>{0}</p>'.format(part.get_payload())
-                else:
-                    payload = '<pre class="wordwrap">{0}</pre>'.format(maildirmessage.get_payload())
-                """
-                payload = maildirmessage.get_payload()
+                parts = []
+                for part in maildirmessage.walk():
+                    handler = HANDLERS.get(part.get_content_type(),None)
+                    if handler:
+                        parts.append(handler(part))
+                    
+                #assert False, parts
                 return render_to_string('archive/message.html', {
                     'msg': self,
                     'maildirmessage': maildirmessage,
                     'headers': headers,
-                    'payload': payload,
-                    'multipart': multipart,
                     'parts': parts}
                 )
 

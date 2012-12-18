@@ -24,7 +24,20 @@ $(function() {
         window.location="/archive/browse/" + label;
     }
     
+    function sync_tables() {
+        // synchronize the message list header table with the scrollable content table
+        $("#msg-list-header-table").width($("#msg-table").width());
+        $("#msg-list-header-table tr th").each(function (i){
+            $(this).width($($("#msg-table tr:first td")[i]).width() + 10);
+        });
+    }
+    
     function init_search() {
+        sync_tables();
+        $(window).resize(function(){
+            sync_tables();
+        });
+        
         // init splitter
         $("#splitter-pane").draggable({
             axis:"y",
@@ -36,13 +49,11 @@ $(function() {
                 $("#view-pane").css("top",top+3);
             }
         });
+        
         // optimize for 1024x768
         $("#list-pane").css("height",175);
         $("#view-pane").css("top",181);
         $("#splitter-pane").css("top",175);
-        
-        // SETUP KEY BINDING
-        // set focus on msg-list pane
         
         function scrGrid(row){
             // changed formula because rpos is always within clientheight
@@ -56,8 +67,7 @@ $(function() {
             }
         }
         
-        
-        $('#msg-list').focus();
+        // SETUP KEY BINDING
         $('#msg-list').bind("keydown", function(event) {
             var keyCode = event.keyCode || event.which,
                 arrow = {up: 38, down: 40 };
@@ -87,6 +97,8 @@ $(function() {
             }
         });
         
+        // set focus on msg-list pane
+        $('#msg-list').focus();
     }
     
     function setup_ajax_browse(field, list, searchfield, url) {
@@ -101,6 +113,8 @@ $(function() {
     }
 
     function setup_buttons() {
+        $( "a.sortbutton" ).button();
+        
         var so=getURLParameter("so");
         $('#sort-date-button').click(function() {
             if(so=="date"){
@@ -143,7 +157,7 @@ $(function() {
             $('form#id_search_form').submit();
         });
         
-        $('button.unsorted').button();
+        //$('button.unsorted').button();
         
         //if(so=="-date"||so=="null"){
         if(so=="-date"){

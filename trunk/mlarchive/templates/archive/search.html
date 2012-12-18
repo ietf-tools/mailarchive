@@ -13,6 +13,8 @@
     <!-- use context "form" to re-display search form -->
   
     <div id="msg-headers"> 
+        
+        {% comment %}
         <div id="sort-header">
           Sort:
           <button id="sort-date-button" class="unsorted small-button">Date</button>
@@ -21,6 +23,7 @@
           <button id="sort-list-button" class="unsorted small-button">List</button>
           <button id="sort-score-button" class="unsorted small-button">Score</button>
         </div> <!-- sort_header -->
+        {% endcomment %}
         
         <div id="search-header">
           {% include "includes/search_box.html" %}
@@ -29,6 +32,19 @@
         
     <div id="msg-panes">    
         <div id="list-pane">
+            <div id="msg-list-header">
+                <table id="msg-list-header-table">
+                    <thead>
+                        <tr>
+                            <th><a id="sort-date-button" class="unsorted sortbutton" href="#">Date</a></th>
+                            <th><a id="sort-thread-button" class="unsorted sortbutton" href="#">Subject</a></th>
+                            <th><a id="sort-from-button" class="unsorted sortbutton" href="#">From</a></th>
+                            <th><a id="sort-list-button" class="unsorted sortbutton" href="#">List</a></th>
+                            <th><a id="sort-score-button" class="unsorted sortbutton" href="#">Score</a></th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
             <div id="msg-list" tabindex="-1">
                 <table id="msg-table" class="no-zebra">
                 {% for result in page.object_list %}

@@ -11,11 +11,7 @@
     </div>
     <div id="msg-payload">
       {% for part in parts %}
-          {% if part.0 == "text/plain" %}
-            <pre>{{ part.1 }}</pre>
-          {% else %}
-            {{ part.1|safe }}
-          {% endif %}
+          {{ part|safe }}
       {% endfor %}
     </div>
     

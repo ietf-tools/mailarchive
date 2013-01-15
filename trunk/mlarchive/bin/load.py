@@ -90,6 +90,7 @@ def import_mbox(group,path,mlist):
         # just catch these and proceed to the next record
         try:
             # convert date
+            # TODO: use email.utils.parsedate
             date = datetime.datetime.strptime(' '.join(date_parts),'%a %b %d %H:%M:%S %Y')
             hash = get_hash(mlist.name,m['Message-ID'])
             msg = Message(body=m.get_payload(),

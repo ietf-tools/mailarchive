@@ -24,6 +24,18 @@
           <button id="sort-score-button" class="unsorted small-button">Score</button>
         </div> <!-- sort_header -->
         {% endcomment %}
+        <div id="search-filters">
+            <div class="filter-item">
+                <div class="filter-item-txt">Any Time</div>
+                <span class="dwn-arw"></span>
+            </div>
+            <ul class="filter-options" tabindex="-1">
+              <li><a class="filter-link" href="{% append_to_get qdr='d' %}">Past 24 hours</a></li>
+              <li><a class="filter-link" href="{% append_to_get qdr='w' %}">Past week</a></li>
+              <li><a class="filter-link" href="{% append_to_get qdr='m' %}">Past month</a></li>
+              <li><a class="filter-link" href="{% append_to_get qdr='y' %}">Past year</a></li>
+            </ul>
+        </div> <!-- search-filters -->
         
         <div id="search-header">
           {% include "includes/search_box.html" %}

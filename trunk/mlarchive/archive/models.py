@@ -8,18 +8,25 @@ import logging
 import mailbox
 import os
 
-
+US_CHARSETS = ('us-ascii','iso-8859-1')
+OTHER_CHARSETS = ('gb2312')
 
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
 def handle_plain(part):
-    #print "plain: %s" % part.get_payload()[:20]
-    return render_to_string('archive/message_plain.html', {'payload': part.get_payload})
+    # get_charset() doesn't work??
+    charset = part.get_param('charset').lower()
+    payload = part.get_payload(decode=True)
+    if charset not in US_CHARSETS:
+        # TODO log failure and pass
+        #try:
+        payload = payload.decode(charset)
+        #except UnicodeDecodeError:
+    return render_to_string('archive/message_plain.html', {'payload': payload})
     
 def handle_html(part):
-    #print "html: %s" % part.get_payload()[:20]
-    return render_to_string('archive/message_html.html', {'payload': part.get_payload})
+    return render_to_string('archive/message_html.html', {'payload': part.get_payload(decode=True)})
     
 # a dictionary of supported mime types
 HANDLERS = {'text/plain':handle_plain,
@@ -29,19 +36,25 @@ def parse(path):
     '''
     Parse message mime parts
     '''
+    parts = []
+    alt_count = 0
     try:
         with open(path) as f:
             maildirmessage = mailbox.MaildirMessage(f)
             headers = maildirmessage.items()
-            #get_parts(maildirmessage)
-            parts = []
             for part in maildirmessage.walk():
-                handler = HANDLERS.get(part.get_content_type(),None)
+                type = part.get_content_type()
+                if type == 'multipart/alternative':
+                    alt_count = len(part.get_payload())
+                    continue
+                handler = HANDLERS.get(type,None)
                 if handler:
                     parts.append(handler(part))
-            return parts
+    
     except IOError, e:
         return ''
+        
+    return parts
 
 # --------------------------------------------------
 # Models
@@ -97,8 +110,6 @@ class Message(models.Model):
         a dictionary.  As a result it's methods are not available to the Django template.
         Therefore we need to pass these to the template individually.
         '''
-        payload = ''
-        multipart = False
         try:
             with open(self.get_file_path()) as f:
                 maildirmessage = mailbox.MaildirMessage(f)
@@ -108,17 +119,15 @@ class Message(models.Model):
                     handler = HANDLERS.get(part.get_content_type(),None)
                     if handler:
                         parts.append(handler(part))
-                    
-                #assert False, parts
-                return render_to_string('archive/message.html', {
-                    'msg': self,
-                    'maildirmessage': maildirmessage,
-                    'headers': headers,
-                    'parts': parts}
-                )
-
         except IOError, e:
             return ''
+            
+        return render_to_string('archive/message.html', {
+            'msg': self,
+            'maildirmessage': maildirmessage,
+            'headers': headers,
+            'parts': parts}
+        )
     
     def __unicode__(self):
         return self.msgid

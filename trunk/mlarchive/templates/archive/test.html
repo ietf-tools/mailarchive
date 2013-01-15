@@ -1,5 +1,16 @@
 {% extends "base.html" %}
 
+{% block extrahead %}
+<style>
+#test { 
+  border: 1px solid black; 
+  width: 300px;
+  white-space: pre-wrap;
+}
+</style>
+{% endblock %} 
+
+
 {% block title %}Archive{% endblock %}
 
 {% block content %}
@@ -13,8 +24,21 @@
     <li><a href="./haystack">Haystack</a></li>
     <li><a href="./custom">Custom Haystack</a></li>
   </ul>
+  
+  <p>
+    <ul>
+      <li>{{ request.session.keys }}</li>
+      <li>{{ request.session.get_decoded }}</li>
+      <li>{{ request.session.expire_date }}</li>
+    </ul>
+  </p>
 
 </div> <!-- module -->
+
+<div id='test'>
+<div>Here is a div with a really long line in it to test if this line gets wrapped properly when it is really long and goes outside the div</div>
+<div></div>
+</div>
 
 <div id="sample"> <pre class="someclass">Some text goes here<pre></div>
 {% endblock %}

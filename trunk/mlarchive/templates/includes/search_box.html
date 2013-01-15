@@ -1,13 +1,9 @@
   <div id="basic-search">
-      <form name="search-form" id="id_search_form" action="search" method="get">
+      <form name="search-form" id="id_search_form" action="" method="get">
+        {{ form.email_list }}
         {{ form.so }}
         {{ form.q }}
-        {# <input id="id_q" type="text" value="improve" name="q"> #}
         <input class="hidden-submit" type="submit" value="Search" />
-        {% comment %}
-        {{ form.q }}
-        <a id="as-show" href="#">Advanced Search</a>
-        {% endcomment %}
         <button id="" class="unsorted small-button" onclick="window.history.back()">Change Search</button>
         <button id="" class="unsorted small-button">Export</button>
       </form>

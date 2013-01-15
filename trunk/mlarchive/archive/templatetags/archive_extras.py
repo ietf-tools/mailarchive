@@ -21,7 +21,7 @@ def get_params(params, exclude):
 @register.simple_tag
 def get_column(length,count):
     '''
-    This custom tag two integers, the length of a ordered list and the count of the current
+    This custom tag takes two integers, the length of a ordered list and the count of the current
     list item.  It returns col[1-4] to be used as a class to position the item in the 
     correct column.
     '''
@@ -53,6 +53,9 @@ def easy_tag(func):
     return inner
 
 class AppendGetNode(template.Node):
+    '''
+    This is a custom tag which takes the 
+    '''
     def __init__(self, dict):
         self.dict_pairs = {}
         for pair in dict.split(','):
@@ -60,17 +63,16 @@ class AppendGetNode(template.Node):
             self.dict_pairs[pair[0]] = template.Variable(pair[1])
             
     def render(self, context):
+        # GET is a QueryDict object
         get = context['request'].GET.copy()
 
+        # use this method to replace keys if they already exist.  update() won't replace
         for key in self.dict_pairs:
             get[key] = self.dict_pairs[key].resolve(context)
         
         path = context['request'].META['PATH_INFO']
         
-        #print "&".join(["%s=%s" % (key, value) for (key, value) in get.items() if value])
-        
         if len(get):
-            #path += "?%s" % "&".join(["%s=%s" % (key, value) for (key, value) in get.items() if value])
             path += "?%s" % get.urlencode()
         
         return path

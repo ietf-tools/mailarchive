@@ -5,9 +5,10 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils import simplejson
 from haystack.query import SearchQuerySet
-from mlarchive.archive.utils import jsonapi
+from mlarchive.archive.utils import jsonapi, get_html
 from mlarchive.archive.models import EmailList, Message
 from mlarchive.http import Http403
+from mlarchive.utils.decorators import check_access
 
 import json
 
@@ -50,35 +51,15 @@ def ajax_get_msg(request):
     response = {'body':msg.body}
     return response
 '''
-
-def ajax_get_msg(request):
+@check_access
+def ajax_get_msg(request, msg):
     '''
-    Ajax method to retrieve message details.  One parameter expected, "term" which 
-    is the ID of the message.  We return the results of message.html, which is 
+    Ajax method to retrieve message details.  One URL parameter expected, "id" which 
+    is the ID of the message.  We return the results of get_html(), which is 
     an HTML'ized presentation of the message.
+    NOTE: the "msg" arguments is added by check_access decorator
     '''
-    if request.method != 'GET' or not request.GET.has_key('term'):
-        return { 'success' : False, 'error' : 'No term submitted or not GET' }
-    term = request.GET.get('term')
-    user = request.user
-    
-    try:
-        msg = Message.objects.get(id=term)
-    except Message.DoesNotExist:
-        return { 'success' : False, 'error' : 'ID not found' }
-    
-    # authorize
-    if msg.email_list.private:
-        if not user.is_authenticated() or not msg.email_list.members.filter(id=user.id):
-            raise Http403
-            #return { 'success' : False, 'error' : 'Access Denied' }
-        
-    #return render_to_response('archive/ajax_msg.html', {
-    #    'msg': msg},
-    #    RequestContext(request, {}),
-    #)
-    
-    return HttpResponse(msg.html)
+    return HttpResponse(get_html(msg,request))
 
 @jsonapi
 def ajax_messages(request):

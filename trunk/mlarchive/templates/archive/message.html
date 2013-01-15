@@ -9,11 +9,13 @@
         {{k}}: {{v}}<br />
       {% endfor %}
     </div>
-    <div id="msg-payload">
+    <div id="msg-payload" class="wordwrap">
       {% for part in parts %}
           {{ part|safe }}
       {% endfor %}
     </div>
-    
 </div>
+
+{% if request %}
 <div id="msg-link"><a class="msg-link" href="http://{{ request.META.HTTP_HOST }}{% url archive_detail list_name=msg.email_list.name id=msg.hashcode %}">http://{{ request.META.HTTP_HOST }}{% url archive_detail list_name=msg.email_list.name id=msg.hashcode %}</a></div>
+{% endif %}

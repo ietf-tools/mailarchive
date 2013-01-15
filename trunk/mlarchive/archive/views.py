@@ -7,6 +7,9 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from haystack.views import SearchView
+from mlarchive.archive.utils import get_html
+from mlarchive.http import Http403
+from mlarchive.utils.decorators import check_access
 
 from models import *
 from forms import *
@@ -28,7 +31,7 @@ class CustomSearchView(SearchView):
         return "CustomSearchView"
 
     def build_form(self, form_kwargs=None):
-        # add request to the form so we can use auth in processing
+        # add request to the form init call so we can use auth in processing
         return super(self.__class__,self).build_form(form_kwargs={ 'request' : self.request }) 
         
     def extra_context(self):
@@ -110,12 +113,17 @@ def browse_date(request, list_name):
         'msgs': msgs},
         RequestContext(request, {}),
     )
-
-def detail(request, list_name, id):
-    message = get_object_or_404(Message, hashcode=id)
-
+    
+@check_access
+def detail(request, list_name, id, msg):
+    '''
+    This view displays the requested message.
+    NOTE: the "msg" arguments is added by check_access decorator
+    '''
+    msg_html = get_html(msg, None)
+    
     return render_to_response('archive/detail.html', {
-        'message': message},
+        'msg_html': msg_html},
         RequestContext(request, {}),
     )
 
@@ -142,6 +150,7 @@ def main(request):
     '''
     form = SearchForm()
     
+    #assert False, request
     return render_to_response('archive/main.html', {
         'form': form},
         RequestContext(request, {}),

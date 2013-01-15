@@ -1,11 +1,13 @@
-from django.conf import settings
 from django import forms
+from django.conf import settings
+from django.contrib import messages
 #from haystack.backends.xapian_backend import SearchBackend   #v1.2.7
 from haystack.backends.xapian_backend import XapianSearchBackend
 from haystack.forms import SearchForm
 from haystack.query import SearchQuerySet
-from mlarchive.archive.models import EmailList
 from mlarchive.archive.getSQ import parse
+from mlarchive.archive.models import EmailList
+from mlarchive.archive.utils import get_noauth
 
 FIELD_CHOICES = (('text','Subject and Body'),
                  ('subject','Subject'),
@@ -17,7 +19,7 @@ FIELD_CHOICES = (('text','Subject and Body'),
 class AdvancedSearchForm(SearchForm):
     start_date = forms.DateField(required=False,help_text='YYYY-MM-DD')
     end_date = forms.DateField(required=False)
-    email_list = forms.CharField(max_length=255,required=False)
+    email_list = forms.CharField(max_length=255,required=False,widget=forms.HiddenInput)
     subject = forms.CharField(max_length=255,required=False)
     frm = forms.CharField(max_length=255,required=False)
     msgid = forms.CharField(max_length=255,required=False)
@@ -53,7 +55,6 @@ class AdvancedSearchForm(SearchForm):
         # use custom parser
         if q:
             sq = parse(q)
-            #assert False, sq
             sqs = self.searchqueryset.filter(sq)
         else:
             sqs = self.searchqueryset
@@ -65,7 +66,6 @@ class AdvancedSearchForm(SearchForm):
             sqs = sqs.filter(date__lte=self.cleaned_data['end_date'])
             
         if self.cleaned_data['email_list']:
-            #assert False, self.cleaned_data['email_list']
             sqs = sqs.filter(email_list__in=self.cleaned_data['email_list'])
         
         if self.cleaned_data['subject']:
@@ -77,12 +77,22 @@ class AdvancedSearchForm(SearchForm):
         if self.cleaned_data['msgid']:
             sqs = sqs.filter(msgid__icontains=self.cleaned_data['msgid'])
         
-        # handle sort order if specified
+        # private lists -------------------------------------------
+        if self.request.user.is_authenticated():
+            # exclude those lists the user is not authorized for
+            sqs = sqs.exclude(email_list__in=get_noauth(self.request))
+        else:
+            # exclude all private lists
+            # TODO cache this query, see Low Level Cache API
+            private_ids = [ str(x.pk) for x in EmailList.objects.filter(private=True) ]
+            sqs = sqs.exclude(email_list__in=private_ids)
+            
+        # sorting -------------------------------------------------
         so = self.cleaned_data.get('so',None)
         if so in ('date','-date','email_list','-email_list','frm','-frm'):
             sqs = sqs.order_by(so)
         elif so in ('score','-score'):
-            # order_by('score') doesn't work because its strings, but is default ordering
+            # TODO: order_by('score') doesn't work because its strings, but is default ordering
             pass
         else:
             # default to
@@ -96,16 +106,21 @@ class AdvancedSearchForm(SearchForm):
     
     def clean_email_list(self):
         # take a comma separated list of email_list names and convert to list of ids
-        #assert False, (self.request.user, self.request.user.is_authenticated())
         user = self.request.user
         ids = []
+        bad_lists = []
         email_list = self.cleaned_data['email_list']
         for name in self.cleaned_data['email_list'].split(','):
             try:
                 ids.append(EmailList.objects.get(name=name).id)
             except EmailList.DoesNotExist:
-                pass
+                bad_lists.append(name)
         
+        # TODO
+        #if bad_lists:
+        #    messages.warning(self.request, 'This feature is disabled')
+        
+        """
         # don't allow inclusion of unauthorized lists
         # TODO: consider just adding exclude to sqs to restrict lists
         if not user.is_authenticated():
@@ -117,7 +132,9 @@ class AdvancedSearchForm(SearchForm):
         # subtract restricted email_list ids
         nset = qset.difference(restricted)
         return list(nset)
-
+        """
+        return ids
+        
     def clean(self):
         super(AdvancedSearchForm, self).clean()
         cleaned_data = self.cleaned_data
@@ -130,7 +147,7 @@ class AdvancedSearchForm(SearchForm):
 
 class RulesForm(forms.Form):
     field = forms.ChoiceField(choices=FIELD_CHOICES,widget=forms.Select(attrs={'class':'parameter'}))
-    value = forms.CharField(max_length=40,widget=forms.TextInput(attrs={'class':'operand'}))
+    value = forms.CharField(max_length=120,widget=forms.TextInput(attrs={'class':'operand'}))
 
 class SqlSearchForm(forms.Form):
     start = forms.DateField(required=False)

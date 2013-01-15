@@ -9,12 +9,36 @@ from mlarchive.archive.getSQ import parse
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
 
+from datetime import datetime, timedelta
+
 FIELD_CHOICES = (('text','Subject and Body'),
                  ('subject','Subject'),
                  ('frm','From'),
                  ('to','To'),
                  ('msgid','Message-ID'))
                  
+# --------------------------------------------------------
+# Helper Functions
+# --------------------------------------------------------
+def get_qdr_time(val):
+    '''
+    This function expects the value of the qdr search parameter [h,d,w,m,y]
+    and returns the corresponding datetime to use in the search filter.
+    EXAMPLE: h -> now - one hour
+    '''
+    now = datetime.now()
+    if val == 'h':
+        return now - timedelta(hours=1)
+    elif val == 'd':
+        return now - timedelta(days=1)
+    elif val == 'w':
+        return now - timedelta(weeks=1)
+    elif val == 'm':
+        return now - timedelta(days=30)
+    elif val == 'y':
+        return now - timedelta(days=365)
+    
+
 # --------------------------------------------------------
 class AdvancedSearchForm(SearchForm):
     start_date = forms.DateField(required=False,help_text='YYYY-MM-DD')
@@ -59,23 +83,27 @@ class AdvancedSearchForm(SearchForm):
         else:
             sqs = self.searchqueryset
 
-        if self.cleaned_data['start_date']:
-            sqs = sqs.filter(date__gte=self.cleaned_data['start_date'])
-
-        if self.cleaned_data['end_date']:
-            sqs = sqs.filter(date__lte=self.cleaned_data['end_date'])
-            
+        # handle URL parameters
         if self.cleaned_data['email_list']:
             sqs = sqs.filter(email_list__in=self.cleaned_data['email_list'])
-        
-        if self.cleaned_data['subject']:
-            sqs = sqs.filter(subject__icontains=self.cleaned_data['subject'])
+            
+        if self.cleaned_data['end_date']:
+            sqs = sqs.filter(date__lte=self.cleaned_data['end_date'])
             
         if self.cleaned_data['frm']:
             sqs = sqs.filter(frm__icontains=self.cleaned_data['frm'])
         
         if self.cleaned_data['msgid']:
             sqs = sqs.filter(msgid__icontains=self.cleaned_data['msgid'])
+            
+        if self.cleaned_data['qdr']:
+            sqs = sqs.filter(date_gte=get_qdr_time(self.cleaned_data['qdr']))
+        
+        if self.cleaned_data['start_date']:
+            sqs = sqs.filter(date__gte=self.cleaned_data['start_date'])
+        
+        if self.cleaned_data['subject']:
+            sqs = sqs.filter(subject__icontains=self.cleaned_data['subject'])
         
         # private lists -------------------------------------------
         if self.request.user.is_authenticated():

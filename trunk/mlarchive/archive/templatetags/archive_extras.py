@@ -54,7 +54,10 @@ def easy_tag(func):
 
 class AppendGetNode(template.Node):
     '''
-    This is a custom tag which takes the 
+    This is a custom tag which takes the one or more arguments in the form key=val, key=val...
+    The key value pairs are added to the current URL parameters overriding parameters of the
+    same name.  The new URL is returned.
+    NOTE: request must be in the template context
     '''
     def __init__(self, dict):
         self.dict_pairs = {}
@@ -64,16 +67,16 @@ class AppendGetNode(template.Node):
             
     def render(self, context):
         # GET is a QueryDict object
-        get = context['request'].GET.copy()
+        params = context['request'].GET.copy()
 
         # use this method to replace keys if they already exist.  update() won't replace
         for key in self.dict_pairs:
-            get[key] = self.dict_pairs[key].resolve(context)
+            params[key] = self.dict_pairs[key].resolve(context)
         
         path = context['request'].META['PATH_INFO']
         
         if len(get):
-            path += "?%s" % get.urlencode()
+            path += "?%s" % params.urlencode()
         
         return path
 

@@ -49,6 +49,7 @@ class AdvancedSearchForm(SearchForm):
     msgid = forms.CharField(max_length=255,required=False)
     #operator = forms.ChoiceField(choices=(('AND','ALL'),('OR','ANY')))
     so = forms.CharField(max_length=25,required=False,widget=forms.HiddenInput)
+    qdr = forms.CharField(max_length=25,required=False)
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request')

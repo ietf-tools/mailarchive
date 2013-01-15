@@ -75,7 +75,7 @@ class AppendGetNode(template.Node):
         
         path = context['request'].META['PATH_INFO']
         
-        if len(get):
+        if len(params):
             path += "?%s" % params.urlencode()
         
         return path

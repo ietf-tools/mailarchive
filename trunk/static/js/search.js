@@ -113,7 +113,17 @@ $(function() {
     }
 
     function setup_buttons() {
-        $( "a.sortbutton" ).button();
+        // setup filters
+        $('div.filter-item').click(function() {
+            $(this).next().show().focus();
+        });
+        $('ul.filter-options').blur(function() {
+            var myList = $(this)
+            window.setTimeout(function() { $(myList).hide(); },500);
+            //$(this).hide();
+        });
+        
+        $('a.sortbutton').button();
         
         var so=getURLParameter("so");
         $('#sort-date-button').click(function() {
@@ -208,7 +218,7 @@ $(function() {
     function load_msg(row) {
         var msgId = row.find("td:last").html();
         /* TODO: this call needs auth */
-        $('#view-pane').load('/archive/ajax/msg/?term=' + msgId, function() {
+        $('#view-pane').load('/archive/ajax/msg/?id=' + msgId, function() {
             $('#msg-header').hide()
             $('#msg-date').after('<a id="toggle" href="#">Show header</a>');
             $('#toggle').click(function(ev) { 

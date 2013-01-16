@@ -455,6 +455,44 @@ table#msg-list-header-table th {
 
 a span.ui-icon { float: left; margin: 0 4px; }
 
+/* Filters
+   ========================================================================== */
+
+#search-filters {
+    display: inline-block;
+}
+
+.filter-item {
+    color: #777777;
+    cursor: pointer;
+    display: inline-block;
+}
+
+.filter-item:hover {
+    color: #222222;
+}
+
+.filter-options {
+    display: none;
+}
+
+.filter-options li {
+    list-style: none outside none;
+}
+
+.filter-options {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border: 1px solid #D6D6D6;
+    box-shadow: 0 2px 4px #D6D6D6;
+    color: #333333;
+    line-height: 17px;
+    padding-bottom: 5px;
+    padding-top: 5px;
+    position: absolute;
+    top: 36px;
+    z-index: 103;
+}
+
 /* ==========================================================================
    Advanced Search
    ========================================================================== */
@@ -652,6 +690,15 @@ div#browse_columns {
 /* ==========================================================================
    Detail
    ========================================================================== */
+#msg-detail {
+    width: 645px;
+}
+
+#msg-detail #msg-payload {
+    font-family: "DejaVu Sans Mono",Monaco,"Courier New",Courier;
+    font-size: 0.85em;
+}
+
 #msg-detail pre {
     font-family: monospace;
     margin-top: 1em;

@@ -7,8 +7,8 @@ export DJANGO_SETTINGS_MODULE=mlarchive.settings
 '''
 
 import sys
-sys.path.insert(0, '/a/home/rcross/src/amsl/mlabast')
-sys.path.insert(0, '/a/home/rcross/src/amsl/mlabast/mlarchive')
+#sys.path.insert(0, '/a/home/rcross/src/amsl/mlabast')
+#sys.path.insert(0, '/a/home/rcross/src/amsl/mlabast/mlarchive')
 
 from django.core.management import setup_environ
 from django.db.utils import IntegrityError
@@ -29,7 +29,7 @@ import base64
 # --------------------------------------------------
 # Globals
 # --------------------------------------------------
-ARCHIVE_DIR = '/a/www/ietf-mail-archive/'
+SOURCE_DIR = '/a/www/ietf-mail-archive/'
 #FILE_PATTERN = re.compile(r'^\d{4}-\d{2}.mail$')
 # get only recent files (2010 on) the older ones have different format??
 FILE_PATTERN = re.compile(r'^201[0-2]-\d{2}.mail$')
@@ -126,13 +126,13 @@ def load(lists,private=False):
         # create list object
         mlist,created = EmailList.objects.get_or_create(name=dir,description=dir,private=private)
         
-        mboxs = [ f for f in os.listdir(os.path.join(ARCHIVE_DIR,subdir,dir)) if FILE_PATTERN.match(f) ]
+        mboxs = [ f for f in os.listdir(os.path.join(SOURCE_DIR,subdir,dir)) if FILE_PATTERN.match(f) ]
         
         # we need to import the files in chronological order so thread resolution works
         sorted_mboxs = sorted(mboxs)
         
         for filename in sorted_mboxs:
-            path = os.path.join(ARCHIVE_DIR,subdir,dir,filename)
+            path = os.path.join(SOURCE_DIR,subdir,dir,filename)
             import_mbox(dir,path,mlist)
             
 # --------------------------------------------------
@@ -141,7 +141,7 @@ def load(lists,private=False):
 
 def main(): 
     # which email lists to load
-    all = os.listdir(os.path.join(ARCHIVE_DIR,'text'))
+    all = os.listdir(os.path.join(SOURCE_DIR,'text'))
     #public_lists = ('ccamp','alto')
     public_lists = ('abfab','alto','ancp','autoconf','ccamp','dime','discuss','ipsec','netconf','sip','simple')
     #public_lists = [ d for d in all if d.startswith(('a','b','c')) ]

@@ -8,8 +8,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from haystack.views import SearchView, FacetedSearchView
 from mlarchive.archive.utils import get_html
-from mlarchive.http import Http403
-from mlarchive.utils.decorators import check_access
+from mlarchive.utils.decorators import check_access, superuser_only
 
 from models import *
 from forms import *
@@ -25,28 +24,23 @@ import os
 # --------------------------------------------------
 class CustomSearchView(FacetedSearchView):
     '''
-    A customized SearchView to add extra context
+    A customized SearchView.  Need to add request object to the form init so we can use it
+    for authorization
     '''
     def __name__(self):
         return "CustomSearchView"
 
     def build_form(self, form_kwargs=None):
-        # add request to the form init call so we can use auth in processing
         return super(self.__class__,self).build_form(form_kwargs={ 'request' : self.request }) 
-        
-    def extra_context(self):
-        extra = super(CustomSearchView, self).extra_context()
 
-        extra['test'] = 'test'
-        
-        return extra
-        
+    # def extra_context(self):
+
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
 def chunks(l, n):
     '''
-    Yield successive n-sized chunks from l.
+    Yield successive n-sized chunks from l
     '''
     for i in xrange(0, len(l), n):
         yield l[i:i+n]
@@ -55,6 +49,9 @@ def chunks(l, n):
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
 def advsearch(request):
+    '''
+    The Advanced Search View
+    '''
     form = AdvancedSearchForm(request=request)
     RulesFormset = formset_factory(RulesForm)
     query_formset = RulesFormset(prefix='query')
@@ -68,9 +65,11 @@ def advsearch(request):
     )
     
 def browse(request):
+    '''
+    This view presents a list of Email Lists the user has access to
+    '''
     display_columns = 5
     form = BrowseForm()
-    #assert False, request.user
     if request.user.is_authenticated():
         lists = EmailList.objects.filter(Q(active=True,private=False)|Q(members=request.user.pk)).order_by('name')
     else:
@@ -84,15 +83,17 @@ def browse(request):
         RequestContext(request, {}),
     )
 
+# TODO if we use this, need access decorator
 def browse_list(request, list_name):
-    # TODO change this
-    name = list_name.split('@')[0]
-    list_obj = get_object_or_404(EmailList, name=name)
+    '''
+    Browse emails by list
+    '''
+    list_obj = get_object_or_404(EmailList, name=list_name)
     
-    so = request.GET.get('so','date')
-    
-    if so in ('date','frm'):
-        order = so
+    # default sort order is date descending
+    order = request.GET.get('so','-date')
+    if not order in ('date','-date','frm','-frm'):
+        order = '-date'
     msgs = Message.objects.filter(email_list=list_obj).order_by(order)
     
     return render_to_response('archive/browse_list.html', {
@@ -101,24 +102,11 @@ def browse_list(request, list_name):
         RequestContext(request, {}),
     )
 
-def browse_date(request, list_name):
-    # TODO change this
-    name = list_name.split('@')[0]
-    list_obj = get_object_or_404(EmailList, name=name)
-    
-    msgs = Message.objects.filter(email_list=list_obj)
-    
-    return render_to_response('archive/browse.html', {
-        'list_obj': list_obj,
-        'msgs': msgs},
-        RequestContext(request, {}),
-    )
-    
 @check_access
 def detail(request, list_name, id, msg):
     '''
     This view displays the requested message.
-    NOTE: the "msg" arguments is added by check_access decorator
+    NOTE: the "msg" argument is a Message object added by the check_access decorator
     '''
     msg_html = get_html(msg, None)
     
@@ -127,11 +115,12 @@ def detail(request, list_name, id, msg):
         RequestContext(request, {}),
     )
 
-# TODO: needs to be admin only
+@superuser_only
 def load(request):
     '''
-    Load private list memebership.
+    Load private list memebership
     '''
+    # TODO do real implementation
     with open('/a/home/rcross/data/members') as f:
         members = f.readlines()
     
@@ -141,7 +130,11 @@ def load(request):
     )
 
 def logout_view(request):
+    '''
+    Logout the user
+    '''
     logout(request)
+    
     return HttpResponseRedirect('/archive/')
     
 def main(request):
@@ -150,7 +143,6 @@ def main(request):
     '''
     form = SearchForm()
     
-    #assert False, request
     return render_to_response('archive/main.html', {
         'form': form},
         RequestContext(request, {}),
@@ -159,5 +151,7 @@ def main(request):
 # --------------------------------------------------
 # TEST FUNCTIONS
 # --------------------------------------------------
-
+def test(request):
+    from django.core.exceptions import PermissionDenied
+    raise PermissionDenied
 

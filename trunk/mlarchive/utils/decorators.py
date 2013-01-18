@@ -1,12 +1,18 @@
-from django.core.urlresolvers import reverse
-from django.http import HttpResponseRedirect
+from django.core.exceptions import PermissionDenied
+from django.http import Http404
 from django.shortcuts import render_to_response, get_object_or_404
 from functools import wraps
-
 from mlarchive.archive.models import Message
-from mlarchive.http import Http403
 
-from itertools import chain
+def superuser_only(function):
+    '''
+    Limit view to superusers only.
+    '''
+    def _inner(request, *args, **kwargs):
+        if not request.user.is_superuser:
+            raise PermissionDenied           
+        return function(request, *args, **kwargs)
+    return _inner
 
 def check_access(func):
     """
@@ -17,41 +23,23 @@ def check_access(func):
     lookup.
     """
     def wrapper(request, *args, **kwargs):
-        # if passed as a function argument id is a hashcode
-        if 'id' in kwargs:
-            id = kwargs['id']
-            msg = get_object_or_404(Message,hashcode=id)
-        # if passed as a URL parameter id is a record id
-        elif request.GET.has_key('id'):
-            id = request.GET['id']
-            msg = get_object_or_404(Message,id=id)
-        
-        # add the message object to returning arguments
-        kwargs['msg'] = msg
-        
-        # short circuit. superuser has full access
-        if request.user.is_superuser:
-            return func(request, *args, **kwargs)
-        
-        if msg.email_list.private:
-            if not request.user.is_authenticated() or not msg.email_list.members.filter(id=request.user.id):
-                raise Http403
+        # if passed as a URL parameter id is a record id (more common)
+        if request.GET.has_key('id'):
+            msg = get_object_or_404(Message,id=request.GET['id'])
+        # if passed as a function argument id is a hashcode (less common)
+        elif 'id' in kwargs:
+            msg = get_object_or_404(Message,hashcode=kwargs['id'])
         else:
-            return func(request, *args, **kwargs)
-
-    return wraps(func)(wrapper)
-
-def admin_only(func):
-    """
-    This decorator checks that the user making the request is an admin user.
-    """
-    def wrapper(request, *args, **kwargs):
-        # TODO implement for admin user
-        if request.user_is_secretariat:
-            return func(request, *args, **kwargs)
+            raise Http404
         
-        return render_to_response('unauthorized.html',{
-            'user_name':request.user.get_profile()}
-        )
+        if msg.email_list.private and not request.user.is_superuser:
+            if not request.user.is_authenticated() or not msg.email_list.members.filter(id=request.user.id):
+                raise PermissionDenied
+        else:
+            # add the message object to returning arguments
+            kwargs['msg'] = msg
+            return func(request, *args, **kwargs)
 
     return wraps(func)(wrapper)
+
+

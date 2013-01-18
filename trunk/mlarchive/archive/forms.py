@@ -3,7 +3,7 @@ from django.conf import settings
 from django.contrib import messages
 #from haystack.backends.xapian_backend import SearchBackend   #v1.2.7
 from haystack.backends.xapian_backend import XapianSearchBackend
-from haystack.forms import SearchForm
+from haystack.forms import SearchForm, FacetedSearchForm
 from haystack.query import SearchQuerySet
 from mlarchive.archive.getSQ import parse
 from mlarchive.archive.models import EmailList
@@ -40,7 +40,7 @@ def get_qdr_time(val):
     
 
 # --------------------------------------------------------
-class AdvancedSearchForm(SearchForm):
+class AdvancedSearchForm(FacetedSearchForm):
     start_date = forms.DateField(required=False,help_text='YYYY-MM-DD')
     end_date = forms.DateField(required=False)
     email_list = forms.CharField(max_length=255,required=False,widget=forms.HiddenInput)
@@ -98,7 +98,7 @@ class AdvancedSearchForm(SearchForm):
             sqs = sqs.filter(msgid__icontains=self.cleaned_data['msgid'])
             
         if self.cleaned_data['qdr']:
-            sqs = sqs.filter(date_gte=get_qdr_time(self.cleaned_data['qdr']))
+            sqs = sqs.filter(date__gte=get_qdr_time(self.cleaned_data['qdr']))
         
         if self.cleaned_data['start_date']:
             sqs = sqs.filter(date__gte=self.cleaned_data['start_date'])
@@ -128,6 +128,10 @@ class AdvancedSearchForm(SearchForm):
             # sqs = sqs.order_by('-date')
             pass
             
+        # faceting ------------------------------------------------
+        sqs = sqs.facet('email_list')
+        
+        # TODO: do we need this?
         if self.load_all:
             sqs = sqs.load_all()
                 

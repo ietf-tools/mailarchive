@@ -3,6 +3,21 @@ from django import template
 register = template.Library()
 
 @register.simple_tag
+def selected(request,key,val):
+    '''
+    Returns "selected" if key=value appears in the request URL parameters
+    Use this tag to set the class, for highlighting selected filter options
+    '''
+    params = request.GET.dict()
+    if key in params:
+        if params.get(key,None) == val:
+            return 'selected'
+    else:
+        if val == '':
+            return 'selected'
+
+
+@register.simple_tag
 def get_params(params, exclude):
     '''
     This custom template tag takes a dictionary of parameters (requets.GET) and

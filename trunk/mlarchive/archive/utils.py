@@ -18,7 +18,13 @@ US_CHARSETS = ('us-ascii','iso-8859-1')
 
 def handle_plain(part):
     # get_charset() doesn't work??
-    charset = part.get_param('charset').lower()
+    if part.get_content_charset():
+        charset = part.get_content_charset()
+    elif part.get_param('charset'):
+        charset = part.get_param('charset').lower()
+    else:
+        charset = US_CHARSETS[0]
+    
     payload = part.get_payload(decode=True)
     if charset not in US_CHARSETS:
         # TODO log failure and pass

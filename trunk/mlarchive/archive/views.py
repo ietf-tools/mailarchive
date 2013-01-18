@@ -6,7 +6,7 @@ from django.forms.formsets import formset_factory
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
-from haystack.views import SearchView
+from haystack.views import SearchView, FacetedSearchView
 from mlarchive.archive.utils import get_html
 from mlarchive.http import Http403
 from mlarchive.utils.decorators import check_access
@@ -23,7 +23,7 @@ import os
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------
-class CustomSearchView(SearchView):
+class CustomSearchView(FacetedSearchView):
     '''
     A customized SearchView to add extra context
     '''

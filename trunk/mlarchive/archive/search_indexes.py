@@ -10,7 +10,7 @@ class MessageIndex(BaseSearch, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
     
     date = indexes.DateTimeField(model_attr='date')
-    email_list = indexes.IntegerField(model_attr='email_list_id')
+    email_list = indexes.IntegerField(model_attr='email_list_id', faceted=True)
     frm = indexes.CharField(model_attr='frm')
     msgid = indexes.CharField(model_attr='msgid')
     subject = indexes.CharField(model_attr='subject')

@@ -49,12 +49,25 @@ body, html {
     top: 3em;
 }
 
+#msg-container {
+    position: absolute;
+    top: 2em;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+#msg-left-nav {
+    width: 200px;
+    float: left;
+}
+
 #msg-panes {
     bottom: 0;
-    left: 0;
+    left: 200px;
     position: absolute;
     right: 0;
-    top: 4em;
+    top: 0;
 }
 
 #list-pane {
@@ -168,34 +181,37 @@ body, html {
         <div id="search-header">
         search box
         </div> <!-- search-header -->
-        
-        <div id="tool-header">
-          Results for:  the query
-          <a href="{% url archive %}">Back to Search</a>&nbsp;
-          <button id="sort-date-button">Date</button>
-          <button id="sort-from-button">From</button>
-        </div>
     </div> <!-- msg-headers -->
-        
-    <div id="msg-panes">    
-        <div id="list-pane">
-            <div id="msg-list">
-                {% include "includes/layout_data.html" %}
-            </div> <!-- msg-list -->
-            <div id="msg-list-controls">
-                Showing 1 of 4
-                    <span class="right"><a href="#">&laquo; Previous</a>|<a href="#">Next &raquo;</a></span>
-            </div>
-        
-        </div> <!-- list-pane -->
-        
-        <div id="splitter-pane"></div>
     
-        <div id="body-pane">
-            {% include "includes/layout_data2.html" %}
+    <div id="msg-container">
+        <div id="msg-left-nav">
+        <h3>FILTER</h3>
+        <ul>
+            <li><a href="">Past day</a></li>
+            <li><a href="">Past week</a></li>
+        </ul>
         </div>
+        
+        <div id="msg-panes">    
+            <div id="list-pane">
+                <div id="msg-list">
+                    {% include "includes/layout_data.html" %}
+                </div> <!-- msg-list -->
+                <div id="msg-list-controls">
+                    Showing 1 of 4
+                        <span class="right"><a href="#">&laquo; Previous</a>|<a href="#">Next &raquo;</a></span>
+                </div>
+            
+            </div> <!-- list-pane -->
+            
+            <div id="splitter-pane"></div>
+        
+            <div id="body-pane">
+                {% include "includes/layout_data2.html" %}
+            </div>
+        </div> <!-- msg-panes -->
+    </div> <!-- msg-containter -->
     
-    </div> <!-- msg-panes -->
     </div> <!-- END Content -->
 
 

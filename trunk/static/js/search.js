@@ -114,13 +114,13 @@ $(function() {
 
     function setup_buttons() {
         // setup filters
-        $('div.filter-item').click(function() {
+        $('div.filter-name').click(function() {
             $(this).next().show().focus();
         });
         $('ul.filter-options').blur(function() {
             var myList = $(this)
+            // must use a timeout, or else list disappears before link gets activated
             window.setTimeout(function() { $(myList).hide(); },500);
-            //$(this).hide();
         });
         
         $('a.sortbutton').button();

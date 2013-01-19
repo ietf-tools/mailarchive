@@ -7,7 +7,6 @@ from django.utils import simplejson
 from haystack.query import SearchQuerySet
 from mlarchive.archive.utils import jsonapi, get_html
 from mlarchive.archive.models import EmailList, Message
-from mlarchive.http import Http403
 from mlarchive.utils.decorators import check_access
 
 import json
@@ -36,28 +35,13 @@ def ajax_get_list(request):
     response = [dict(id=r.id, label = r.name) for r in results]
     return response
 
-'''
-@jsonapi
-def ajax_get_msg(request):
-    if request.method != 'GET' or not request.GET.has_key('term'):
-        return { 'success' : False, 'error' : 'No term submitted or not GET' }
-    term = request.GET.get('term')
-    
-    try:
-        msg = Message.objects.get(id=term)
-    except Message.DoesNotExist:
-        return { 'success' : False, 'error' : 'ID not found' }
-    
-    response = {'body':msg.body}
-    return response
-'''
 @check_access
 def ajax_get_msg(request, msg):
     '''
     Ajax method to retrieve message details.  One URL parameter expected, "id" which 
     is the ID of the message.  We return the results of get_html(), which is 
     an HTML'ized presentation of the message.
-    NOTE: the "msg" arguments is added by check_access decorator
+    NOTE: the "msg" argument is Message object added by the check_access decorator
     '''
     return HttpResponse(get_html(msg,request))
 

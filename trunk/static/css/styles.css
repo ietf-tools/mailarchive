@@ -62,9 +62,9 @@ input[disabled='disabled'] {
     /* background-color: #DDDDDD; 
     background-color: #EEEEFF; */
     background-color: #FFF;
-    border-top: 1px solid #CCCCCC;
+    border-top: 1px solid #CCC;
     bottom: 0;
-    color: #888888;
+    color: #888;
     font-size: 10px;
     height: 15px;
     left: 0;
@@ -78,22 +78,6 @@ input[disabled='disabled'] {
 
 #footer p {
     padding-left: 2.5em;
-}
-
-.module {
-    background: none repeat scroll 0 0 white;
-    border: 1px solid #CCCCCC;
-    margin-bottom: 5px;
-}
-
-.module h2 {
-    background: url("../img/admin/default-bg.gif") repeat-x scroll left top #7CA0C7;
-    color: white;
-    font-size: 11px;
-    font-weight: bold;
-    margin: 0;
-    padding: 2px 5px 3px;
-    text-align: left;
 }
 
 .button-group ul {
@@ -139,38 +123,10 @@ a:hover {
 }
 
 /* ==========================================================================
-   Search v1
+   Search
    ========================================================================== */
-/* 
-#search-module {
-    width: 80%;
-    margin: auto;
-}
-*/
-
-#search-module {
-    background-color: #F2F2E6;
-}
-
-/*
-div#msg-list-header {
-    padding: 5px;
-}
-*/
-
-/* ==========================================================================
-   Search v2
-   ========================================================================== */
-a#as-show {
-    font-size: 0.75em;
-}
-
 td.hidden {
     display: none;
-}
-
-tr.hilite td {
-    background: #DDECFE;
 }
 
 table#msg-table {
@@ -194,10 +150,6 @@ table#msg-table {
 
 #search-header {
     float: right;
-}
-
-#sort-header {
-    float: left;
 }
 
 #basic-search input#id_q {
@@ -299,9 +251,9 @@ ul#navigation li:last-child {
 
 #msg-list-header {
     background: url("smoothness/images/ui-bg_glass_75_e6e6e6_1x400.png") repeat-x scroll 50% 50% #E6E6E6;
-    border-left: 1px solid #CCCCCC;
-    border-right: 1px solid #CCCCCC;
-    border-top: 1px solid #CCCCCC;
+    border-left: 1px solid #CCC;
+    border-right: 1px solid #CCC;
+    border-top: 1px solid #CCC;
     font-size: 0.75em;
     left: 0;
     position: absolute;
@@ -317,9 +269,9 @@ ul#navigation li:last-child {
 }
 
 #msg-list {
-    border-left: 1px solid #CCCCCC;
-    border-right: 1px solid #CCCCCC;
-    border-top: 1px solid #CCCCCC;
+    border-left: 1px solid #CCC;
+    border-right: 1px solid #CCC;
+    border-top: 1px solid #CCC;
     bottom: 27px;
     left: 0;
     overflow-x: hidden;
@@ -330,7 +282,7 @@ ul#navigation li:last-child {
 }
 
 #msg-list-controls {
-    border: 1px solid #CCCCCC;
+    border: 1px solid #CCC;
     font-size: 0.75em;
     left: 0;
     padding: 3px 1em 3px 1em;
@@ -352,7 +304,7 @@ ul#navigation li:last-child {
 }
 
 #view-pane {
-    border: 1px solid #CCCCCC;
+    border: 1px solid #CCC;
     bottom: 0;
     font-size: 0.75em;
     left: 0;
@@ -438,13 +390,13 @@ input.hidden-submit {
 }
 
 .pipe {
-    border-right: 1px solid #DDDDDD;
+    border-right: 1px solid #DDD;
     margin-right: 0.5em;
     padding-right: 0.8em;
 }
 
 .darkgray {
-    color: #666666;
+    color: #666;
 }
 
 /* Header sort buttons
@@ -528,7 +480,7 @@ a.selected {
 ul#email_list_list li {
     /* background-color: #6699CC; */
     background-color: #87CEFA;
-    color: #ffffff;
+    color: #fff;
     display: inline;
     list-style-type: none;
     margin: 3px 3px 3px 0;
@@ -541,7 +493,7 @@ a.listlink:link, a.listlink:visited {
 }
 
 .list-fieldset {
-    border: 1px solid #cccccc;
+    border: 1px solid #CCC;
     margin-left: 75px;
     margin-right: 71px;
     padding: 3px;

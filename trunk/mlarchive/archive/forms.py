@@ -60,52 +60,57 @@ class AdvancedSearchForm(FacetedSearchForm):
         Custom search function.  This completely overrides the parent
         search().
         '''
-        # First, store the SearchQuerySet received from other processing.
-        #sqs = super(DateRangeSearchForm, self).search()
-        
+        # for now if search form doesn't validate return empty results
         if not self.is_valid():
             #assert False, self.errors
+            # TODO
+            # messages.warning(self.request, 'invalid search parameters')
             return self.no_query_found()
         
-        q = self.cleaned_data['q']
-    
-        #if not self.cleaned_data.get('q'):
-        #    return self.no_query_found()
-
-        #sqs = self.searchqueryset.auto_query(self.cleaned_data['q'])
-        #backend = XapianSearchBackend('default',PATH=settings.HAYSTACK_XAPIAN_PATH)
-        #query = backend.parse_query(self.cleaned_data['q'])
-        #sqs = self.searchqueryset.raw_search(query)
+        '''
+        Original search function.  By using backend directly we could take advantage
+        of Xapian's impressive query parsing.  However the resulting QuerySet does
+        not support chaining so it's not going to work for us.
         
-        # use custom parser
-        if q:
-            sq = parse(q)
-            sqs = self.searchqueryset.filter(sq)
+        sqs = self.searchqueryset.auto_query(self.cleaned_data['q'])
+        backend = XapianSearchBackend('default',PATH=settings.HAYSTACK_XAPIAN_PATH)
+        query = backend.parse_query(self.cleaned_data['q'])
+        sqs = self.searchqueryset.raw_search(query)
+        '''
+        
+        # use custom parser-----------------------------------------
+        if self.cleaned_data.get('q'):
+            query = parse(self.cleaned_data['q'])
+            sqs = self.searchqueryset.filter(query)
         else:
             sqs = self.searchqueryset
 
-        # handle URL parameters
+        # handle URL parameters ------------------------------------
+        kwargs = {}
         if self.cleaned_data['email_list']:
-            sqs = sqs.filter(email_list__in=self.cleaned_data['email_list'])
+            kwargs['email_list__in'] = self.cleaned_data['email_list']
             
         if self.cleaned_data['end_date']:
-            sqs = sqs.filter(date__lte=self.cleaned_data['end_date'])
+            kwargs['date__lte'] = self.cleaned_data['end_date']
             
         if self.cleaned_data['frm']:
-            sqs = sqs.filter(frm__icontains=self.cleaned_data['frm'])
+            kwargs['frm__icontains'] = self.cleaned_data['frm']
         
         if self.cleaned_data['msgid']:
-            sqs = sqs.filter(msgid__icontains=self.cleaned_data['msgid'])
+            kwargs['msgid'] = self.cleaned_data['msgid']
             
         if self.cleaned_data['qdr']:
-            sqs = sqs.filter(date__gte=get_qdr_time(self.cleaned_data['qdr']))
+            kwargs['date__gte'] = get_qdr_time(self.cleaned_data['qdr'])
         
         if self.cleaned_data['start_date']:
-            sqs = sqs.filter(date__gte=self.cleaned_data['start_date'])
+            kwargs['date__gte'] = self.cleaned_data['start_date']
         
         if self.cleaned_data['subject']:
-            sqs = sqs.filter(subject__icontains=self.cleaned_data['subject'])
-        
+            kwargs['subject__icontains'] = self.cleaned_data['subject']
+            
+        if kwargs:
+            sqs = sqs.filter(**kwargs)
+            
         # private lists -------------------------------------------
         if self.request.user.is_authenticated():
             # exclude those lists the user is not authorized for
@@ -117,7 +122,7 @@ class AdvancedSearchForm(FacetedSearchForm):
             sqs = sqs.exclude(email_list__in=private_ids)
             
         # sorting -------------------------------------------------
-        so = self.cleaned_data.get('so',None)
+        so = self.cleaned_data.get('so')
         if so in ('date','-date','email_list','-email_list','frm','-frm'):
             sqs = sqs.order_by(so)
         elif so in ('score','-score'):
@@ -150,31 +155,10 @@ class AdvancedSearchForm(FacetedSearchForm):
                 bad_lists.append(name)
         
         # TODO
-        #if bad_lists:
-        #    messages.warning(self.request, 'This feature is disabled')
+        #if unauthorized lists
+        #    messages.warning(self.request, 'You don't have access to list %s')
         
-        """
-        # don't allow inclusion of unauthorized lists
-        # TODO: consider just adding exclude to sqs to restrict lists
-        if not user.is_authenticated():
-            noauth_ids = [ x.id for x in EmailList.objects.filter(private=True) ]
-        else:
-            noauth_ids = [ x.id for x in EmailList.objects.filter(private=True).exclude(members=user) ]
-        qset = set(ids)
-        restricted = set(noauth_ids)
-        # subtract restricted email_list ids
-        nset = qset.difference(restricted)
-        return list(nset)
-        """
         return ids
-        
-    def clean(self):
-        super(AdvancedSearchForm, self).clean()
-        cleaned_data = self.cleaned_data
-
-        # error if all fields empty
-        
-        return cleaned_data
 
 # ---------------------------------------------------------
 

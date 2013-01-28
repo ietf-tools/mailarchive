@@ -69,7 +69,7 @@ class EmailList(models.Model):
     active = models.BooleanField(default=True,db_index=True)
     date_created = models.DateTimeField(auto_now_add=True)
     description = models.CharField(max_length=255,blank=True)
-    name = models.CharField(max_length=255,db_index=True)
+    name = models.CharField(max_length=255,db_index=True,unique=True)
     private = models.BooleanField(default=False,db_index=True)
     alias = models.CharField(max_length=255,blank=True)
     members = models.ManyToManyField(User)

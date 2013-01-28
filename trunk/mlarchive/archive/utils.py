@@ -68,7 +68,7 @@ def get_html(msg,request):
 
 def get_noauth(request):
     '''
-    This function takes a request object and returns a list of private email list ids (as string)
+    This function takes a request object and returns a list of private email list names (as string)
     the user does NOT have access to, for use in an exclude().  The list is stored in the request
     session to minimize database hits.
     '''
@@ -76,7 +76,7 @@ def get_noauth(request):
     if noauth:
         return noauth
     else:
-        request.session['noauth'] = [ str(x.pk) for x in EmailList.objects.filter(
+        request.session['noauth'] = [ str(x.name) for x in EmailList.objects.filter(
             private=True).exclude(members=request.user) ]
         return request.session['noauth']
 

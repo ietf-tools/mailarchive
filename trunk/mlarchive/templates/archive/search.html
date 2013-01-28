@@ -3,6 +3,7 @@
 {% load archive_extras %}
 
 {% block extrahead %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery.query.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/search.js"></script>
 {% endblock %}
 
@@ -31,6 +32,13 @@
                 </ul>
                 <h4>FILTER BY LIST</h4>
                 <ul class="filter-options" tabindex="-1">
+                {% if facets.fields.email_list %}
+                    <form id="list-filter">
+                    {% for list in facets.fields.email_list|slice:":5" %}
+                        <li><input class="list-facet" type="checkbox" name="listsel" value="{{ list.0 }}">{{ list.0 }} ({{ list.1 }})</li>
+                    {% endfor %}
+                    </form>
+                {% endif %}
                 </ul>
                 <h4>FILTER BY FROM</h4>
                 <ul class="filter-options" tabindex="-1">

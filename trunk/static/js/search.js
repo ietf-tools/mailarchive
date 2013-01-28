@@ -113,7 +113,7 @@ $(function() {
     }
 
     function setup_buttons() {
-        // setup filters
+        /* setup filters, from old menu style filters
         $('div.filter-name').click(function() {
             $(this).next().show().focus();
         });
@@ -121,6 +121,16 @@ $(function() {
             var myList = $(this)
             // must use a timeout, or else list disappears before link gets activated
             window.setTimeout(function() { $(myList).hide(); },500);
+        });
+        */
+        $('input.list-facet[type=checkbox]').change(function() {
+            var values = [];
+            $('input.list-facet[type=checkbox]:checked').each(function() { 
+                values.push($(this).val());
+            });
+            var value = values.join(',');
+            location.search = $.query.set("email_list",value);
+            //alert($.query.set("email_list",value));
         });
         
         $('a.sortbutton').button();

@@ -72,6 +72,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'mlarchive.middleware.QueryMiddleware',
 )
 
 ROOT_URLCONF = 'mlarchive.urls'
@@ -101,6 +102,54 @@ INSTALLED_APPS = (
 )
 
 STATIC_URL = '/static/'
+
+
+###########
+# LOGGING #
+###########
+
+# taken from conf/global_settings.py.
+# in Django 1.5 we can choose to add to (not override) global logging settings
+
+MY_LOG_FILENAME = '/a/home/rcross/data/log/mlarchive.log'
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        }
+    },
+    'handlers': {
+        'mail_admins': {
+            'level': 'ERROR',
+            'filters': ['require_debug_false'],
+            'class': 'django.utils.log.AdminEmailHandler'
+        },
+        'rotating_file':
+        {
+            'level' : 'DEBUG',
+            #'formatter' : 'verbose', # from the django doc example
+            'class' : 'logging.handlers.TimedRotatingFileHandler',
+            'filename' :   MY_LOG_FILENAME, # full path works
+            'when' : 'midnight',
+            'interval' : 1,
+            'backupCount' : 7,
+        }
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+        'mlarchive.custom': {
+            'handlers': ['rotating_file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        }
+    }
+}
 
 # HAYSTACK SETTINGS
 #HAYSTACK_SITECONF = 'mlarchive.search_sites'

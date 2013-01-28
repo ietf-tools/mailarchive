@@ -118,8 +118,8 @@ class AdvancedSearchForm(FacetedSearchForm):
         else:
             # exclude all private lists
             # TODO cache this query, see Low Level Cache API
-            private_ids = [ str(x.pk) for x in EmailList.objects.filter(private=True) ]
-            sqs = sqs.exclude(email_list__in=private_ids)
+            private_lists = [ str(x.name) for x in EmailList.objects.filter(private=True) ]
+            sqs = sqs.exclude(email_list__in=private_lists)
             
         # sorting -------------------------------------------------
         so = self.cleaned_data.get('so')
@@ -143,7 +143,8 @@ class AdvancedSearchForm(FacetedSearchForm):
         return sqs
     
     def clean_email_list(self):
-        # take a comma separated list of email_list names and convert to list of ids
+        # take a comma separated list of email_list names and convert to list of names
+        '''
         user = self.request.user
         ids = []
         bad_lists = []
@@ -159,7 +160,12 @@ class AdvancedSearchForm(FacetedSearchForm):
         #    messages.warning(self.request, 'You don't have access to list %s')
         
         return ids
-
+        '''
+        email_list = self.cleaned_data['email_list']
+        if email_list:
+            return email_list.split(',')
+        else:
+            return None
 # ---------------------------------------------------------
 
 class RulesForm(forms.Form):

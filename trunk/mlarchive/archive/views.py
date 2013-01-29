@@ -7,7 +7,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from haystack.views import SearchView, FacetedSearchView
-from mlarchive.archive.utils import get_html
+#from mlarchive.archive.utils import get_html
 from mlarchive.utils.decorators import check_access, superuser_only
 
 from models import *
@@ -112,7 +112,7 @@ def detail(request, list_name, id, msg):
     This view displays the requested message.
     NOTE: the "msg" argument is a Message object added by the check_access decorator
     '''
-    msg_html = get_html(msg, None)
+    msg_html = msg.get_body_html()
     
     return render_to_response('archive/detail.html', {
         'msg_html': msg_html},

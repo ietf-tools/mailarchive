@@ -13,10 +13,13 @@ class QueryMiddleware(object):
         logger.info('QueryMiddleware:process_request()')
         if request.META['REQUEST_URI'].startswith('/archive/search/'):
             if not request.GET.get('f_list'):
+                # init session dict
+                if 'queries' not in request.session:
+                    request.session['queries'] = {}
                 # if the query isn't already stored, get facets and store
                 if request.META['QUERY_STRING'] not in request.session['queries']:
                     # call search function from here
                     base_facets = None
-                    request.session['queries'][reqest.META['QUERY_STRING']] = base_facets
+                    request.session['queries'][request.META['QUERY_STRING']] = base_facets
                     #assert False, request
         return None

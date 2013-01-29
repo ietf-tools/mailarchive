@@ -5,7 +5,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils import simplejson
 from haystack.query import SearchQuerySet
-from mlarchive.archive.utils import jsonapi, get_html
+from mlarchive.archive.utils import jsonapi, # get_html
 from mlarchive.archive.models import EmailList, Message
 from mlarchive.utils.decorators import check_access
 
@@ -43,7 +43,8 @@ def ajax_get_msg(request, msg):
     an HTML'ized presentation of the message.
     NOTE: the "msg" argument is Message object added by the check_access decorator
     '''
-    return HttpResponse(get_html(msg,request))
+    #return HttpResponse(get_html(msg,request))
+    return HttpResponse(msg.get_body_html(request))
 
 @jsonapi
 def ajax_messages(request):

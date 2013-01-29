@@ -1,2 +1,2 @@
 {{ object.subject }}
-{{ object.body }}
+{{ object.get_body }}

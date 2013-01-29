@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 
+from HTMLParser import HTMLParser, HTMLParseError
+
 import logging
 import mailbox
 import os
@@ -14,24 +16,48 @@ OTHER_CHARSETS = ('gb2312')
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
-def handle_plain(part):
+class MLStripper(HTMLParser):
+    def __init__(self):
+        self.reset()
+        self.fed = []
+    def handle_data(self, d):
+        self.fed.append(d)
+    def get_data(self):
+        return ''.join(self.fed)
+        
+def handle_plain(part,html):
     # get_charset() doesn't work??
-    charset = part.get_param('charset').lower()
+    if part.get_content_charset():
+        charset = part.get_content_charset()
+    elif part.get_param('charset'):
+        charset = part.get_param('charset').lower()
+    else:
+        charset = US_CHARSETS[0]
+    
     payload = part.get_payload(decode=True)
     if charset not in US_CHARSETS:
         # TODO log failure and pass
         #try:
         payload = payload.decode(charset)
         #except UnicodeDecodeError:
-    return render_to_string('archive/message_plain.html', {'payload': payload})
+    #return render_to_string('archive/message_plain.html', {'payload': payload})
+    return payload
     
-def handle_html(part):
-    return render_to_string('archive/message_html.html', {'payload': part.get_payload(decode=True)})
-    
+def handle_html(part,html):
+    if html:
+        return render_to_string('archive/message_html.html', {'payload': part.get_payload(decode=True)})
+    else:
+        # TODO use a better parse library
+        try:
+            clean = strip_tags(part.get_payload(decode=True))
+        except HTMLParseError:
+            clean = part.get_payload(decode=True)
+        return clean
+        
 # a dictionary of supported mime types
 HANDLERS = {'text/plain':handle_plain,
             'text/html':handle_html}
-            
+
 def parse(path):
     '''
     Parse message mime parts
@@ -56,6 +82,41 @@ def parse(path):
         
     return parts
 
+def parse_body(msg,html=False,request=None):
+    '''
+    This function takes a Message object and returns the message body.
+    Option arguments: 
+    html: if true format with HTML for display in templates, if false return text only, good
+    for indexing.
+    request: a request object to use in building links for HTML
+    '''
+    try:
+        with open(msg.get_file_path()) as f:
+            maildirmessage = mailbox.MaildirMessage(f)
+            headers = maildirmessage.items()
+            parts = []
+            for part in maildirmessage.walk():
+                handler = HANDLERS.get(part.get_content_type(),None)
+                if handler:
+                    parts.append(handler(part,html))
+    except IOError, e:
+        return 'ERROR: reading message'
+    
+    if html:
+        return render_to_string('archive/message.html', {
+            'msg': msg,
+            'maildirmessage': maildirmessage,
+            'headers': headers,
+            'parts': parts,
+            'request': request}
+        )
+    else:
+        return '\n'.join(parts)
+
+def strip_tags(html):
+    s = MLStripper()
+    s.feed(html)
+    return s.get_data()
 # --------------------------------------------------
 # Models
 # --------------------------------------------------
@@ -92,8 +153,28 @@ class Message(models.Model):
     thread = models.ForeignKey(Thread)
     to = models.CharField(max_length=255,blank=True,default='')
     
-    @property
-    def body(self):
+    def __unicode__(self):
+        return self.msgid
+
+    def get_absolute_url(self):
+        pass
+    
+    def get_body(self):
+        '''
+        Returns the contents of the message body, text only for use in indexing.
+        ie. HTML is stripped.
+        '''
+        return parse_body(self)
+        
+    def get_body_html(self, request=None):
+        
+        return parse_body(self, html=True, request=request)
+        
+    def get_body_raw(self):
+        '''
+        Utility function.  Returns the raw contents of the message file.
+        NOTE: this will include encoded attachments
+        '''
         try:
             with open(self.get_file_path()) as f:
                 return f.read()
@@ -101,40 +182,8 @@ class Message(models.Model):
             #logger = logging.getLogger(__name__)
             #logger.warning('IOError %s' % e)
             # TODO: handle this better
-            return ''
-        
-    @property
-    def html(self):
-        '''
-        Return HTML representation of the message.  The MaildirMessage object simulates
-        a dictionary.  As a result it's methods are not available to the Django template.
-        Therefore we need to pass these to the template individually.
-        '''
-        try:
-            with open(self.get_file_path()) as f:
-                maildirmessage = mailbox.MaildirMessage(f)
-                headers = maildirmessage.items()
-                parts = []
-                for part in maildirmessage.walk():
-                    handler = HANDLERS.get(part.get_content_type(),None)
-                    if handler:
-                        parts.append(handler(part))
-        except IOError, e:
-            return ''
+            return 'Error: message not found.'
             
-        return render_to_string('archive/message.html', {
-            'msg': self,
-            'maildirmessage': maildirmessage,
-            'headers': headers,
-            'parts': parts}
-        )
-    
-    def __unicode__(self):
-        return self.msgid
-
-    def get_absolute_url(self):
-        pass
-    
     def get_file_path(self):
         return os.path.join(settings.ARCHIVE_DIR,self.email_list.name,self.hashcode)
         

@@ -157,6 +157,8 @@ def main(request):
 # TEST FUNCTIONS
 # --------------------------------------------------
 def test(request):
-    from django.core.exceptions import PermissionDenied
-    raise PermissionDenied
-
+    #from django.core.exceptions import PermissionDenied
+    #raise PermissionDenied
+    return render_to_response('archive/test.html', {},
+        RequestContext(request, {}),
+    )

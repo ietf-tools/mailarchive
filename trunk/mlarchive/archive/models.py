@@ -3,19 +3,32 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
-
+from bs4 import BeautifulSoup
 from HTMLParser import HTMLParser, HTMLParseError
+from html2text import html2text
 
 import logging
 import mailbox
 import os
 
 US_CHARSETS = ('us-ascii','iso-8859-1')
-OTHER_CHARSETS = ('gb2312')
+OTHER_CHARSETS = ('gb2312',)
+UNSUPPORTED_CHARSETS = ('unknown',)
 
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
+def skip_attachment(function):
+    '''
+    This is a decorator for custom MIME part handlers, handle_*.  
+    If the part passed is an attachment then it is skipped (None is returned).
+    '''
+    def _inner(*args, **kwargs):
+        if args[0].get_filename():
+            return None
+        return function(*args, **kwargs)
+    return _inner
+    
 class MLStripper(HTMLParser):
     def __init__(self):
         self.reset()
@@ -24,8 +37,14 @@ class MLStripper(HTMLParser):
         self.fed.append(d)
     def get_data(self):
         return ''.join(self.fed)
-        
-def handle_plain(part,html):
+
+def strip_tags(html):
+    s = MLStripper()
+    s.feed(html)
+    return s.get_data()
+
+@skip_attachment
+def handle_plain(part,text_only):
     # get_charset() doesn't work??
     if part.get_content_charset():
         charset = part.get_content_charset()
@@ -35,28 +54,93 @@ def handle_plain(part,html):
         charset = US_CHARSETS[0]
     
     payload = part.get_payload(decode=True)
-    if charset not in US_CHARSETS:
+    #if charset not in US_CHARSETS and charset not in UNSUPPORTED_CHARSETS:
         # TODO log failure and pass
         #try:
-        payload = payload.decode(charset)
+        #payload = payload.decode(charset)
         #except UnicodeDecodeError:
     #return render_to_string('archive/message_plain.html', {'payload': payload})
     return payload
     
-def handle_html(part,html):
-    if html:
+@skip_attachment
+def handle_html(part,text_only):
+    if not text_only:
         return render_to_string('archive/message_html.html', {'payload': part.get_payload(decode=True)})
     else:
-        # TODO use a better parse library
-        try:
-            clean = strip_tags(part.get_payload(decode=True))
-        except HTMLParseError:
-            clean = part.get_payload(decode=True)
-        return clean
+        payload = part.get_payload(decode=True)
+        uni = unicode(payload,errors='ignore')
+        
+        # tried many solutions here
+        # text = strip_tags(part.get_payload(decode=True)) # problems with bad html 
+        # soup = BeautifulSoup(part.get_payload(decode=True)) # errors with lxml 
+        soup = BeautifulSoup(part.get_payload(decode=True),'html5') # included "html" and css
+        text = soup.get_text()
+        # text = html2text(uni) # errors with malformed tags
+        return text
         
 # a dictionary of supported mime types
 HANDLERS = {'text/plain':handle_plain,
             'text/html':handle_html}
+
+def handle(part,text_only):
+    #return chunk.get_content_type()
+    type = part.get_content_type()
+    handler = HANDLERS.get(type,None)
+    if handler:
+        return handler(part,text_only)
+    
+def parse(entity, text_only=False):
+    '''
+    This function recursively traverses a MIME email and returns it's parts.
+    The function takes an email.message object, 
+    '''
+    #print "calling parse %s:%s" % (entity.__class__,entity.get_content_type())
+    parts = []
+    if entity.is_multipart():
+        if entity.get_content_type() == 'multipart/alternative':
+            contents = entity.get_payload()
+            # if output is not for indexing start from the most detailed option
+            if not text_only:
+                contents = contents[::-1]
+            #print "first alt: %s" % contents[0].get_content_type()
+            for x in contents:
+                # only return first readable item
+                r = parse(x,text_only)
+                if r:
+                    parts.extend(r)
+                    break
+        else:
+            for part in entity.get_payload():
+                parts.extend(parse(part,text_only))
+    else:
+        body = handle(entity,text_only)
+        if body:
+            parts.append(body)
+    
+    #print "returning parse %s:%s" % (type(parts),parts)
+    return parts
+    
+def parse_body(msg, text_only=False, request=None):
+    try:
+        with open(msg.get_file_path()) as f:
+            mm = mailbox.MaildirMessage(f)
+            headers = mm.items()
+            parts = parse(mm,text_only)
+    except IOError:
+        return 'Error reading message'
+        
+    if not text_only:
+        return render_to_string('archive/message.html', {
+            'msg': msg,
+            'maildirmessage': mm,
+            'headers': headers,
+            'parts': parts,
+            'request': request}
+        )
+    else:
+        return '\n'.join(parts)
+"""
+OLD FUNCTIONS -------------------------------
 
 def parse(path):
     '''
@@ -96,6 +180,8 @@ def parse_body(msg,html=False,request=None):
             headers = maildirmessage.items()
             parts = []
             for part in maildirmessage.walk():
+                if part.get_content_maintype() == 'multipart':
+                    continue    # TODO do something with this
                 handler = HANDLERS.get(part.get_content_type(),None)
                 if handler:
                     parts.append(handler(part,html))
@@ -112,11 +198,7 @@ def parse_body(msg,html=False,request=None):
         )
     else:
         return '\n'.join(parts)
-
-def strip_tags(html):
-    s = MLStripper()
-    s.feed(html)
-    return s.get_data()
+"""
 # --------------------------------------------------
 # Models
 # --------------------------------------------------
@@ -164,11 +246,11 @@ class Message(models.Model):
         Returns the contents of the message body, text only for use in indexing.
         ie. HTML is stripped.
         '''
-        return parse_body(self)
+        return parse_body(self, text_only=True)
         
     def get_body_html(self, request=None):
         
-        return parse_body(self, html=True, request=request)
+        return parse_body(self, request=request)
         
     def get_body_raw(self):
         '''

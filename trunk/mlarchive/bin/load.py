@@ -93,8 +93,7 @@ def import_mbox(group,path,mlist):
             # TODO: use email.utils.parsedate
             date = datetime.datetime.strptime(' '.join(date_parts),'%a %b %d %H:%M:%S %Y')
             hash = get_hash(mlist.name,m['Message-ID'])
-            msg = Message(body=m.get_payload(),
-                      date=date,
+            msg = Message(date=date,
                       email_list=mlist,
                       frm=m['From'],
                       hashcode=hash,
@@ -143,7 +142,7 @@ def main():
     # which email lists to load
     all = os.listdir(os.path.join(SOURCE_DIR,'text'))
     #public_lists = ('ccamp','alto')
-    public_lists = ('abfab','alto','ancp','autoconf','ccamp','dime','discuss','ipsec','netconf','sip','simple')
+    public_lists = ('abfab','alto','ancp','autoconf','bliss','ccamp','cga-ext','codec','dane','dmm','dnsop','dime','discuss','emu','gen-art','grow','hipsec','homenet','i2rs','ipsec','netconf','sip','simple')
     #public_lists = [ d for d in all if d.startswith(('a','b','c')) ]
     #public_lists = all
     

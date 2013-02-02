@@ -3,11 +3,14 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
+
+from email.utils import collapse_rfc2231_value
+from email.Header import decode_header
+
 from bs4 import BeautifulSoup
 from HTMLParser import HTMLParser, HTMLParseError
 from html2text import html2text
 
-import logging
 import mailbox
 import os
 
@@ -15,9 +18,29 @@ US_CHARSETS = ('us-ascii','iso-8859-1')
 OTHER_CHARSETS = ('gb2312',)
 UNSUPPORTED_CHARSETS = ('unknown',)
 
+from django.utils.log import getLogger
+logger = getLogger('mlarchive.custom')
+
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
+def getmailheader(header_text, default="ascii"):
+    """Decode header_text if needed"""
+    try:
+        headers=decode_header(header_text)
+    except email.Errors.HeaderParseError:
+        # This already append in email.base64mime.decode()
+        # instead return a sanitized ascii string 
+        return header_text.encode('ascii', 'replace').decode('ascii')
+    else:
+        for i, (text, charset) in enumerate(headers):
+            try:
+                headers[i]=unicode(text, charset or default, errors='replace')
+            except LookupError:
+                # if the charset is unknown, force default 
+                headers[i]=unicode(text, default, errors='replace')
+        return u"".join(headers)
+        
 def skip_attachment(function):
     '''
     This is a decorator for custom MIME part handlers, handle_*.  
@@ -43,6 +66,66 @@ def strip_tags(html):
     s.feed(html)
     return s.get_data()
 
+def handle_external_body(part,text_only):
+    '''
+    Two common formats:
+    A) in content type parameters
+    Content-Type: Message/External-body; name="draft-ietf-alto-reqs-03.txt";
+        site="ftp.ietf.org"; access-type="anon-ftp";
+        directory="internet-drafts"
+
+    Content-Type: text/plain
+    Content-ID: <2010-02-17021922.I-D@ietf.org>
+
+    B) as an attachment
+    Content-Type: message/external-body; name="draft-howlett-radsec-knp-01.url"
+    Content-Description: draft-howlett-radsec-knp-01.url
+    Content-Disposition: attachment; filename="draft-howlett-radsec-knp-01.url";
+        size=92; creation-date="Mon, 14 Mar 2011 22:39:25 GMT";
+        modification-date="Mon, 14 Mar 2011 22:39:25 GMT"
+    Content-Transfer-Encoding: base64
+    
+    W0ludGVybmV0U2hvcnRjdXRdDQpVUkw9ZnRwOi8vZnRwLmlldGYub3JnL2ludGVybmV0LWRyYWZ0
+    cy9kcmFmdC1ob3dsZXR0LXJhZHNlYy1rbnAtMDEudHh0DQo=
+    '''
+    if text_only:
+        return None
+    
+    # handle B format
+    if part.get_filename() and part.get_filename().endswith('url'):
+        codec = part['Content-Transfer-Encoding']
+        inner = part.get_payload()
+        payload = inner[0].get_payload()
+        link = payload.decode(codec)
+        return link
+    # handle A format
+    else:
+        rawsite = part.get_param('site')
+        site = collapse_rfc2231_value(rawsite)
+        rawdir = part.get_param('directory')
+        dir = collapse_rfc2231_value(rawdir)
+        rawname = part.get_param('name')
+        name = collapse_rfc2231_value(rawname)
+        link = 'ftp://%s/%s/%s' % (site,dir,name)
+        html = '<div><a rel="nofollow" href="%s">&lt;%s&gt;</a></div>' % (link,link)
+        return html
+
+@skip_attachment
+def handle_html(part,text_only):
+    if not text_only:
+        return render_to_string('archive/message_html.html', {'payload': part.get_payload(decode=True)})
+    else:
+        payload = part.get_payload(decode=True)
+        uni = unicode(payload,errors='ignore')
+        
+        # tried many solutions here
+        # text = strip_tags(part.get_payload(decode=True)) # problems with bad html 
+        # soup = BeautifulSoup(part.get_payload(decode=True)) # errors with lxml 
+        soup = BeautifulSoup(part.get_payload(decode=True),'html5') # included "html" and css
+        text = soup.get_text()
+        # text = html2text(uni) # errors with malformed tags
+        return text
+        
 @skip_attachment
 def handle_plain(part,text_only):
     # get_charset() doesn't work??
@@ -61,30 +144,16 @@ def handle_plain(part,text_only):
         #except UnicodeDecodeError:
     #return render_to_string('archive/message_plain.html', {'payload': payload})
     return payload
-    
-@skip_attachment
-def handle_html(part,text_only):
-    if not text_only:
-        return render_to_string('archive/message_html.html', {'payload': part.get_payload(decode=True)})
-    else:
-        payload = part.get_payload(decode=True)
-        uni = unicode(payload,errors='ignore')
-        
-        # tried many solutions here
-        # text = strip_tags(part.get_payload(decode=True)) # problems with bad html 
-        # soup = BeautifulSoup(part.get_payload(decode=True)) # errors with lxml 
-        soup = BeautifulSoup(part.get_payload(decode=True),'html5') # included "html" and css
-        text = soup.get_text()
-        # text = html2text(uni) # errors with malformed tags
-        return text
-        
+
 # a dictionary of supported mime types
-HANDLERS = {'text/plain':handle_plain,
+HANDLERS = {'message/external-body':handle_external_body,
+            'text/plain':handle_plain,
             'text/html':handle_html}
 
 def handle(part,text_only):
     #return chunk.get_content_type()
     type = part.get_content_type()
+    logger.debug('handling %s' % type)
     handler = HANDLERS.get(type,None)
     if handler:
         return handler(part,text_only)
@@ -96,7 +165,9 @@ def parse(entity, text_only=False):
     '''
     #print "calling parse %s:%s" % (entity.__class__,entity.get_content_type())
     parts = []
-    if entity.is_multipart():
+    # messages with type message/external-body are marked multipart, but we need to treat them 
+    # otherwise
+    if entity.is_multipart() and entity.get_content_type() != 'message/external-body':
         if entity.get_content_type() == 'multipart/alternative':
             contents = entity.get_payload()
             # if output is not for indexing start from the most detailed option

@@ -451,6 +451,26 @@ a.selected {
     color: #808080;
 }
 
+#list-filter-extra {
+    background: none repeat scroll 0 0 #FFFFFF;
+    border: 1px solid #D6D6D6;
+    box-shadow: 0 2px 4px #D6D6D6;
+    color: #333333;
+    display: none;
+    line-height: 17px;
+    padding-bottom: 5px;
+    padding-top: 5px;
+    position: absolute;
+    right: -50px;
+    top: 36px;
+    z-index: 103;
+}
+
+.filter-extra {
+    line-height: 17px;
+    padding: 3px 10px 3px 10px;
+}
+
 /* ==========================================================================
    Advanced Search
    ========================================================================== */

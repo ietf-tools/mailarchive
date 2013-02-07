@@ -64,6 +64,9 @@ TEMPLATE_LOADERS = (
 
 TEMPLATE_CONTEXT_PROCESSORS = DEFAULT_SETTINGS.TEMPLATE_CONTEXT_PROCESSORS + (
     'django.core.context_processors.request',
+    'mlarchive.context_processors.server_mode',
+    'mlarchive.context_processors.revision_info',
+    'mlarchive.context_processors.facet_info',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -159,6 +162,7 @@ HAYSTACK_USE_REALTIME_SEARCH = False
 
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = '/a/home/rcross/data/archive'
+SERVER_MODE = 'development'
 
 LOGIN_REDIRECT_URL = '/archive/'
 AUTHENTICATION_BACKENDS = (

@@ -15,6 +15,7 @@ import mailbox
 import os
 
 US_CHARSETS = ('us-ascii','iso-8859-1')
+DEFAULT_CHARSET = 'ascii'
 OTHER_CHARSETS = ('gb2312',)
 UNSUPPORTED_CHARSETS = ('unknown',)
 
@@ -113,7 +114,10 @@ def handle_external_body(part,text_only):
 @skip_attachment
 def handle_html(part,text_only):
     if not text_only:
-        return render_to_string('archive/message_html.html', {'payload': part.get_payload(decode=True)})
+        payload = part.get_payload(decode=True)
+        charset = part.get_content_charset()
+        uni = unicode(payload,charset or DEFAULT_CHARSET,errors='replace')
+        return render_to_string('archive/message_html.html', {'payload': uni})
     else:
         payload = part.get_payload(decode=True)
         uni = unicode(payload,errors='ignore')

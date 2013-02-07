@@ -123,13 +123,18 @@ $(function() {
             window.setTimeout(function() { $(myList).hide(); },500);
         });
         */
+        $('#list-filter-more').bind("click", function(event) {
+            event.preventDefault();
+            $('#list-filter-extra').show();
+        });
+        
         $('input.list-facet[type=checkbox]').change(function() {
             var values = [];
             $('input.list-facet[type=checkbox]:checked').each(function() { 
                 values.push($(this).val());
             });
             var value = values.join(',');
-            location.search = $.query.set("email_list",value);
+            location.search = $.query.set("f_list",value);
             //alert($.query.set("email_list",value));
         });
         

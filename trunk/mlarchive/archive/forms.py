@@ -11,6 +11,9 @@ from mlarchive.archive.utils import get_noauth
 
 from datetime import datetime, timedelta
 
+from django.utils.log import getLogger
+logger = getLogger('mlarchive.custom')
+
 FIELD_CHOICES = (('text','Subject and Body'),
                  ('subject','Subject'),
                  ('frm','From'),
@@ -45,6 +48,7 @@ class AdvancedSearchForm(FacetedSearchForm):
     end_date = forms.DateField(required=False)
     email_list = forms.CharField(max_length=255,required=False,widget=forms.HiddenInput)
     subject = forms.CharField(max_length=255,required=False)
+    f_list = forms.CharField(max_length=255,required=False)
     frm = forms.CharField(max_length=255,required=False)
     msgid = forms.CharField(max_length=255,required=False)
     #operator = forms.ChoiceField(choices=(('AND','ALL'),('OR','ANY')))
@@ -81,6 +85,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         # use custom parser-----------------------------------------
         if self.cleaned_data.get('q'):
             query = parse(self.cleaned_data['q'])
+            logger.info('Query:%s' % query)
             sqs = self.searchqueryset.filter(query)
         else:
             sqs = self.searchqueryset
@@ -110,6 +115,11 @@ class AdvancedSearchForm(FacetedSearchForm):
             
         if kwargs:
             sqs = sqs.filter(**kwargs)
+            
+        # filters -------------------------------------------------
+        if self.cleaned_data['f_list']:
+            f_list = self.cleaned_data['f_list'].split(',')
+            sqs = sqs.filter(email_list__in=f_list)
             
         # private lists -------------------------------------------
         if self.request.user.is_authenticated():

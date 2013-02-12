@@ -146,8 +146,8 @@ def handle_plain(part,text_only):
         #try:
         #payload = payload.decode(charset)
         #except UnicodeDecodeError:
-    #return render_to_string('archive/message_plain.html', {'payload': payload})
-    return payload
+    return render_to_string('archive/message_plain.html', {'payload': payload})
+    #return payload
 
 # a dictionary of supported mime types
 HANDLERS = {'message/external-body':handle_external_body,
@@ -174,10 +174,13 @@ def parse(entity, text_only=False):
     if entity.is_multipart() and entity.get_content_type() != 'message/external-body':
         if entity.get_content_type() == 'multipart/alternative':
             contents = entity.get_payload()
+            # NOTE: rather than trying to handle possibly malformed HTML, just use the
+            # text/plain versions for display.
+            # --clip
             # if output is not for indexing start from the most detailed option
-            if not text_only:
-                contents = contents[::-1]
-            #print "first alt: %s" % contents[0].get_content_type()
+            #if not text_only:
+            #    contents = contents[::-1]
+            # --clip
             for x in contents:
                 # only return first readable item
                 r = parse(x,text_only)

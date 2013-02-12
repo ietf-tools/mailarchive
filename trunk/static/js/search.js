@@ -125,8 +125,21 @@ $(function() {
         */
         $('#list-filter-more').bind("click", function(event) {
             event.preventDefault();
-            $('#list-filter-extra').show();
+            $('#list-filter-extra').show().focus();
         });
+        $('#list-filter-extra').blur(function() {
+            var myDiv = $(this)
+            // must use a timeout, or else list disappears before link gets activated
+            window.setTimeout(function() { $(myDiv).hide(); },500);
+        });
+        $('#list-filter-clear').bind("click", function(event) {
+            event.preventDefault();
+            var value = '';
+            location.search = $.query.set("f_list",value);
+        });
+        if ($('input.list-facet[type=checkbox]:checked').length == 0) {
+            $('#list-filter-clear').hide();
+        }
         
         $('input.list-facet[type=checkbox]').change(function() {
             var values = [];
@@ -240,6 +253,7 @@ $(function() {
                 $('#msg-header').toggle(); 
                 $(this).html(($('#toggle').text() == 'Show header') ? 'Hide header' : 'Show header');
             });
+            $('#view-pane').scrollTop(0);    // should this be msg-body?
         });
     }
     

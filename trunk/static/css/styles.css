@@ -443,11 +443,15 @@ a.selected {
     list-style: none outside none;
 }
 
+.filter-options li input {
+    margin-left: 0;
+}
+
 #sidebar ul {
     margin-bottom: 18px;
 }
 
-#sidebar h4 {
+#sidebar {
     color: #808080;
 }
 

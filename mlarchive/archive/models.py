@@ -9,7 +9,7 @@ from email.Header import decode_header
 
 from bs4 import BeautifulSoup
 from HTMLParser import HTMLParser, HTMLParseError
-from html2text import html2text
+#from html2text import html2text
 
 import mailbox
 import os

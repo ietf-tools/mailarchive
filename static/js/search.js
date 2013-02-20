@@ -123,11 +123,14 @@ $(function() {
             window.setTimeout(function() { $(myList).hide(); },500);
         });
         */
-        $('#list-filter-more').bind("click", function(event) {
+        
+        // FILTERS =============================================
+        $('.more-link').bind("click", function(event) {
             event.preventDefault();
-            $('#list-filter-extra').show().focus();
+            $(this).parent().next('div').show().focus();
         });
-        $('#list-filter-extra').blur(function() {
+        
+        $('.filter-extra-div').blur(function() {
             var myDiv = $(this)
             // must use a timeout, or else list disappears before link gets activated
             window.setTimeout(function() { $(myDiv).hide(); },500);
@@ -150,6 +153,7 @@ $(function() {
             location.search = $.query.set("f_list",value);
             //alert($.query.set("email_list",value));
         });
+        // END FILTERS =========================================
         
         $('a.sortbutton').button();
         

@@ -17,6 +17,7 @@ from mlarchive import settings
 setup_environ(settings)
 
 from mlarchive.archive.models import *
+from email.utils import parseaddr
 
 import datetime
 import re
@@ -96,6 +97,7 @@ def import_mbox(group,path,mlist):
             msg = Message(date=date,
                       email_list=mlist,
                       frm=m['From'],
+                      #frm_email=parseaddr(m['From'])[1],
                       hashcode=hash,
                       headers = 'this is a test',
                       inrt=m.get('In-Reply-To','').strip('<>'),

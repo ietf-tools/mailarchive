@@ -38,8 +38,8 @@
                         <li><input class="list-facet" type="checkbox" name="listsel" value="{{ list.0 }}" {% checked request 'f_list' list.0 %}>{{ list.0 }} ({{ list.1 }})</li>
                     {% endfor %}
                     {% if base_facets.fields.email_list|length > 6 %}
-                        <li><a id="list-filter-more" href="">more...</a></li>
-                        <div id="list-filter-extra" tabindex="-1">
+                        <li><a class="more-link" href="">more...</a></li>
+                        <div id="list-filter-extra" class="filter-extra-div" tabindex="-1">
                         {% for list in base_facets.fields.email_list|slice:"6:" %}
                             <li class="filter-extra"><input class="list-facet" type="checkbox" name="listsel" value="{{ list.0 }}" {% checked request 'f_list' list.0 %}>{{ list.0 }} ({{ list.1 }})</li>
                         {% endfor %}
@@ -51,6 +51,22 @@
                 </ul>
                 <h4>FILTER BY FROM</h4>
                 <ul class="filter-options" tabindex="-1">
+                 {% if base_facets.fields.frm_email %}
+                    <form id="from-filter">
+                    {% for email in base_facets.fields.frm_email|slice:":6" %}
+                        <li><input class="from-facet" type="checkbox" name="fromsel" value="{{ email.0 }}" {% checked request 'f_from' email.0 %}>{{ email.0|truncatechars:18 }} ({{ email.1 }})</li>
+                    {% endfor %}
+                    {% if base_facets.fields.frm_email|length > 6 %}
+                        <li><a class="more-link" href="">more...</a></li>
+                        <div id="from-filter-extra" class="filter-extra-div" tabindex="-1">
+                        {% for email in base_facets.fields.frm_email|slice:"6:" %}
+                            <li class="filter-extra"><input class="from-facet" type="checkbox" name="fromsel" value="{{ email.0 }}" {% checked request 'f_from' email.0 %}>{{ email.0|truncatechars:18 }} ({{ email.1 }})</li>
+                        {% endfor %}
+                        </div>
+                    {% endif %}
+                    <li><a id="from-filter-clear" href="">Clear</a></li>
+                    </form>
+                {% endif %}
                 </ul>
             </div> <!-- search-filters -->
         </div> <!-- msg-left-nav -->

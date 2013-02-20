@@ -455,7 +455,7 @@ a.selected {
     color: #808080;
 }
 
-#list-filter-extra {
+.filter-extra-div {
     background: none repeat scroll 0 0 #FFFFFF;
     border: 1px solid #D6D6D6;
     box-shadow: 0 2px 4px #D6D6D6;

@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 
-from email.utils import collapse_rfc2231_value
+from email.utils import parseaddr, collapse_rfc2231_value
 from email.Header import decode_header
 
 from bs4 import BeautifulSoup
@@ -302,7 +302,8 @@ class Message(models.Model):
     cc = models.CharField(max_length=255,blank=True)
     date = models.DateTimeField(db_index=True)
     email_list = models.ForeignKey(EmailList,db_index=True)
-    frm = models.CharField(max_length=255,db_index=True)
+    frm = models.CharField(max_length=255,db_index=True)    # both realname and email for search
+    #frm_email = models.CharField(max_length=255)            # only email part, for faceting
     hashcode = models.CharField(max_length=28,db_index=True)
     headers = models.TextField()
     inrt = models.CharField(max_length=255,blank=True)      # in-reply-to header field
@@ -360,6 +361,14 @@ class Message(models.Model):
         else:
             part = [p for p in parts if '@' in p]
             return part[0].strip('<>')
+    
+    @property
+    def frm_email(self):
+        '''
+        This property is the email portion of the "From" header all lowercase (the realname
+        is stripped).  It is used in faceting search results as well as display.
+        '''
+        return parseaddr(self.frm)[1].lower()
         
 class Attachment(models.Model):
     name = models.CharField(max_length=255)

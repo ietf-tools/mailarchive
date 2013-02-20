@@ -144,7 +144,7 @@ class AdvancedSearchForm(FacetedSearchForm):
             pass
             
         # faceting ------------------------------------------------
-        sqs = sqs.facet('email_list')
+        sqs = sqs.facet('email_list').facet('frm_email')
         
         # TODO: do we need this?
         if self.load_all:

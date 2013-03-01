@@ -48,12 +48,14 @@ class AdvancedSearchForm(FacetedSearchForm):
     end_date = forms.DateField(required=False)
     email_list = forms.CharField(max_length=255,required=False,widget=forms.HiddenInput)
     subject = forms.CharField(max_length=255,required=False)
-    f_list = forms.CharField(max_length=255,required=False)
     frm = forms.CharField(max_length=255,required=False)
     msgid = forms.CharField(max_length=255,required=False)
     #operator = forms.ChoiceField(choices=(('AND','ALL'),('OR','ANY')))
     so = forms.CharField(max_length=25,required=False,widget=forms.HiddenInput)
     qdr = forms.CharField(max_length=25,required=False)
+    # filter fields    
+    f_list = forms.CharField(max_length=255,required=False)
+    f_from = forms.CharField(max_length=255,required=False)
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request')
@@ -120,6 +122,9 @@ class AdvancedSearchForm(FacetedSearchForm):
         if self.cleaned_data['f_list']:
             f_list = self.cleaned_data['f_list'].split(',')
             sqs = sqs.filter(email_list__in=f_list)
+        if self.cleaned_data['f_from']:
+            f_from = self.cleaned_data['f_from'].split(',')
+            sqs = sqs.filter(frm_email__in=f_from)
             
         # private lists -------------------------------------------
         if self.request.user.is_authenticated():

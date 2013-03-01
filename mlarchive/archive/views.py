@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.core.urlresolvers import reverse
@@ -146,7 +147,8 @@ def main(request):
     The main page.  This page contains a simple search form and some links.
     '''
     form = SearchForm()
-    os.chmod('/a/home/rcross/data/log/mlarchive.log',0666)
+    if os.path.exists(settings.LOG_FILE):
+        os.chmod(settings.LOG_FILE,0666)
     
     return render_to_response('archive/main.html', {
         'form': form},

@@ -2,10 +2,14 @@
 
 from django.conf import settings
 from mlarchive import __date__, __rev__, __version__, __id__
+from mlarchive.middleware import has_filters, get_base_query
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
 
+# --------------------------------------------------
+# Context Processors
+# --------------------------------------------------
 def server_mode(request):
     return {'server_mode': settings.SERVER_MODE}
     
@@ -22,14 +26,12 @@ def facet_info(request):
     TODO: alternatively this could just overwrite "facets" when a filter has been applied.
     '''
     if request.META['REQUEST_URI'].startswith('/archive/search/'):
-        if request.GET.get('f_list'):
-            logger.info('context_processer: %s' % request.session['queries'].keys())
-            new = request.GET.copy()
-            del new['f_list']
-            query = new.urlencode()
-            base_facets = request.session['queries'].get(query)
-        else:
-            base_facets = request.session['queries'].get(request.META['QUERY_STRING'])
+        # strip any filters and lookup query
+        query = get_base_query(request.GET)
+        base_facets = request.session['queries'].get(query)
+        logger.info('context_processer: checking for: %s' % query)
+        logger.info('context_processer: result: %s' % base_facets)
+        logger.info('context_processer: contents: %s' % request.session['queries'].keys())
         return {'base_facets':base_facets}
     else:
         return {}

@@ -163,6 +163,7 @@ HAYSTACK_USE_REALTIME_SEARCH = False
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = '/a/home/rcross/data/archive'
 SERVER_MODE = 'development'
+LOG_FILE = '/a/home/rcross/data/log/mlarchive.log'
 
 LOGIN_REDIRECT_URL = '/archive/'
 AUTHENTICATION_BACKENDS = (

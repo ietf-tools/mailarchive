@@ -35,13 +35,13 @@
                 {% if base_facets.fields.email_list %}
                     <form id="list-filter">
                     {% for list in base_facets.fields.email_list|slice:":6" %}
-                        <li><input class="list-facet" type="checkbox" name="listsel" value="{{ list.0 }}" {% checked request 'f_list' list.0 %}>{{ list.0 }} ({{ list.1 }})</li>
+                        <li><input class="list-facet facetchk" type="checkbox" name="f_list" value="{{ list.0 }}" {% checked request 'f_list' list.0 %}>{{ list.0 }} ({{ list.1 }})</li>
                     {% endfor %}
                     {% if base_facets.fields.email_list|length > 6 %}
                         <li><a class="more-link" href="">more...</a></li>
                         <div id="list-filter-extra" class="filter-extra-div" tabindex="-1">
                         {% for list in base_facets.fields.email_list|slice:"6:" %}
-                            <li class="filter-extra"><input class="list-facet" type="checkbox" name="listsel" value="{{ list.0 }}" {% checked request 'f_list' list.0 %}>{{ list.0 }} ({{ list.1 }})</li>
+                            <li class="filter-extra"><input class="list-facet facetchk" type="checkbox" name="f_list" value="{{ list.0 }}" {% checked request 'f_list' list.0 %}>{{ list.0 }} ({{ list.1 }})</li>
                         {% endfor %}
                         </div>
                     {% endif %}
@@ -54,13 +54,13 @@
                  {% if base_facets.fields.frm_email %}
                     <form id="from-filter">
                     {% for email in base_facets.fields.frm_email|slice:":6" %}
-                        <li><input class="from-facet" type="checkbox" name="fromsel" value="{{ email.0 }}" {% checked request 'f_from' email.0 %}>{{ email.0|truncatechars:18 }} ({{ email.1 }})</li>
+                        <li><input class="from-facet facetchk" type="checkbox" name="f_from" value="{{ email.0 }}" {% checked request 'f_from' email.0 %}>{{ email.0|truncatechars:18 }} ({{ email.1 }})</li>
                     {% endfor %}
                     {% if base_facets.fields.frm_email|length > 6 %}
                         <li><a class="more-link" href="">more...</a></li>
                         <div id="from-filter-extra" class="filter-extra-div" tabindex="-1">
                         {% for email in base_facets.fields.frm_email|slice:"6:" %}
-                            <li class="filter-extra"><input class="from-facet" type="checkbox" name="fromsel" value="{{ email.0 }}" {% checked request 'f_from' email.0 %}>{{ email.0|truncatechars:18 }} ({{ email.1 }})</li>
+                            <li class="filter-extra"><input class="from-facet facetchk" type="checkbox" name="f_from" value="{{ email.0 }}" {% checked request 'f_from' email.0 %}>{{ email.0|truncatechars:18 }} ({{ email.1 }})</li>
                         {% endfor %}
                         </div>
                     {% endif %}
@@ -77,11 +77,11 @@
                     <table id="msg-list-header-table">
                         <thead>
                             <tr>
-                                <th><a id="sort-date-button" class="unsorted sortbutton" href="#">Date</a></th>
-                                <th><a id="sort-thread-button" class="unsorted sortbutton" href="#">Subject</a></th>
-                                <th><a id="sort-from-button" class="unsorted sortbutton" href="#">From</a></th>
-                                <th><a id="sort-list-button" class="unsorted sortbutton" href="#">List</a></th>
-                                <th><a id="sort-score-button" class="unsorted sortbutton" href="#">Score</a></th>
+                                <th><a id="sort-button-date" class="unsorted sortbutton" href="#">Date</a></th>
+                                <th><a id="sort-button-subject" class="unsorted sortbutton" href="#">Subject</a></th>
+                                <th><a id="sort-button-frm" class="unsorted sortbutton" href="#">From</a></th>
+                                <th><a id="sort-button-email_list" class="unsorted sortbutton" href="#">List</a></th>
+                                <th><a id="sort-button-score" class="unsorted sortbutton" href="#">Score</a></th>
                             </tr>
                         </thead>
                     </table>

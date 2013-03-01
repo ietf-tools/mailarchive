@@ -1,5 +1,17 @@
 /* search.js */
 
+/* 
+This script uses the JQuery Query String Object plugin
+http://archive.plugins.jquery.com/project/query-object
+*/
+
+// GLOBAL VARIABLES
+var sortDefault = new Array();
+sortDefault['date'] = '-date';
+sortDefault['email_list'] = 'email_list';
+sortDefault['frm'] = 'frm';
+sortDefault['score'] = '-score';
+
 $(function() {
     
     function add_to_list(list, id, label) {
@@ -113,23 +125,11 @@ $(function() {
     }
 
     function setup_buttons() {
-        /* setup filters, from old menu style filters
-        $('div.filter-name').click(function() {
-            $(this).next().show().focus();
-        });
-        $('ul.filter-options').blur(function() {
-            var myList = $(this)
-            // must use a timeout, or else list disappears before link gets activated
-            window.setTimeout(function() { $(myList).hide(); },500);
-        });
-        */
-        
         // FILTERS =============================================
         $('.more-link').bind("click", function(event) {
             event.preventDefault();
             $(this).parent().next('div').show().focus();
         });
-        
         $('.filter-extra-div').blur(function() {
             var myDiv = $(this)
             // must use a timeout, or else list disappears before link gets activated
@@ -137,113 +137,65 @@ $(function() {
         });
         $('#list-filter-clear').bind("click", function(event) {
             event.preventDefault();
-            var value = '';
-            location.search = $.query.set("f_list",value);
+            location.search = $.query.set("f_list",'');
+        });
+        $('#from-filter-clear').bind("click", function(event) {
+            event.preventDefault();
+            location.search = $.query.set("f_from",'');
         });
         if ($('input.list-facet[type=checkbox]:checked').length == 0) {
             $('#list-filter-clear').hide();
         }
-        
-        $('input.list-facet[type=checkbox]').change(function() {
+        if ($('input.from-facet[type=checkbox]:checked').length == 0) {
+            $('#from-filter-clear').hide();
+        }
+        $('input.facetchk[type=checkbox]').change(function() {
             var values = [];
-            $('input.list-facet[type=checkbox]:checked').each(function() { 
+            var name = $(this).attr('name');
+            $("input[name=" + name + "][type=checkbox]:checked").each(function() { 
                 values.push($(this).val());
             });
             var value = values.join(',');
-            location.search = $.query.set("f_list",value);
-            //alert($.query.set("email_list",value));
+            location.search = $.query.set(name,value);
         });
         // END FILTERS =========================================
         
+        // SORTING =============================================
         $('a.sortbutton').button();
-        
         var so=getURLParameter("so");
-        $('#sort-date-button').click(function() {
-            if(so=="date"){
-                $('#id_so').val('-date');
+        var new_so = "";
+        $('a.sortbutton').click(function() {
+            var id = $(this).attr('id');
+            col = id.replace('sort-button-','');
+            if(so==col){
+                new_so = "-" + col;
             }
-            if(so=="-date"){
-                $('#id_so').val('date');
-            }
-            else {
-                $('#id_so').val('-date');
-            }
-            $('form#id_search_form').submit();
-        });
-        $('#sort-from-button').click(function() {
-            if(so=="frm"){
-                $('#id_so').val('-frm');
-            }
-            else if(so=="-frm"){
-                $('#id_so').val('frm');
+            else if(so=="-" + col){
+                new_so = col;
             }
             else {
-                $('#id_so').val('frm');
+                new_so = sortDefault[col];
             }
-            $('form#id_search_form').submit();
+            location.search = $.query.set('so',new_so);
+            // $('#id_so').val(new_so);
+            // $('form#id_search_form').submit();
         });
-        $('#sort-list-button').click(function() {
-            if(so=="email_list"){
-                $('#id_so').val('-email_list');
+        // show appropriate sort arrow icon
+        if(so!='null'){
+            var col = so.replace('-','');
+            var elem = $("#sort-button-" + col);
+            if(so.match("^-")){
+                icon = "ui-icon-triangle-1-s";
+            } else {
+                icon = "ui-icon-triangle-1-n";
             }
-            else if(so=="-email_list"){
-                $('#id_so').val('email_list');
-            }
-            else {
-                $('#id_so').val('email_list');
-            }
-            $('form#id_search_form').submit();
-        });
-        $('#sort-score-button').click(function() {
-            $('#id_so').val('-score');
-            $('form#id_search_form').submit();
-        });
-        
-        //$('button.unsorted').button();
-        
-        //if(so=="-date"||so=="null"){
-        if(so=="-date"){
-            $('#sort-date-button').button({
+            elem.button({
                 icons: {
-                    secondary: "ui-icon-triangle-1-s"
+                    secondary: icon
                 }
             });
         }
-        if(so=="date"){
-            $('#sort-date-button').button({
-                icons: {
-                    secondary: "ui-icon-triangle-1-n"
-                }
-            });
-        }
-        if(so=="-frm"){
-            $('#sort-from-button').button({
-                icons: {
-                    secondary: "ui-icon-triangle-1-s"
-                }
-            });
-        }
-        if(so=="frm"){
-            $('#sort-from-button').button({
-                icons: {
-                    secondary: "ui-icon-triangle-1-n"
-                }
-            });
-        }
-        if(so=="-email_list"){
-            $('#sort-list-button').button({
-                icons: {
-                    secondary: "ui-icon-triangle-1-s"
-                }
-            });
-        }
-        if(so=="email_list"){
-            $('#sort-list-button').button({
-                icons: {
-                    secondary: "ui-icon-triangle-1-n"
-                }
-            });
-        }
+        // END SORTING =========================================
     }
     
     // given the row of the msg list, load the message text in the mag view pane

@@ -146,7 +146,8 @@ class AdvancedSearchForm(FacetedSearchForm):
         else:
             # default to
             # sqs = sqs.order_by('-date')
-            pass
+            # if there's no "so" param, and no query we are browsing, sort by -date
+            sqs = sqs.order_by('-date')
             
         # faceting ------------------------------------------------
         sqs = sqs.facet('email_list').facet('frm_email')
@@ -159,23 +160,6 @@ class AdvancedSearchForm(FacetedSearchForm):
     
     def clean_email_list(self):
         # take a comma separated list of email_list names and convert to list of names
-        '''
-        user = self.request.user
-        ids = []
-        bad_lists = []
-        email_list = self.cleaned_data['email_list']
-        for name in self.cleaned_data['email_list'].split(','):
-            try:
-                ids.append(EmailList.objects.get(name=name).id)
-            except EmailList.DoesNotExist:
-                bad_lists.append(name)
-        
-        # TODO
-        #if unauthorized lists
-        #    messages.warning(self.request, 'You don't have access to list %s')
-        
-        return ids
-        '''
         email_list = self.cleaned_data['email_list']
         if email_list:
             return email_list.split(',')

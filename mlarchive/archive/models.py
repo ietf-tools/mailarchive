@@ -14,7 +14,7 @@ from HTMLParser import HTMLParser, HTMLParseError
 import mailbox
 import os
 
-US_CHARSETS = ('us-ascii','iso-8859-1')
+US_CHARSETS = ('us-ascii','ascii')
 DEFAULT_CHARSET = 'ascii'
 OTHER_CHARSETS = ('gb2312',)
 UNSUPPORTED_CHARSETS = ('unknown',)
@@ -25,6 +25,24 @@ logger = getLogger('mlarchive.custom')
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
+def handle_header(header):
+    parts = []
+    for part in header.split():
+        if part.startswith('=?'):
+            part = getmailheader(part)
+        parts.append(part)
+    return ' '.join(parts)
+
+def get_charset(part):
+    # part.get_charset() doesn't work??
+    if part.get_content_charset():
+        charset = part.get_content_charset()
+    elif part.get_param('charset'):
+        charset = part.get_param('charset').lower()
+    else:
+        charset = US_CHARSETS[0]
+    return charset
+    
 def getmailheader(header_text, default="ascii"):
     """Decode header_text if needed"""
     try:
@@ -132,32 +150,31 @@ def handle_html(part,text_only):
         
 @skip_attachment
 def handle_plain(part,text_only):
-    # get_charset() doesn't work??
-    if part.get_content_charset():
-        charset = part.get_content_charset()
-    elif part.get_param('charset'):
-        charset = part.get_param('charset').lower()
-    else:
-        charset = US_CHARSETS[0]
-    
+    charset = get_charset(part)
     payload = part.get_payload(decode=True)
-    #if charset not in US_CHARSETS and charset not in UNSUPPORTED_CHARSETS:
-        # TODO log failure and pass
-        #try:
-        #payload = payload.decode(charset)
-        #except UnicodeDecodeError:
-    return render_to_string('archive/message_plain.html', {'payload': payload})
-    #return payload
-
+    if charset not in US_CHARSETS and charset not in UNSUPPORTED_CHARSETS:
+        try:
+            payload = payload.decode(charset)
+        except UnicodeDecodeError as err:
+            logger.warn("UnicodeDecodeError [{0}, {1}]".format(err.encoding,err.reason))
+            payload = unicode(payload,DEFAULT_CHARSET,errors='ignore')
+    
+    result = render_to_string('archive/message_plain.html', {'payload': payload})
+    # undeclared charactersets can cause problems with template rendering
+    # if result is empty template (len=28) try again with unicode
+    if len(result) == 28 and not isinstance(payload, unicode):
+        payload = unicode(payload,DEFAULT_CHARSET,errors='ignore')
+        result = render_to_string('archive/message_plain.html', {'payload': payload})
+    return result
+    
 # a dictionary of supported mime types
 HANDLERS = {'message/external-body':handle_external_body,
             'text/plain':handle_plain,
             'text/html':handle_html}
 
 def handle(part,text_only):
-    #return chunk.get_content_type()
     type = part.get_content_type()
-    logger.debug('handling %s' % type)
+    #logger.debug('handling %s' % type)
     handler = HANDLERS.get(type,None)
     if handler:
         return handler(part,text_only)

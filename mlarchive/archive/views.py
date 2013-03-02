@@ -161,6 +161,11 @@ def main(request):
 def test(request):
     #from django.core.exceptions import PermissionDenied
     #raise PermissionDenied
-    return render_to_response('archive/test.html', {},
+    test = u'Ond\u0159ej Sur\xfd<ondrej.sury@nic.cz>'
+    msg = Message.objects.get(id=24190)
+    body = msg.get_body()
+    return render_to_response('archive/test.html', {
+        'test': test,
+        'body': body},
         RequestContext(request, {}),
     )

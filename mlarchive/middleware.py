@@ -83,10 +83,10 @@ class QueryMiddleware(object):
                         for field in base_facets['fields']:
                             # need to set a hard limit, can't disaply unlimited number of options
                             logger.info('facets count for %s:%s' % (field,len(base_facets['fields'][field])))
-                            if len(base_facets['fields'][field]) > 30:
+                            #if len(base_facets['fields'][field]) > 30:
                                 # get the top thirty sorted by facet count
-                                sorted_facets = sorted(base_facets['fields'][field], key=lambda k: k[1],reverse=True)
-                                base_facets['fields'][field] = sorted_facets[:30]
+                            #    sorted_facets = sorted(base_facets['fields'][field], key=lambda k: k[1],reverse=True)
+                            #    base_facets['fields'][field] = sorted_facets[:30]
                             base_facets['fields'][field].sort()  # sort by name
                     else:
                         base_facets = None

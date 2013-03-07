@@ -3,9 +3,10 @@ import sys
 from haystack.query import SQ
 from django.conf import settings
 
-Patern_Field_Query = re.compile(r"^(\w+):(\w+)\s*",re.U)
+#Patern_Field_Query = re.compile(r"^(\w+):(\w+)\s*",re.U)
+Patern_Field_Query = re.compile(r"^(\w+):([a-zA-Z0-9\.\@\-\_\+\=\$]+)\s*",re.U)
 Patern_Field_Exact_Query = re.compile(r"^(\w+):\"(.+)\"\s*",re.U)
-Patern_Normal_Query = re.compile(r"^(\w+)\s*",re.U)             
+Patern_Normal_Query = re.compile(r"^(\w+)\s*",re.U)
 Patern_Operator = re.compile(r"^(AND|OR|NOT)\s*",re.U)
 Patern_Quoted_Text = re.compile(r"^\"(.+)\"\s*",re.U)
 
@@ -22,7 +23,7 @@ class UnhandledException(Exception):
     def __init__(self,value=''):
         self.value = value
     def __str__(self):
-        return self.value        
+        return self.value
 
 def handle_field_query(sq,q,current=HAYSTACK_DEFAULT_OPERATOR ):
     mat = re.search(Patern_Field_Query,q)

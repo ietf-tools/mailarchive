@@ -9,8 +9,11 @@ $(function() {
 
     function build_query(ev) {
         var query_string="";
-        var part_pattern="{param}:({keyword})";
-        var not_pattern="-{param}:({keyword})";
+        //var part_pattern="{param}:({keyword})";
+        //var not_pattern="-{param}:({keyword})";
+        var part_pattern="{param}:{keyword}";
+        var not_pattern="-{param}:{keyword}";
+        
         var op_value=$('#id_operator').val();
         
         // regular query fields'

@@ -4,12 +4,12 @@
       <span id="msg-from" class="pipe">{{ msg.frm }}</span>
       <span id="msg-date" class="pipe">{{ msg.date }}</span>
     </p>
-    <div id="msg-header">
+    <div id="msg-header" class="darkgray">
       {% for k,v in headers %}
         {{k}}: {{v}}<br />
       {% endfor %}
     </div>
-    <div id="msg-payload" class="wordwrap">
+    <div id="msg-payload">
       {% for part in parts %}
           {{ part|safe }}
       {% endfor %}

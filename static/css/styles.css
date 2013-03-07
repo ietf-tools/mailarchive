@@ -114,6 +114,16 @@ a:link, a:visited {
 a:hover {
     color: #036;
 }
+
+.errorlist {
+    list-style-type: none;
+}
+
+.errorlist li {
+    background: #FF8080 url(../img/admin/icon_alert.gif) no-repeat scroll 5px 0.3em;
+    border: 1px solid #FF8080;
+}
+
 /* ==========================================================================
    Action Buttons
    ========================================================================== */
@@ -335,13 +345,17 @@ ul#navigation li:last-child {
     /* margin-top: 0.5em; */
 }
 
+#msg-header {
+    margin-top: 1.5em;
+}
+
 #msg-payload {
-    margin-top: 0.5em;
+    margin-top: 1.5em;
 }
 
 /* Source: http://snipplr.com/view/10979/css-cross-browser-word-wrap */
 .wordwrap { 
-   white-space: pre-wrap;      /* CSS3 */   
+   white-space: pre-line;      /* CSS3 */   
    white-space: -moz-pre-wrap; /* Firefox */    
    white-space: -pre-wrap;     /* Opera <7 */   
    white-space: -o-pre-wrap;   /* Opera 7 */    
@@ -465,9 +479,13 @@ a.selected {
     padding-bottom: 5px;
     padding-top: 5px;
     position: absolute;
-    right: -50px;
+    right: -60px;
     top: 36px;
     z-index: 103;
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: 450px;
+    width: 220px;
 }
 
 .filter-extra {

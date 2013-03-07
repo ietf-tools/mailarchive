@@ -76,7 +76,10 @@ def browse(request):
     display_columns = 5
     form = BrowseForm()
     if request.user.is_authenticated():
-        lists = EmailList.objects.filter(Q(active=True,private=False)|Q(members=request.user.pk)).order_by('name')
+        if request.user.is_superuser:
+            lists = EmailList.objects.filter(active=True).order_by('name')
+        else:
+            lists = EmailList.objects.filter(Q(active=True,private=False)|Q(members=request.user.pk)).order_by('name')
     else:
         lists = EmailList.objects.filter(active=True,private=False).order_by('name')
     columns = chunks(lists,int(math.ceil(lists.count()/float(display_columns))))

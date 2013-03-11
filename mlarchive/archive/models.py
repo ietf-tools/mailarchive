@@ -139,13 +139,13 @@ def handle_html(part,text_only):
     else:
         payload = part.get_payload(decode=True)
         uni = unicode(payload,errors='ignore')
-        
         # tried many solutions here
         # text = strip_tags(part.get_payload(decode=True)) # problems with bad html 
         # soup = BeautifulSoup(part.get_payload(decode=True)) # errors with lxml 
+        # text = html2text(uni) # errors with malformed tags
         soup = BeautifulSoup(part.get_payload(decode=True),'html5') # included "html" and css
         text = soup.get_text()
-        # text = html2text(uni) # errors with malformed tags
+        
         return text
         
 @skip_attachment
@@ -181,8 +181,7 @@ def handle(part,text_only):
     
 def parse(entity, text_only=False):
     '''
-    This function recursively traverses a MIME email and returns it's parts.
-    The function takes an email.message object, 
+    This function recursively traverses a MIME email and returns a list of email.Message objects
     '''
     #print "calling parse %s:%s" % (entity.__class__,entity.get_content_type())
     parts = []
@@ -195,8 +194,8 @@ def parse(entity, text_only=False):
             # text/plain versions for display.
             # --clip
             # if output is not for indexing start from the most detailed option
-            #if not text_only:
-            #    contents = contents[::-1]
+            # if not text_only:
+            #     contents = contents[::-1]
             # --clip
             for x in contents:
                 # only return first readable item
@@ -234,66 +233,7 @@ def parse_body(msg, text_only=False, request=None):
         )
     else:
         return '\n'.join(parts)
-"""
-OLD FUNCTIONS -------------------------------
 
-def parse(path):
-    '''
-    Parse message mime parts
-    '''
-    parts = []
-    alt_count = 0
-    try:
-        with open(path) as f:
-            maildirmessage = mailbox.MaildirMessage(f)
-            headers = maildirmessage.items()
-            for part in maildirmessage.walk():
-                type = part.get_content_type()
-                if type == 'multipart/alternative':
-                    alt_count = len(part.get_payload())
-                    continue
-                handler = HANDLERS.get(type,None)
-                if handler:
-                    parts.append(handler(part))
-    
-    except IOError, e:
-        return ''
-        
-    return parts
-
-def parse_body(msg,html=False,request=None):
-    '''
-    This function takes a Message object and returns the message body.
-    Option arguments: 
-    html: if true format with HTML for display in templates, if false return text only, good
-    for indexing.
-    request: a request object to use in building links for HTML
-    '''
-    try:
-        with open(msg.get_file_path()) as f:
-            maildirmessage = mailbox.MaildirMessage(f)
-            headers = maildirmessage.items()
-            parts = []
-            for part in maildirmessage.walk():
-                if part.get_content_maintype() == 'multipart':
-                    continue    # TODO do something with this
-                handler = HANDLERS.get(part.get_content_type(),None)
-                if handler:
-                    parts.append(handler(part,html))
-    except IOError, e:
-        return 'ERROR: reading message'
-    
-    if html:
-        return render_to_string('archive/message.html', {
-            'msg': msg,
-            'maildirmessage': maildirmessage,
-            'headers': headers,
-            'parts': parts,
-            'request': request}
-        )
-    else:
-        return '\n'.join(parts)
-"""
 # --------------------------------------------------
 # Models
 # --------------------------------------------------
@@ -408,4 +348,3 @@ class Reference(models.Model):
     class Meta:
         ordering = ('order',)
 
-    

@@ -5,9 +5,11 @@
       <span id="msg-date" class="pipe">{{ msg.date }}</span>
     </p>
     <div id="msg-header" class="darkgray">
+      <p>
       {% for k,v in headers %}
         {{k}}: {{v}}<br />
       {% endfor %}
+      </p>
     </div>
     <div id="msg-payload">
       {% for part in parts %}

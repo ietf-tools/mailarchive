@@ -3,7 +3,7 @@
 {% block extrahead %}
 <script type="text/javascript">
 $(function() {
-    $('#id_q').focus();
+    $('#id_username').focus();
 });
 </script>
 {% endblock %} 
@@ -12,10 +12,10 @@ $(function() {
 
 {% block content %}
 
-<div id="search-container">
+<div id="login-container">
   <form action="." method="post">{% csrf_token %}
     {{ form.as_p }}
-    <input type="submit" value="Submit" />
+    <div class="button-group"><ul><li><input id="login-submit" type="submit" value="Submit" /></li></ul></div>
   </form>
 </div>
 

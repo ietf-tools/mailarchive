@@ -131,6 +131,17 @@ a:hover {
     padding-left: 12px;
     background: url("../admin/img/icon_addlink.gif") 0 .2em no-repeat;
 }
+/* ==========================================================================
+   Login
+   ========================================================================== */
+#login-container {
+    margin: 50px auto;
+    width: 155px;
+}
+
+#login-submit {
+    margin: 15px auto;
+}
 
 /* ==========================================================================
    Search
@@ -158,7 +169,18 @@ table#msg-table {
     width: 35em;
 }
 
+#browse-header {
+    display: inline;
+    font-size: 20px;
+    margin-left: 200px;
+}
+
+#browse-header.private {
+    color: #FF7373;
+}
+
 #search-header {
+    display: inline;
     float: right;
 }
 
@@ -220,7 +242,7 @@ ul#navigation li:last-child {
     min-width: 600px;
     position: absolute;
     right: 5em;
-    top: 3em;
+    top: 41px;
 }
 
 #msg-container {
@@ -536,14 +558,12 @@ a.listlink:link, a.listlink:visited {
 
 .list-fieldset {
     border: 1px solid #CCC;
-    margin-left: 75px;
-    margin-right: 71px;
+/*    margin-left: 75px;
+    margin-right: 71px;  */
     padding: 3px;
 }
 
 #list-fieldset2 {
-    margin-left: 85px;
-    margin-right: 162px;
 }
 
 #delete-icon {
@@ -563,7 +583,7 @@ a.listlink:link, a.listlink:visited {
 }
 
 #adv-search input.operand {
-    width: 42em;
+    width: 35em;
 
 }
 #adv-search select.parameter {
@@ -696,11 +716,20 @@ div#browse_columns {
 
 #msg-detail #msg-payload {
     font-family: "DejaVu Sans Mono",Monaco,"Courier New",Courier;
-    font-size: 0.85em;
+    /* font-size: 0.85em; */
+}
+
+#msg-detail h1 {
+    font-size: 18px;
+}
+
+#msg-detail p {
+    font-size: 13px;
 }
 
 #msg-detail pre {
     font-family: monospace;
+    font-size: 13px;
     margin-top: 1em;
 }
 

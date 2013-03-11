@@ -38,8 +38,18 @@ class CustomSearchView(FacetedSearchView):
     def build_form(self, form_kwargs=None):
         return super(self.__class__,self).build_form(form_kwargs={ 'request' : self.request }) 
 
-    # def extra_context(self):
-
+    def extra_context(self):
+        extra = super(CustomSearchView, self).extra_context()
+        match = re.search(r"^email_list=([a-zA-Z0-9\_\-]+)",self.request.META['QUERY_STRING'])
+        if match:
+            try:
+                browse_list = EmailList.objects.get(name=match.group(1))
+            except EmailList.DoesNotExist:
+                browse_list = None
+        else:
+            browse_list = None
+        extra['browse_list'] = browse_list
+        return extra 
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
@@ -61,7 +71,7 @@ def advsearch(request):
     RulesFormset = formset_factory(RulesForm)
     query_formset = RulesFormset(prefix='query')
     not_formset = RulesFormset(prefix='not')
-    
+
     return render_to_response('archive/advsearch.html', {
         'form': form,
         'query_formset': query_formset,

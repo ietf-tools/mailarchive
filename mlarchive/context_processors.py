@@ -30,7 +30,7 @@ def facet_info(request):
         query = get_base_query(request.GET)
         base_facets = request.session['queries'].get(query)
         logger.info('context_processer: checking for: %s' % query)
-        logger.info('context_processer: result: %s' % base_facets)
+        #logger.info('context_processer: result: %s' % base_facets)
         logger.info('context_processer: contents: %s' % request.session['queries'].keys())
         return {'base_facets':base_facets}
     else:

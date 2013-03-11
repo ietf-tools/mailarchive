@@ -9,6 +9,7 @@
               {{ form.non_field_errors }}
             {% endif %}
             {{ form.field }}
+            {{ form.qualifier }}
             {{ form.value }}
             <a id="remove_0" class="remove_btn" onclick="false" href="#" name="remove_0">
                 <img title="Remove" src="{{ STATIC_URL }}admin/img/icon_deletelink.gif" alt="Remove">
@@ -26,6 +27,7 @@
               {{ form.non_field_errors }}
             {% endif %}
             {{ form.field }}
+            {{ form.qualifier }}
             {{ form.value }}
             <a id="not_remove_0" class="not_remove_btn" onclick="false" href="#" name="not_remove_0">
                 <img title="Remove" src="{{ STATIC_URL }}admin/img/icon_deletelink.gif" alt="Remove">
@@ -41,12 +43,12 @@
         <span class="label">filter results by:</span>
             <table id="advanced-search-table" class="clean">
                 <tr>
-                    <td>Date Between:</td>
-                    <td><input id="start_date" class="date defaultText" type="text" name="start_date" title="YYYY-MM-DD"> and <input id="end_date" class="date defaultText" type="text" name="end_date" title="YYYY-MM-DD"></td>
+                    <td>Time:</td>
+                    <td>{{ form.qdr }}</td>
                 </tr>
                 <tr>
                     <td>List:</td>
-                    <td><input id="email_list_search" class="defaultText" type="text" size="35" title="Start typing name and pick from list"></td>
+                    <td><input id="email_list_search" class="defaultText" type="text" size="30" title="Start typing name and pick from list"></td>
                 </tr>
                 <input type="hidden" name="email_list" id="email_list" />
             </table>

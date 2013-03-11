@@ -3,6 +3,9 @@ import sys
 from haystack.query import SQ
 from django.conf import settings
 
+from django.utils.log import getLogger
+logger = getLogger('mlarchive.custom')
+
 #Patern_Field_Query = re.compile(r"^(\w+):(\w+)\s*",re.U)
 Patern_Field_Query = re.compile(r"^(\w+):([a-zA-Z0-9\.\@\-\_\+\=\$]+)\s*",re.U)
 Patern_Field_Exact_Query = re.compile(r"^(\w+):\"(.+)\"\s*",re.U)
@@ -27,7 +30,8 @@ class UnhandledException(Exception):
 
 def handle_field_query(sq,q,current=HAYSTACK_DEFAULT_OPERATOR ):
     mat = re.search(Patern_Field_Query,q)
-    sq.add(SQ(**{str(mat.group(1)):mat.group(2)}),current)
+    field, value = translate(mat.group(1),mat.group(2))
+    sq.add(SQ(**{str(field):value}),current)
     q, n = re.subn(Patern_Field_Query,'',q,1)
     return sq,q, HAYSTACK_DEFAULT_OPERATOR
 
@@ -103,3 +107,17 @@ def parse(q):
     except:
         raise UnhandledException(sys.exc_info()[0])
     return sq
+    
+def translate(field,value):
+    '''
+    This function takes two strings that are the field and value derived from a field query
+    (ie.  'frm:rcross@amsl.com') and performs specific translations to optimize search.
+    '''
+    # if searching for an email address use the frm_email field
+    logger.info('Translation field:%s value:%s' % (field,value))
+    if field == 'from':
+        field = 'frm'
+    if field == 'frm' and value.find('@') != -1:
+        field = 'frm_email'
+    
+    return field,value

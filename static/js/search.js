@@ -39,9 +39,11 @@ $(function() {
     function sync_tables() {
         // synchronize the message list header table with the scrollable content table
         $("#msg-list-header-table").width($("#msg-table").width());
-        $("#msg-list-header-table tr th").each(function (i){
-            $(this).width($($("#msg-table tr:first td")[i]).width() + 10);
-        });
+        if($('#msg-table').find("tr:first td").length != 1) {
+            $("#msg-list-header-table tr th").each(function (i){
+                $(this).width($($("#msg-table tr:first td")[i]).width() + 10);
+            });
+        }
     }
     
     function init_search() {

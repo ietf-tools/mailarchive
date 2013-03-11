@@ -80,6 +80,7 @@ class QueryMiddleware(object):
                     temp = results._clone()
                     if temp.count() < 15000:
                         base_facets = results.facet_counts()
+                        #assert False, (results,query,base_facets)
                         for field in base_facets['fields']:
                             # need to set a hard limit, can't disaply unlimited number of options
                             logger.info('facets count for %s:%s' % (field,len(base_facets['fields'][field])))

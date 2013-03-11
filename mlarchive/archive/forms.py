@@ -20,6 +20,15 @@ FIELD_CHOICES = (('text','Subject and Body'),
                  ('to','To'),
                  ('msgid','Message-ID'))
                  
+QUALIFIER_CHOICES = (('contains','contains'),
+                     ('exact','exact'),
+                     ('startswith','startswith'))
+                     
+TIME_CHOICES = (('a','anytime'),
+                ('d','day'),
+                ('w','week'),
+                ('m','month'),
+                ('y','year'))
 # --------------------------------------------------------
 # Helper Functions
 # --------------------------------------------------------
@@ -52,8 +61,9 @@ class AdvancedSearchForm(FacetedSearchForm):
     msgid = forms.CharField(max_length=255,required=False)
     #operator = forms.ChoiceField(choices=(('AND','ALL'),('OR','ANY')))
     so = forms.CharField(max_length=25,required=False,widget=forms.HiddenInput)
-    qdr = forms.CharField(max_length=25,required=False)
-    # filter fields    
+    # filter fields
+    #qdr = forms.CharField(max_length=25,required=False)
+    qdr = forms.ChoiceField(choices=TIME_CHOICES,required=False)
     f_list = forms.CharField(max_length=255,required=False)
     f_from = forms.CharField(max_length=255,required=False)
 
@@ -91,7 +101,8 @@ class AdvancedSearchForm(FacetedSearchForm):
             sqs = self.searchqueryset.filter(query)
         else:
             sqs = self.searchqueryset
-
+        
+        #assert False, self.cleaned_data
         # handle URL parameters ------------------------------------
         kwargs = {}
         if self.cleaned_data['email_list']:
@@ -100,8 +111,12 @@ class AdvancedSearchForm(FacetedSearchForm):
         if self.cleaned_data['end_date']:
             kwargs['date__lte'] = self.cleaned_data['end_date']
             
-        if self.cleaned_data['frm']:
-            kwargs['frm__icontains'] = self.cleaned_data['frm']
+        frm = self.cleaned_data['frm']
+        if frm:
+            if frm.find('@')!=-1:
+                kwargs['frm_email'] = frm
+            else:
+                kwargs['frm__icontains'] = frm
         
         if self.cleaned_data['msgid']:
             kwargs['msgid'] = self.cleaned_data['msgid']
@@ -128,8 +143,9 @@ class AdvancedSearchForm(FacetedSearchForm):
             
         # private lists -------------------------------------------
         if self.request.user.is_authenticated():
-            # exclude those lists the user is not authorized for
-            sqs = sqs.exclude(email_list__in=get_noauth(self.request))
+            if not self.request.user.is_superuser:
+                # exclude those lists the user is not authorized for
+                sqs = sqs.exclude(email_list__in=get_noauth(self.request))
         else:
             # exclude all private lists
             # TODO cache this query, see Low Level Cache API
@@ -138,14 +154,14 @@ class AdvancedSearchForm(FacetedSearchForm):
             
         # sorting -------------------------------------------------
         so = self.cleaned_data.get('so')
-        if so in ('date','-date','email_list','-email_list','frm','-frm'):
+        if so in ('frm','-frm'):
+            sqs = sqs.order_by(so + '_email')   # just email portion of from
+        elif so in ('date','-date','email_list','-email_list'):
             sqs = sqs.order_by(so)
         elif so in ('score','-score'):
             # TODO: order_by('score') doesn't work because its strings, but is default ordering
             pass
         else:
-            # default to
-            # sqs = sqs.order_by('-date')
             # if there's no "so" param, and no query we are browsing, sort by -date
             sqs = sqs.order_by('-date')
             
@@ -155,7 +171,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         # TODO: do we need this?
         if self.load_all:
             sqs = sqs.load_all()
-                
+        
         return sqs
     
     def clean_email_list(self):
@@ -169,7 +185,11 @@ class AdvancedSearchForm(FacetedSearchForm):
 
 class RulesForm(forms.Form):
     field = forms.ChoiceField(choices=FIELD_CHOICES,widget=forms.Select(attrs={'class':'parameter'}))
+    qualifier = forms.ChoiceField(choices=QUALIFIER_CHOICES)
     value = forms.CharField(max_length=120,widget=forms.TextInput(attrs={'class':'operand'}))
+
+class FilterForm(forms.Form):
+    time = forms.ChoiceField(choices=TIME_CHOICES)
 
 class SqlSearchForm(forms.Form):
     start = forms.DateField(required=False)

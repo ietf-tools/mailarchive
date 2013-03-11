@@ -33,7 +33,7 @@ import base64
 SOURCE_DIR = '/a/www/ietf-mail-archive/'
 #FILE_PATTERN = re.compile(r'^\d{4}-\d{2}.mail$')
 # get only recent files (2010 on) the older ones have different format??
-FILE_PATTERN = re.compile(r'^201[0-2]-\d{2}.mail$')
+FILE_PATTERN = re.compile(r'^201[0-3]-\d{2}.mail$')
 IRTS = 0
 LOADED = 0
 MISSING_IRT = 0
@@ -75,6 +75,7 @@ def get_thread(msg):
 def import_mbox(group,path,mlist):
     global LOADED
     global SKIPPED
+    rgx = re.compile('[<>]')
     
     mb = mailbox.mbox(path)
     for m in mb:
@@ -94,9 +95,12 @@ def import_mbox(group,path,mlist):
             # TODO: use email.utils.parsedate
             date = datetime.datetime.strptime(' '.join(date_parts),'%a %b %d %H:%M:%S %Y')
             hash = get_hash(mlist.name,m['Message-ID'])
+            # strip brackets, causes all parts to be concat together, bad
+            #f=handle_header(m['From'])
+            #frm=rgx.sub('',f)
             msg = Message(date=date,
                       email_list=mlist,
-                      frm=handle_header(m['From']),
+                      frm = handle_header(m['From']),
                       #frm_email=parseaddr(m['From'])[1],
                       hashcode=hash,
                       headers = 'this is a test',
@@ -148,7 +152,8 @@ def main():
     #public_lists = [ d for d in all if d.startswith(('a','b','c')) ]
     #public_lists = all
     
-    secure_lists = ('ietf82-team','ietf83-team','ietf84-team','media','rsoc')
+    #secure_lists = ('ietf82-team','ietf83-team','ietf84-team','media','rsoc')
+    secure_lists = ('ietf82-team','ietf83-team','ietf84-team')
     
     load(public_lists)
     load(secure_lists,private=True)

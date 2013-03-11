@@ -12,13 +12,18 @@
 {% block content %}
 
     <!-- use context "form" to re-display search form -->
-  
-    <div id="msg-headers">         
+    
+    <div id="msg-headers">
+        <div id="browse-header" class="{% if browse_list.private %} private{% endif %}">
+            {% if browse_list %}
+              {{ browse_list.name }}
+            {% endif %}
+        </div>
         <div id="search-header">
           {% include "includes/search_box.html" %}
-        </div> <!-- search-header -->        
+        </div> <!-- search-header -->
     </div> <!-- msg-headers -->
-        
+    
     <div id="msg-container">
         <div id="sidebar">
             <div id="search-filters">

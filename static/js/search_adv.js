@@ -89,4 +89,14 @@ $(function() {
         });
     });
     // end setup inline help
+    
+    $("#id_qdr").change(function() {
+        if($(this).val()=="c") {
+            $("#custom_date").show();
+        } else {
+            $("#id_start_date").val("");
+            $("#id_end_date").val("");
+            $("#custom_date").hide();
+        }
+    });
 });

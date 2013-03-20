@@ -101,6 +101,7 @@
                             <td>{{ result.object.friendly_frm|truncatechars:35 }}</td>
                             <td>{{ result.object.email_list }}</td>
                             <td>{{ result.score }}</td>
+                            <td class="hidden">{{ result.object.get_absolute_url }}</td>
                             <td class="hidden">{{ result.object.id }}</td>
                         </tr>
                     {% empty %}

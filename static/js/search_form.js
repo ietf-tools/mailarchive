@@ -1,5 +1,12 @@
 /* search_form.js */
 
+var fieldOptions = {"Subject and Body": "text",
+  "Subject": "subject",
+  "From": "from",
+  "To":"to",
+  "Message-ID":"msgid"
+};
+
 $(function() {
     jQuery.substitute = function(str, sub) {
         return str.replace(/\{(.+?)\}/g, function($0, $1) {
@@ -13,7 +20,6 @@ $(function() {
         //var not_pattern="-{param}:({keyword})";
         var part_pattern="{param}:{keyword}";
         var not_pattern="-{param}:{keyword}";
-        
         var op_value=$('#id_operator').val();
         
         // regular query fields'
@@ -44,9 +50,30 @@ $(function() {
             if(query_string!='')query_string+=' ';
             query_string+=not_operands.join(' ');
         }
-        
         $('#id_q').val(query_string);
-        
+    }
+    
+    function handle_qualifier(ev) {
+        var field_id = $(ev.target).attr('id').replace('qualifier','field');
+        if($(ev.target).val()=='startswith') {
+            $("#" + field_id + " option").each(function() {
+                var prefix = $(this).val().split("__");
+                $(this).val(prefix[0] + "__startswith");
+            });
+        }
+        else if($(ev.target).val()=='contains') {
+            $("#" + field_id + " option").each(function() {
+                var prefix = $(this).val().split("__");
+                $(this).val(prefix[0]);
+            });
+        }
+        else if($(ev.target).val()=='exact') {
+            $("#" + field_id + " option").each(function() {
+                var prefix = $(this).val().split("__");
+                $(this).val(prefix[0] + "__exact");
+            });
+        }
+        build_query(ev);
     }
     
     function increment_ids(el) {
@@ -70,6 +97,7 @@ $(function() {
         $('#id_query-0-field').change(build_query);
         $('#id_not-0-value').bind('change keyup',build_query);
         $('#id_not-0-field').change(build_query);
+        $('#id_query-0-qualifier').change(handle_qualifier);
         
         $('a.remove_btn').click(function() {
             var remove_index = $(this).attr('id').split('_')[1];

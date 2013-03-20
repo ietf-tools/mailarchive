@@ -46,6 +46,9 @@
                     <td>Time:</td>
                     <td>{{ form.qdr }}</td>
                 </tr>
+                <tr id="custom_date">
+                        <td>After:</td><td><input id="id_start_date" name="start_date" class="defaultText" type="text" size="15" title="YYYY-MM-DD"></td><td>Before:</td><td><input id="id_end_date" name="end_date" class="defaultText" type="text" size="15" title="YYYY-MM-DD"></td>
+                </tr>
                 <tr>
                     <td>List:</td>
                     <td><input id="email_list_search" class="defaultText" type="text" size="30" title="Start typing name and pick from list"></td>
@@ -67,7 +70,7 @@
         
         <div class="button-group">
           <ul>
-            <li><button type="submit" name="submit" value="Search">Search</button></li>
+            <li><button type="submit">Search</button></li>
           </ul>
         </div> <!-- button-group -->
       </form>

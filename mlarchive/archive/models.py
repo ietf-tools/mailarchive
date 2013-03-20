@@ -275,7 +275,7 @@ class Message(models.Model):
         return self.msgid
 
     def get_absolute_url(self):
-        pass
+        return '/archive/detail/%s/%s' % (self.email_list.name,self.hashcode)
     
     def get_body(self):
         '''
@@ -285,7 +285,6 @@ class Message(models.Model):
         return parse_body(self, text_only=True)
         
     def get_body_html(self, request=None):
-        
         return parse_body(self, request=request)
         
     def get_body_raw(self):

@@ -113,6 +113,12 @@ $(function() {
         
         // set focus on msg-list pane
         $('#msg-list').focus();
+        
+        // SETUP DOUBLE CLICK MESSAGE
+        $('#msg-table tr').dblclick(function() {
+            var url = $(this).find("td:nth-child(6)").html()
+            window.open(url);
+        });
     }
     
     function setup_ajax_browse(field, list, searchfield, url) {

@@ -1,7 +1,5 @@
 {% extends "base2.html" %}
 
-{% load archive_extras %}
-
 {% block extrahead %}
 <script type="text/javascript" src="{{ STATIC_URL }}js/browse.js"></script>
 {% endblock %} 
@@ -18,34 +16,32 @@
     <input type="submit" value="Go" title="Go" alt="Go" name="browse">
     <span id="browse_help">(or pick from below)</span>
 </form>
-<hr />
 </div>
 
+{% if private_columns %}
+<div class="browse_section">
+<h2>Private Lists</h2>
+{% with private_columns as columns %}
+    {% include "includes/browse_columns.html" %}
+{% endwith %}
+</div>
+{% endif %}
 
-{% comment %}
-<ul class="search-links">
-  <li class="last"><a href="{% url archive %}">Back to Search</a></li>
-</ul>
-
-<ol id="browse-list">
-{% for list in lists %}
-  <li class="{% get_column lists|length forloop.counter %}"><a href="{% append_to_get email_list=list %}">{{ list }}</a></li>
-{% endfor %}
-</ol>
-{% endcomment %}
-
-<div id="browse_columns">
-{% for col in columns %}
-  <div class="browse_column">
-    <ul class="browse_list">
-      {% for item in col %}
-        <li><a class="browse-link{% if item.private %} private{% endif %}" href="../search/?email_list={{ item }}">{{ item|truncatechars:19 }}</a></li>
-      {% endfor %}
-    </ul>
-  </div>
-{% endfor %}
+<div class="browse_section">
+<h2>Active Lists</h2>
+{% with active_columns as columns %}
+    {% include "includes/browse_columns.html" %}
+{% endwith %}
 </div>
 
+{% if inactive_columns %}
+<div class="browse_section">
+<h2>Inactive Lists</h2>
+{% with inactive_columns as columns %}
+    {% include "includes/browse_columns.html" %}
+{% endwith %}
+</div>
+{% endif %}
 
 </div> <!-- browse_page -->
 

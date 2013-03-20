@@ -87,17 +87,28 @@ def browse(request):
     form = BrowseForm()
     if request.user.is_authenticated():
         if request.user.is_superuser:
-            lists = EmailList.objects.filter(active=True).order_by('name')
+            lists = EmailList.objects.filter(private=True).order_by('name')
         else:
-            lists = EmailList.objects.filter(Q(active=True,private=False)|Q(members=request.user.pk)).order_by('name')
+            lists = EmailList.objects.filter(private=True,members=request.user.pk).order_by('name')
+        private_columns = chunks(lists,int(math.ceil(lists.count()/float(display_columns))))
     else:
-        lists = EmailList.objects.filter(active=True,private=False).order_by('name')
-    columns = chunks(lists,int(math.ceil(lists.count()/float(display_columns))))
+        private_columns = []
+        
+    lists = EmailList.objects.filter(active=True,private=False).order_by('name')
+    active_columns = chunks(lists,int(math.ceil(lists.count()/float(display_columns))))
+    
+    lists = EmailList.objects.filter(active=False,private=False).order_by('name')
+    if lists:
+        inactive_columns = chunks(lists,int(math.ceil(lists.count()/float(display_columns))))
+    else:
+        inactive_columns = []
+    #assert False, (private_columns,active_columns,inactive_columns)
     
     return render_to_response('archive/browse.html', {
         'form': form,
-        'lists': lists,
-        'columns':columns},
+        'private_columns': private_columns,
+        'active_columns': active_columns,
+        'inactive_columns': inactive_columns},
         RequestContext(request, {}),
     )
 

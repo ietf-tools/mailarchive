@@ -28,7 +28,8 @@ TIME_CHOICES = (('a','anytime'),
                 ('d','day'),
                 ('w','week'),
                 ('m','month'),
-                ('y','year'))
+                ('y','year'),
+                ('c','custom...'))
 # --------------------------------------------------------
 # Helper Functions
 # --------------------------------------------------------
@@ -121,7 +122,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         if self.cleaned_data['msgid']:
             kwargs['msgid'] = self.cleaned_data['msgid']
             
-        if self.cleaned_data['qdr']:
+        if self.cleaned_data['qdr'] and self.cleaned_data['qdr'] not in ('a','c'):
             kwargs['date__gte'] = get_qdr_time(self.cleaned_data['qdr'])
         
         if self.cleaned_data['start_date']:
@@ -163,7 +164,8 @@ class AdvancedSearchForm(FacetedSearchForm):
             pass
         else:
             # if there's no "so" param, and no query we are browsing, sort by -date
-            sqs = sqs.order_by('-date')
+            if len(kwargs) == 1 and kwargs.get('email_list__in'):
+                sqs = sqs.order_by('-date')
             
         # faceting ------------------------------------------------
         sqs = sqs.facet('email_list').facet('frm_email')

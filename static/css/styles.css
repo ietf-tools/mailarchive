@@ -150,6 +150,10 @@ td.hidden {
     display: none;
 }
 
+tr.hidden {
+    display: none;
+}
+
 table#msg-table {
     cursor: pointer;
     width: 100%;
@@ -570,6 +574,9 @@ a.listlink:link, a.listlink:visited {
     margin: 0 3px 0 3px;
 }
 
+#custom_date {
+    display: none;
+}
 /* ==========================================================================
    Advanced Search 2
    ========================================================================== */
@@ -692,14 +699,21 @@ ul.browse_list li {
 
 div.browse_column {
     float: left;
-    margin-bottom: 5em;
+    margin-bottom: 2em;
     padding-right: 1em;
     width: 170px;
 }
 
-div#browse_columns {
+div.browse_section {
     width: 960px;
     margin: 0 auto;
+    clear: both;
+}
+
+div.browse_section h2 {
+    text-align: center;
+    color: white;
+    background: #5b80b2;
 }
 
 #browse_help {

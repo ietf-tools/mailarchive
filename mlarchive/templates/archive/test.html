@@ -8,6 +8,13 @@
   white-space: pre-wrap;
 }
 </style>
+<script type="text/javascript">
+alert("Here");
+$('#target').dblclick(function() {
+    alert('Handler for .dblclick() called.');
+});
+$("p").dblclick( function () { alert("Hello World!"); });
+</script>
 {% endblock %} 
 
 
@@ -48,6 +55,15 @@
 <h2>Here is unicode template variable {{ test }}</h2>
 
 <h2>Here is a body test {{ body }}</h2>
+
+<div id="target">
+Double-click here
+</div>
+
+<div id="other">
+Trigger the handler
+</div>
+
 {% endblock %}
 
 

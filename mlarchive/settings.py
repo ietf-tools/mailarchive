@@ -158,8 +158,8 @@ LOGGING = {
 #HAYSTACK_SITECONF = 'mlarchive.search_sites'
 #HAYSTACK_SEARCH_ENGINE = 'xapian'
 HAYSTACK_XAPIAN_PATH = '/a/home/rcross/data/archive_index'
-HAYSTACK_USE_REALTIME_SEARCH = True
-HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+HAYSTACK_USE_REALTIME_SEARCH = False
+#HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = '/a/home/rcross/data/archive'

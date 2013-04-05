@@ -26,16 +26,6 @@ $(function() {
         return values.join();
     }
     
-    function getURLParameter(name) {
-        return decodeURI(
-            (RegExp(name + '=' + '(.+?)(&|$)').exec(location.search)||[,null])[1]
-        );
-    }
-
-    function jump_to(label) {
-        window.location="/archive/browse/" + label;
-    }
-    
     function sync_tables() {
         // synchronize the message list header table with the scrollable content table
         $("#msg-list-header-table").width($("#msg-table").width());
@@ -126,7 +116,7 @@ $(function() {
             source: url,
             minLength: 1,
             select: function( event, ui ) {
-                jump_to(ui.item.label);
+                window.location="/archive/browse/" + ui.item.label;
                 return false;
             }
         });
@@ -170,7 +160,7 @@ $(function() {
         
         // SORTING =============================================
         $('a.sortbutton').button();
-        var so=getURLParameter("so");
+        var so = $.query.get('so');
         var new_so = "";
         $('a.sortbutton').click(function() {
             var id = $(this).attr('id');
@@ -184,7 +174,14 @@ $(function() {
             else {
                 new_so = sortDefault[col];
             }
-            location.search = $.query.set('so',new_so);
+            // if there already was a sort order and the new sort order is not just a reversal
+            // of the previous sort, save it as the secondary sort order
+            if(so!='' && so.replace('-','') != new_so.replace('-','')) {
+                var query = $.query.set('so',new_so).set('sso',so);
+            } else {
+                var query = $.query.set('so',new_so);
+            }
+            location.search = query;
             // $('#id_so').val(new_so);
             // $('form#id_search_form').submit();
         });

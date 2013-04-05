@@ -262,7 +262,6 @@ class Message(models.Model):
     frm = models.CharField(max_length=255,db_index=True)    # both realname and email for search
     #frm_email = models.CharField(max_length=255)            # only email part, for faceting
     hashcode = models.CharField(max_length=28,db_index=True)
-    headers = models.TextField()
     inrt = models.CharField(max_length=255,blank=True)      # in-reply-to header field
     legacy_number = models.IntegerField(blank=True,null=True,db_index=True)  # for mapping mhonarc
     msgid = models.CharField(max_length=255,db_index=True)

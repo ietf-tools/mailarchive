@@ -9,7 +9,7 @@ import time
 # Helper Functions
 # --------------------------------------------------
 
-FILTER_PARAMS = ['f_list','f_from', 'so', 'page']
+FILTER_PARAMS = ['f_list','f_from', 'so', 'sso', 'page']
 
 def has_filters(request):
     '''

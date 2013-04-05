@@ -7,6 +7,27 @@
   width: 300px;
   white-space: pre-wrap;
 }
+#left {
+    display: inline;
+    margin-left: 200px;
+    float: left;
+}
+
+#middle {
+    display: inline;
+    width: 100%;
+    float: left;
+}
+
+#right {
+    display: inline;
+    float: right;
+}
+
+#id_text {
+    width: 100%;
+}
+
 </style>
 <script type="text/javascript">
 alert("Here");
@@ -64,6 +85,12 @@ Double-click here
 Trigger the handler
 </div>
 
+<div id="left">left text</div>
+<div id="middle"><input id="id_text" size="20" name="some" value="thing"></div>
+<div id="right">right text</div>
+<br />
+<h1> A test header</h1>
+<p>This is a pragraph</p>
 {% endblock %}
 
 

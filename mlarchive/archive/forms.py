@@ -30,6 +30,9 @@ TIME_CHOICES = (('a','anytime'),
                 ('m','month'),
                 ('y','year'),
                 ('c','custom...'))
+                
+VALID_SORT_OPTIONS = ('frm','-frm','date','-date','email_list','-email_list')
+
 # --------------------------------------------------------
 # Helper Functions
 # --------------------------------------------------------
@@ -52,6 +55,17 @@ def get_qdr_time(val):
         return now - timedelta(days=365)
     
 
+def transform(val):
+    '''
+    This function takes a sort parameter and validates and transforms it for use
+    in an order_by clause.
+    '''
+    if val not in VALID_SORT_OPTIONS:
+        return ''
+    if val in ('frm','-frm'):
+        val = val + '_email'    # use just email portion of from
+    return val
+    
 # --------------------------------------------------------
 class AdvancedSearchForm(FacetedSearchForm):
     start_date = forms.DateField(required=False,help_text='YYYY-MM-DD')
@@ -62,6 +76,7 @@ class AdvancedSearchForm(FacetedSearchForm):
     msgid = forms.CharField(max_length=255,required=False)
     #operator = forms.ChoiceField(choices=(('AND','ALL'),('OR','ANY')))
     so = forms.CharField(max_length=25,required=False,widget=forms.HiddenInput)
+    sso = forms.CharField(max_length=25,required=False,widget=forms.HiddenInput)
     # filter fields
     #qdr = forms.CharField(max_length=25,required=False)
     qdr = forms.ChoiceField(choices=TIME_CHOICES,required=False)
@@ -154,14 +169,12 @@ class AdvancedSearchForm(FacetedSearchForm):
             sqs = sqs.exclude(email_list__in=private_lists)
             
         # sorting -------------------------------------------------
-        so = self.cleaned_data.get('so')
-        if so in ('frm','-frm'):
-            sqs = sqs.order_by(so + '_email')   # just email portion of from
-        elif so in ('date','-date','email_list','-email_list'):
-            sqs = sqs.order_by(so)
-        elif so in ('score','-score'):
-            # TODO: order_by('score') doesn't work because its strings, but is default ordering
-            pass
+        so = transform(self.cleaned_data.get('so'))
+        sso = transform(self.cleaned_data.get('sso'))
+        
+        # TODO: handle score
+        if so:
+            sqs = sqs.order_by(so,sso)
         else:
             # if there's no "so" param, and no query we are browsing, sort by -date
             if len(kwargs) == 1 and kwargs.get('email_list__in'):

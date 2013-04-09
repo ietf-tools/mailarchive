@@ -5,6 +5,9 @@ from mlarchive.archive.models import *
 import _classes
 import _archiver
 
+from django.utils.log import getLogger
+logger = getLogger('mlarchive.custom')
+
 class Command(BaseCommand):
     args = '<message file>'
     help = 'Imports message(s) into the archive'
@@ -25,11 +28,7 @@ class Command(BaseCommand):
         
         loader = _classes.loader(filename, **options)
         loader.startclock()
-        
-        mb = mailbox.mbox(filename)
-        for m in mb:
-            loader.load_message(m)
-        
+        loader.process()
         loader.stopclock()
         loader.showstats()
         #self.stdout.write('Successfully imported file "%s"' % filename)

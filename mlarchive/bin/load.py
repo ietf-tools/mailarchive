@@ -103,7 +103,7 @@ def import_mbox(group,path,mlist):
                       frm = handle_header(m['From']),
                       #frm_email=parseaddr(m['From'])[1],
                       hashcode=hash,
-                      headers = 'this is a test',
+                      #headers = 'this is a test',
                       inrt=m.get('In-Reply-To','').strip('<>'),
                       msgid=m['Message-ID'].strip('<>'),
                       subject=handle_header(m['Subject']),

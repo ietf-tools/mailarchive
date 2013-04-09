@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.core.management.base import CommandError
-from email.utils import parsedate_tz, mktime_tz
+from email.utils import parsedate, parsedate_tz, mktime_tz
 from mlarchive.archive.models import *
 
 import base64
@@ -9,7 +9,17 @@ import hashlib
 import mailbox
 import os
 import re
+import time
 
+from django.utils.log import getLogger
+logger = getLogger('mlarchive.custom')
+
+class ListError(Exception):
+    pass
+    
+class GenericWarning(Exception):
+    pass
+    
 class loader(object):
     def __init__(self, filename, **options):
         self.endtime = 0
@@ -17,15 +27,16 @@ class loader(object):
         self.options = options
         self.starttime = 0
         self.stats = {'irts': 0,'mirts': 0,'count': 0, 'errors': 0}
+        self.listname = options.get('listname')
+        self.mb = mailbox.mbox(filename)   # TODO: handle different types of input files
         
-        # handle list
-        if options.get('listname'):
-            self.listname = options.get('listname')
-        else:
-            self.listname = self.guess_list(filename)
-            
         if not self.listname:
-            raise CommandError('No listname specified and unable to derive from headers.')
+            self.listname = self.guess_list()
+        
+        if not self.listname:
+            raise ListError
+            
+        logger.info('loader called with: %s' % self.filename)
         
         # TODO: handle private
         self.email_list,created = EmailList.objects.get_or_create(name=self.listname,defaults={'description':self.listname})
@@ -33,6 +44,34 @@ class loader(object):
     def elapsedtime(self):
         return self.endtime - self.starttime
         
+    def get_date(self,msg):
+        '''
+        Gets the Date from the message headers.  Check for Date field which is supposed to be
+        the date and time the user sent the message.  Sometimes this field is empty or even
+        absent.  In this case get the date from the intial "From" line.  This is the date and
+        time the message was recieved by the list server.  Returns a naive Datetime object in UTC
+        time to simplify sorting.
+        '''
+        date = msg.get('date')
+        if date:            
+            # Convert RFC2822 datestring to UTC
+            utc = mktime_tz(parsedate_tz(date))
+            utcdate = datetime.datetime.utcfromtimestamp(utc)
+            return utcdate
+        else:
+            # expect line like "From [email] RFC2822 date", no time zone info
+            line = msg.get_from()
+            if '@' in line:
+                # mhonarc archive
+                date_parts = line.split()[1:]
+            else:
+                # pipermail archive
+                date_parts = line.split()[3:]
+            tuple = parsedate(' '.join(date_parts))
+            stamp = time.mktime(tuple)
+            utcdate = datetime.datetime.utcfromtimestamp(stamp)
+            return utcdate
+            
     def get_hash(self,msgid):
         '''
         Takes the name of the email list and msgid and returns the hashcode
@@ -61,12 +100,14 @@ class loader(object):
             thread = Thread.objects.create()
         return thread
     
-    def guess_list(self,path):
+    def guess_list(self):
         '''
         Helper function to determine the list we are importing based on header values
         '''
-        mb = mailbox.mbox(path)
-        msg = mb[0]
+        if len(self.mb) == 0:
+            return None
+            
+        msg = self.mb[0]
         if msg.get('X-BeenThere'):
             val = msg.get('X-BeenThere').split('@')[0]
             if val:
@@ -82,25 +123,50 @@ class loader(object):
         This function takes an email.Message object and creates the archive.Message object
         '''
         self.stats['count'] += 1
-        # Convert RFC2822 datestring to UTC
-        utc = mktime_tz(parsedate_tz(m['date']))
-        date = datetime.datetime.utcfromtimestamp(utc)
-        msgid = m['Message-ID'].strip('<>')
+        msgid = m.get('Message-ID')
+        if msgid:
+            msgid = msgid.strip('<>')
+        else:
+            # see if this is a resent Message, which sometimes have missing Message-ID field
+            resent_msgid = m.get('Resent-Message-ID')
+            if resent_msgid:
+                msgid = resent_msgid.strip('<>')
+        if not msgid:
+            raise GenericWarning('No MessageID (%S)' % m.get_from())
+            
+        inrt = m.get('In-Reply-To','')
+        if inrt:
+            inrt = inrt.strip('<>')
+            
         hashcode = self.get_hash(msgid)
         
+        # The "To" field can have non-ascii charactersets
+        to = m.get('to','')
+        if to:
+            to = handle_header(to)
+            if isinstance(to, str):
+                try:
+                    to = unicode(to,'ascii')
+                except UnicodeDecodeError:
+                    to = unicode(to,'iso-8859-1')
+        
+        # check for duplicate message id, and skip
+        if Message.objects.filter(msgid=msgid,email_list=self.email_list):
+            raise GenericWarning('Duplicate msgid: %s' % msgid)
+            
         # check for duplicate hash
         if Message.objects.filter(hashcode=hashcode):
-            raise CommandError('Duplicate hash, msgid: %s' % m['Message-ID'])
+            raise CommandError('Duplicate hash, msgid: %s' % msgid)
             
-        msg = Message(date=date,
+        msg = Message(date=self.get_date(m),
                       email_list=self.email_list,
                       frm = handle_header(m['From']),
                       hashcode=hashcode,
-                      inrt=m.get('In-Reply-To','').strip('<>'),
+                      inrt=inrt,
                       msgid=msgid,
                       subject=handle_header(m['Subject']),
                       thread=self.get_thread(m),
-                      to=handle_header(m['To']) if m['To'] != None else '')
+                      to=to)
         msg.save()
         
         # save disk object
@@ -110,7 +176,17 @@ class loader(object):
                 os.mkdir(os.path.dirname(path))
             with open(path,'w') as f:
                 f.write(m.as_string())
-
+    
+    def process(self):
+        for m in self.mb:
+            try:
+                self.load_message(m)
+            except GenericWarning as e:
+                logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,e.args,m.get_from()))
+            except Exception as e:
+                logger.error("Import Error [{0}, {1}, {2}]".format(self.filename,e.args,m.get_from()))
+                self.stats['errors'] += 1
+                
     def showstats(self):
         #print 'Number of messages processed: %d' % self.stats['count']
         #print 'Elapsed time: %s' % self.elapsedtime()

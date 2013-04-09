@@ -260,15 +260,15 @@ class Message(models.Model):
     date = models.DateTimeField(db_index=True)
     email_list = models.ForeignKey(EmailList,db_index=True)
     frm = models.CharField(max_length=255,db_index=True)    # both realname and email for search
-    #frm_email = models.CharField(max_length=255)            # only email part, for faceting
+    #frm_email = models.CharField(max_length=255)           # only email part, for faceting
     hashcode = models.CharField(max_length=28,db_index=True)
-    inrt = models.CharField(max_length=255,blank=True)      # in-reply-to header field
+    inrt = models.CharField(max_length=1024,blank=True)     # in-reply-to header field
     legacy_number = models.IntegerField(blank=True,null=True,db_index=True)  # for mapping mhonarc
     msgid = models.CharField(max_length=255,db_index=True)
     references = models.ManyToManyField('self',through='Reference',symmetrical=False)
     subject = models.CharField(max_length=255)
     thread = models.ForeignKey(Thread)
-    to = models.CharField(max_length=255,blank=True,default='')
+    to = models.CharField(max_length=1024,blank=True,default='')        # 512 too small
     
     def __unicode__(self):
         return self.msgid

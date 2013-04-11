@@ -26,6 +26,8 @@ logger = getLogger('mlarchive.custom')
 # Helper Functions
 # --------------------------------------------------
 def handle_header(header):
+    if not header:      # don't fail if it's empty
+        return header
     parts = []
     for part in header.split():
         if part.startswith('=?'):
@@ -266,9 +268,10 @@ class Message(models.Model):
     legacy_number = models.IntegerField(blank=True,null=True,db_index=True)  # for mapping mhonarc
     msgid = models.CharField(max_length=255,db_index=True)
     references = models.ManyToManyField('self',through='Reference',symmetrical=False)
-    subject = models.CharField(max_length=255)
+    subject = models.CharField(max_length=255,blank=True)
     thread = models.ForeignKey(Thread)
-    to = models.CharField(max_length=1024,blank=True,default='')        # 512 too small
+    #to = models.CharField(max_length=20000,blank=True,default='')    # truncate?
+    to = models.TextField(blank=True,default='')
     
     def __unicode__(self):
         return self.msgid

@@ -28,7 +28,8 @@ import os
 SOURCE_DIR = '/a/www/ietf-mail-archive/'
 #FILE_PATTERN = re.compile(r'^\d{4}-\d{2}.mail$')
 # get only recent files (2010 on) the older ones have different format??
-FILE_PATTERN = re.compile(r'^201[0-3]-\d{2}.mail$')
+# FILE_PATTERN = re.compile(r'^201[0-3]-\d{2}(|.mail)$')
+FILE_PATTERN = re.compile(r'^\d{4}-\d{2}(|.mail)$')
 
 # --------------------------------------------------
 # Helper Functions
@@ -60,10 +61,10 @@ def load(lists,private=False):
         
         for filename in sorted_mboxs:
             path = os.path.join(SOURCE_DIR,subdir,dir,filename)
-            format = get_format(filename)
+            format = get_format(path)
             # TODO if not empty
             try:
-                call_command('load', path, test=True, format=format)
+                call_command('load', path, test=True, format=format, listname=dir)
             except ListError:
                 print 'ListError'
 
@@ -75,7 +76,8 @@ def main():
     # which email lists to load
     all = os.listdir(os.path.join(SOURCE_DIR,'text'))
     #public_lists = ('ccamp','alto')
-    public_lists = ('abfab','alto','ancp','autoconf','bliss','ccamp','cga-ext','codec','dane','dmm','dnsop','dime','discuss','emu','gen-art','grow','hipsec','homenet','i2rs','ipsec','netconf','sip','simple')
+    public_lists = ('ietf',)
+    #public_lists = ('abfab','alto','ancp','autoconf','bliss','ccamp','cga-ext','codec','dane','dmm','dnsop','dime','discuss','emu','gen-art','grow','hipsec','homenet','i2rs','ipsec','netconf','sip','simple')
     #public_lists = [ d for d in all if d.startswith(('a','b','c')) ]
     #public_lists = all
     

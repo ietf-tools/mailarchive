@@ -20,6 +20,9 @@ class ListError(Exception):
 class GenericWarning(Exception):
     pass
     
+class DateError(Exception):
+    pass
+    
 class loader(object):
     def __init__(self, filename, **options):
         self.endtime = 0
@@ -31,8 +34,7 @@ class loader(object):
         self.fp = None
         # init mailbox iterator
         if self.options.get('format') == 'mmdf':
-            self.fp = open(self.filename)
-            self.mb = mailbox.MmdfMailbox(self.fp)
+            self.mb = mailbox.MMDF(filename)
         else:
             self.mb = mailbox.mbox(filename)   # TODO: handle different types of input files
         
@@ -61,7 +63,12 @@ class loader(object):
         date = msg.get('date')
         if date:            
             # Convert RFC2822 datestring to UTC
-            utc = mktime_tz(parsedate_tz(date))
+            pdate = parsedate_tz(date)
+            if not pdate:
+                # fixdate
+                # re.compile(r'.*\d{2}:\d{2}:\d{2}\-\w+')
+                raise DateError("Can't parsedate: %s" % date)
+            utc = mktime_tz(pdate)
             utcdate = datetime.datetime.utcfromtimestamp(utc)
             return utcdate
         else:
@@ -110,6 +117,10 @@ class loader(object):
         '''
         Helper function to determine the list we are importing based on header values
         '''
+        # not enought info in MMDF-style mailbox to guess list
+        if isinstance(self.mb,mailbox.MMDF):
+            return None
+            
         if len(self.mb) == 0:
             return None
             
@@ -138,7 +149,7 @@ class loader(object):
             if resent_msgid:
                 msgid = resent_msgid.strip('<>')
         if not msgid:
-            raise GenericWarning('No MessageID (%S)' % m.get_from())
+            raise GenericWarning('No MessageID (%s)' % m.get_from())
             
         inrt = m.get('In-Reply-To','')
         if inrt:
@@ -166,11 +177,11 @@ class loader(object):
             
         msg = Message(date=self.get_date(m),
                       email_list=self.email_list,
-                      frm = handle_header(m['From']),
+                      frm = handle_header(m.get('From','')),
                       hashcode=hashcode,
                       inrt=inrt,
                       msgid=msgid,
-                      subject=handle_header(m['Subject']),
+                      subject=handle_header(m.get('Subject','')),
                       thread=self.get_thread(m),
                       to=to)
         msg.save()

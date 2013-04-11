@@ -33,6 +33,19 @@ FILE_PATTERN = re.compile(r'^201[0-3]-\d{2}.mail$')
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
+def get_format(filename):
+    '''
+    Function to determine the type of mailbox file whose filename is provided.
+    mmdf: starts with 4 control-A's
+    mbox: starts with "From "
+    '''
+    with open(filename) as f:
+        line = f.readline()
+        if line == '\x01\x01\x01\x01\n':
+            return 'mmdf'
+        elif line.startswith('From '):
+            return 'mbox'
+
 def load(lists,private=False):
     subdir = 'text-secure' if private else 'text'
     for dir in lists:
@@ -47,9 +60,10 @@ def load(lists,private=False):
         
         for filename in sorted_mboxs:
             path = os.path.join(SOURCE_DIR,subdir,dir,filename)
-            #import_mbox(dir,path,mlist)
+            format = get_format(filename)
+            # TODO if not empty
             try:
-                call_command('load', path, test=True)
+                call_command('load', path, test=True, format=format)
             except ListError:
                 print 'ListError'
 

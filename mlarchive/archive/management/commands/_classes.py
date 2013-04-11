@@ -28,7 +28,13 @@ class loader(object):
         self.starttime = 0
         self.stats = {'irts': 0,'mirts': 0,'count': 0, 'errors': 0}
         self.listname = options.get('listname')
-        self.mb = mailbox.mbox(filename)   # TODO: handle different types of input files
+        self.fp = None
+        # init mailbox iterator
+        if self.options.get('format') == 'mmdf':
+            self.fp = open(self.filename)
+            self.mb = mailbox.MmdfMailbox(self.fp)
+        else:
+            self.mb = mailbox.mbox(filename)   # TODO: handle different types of input files
         
         if not self.listname:
             self.listname = self.guess_list()
@@ -186,7 +192,9 @@ class loader(object):
             except Exception as e:
                 logger.error("Import Error [{0}, {1}, {2}]".format(self.filename,e.args,m.get_from()))
                 self.stats['errors'] += 1
-                
+        if self.fp:
+            self.fp.close()
+            
     def showstats(self):
         #print 'Number of messages processed: %d' % self.stats['count']
         #print 'Elapsed time: %s' % self.elapsedtime()

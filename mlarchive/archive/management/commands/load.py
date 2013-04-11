@@ -18,6 +18,8 @@ class Command(BaseCommand):
         make_option('-t', '--test',
             action='store_true', dest='test', default=False,
             help="Test mode.  Write databse but don't store message files."),
+        make_option('-f', '--format', dest='format',
+            help='Mailbox format.  Accepted values: mbox,mmdf'),
         )
         
     def handle(self, *args, **options):

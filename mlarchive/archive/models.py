@@ -258,11 +258,10 @@ class EmailList(models.Model):
         return self.name
     
 class Message(models.Model):
-    cc = models.CharField(max_length=255,blank=True)
+    cc = models.TextField(blank=True,default='')
     date = models.DateTimeField(db_index=True)
     email_list = models.ForeignKey(EmailList,db_index=True)
     frm = models.CharField(max_length=255,db_index=True)    # both realname and email for search
-    #frm_email = models.CharField(max_length=255)           # only email part, for faceting
     hashcode = models.CharField(max_length=28,db_index=True)
     inrt = models.CharField(max_length=1024,blank=True)     # in-reply-to header field
     legacy_number = models.IntegerField(blank=True,null=True,db_index=True)  # for mapping mhonarc
@@ -270,7 +269,6 @@ class Message(models.Model):
     references = models.ManyToManyField('self',through='Reference',symmetrical=False)
     subject = models.CharField(max_length=255,blank=True)
     thread = models.ForeignKey(Thread)
-    #to = models.CharField(max_length=20000,blank=True,default='')    # truncate?
     to = models.TextField(blank=True,default='')
     
     def __unicode__(self):

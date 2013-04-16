@@ -172,7 +172,10 @@ def main(request):
     '''
     form = SearchForm()
     if os.path.exists(settings.LOG_FILE):
-        os.chmod(settings.LOG_FILE,0666)
+        try:
+            os.chmod(settings.LOG_FILE,0666)
+        except OSError:
+            pass
     
     return render_to_response('archive/main.html', {
         'form': form},

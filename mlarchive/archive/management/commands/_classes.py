@@ -52,6 +52,19 @@ class loader(object):
     def elapsedtime(self):
         return self.endtime - self.starttime
         
+    def fix_date(date):
+        '''
+        Call this function with a date that can't be parsed by parsedate.  It will try and
+        reformat the date using some known fixes.
+        '''
+        # EXAMPLE: Wed 23 Sep 92 00:15:15-PDT
+        p = re.compile(r'.*\d{2}:\d{2}:\d{2}\-(PDT|PST|\d{4})')
+        if p.match(date):
+            new_date = date.replace('-',' ')
+            pdate = parsedate_tz(new_date)
+            if pdate:
+                return pdate
+        
     def get_date(self,msg):
         '''
         Gets the Date from the message headers.  Check for Date field which is supposed to be
@@ -65,8 +78,8 @@ class loader(object):
             # Convert RFC2822 datestring to UTC
             pdate = parsedate_tz(date)
             if not pdate:
-                # fixdate
-                # re.compile(r'.*\d{2}:\d{2}:\d{2}\-\w+')
+                pdate = fix_date(date)
+            if not pdate:
                 raise DateError("Can't parsedate: %s" % date)
             utc = mktime_tz(pdate)
             utcdate = datetime.datetime.utcfromtimestamp(utc)
@@ -92,7 +105,13 @@ class loader(object):
         sha = hashlib.sha1(msgid)
         sha.update(self.listname)
         return base64.urlsafe_b64encode(sha.digest())
-    
+        
+    def get_stats(self):
+        '''
+        Return statistics from the process() function
+        '''
+        return "%s:%s:%s:%s:%.3f\n" % (self.listname,os.path.basename(self.filename),
+                                     self.stats['count'],self.stats['errors'],self.elapsedtime())
     def get_thread(self,msg):
         '''
         This is a very basic thread algorithm.  If 'In-Reply-To-' is set, look up that message 
@@ -193,7 +212,7 @@ class loader(object):
                 os.mkdir(os.path.dirname(path))
             with open(path,'w') as f:
                 f.write(m.as_string())
-    
+        
     def process(self):
         for m in self.mb:
             try:
@@ -205,21 +224,11 @@ class loader(object):
                 self.stats['errors'] += 1
         if self.fp:
             self.fp.close()
-            
-    def showstats(self):
-        #print 'Number of messages processed: %d' % self.stats['count']
-        #print 'Elapsed time: %s' % self.elapsedtime()
-        #print 'Messages with In-Reply-To: %d' % self.stats['irts']
-        #print 'Missing IRTS: %d' % self.stats['mirts']
-        # one line summary output
-        print "%s:%s:%s:%s:%.3f" % (self.listname,os.path.basename(self.filename),self.stats['count'],self.stats['errors'],self.elapsedtime())
         
     def startclock(self):
-        import time
         self.starttime = time.time()
         
     def stopclock(self):
-        import time
         self.endtime = time.time()
         
 class mlabast(object):                           

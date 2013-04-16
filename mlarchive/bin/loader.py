@@ -1,6 +1,8 @@
 #!/usr/bin/python
 '''
 This is a utility script that handles loading multiple archives
+Use "-f" to load entire archive, otherwise the script uses the
+subset of lists defined in SUBSET below.
 
 to run first do
 export DJANGO_SETTINGS_MODULE=mlarchive.settings
@@ -18,19 +20,24 @@ setup_environ(settings)
 
 from django.core.management import call_command
 from mlarchive.archive.management.commands._classes import ListError
+from optparse import OptionParser
+from StringIO import StringIO
+
 import glob
 import re
 import os
+import time
 
 # --------------------------------------------------
 # Globals
 # --------------------------------------------------
-SOURCE_DIR = '/a/www/ietf-mail-archive/'
-#FILE_PATTERN = re.compile(r'^\d{4}-\d{2}.mail$')
-# get only recent files (2010 on) the older ones have different format??
-# FILE_PATTERN = re.compile(r'^201[0-3]-\d{2}(|.mail)$')
+ALL = sorted(glob.glob('/a/www/ietf-mail-archive/text*/*'))
 FILE_PATTERN = re.compile(r'^\d{4}-\d{2}(|.mail)$')
-
+SOURCE_DIR = '/a/www/ietf-mail-archive/'
+SUBSET = ('abfab','alto','ancp','autoconf','bliss','ccamp','cga-ext','codec','dane','dmm','dnsop',
+          'dime','discuss','emu','gen-art','grow','hipsec','homenet','i2rs','ietf82-team',
+          'ietf83-team','ietf84-team','ipsec','netconf','sip','simple')
+MINI = ('dmm',)
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
@@ -47,47 +54,70 @@ def get_format(filename):
         elif line.startswith('From '):
             return 'mbox'
 
-def load(lists,private=False):
-    subdir = 'text-secure' if private else 'text'
-    for dir in lists:
+def is_empty(filename):
+    '''
+    Takes a filename as string.  Returns true if file is empty
+    '''
+    statinfo = os.stat(filename)
+    if statinfo.st_size == 0:
+        return True
+    else:
+        return False
+# --------------------------------------------------
+# MAIN
+# --------------------------------------------------
+
+def main():
+    usage = "usage: %prog [options]"
+    parser = OptionParser(usage=usage)
+    parser.add_option("-f", "--full", help="perform import of entire archive",
+                      action="store_true", default=False)
+    parser.add_option("-t", "--test", help="test mode",
+                      action="store_true", default=False)
+    parser.add_option("-m", "--mini", help="perform import of one list",
+                      action="store_true", default=False)
+    (options, args) = parser.parse_args()
+    
+    total_count = 0
+    error_count = 0
+    start_time = time.time()
+    
+    if options.full:
+        dirs = ALL
+    elif options.mini:
+        dirs = [ x for x in ALL if os.path.basename(x) in MINI ]
+    else:
+        dirs = [ x for x in ALL if os.path.basename(x) in SUBSET ]
+    
+    for dir in dirs:
         print 'Loading: %s' % dir
-        # create list object
-        # mlist,created = EmailList.objects.get_or_create(name=dir,description=dir,private=private)
-        
-        mboxs = [ f for f in os.listdir(os.path.join(SOURCE_DIR,subdir,dir)) if FILE_PATTERN.match(f) ]
+        mboxs = [ f for f in os.listdir(dir) if FILE_PATTERN.match(f) ]
         
         # we need to import the files in chronological order so thread resolution works
         sorted_mboxs = sorted(mboxs)
         
         for filename in sorted_mboxs:
-            path = os.path.join(SOURCE_DIR,subdir,dir,filename)
+            path = os.path.join(dir,filename)
+            if is_empty(path):
+                continue
             format = get_format(path)
-            # TODO if not empty
-            try:
-                call_command('load', path, test=True, format=format, listname=dir)
-            except ListError:
-                print 'ListError'
-
-# --------------------------------------------------
-# MAIN
-# --------------------------------------------------
-
-def main(): 
-    # which email lists to load
-    all = os.listdir(os.path.join(SOURCE_DIR,'text'))
-    #public_lists = ('ccamp','alto')
-    public_lists = ('ietf',)
-    #public_lists = ('abfab','alto','ancp','autoconf','bliss','ccamp','cga-ext','codec','dane','dmm','dnsop','dime','discuss','emu','gen-art','grow','hipsec','homenet','i2rs','ipsec','netconf','sip','simple')
-    #public_lists = [ d for d in all if d.startswith(('a','b','c')) ]
-    #public_lists = all
+            
+            # save output from command so we can aggregate statistics
+            content = StringIO()
+            call_command('load', path, format=format, listname=dir, test=options.test, stdout=content)
+            
+            # gather stats from output
+            content.seek(0)
+            output = content.read()
+            parts = output.split(':')
+            total_count += int(parts[2])
+            error_count += int(parts[3])
+            
+    elapsed_time = time.time() - start_time
+    print 'Messages Pocessed: %d' % total_count
+    print 'Errors: %d' % error_count
+    print 'Elapsed Time: %s' % elapsed_time
     
-    #secure_lists = ('ietf82-team','ietf83-team','ietf84-team','media','rsoc')
-    secure_lists = ('ietf82-team','ietf83-team','ietf84-team')
-    
-    load(public_lists)
-    #load(secure_lists,private=True)
-    
-    #print "LOADED: %d, SKIPPED: %s, IRTS %s, MISSING IRTs %s" % (LOADED,SKIPPED,IRTS,MISSING_IRT)
-    
+            
 if __name__ == "__main__":
     main()

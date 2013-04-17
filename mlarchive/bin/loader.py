@@ -23,6 +23,7 @@ from mlarchive.archive.management.commands._classes import ListError
 from optparse import OptionParser
 from StringIO import StringIO
 
+import datetime
 import glob
 import re
 import os
@@ -116,7 +117,7 @@ def main():
     elapsed_time = time.time() - start_time
     print 'Messages Pocessed: %d' % total_count
     print 'Errors: %d' % error_count
-    print 'Elapsed Time: %s' % elapsed_time
+    print 'Elapsed Time: %s' % str(datetime.timedelta(seconds=elapsed_time))
     
             
 if __name__ == "__main__":

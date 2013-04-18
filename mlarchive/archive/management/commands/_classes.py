@@ -231,8 +231,8 @@ class loader(object):
     def stopclock(self):
         self.endtime = time.time()
         
-class mlabast(object):                           
-    def __init__(self):                                   
+class mlabast(object):
+    def __init__(self):
         """This is the control class for the MLABAST Message Archive Tool"""
         import time
         

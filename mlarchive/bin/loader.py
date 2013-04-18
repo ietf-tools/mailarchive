@@ -97,8 +97,13 @@ def main():
         # we need to import the files in chronological order so thread resolution works
         sorted_mboxs = sorted(mboxs)
         
-        for filename in sorted_mboxs:
-            path = os.path.join(dir,filename)
+        # exclude directories 
+        full = [ os.path.join(dir,x) for x in sorted_mboxs ]
+        files = filter(os.path.isfile,full)
+        
+        #for filename in sorted_mboxs:
+        for path in files:
+            #path = os.path.join(dir,filename)
             if is_empty(path):
                 continue
             format = get_format(path)

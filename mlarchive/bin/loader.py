@@ -82,7 +82,7 @@ def main():
     
     total_count = 0
     error_count = 0
-    gc_count = 0
+    #gc_count = 0
     start_time = time.time()
     
     if options.full:
@@ -93,7 +93,7 @@ def main():
         dirs = [ x for x in ALL if os.path.basename(x) in SUBSET ]
     
     for dir in dirs:
-        gc_count += 1
+        #gc_count += 1
         print 'Loading: %s' % dir
         mboxs = [ f for f in os.listdir(dir) if FILE_PATTERN.match(f) ]
         
@@ -123,8 +123,8 @@ def main():
             error_count += int(parts[3])
             
         # run garbage collection after every 70 lists loaded
-        if gc_count % 70 == 0:
-            gc.collect()
+        #if gc_count % 70 == 0:
+        #    gc.collect()
     
     elapsed_time = time.time() - start_time
     print 'Messages Pocessed: %d' % total_count

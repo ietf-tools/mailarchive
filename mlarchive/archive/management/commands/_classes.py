@@ -31,7 +31,6 @@ class loader(object):
         self.starttime = 0
         self.stats = {'irts': 0,'mirts': 0,'count': 0, 'errors': 0}
         self.listname = options.get('listname')
-        self.fp = None
         # init mailbox iterator
         if self.options.get('format') == 'mmdf':
             self.mb = mailbox.MMDF(filename)
@@ -212,8 +211,7 @@ class loader(object):
             except Exception as e:
                 logger.error("Import Error [{0}, {1}, {2}]".format(self.filename,e.args,m.get_from()))
                 self.stats['errors'] += 1
-        if self.fp:
-            self.fp.close()
+        self.mb.close()
         
     def startclock(self):
         self.starttime = time.time()
@@ -237,11 +235,9 @@ class mlabast(object):
         self.parseerror=0
     
     def startclock(self):
-        import time
         self.starttime = time.time()
         
     def stopclock(self):
-        import time
         self.endtime = time.time()
         
     def elapsedtime(self):

@@ -78,7 +78,7 @@ class loader(object):
             # Convert RFC2822 datestring to UTC
             pdate = parsedate_tz(date)
             if not pdate:
-                pdate = fix_date(date)
+                pdate = self.fix_date(date)
             if not pdate:
                 raise DateError("Can't parsedate: %s" % date)
             utc = mktime_tz(pdate)
@@ -159,7 +159,7 @@ class loader(object):
         This function takes an email.Message object and creates the archive.Message object
         '''
         self.stats['count'] += 1
-        msgid = m.get('Message-ID')
+        msgid = handle_header(m.get('Message-ID',''))
         if msgid:
             msgid = msgid.strip('<>')
         else:
@@ -175,16 +175,6 @@ class loader(object):
             inrt = inrt.strip('<>')
             
         hashcode = self.get_hash(msgid)
-        
-        # The "To" field can have non-ascii charactersets
-        to = m.get('to','')
-        if to:
-            to = handle_header(to)
-            if isinstance(to, str):
-                try:
-                    to = unicode(to,'ascii')
-                except UnicodeDecodeError:
-                    to = unicode(to,'iso-8859-1')
         
         # check for duplicate message id, and skip
         if Message.objects.filter(msgid=msgid,email_list=self.email_list):
@@ -202,7 +192,7 @@ class loader(object):
                       msgid=msgid,
                       subject=handle_header(m.get('Subject','')),
                       thread=self.get_thread(m),
-                      to=to)
+                      to=handle_header(m.get('To','')))
         msg.save()
         
         # save disk object

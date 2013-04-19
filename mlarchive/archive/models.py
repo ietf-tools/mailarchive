@@ -25,16 +25,6 @@ logger = getLogger('mlarchive.custom')
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
-def handle_header(header):
-    if not header:      # don't fail if it's empty
-        return header
-    parts = []
-    for part in header.split():
-        if part.startswith('=?'):
-            part = getmailheader(part)
-        parts.append(part)
-    return ' '.join(parts)
-
 def get_charset(part):
     # part.get_charset() doesn't work??
     if part.get_content_charset():
@@ -45,7 +35,7 @@ def get_charset(part):
         charset = US_CHARSETS[0]
     return charset
     
-def getmailheader(header_text, default="ascii"):
+def handle_header(header_text, default="ascii"):
     """Decode header_text if needed"""
     try:
         headers=decode_header(header_text)
@@ -261,13 +251,13 @@ class Message(models.Model):
     cc = models.TextField(blank=True,default='')
     date = models.DateTimeField(db_index=True)
     email_list = models.ForeignKey(EmailList,db_index=True)
-    frm = models.CharField(max_length=255,db_index=True)    # both realname and email for search
+    frm = models.CharField(max_length=512,db_index=True)    # both realname and email for search
     hashcode = models.CharField(max_length=28,db_index=True)
     inrt = models.CharField(max_length=1024,blank=True)     # in-reply-to header field
     legacy_number = models.IntegerField(blank=True,null=True,db_index=True)  # for mapping mhonarc
-    msgid = models.CharField(max_length=255,db_index=True)
+    msgid = models.CharField(max_length=512,db_index=True)
     references = models.ManyToManyField('self',through='Reference',symmetrical=False)
-    subject = models.CharField(max_length=255,blank=True)
+    subject = models.CharField(max_length=512,blank=True)
     thread = models.ForeignKey(Thread)
     to = models.TextField(blank=True,default='')
     

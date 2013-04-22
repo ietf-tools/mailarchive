@@ -102,18 +102,19 @@ class loader(object):
             if not utcdate:
                 raise DateError("Can't parsedate: %s" % date)
             return utcdate
-        else:
-            # expect line like "From [email] RFC2822 date", no time zone info
+        else:   # use envelope 
             line = msg.get_from()
+            
             if '@' in line:
                 # mhonarc archive
                 date_parts = line.split()[1:]
-            else:
-                # pipermail archive
-                date_parts = line.split()[3:]
-            tuple = parsedate(' '.join(date_parts))
-            stamp = time.mktime(tuple)
-            utcdate = datetime.datetime.utcfromtimestamp(stamp)
+                tuple = parsedate(' '.join(date_parts))
+                stamp = time.mktime(tuple)
+                utcdate = datetime.datetime.utcfromtimestamp(stamp)
+            elif parsedate_tz(line):    # sometimes Date: is first line of MMDF message
+                pdate = parsedate_tz(date)
+                utc = mktime_tz(pdate)
+                utcdate = datetime.datetime.utcfromtimestamp(utc)
             return utcdate
             
     def get_hash(self,msgid):

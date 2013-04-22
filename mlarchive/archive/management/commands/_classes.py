@@ -2,12 +2,14 @@ from django.conf import settings
 from django.core.management.base import CommandError
 from email.utils import parsedate, parsedate_tz, mktime_tz
 from mlarchive.archive.models import *
+from tzparse import tzparse
 
 import base64
 import datetime
 import hashlib
 import mailbox
 import os
+import pytz
 import re
 import time
 
@@ -51,24 +53,34 @@ class loader(object):
     def elapsedtime(self):
         return self.endtime - self.starttime
         
-    def fix_date(self, date):
+    def fix_date(self, datestring):
         '''
-        Call this function with a date that can't be parsed by parsedate.  It will try and
-        reformat the date using some known fixes.
+        Call this function with a date that can't be parsed by parsedate.  It takes a string and
+        returns a naive datetime object that represents the UTC time.
         '''
         # EXAMPLE: Wed 23 Sep 92 00:15:15-PDT
-        date_formats = ["%a %b %d %H:%M:%S %Y",
+        date_formats = ["%a %d %b %y %H:%M:%S-%Z",
+                        "%d %b %Y %H:%M-%Z",
+                        "%a %b %d %H:%M:%S %Y",
                         "%a %b %d %H:%M:%S %Y %Z",
-                        "%a, %d %b %Y %H:%M:%S %Z",
-                        "%a %d %b %y %H:%M:%S-%Z"]
-        # %Z only recognizes time.tzname, CST, CDT, UTC and GMT
+                        "%a, %d %b %Y %H:%M:%S %Z"]
         
-        p = re.compile(r'.*\d{2}:\d{2}:\d{2}\-(PDT|PST|\d{4})')
-        if p.match(date):
-            new_date = date.replace('-',' ')
-            pdate = parsedate_tz(new_date)
-            if pdate:
-                return pdate
+        for format in date_formats:
+            try:
+                dt = tzparse(datestring,format)
+                break
+            except ValueError:
+                pass
+        dt_in_utc = dt.astimezone(pytz.utc)
+        dt_naive = dt_in_utc.replace(tzinfo=None)
+        return dt_naive
+        
+        #p = re.compile(r'.*\d{2}:\d{2}:\d{2}\-(PDT|PST|\d{4})')
+        #if p.match(date):
+        #    new_date = date.replace('-',' ')
+        #    pdate = parsedate_tz(new_date)
+        #    if pdate:
+        #        return pdate
         
     def get_date(self,msg):
         '''
@@ -82,12 +94,13 @@ class loader(object):
         if date:            
             # Convert RFC2822 datestring to UTC
             pdate = parsedate_tz(date)
-            if not pdate:
-                pdate = self.fix_date(date)
-            if not pdate:
+            if pdate:
+                utc = mktime_tz(pdate)
+                utcdate = datetime.datetime.utcfromtimestamp(utc)
+            else:
+                utcdate = self.fix_date(date)
+            if not utcdate:
                 raise DateError("Can't parsedate: %s" % date)
-            utc = mktime_tz(pdate)
-            utcdate = datetime.datetime.utcfromtimestamp(utc)
             return utcdate
         else:
             # expect line like "From [email] RFC2822 date", no time zone info

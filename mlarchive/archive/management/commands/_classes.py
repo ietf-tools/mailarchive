@@ -51,12 +51,18 @@ class loader(object):
     def elapsedtime(self):
         return self.endtime - self.starttime
         
-    def fix_date(date):
+    def fix_date(self, date):
         '''
         Call this function with a date that can't be parsed by parsedate.  It will try and
         reformat the date using some known fixes.
         '''
         # EXAMPLE: Wed 23 Sep 92 00:15:15-PDT
+        date_formats = ["%a %b %d %H:%M:%S %Y",
+                        "%a %b %d %H:%M:%S %Y %Z",
+                        "%a, %d %b %Y %H:%M:%S %Z",
+                        "%a %d %b %y %H:%M:%S-%Z"]
+        # %Z only recognizes time.tzname, CST, CDT, UTC and GMT
+        
         p = re.compile(r'.*\d{2}:\d{2}:\d{2}\-(PDT|PST|\d{4})')
         if p.match(date):
             new_date = date.replace('-',' ')

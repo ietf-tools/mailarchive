@@ -23,6 +23,8 @@ logger = getLogger('mlarchive.custom')
 # from email standard library v3.3, converted to 2.x
 def parsedate_to_datetime(data):
     tuple = parsedate_tz(data)
+    if not tuple:
+        return None
     tz = tuple[-1]
     if tz is None:
         return datetime.datetime(*tuple[:6])

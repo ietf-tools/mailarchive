@@ -19,12 +19,13 @@ logger = getLogger('mlarchive.custom')
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
-# from email standard library v3.3
+# from email standard library v3.3, converted to 2.x
 def parsedate_to_datetime(data):
-    *dtuple, tz = parsedate_tz(data)
+    tuple = parsedate_tz(data)
+    tz = tuple[-1]
     if tz is None:
-        return datetime.datetime(*dtuple[:6])
-    return datetime.datetime(*dtuple[:6],
+        return datetime.datetime(tuple[:6])
+    return datetime.datetime(tuple[:6],
             tzinfo=datetime.timezone(datetime.timedelta(seconds=tz)))
 
 def get_header_date(msg):

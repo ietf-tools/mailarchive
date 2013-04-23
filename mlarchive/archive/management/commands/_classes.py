@@ -24,8 +24,8 @@ def parsedate_to_datetime(data):
     tuple = parsedate_tz(data)
     tz = tuple[-1]
     if tz is None:
-        return datetime.datetime(tuple[:6])
-    return datetime.datetime(tuple[:6],
+        return datetime.datetime(*tuple[:6])
+    return datetime.datetime(*tuple[:6],
             tzinfo=datetime.timezone(datetime.timedelta(seconds=tz)))
 
 def get_header_date(msg):

@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.core.management.base import CommandError
+from dateutil.tz import tzoffset
 from email.utils import parsedate, parsedate_tz, mktime_tz
 from mlarchive.archive.models import *
 from tzparse import tzparse
@@ -25,8 +26,7 @@ def parsedate_to_datetime(data):
     tz = tuple[-1]
     if tz is None:
         return datetime.datetime(*tuple[:6])
-    return datetime.datetime(*tuple[:6],
-            tzinfo=datetime.timezone(datetime.timedelta(seconds=tz)))
+    return datetime.datetime(*tuple[:6],tzinfo=tzoffset(None,tz))
 
 def get_header_date(msg):
     '''

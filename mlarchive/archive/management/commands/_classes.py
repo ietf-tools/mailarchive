@@ -36,53 +36,56 @@ def get_header_date(msg):
     field.  It returns a Datetime object, either naive or aware, if it can, otherwise None.
     '''
     date = msg.get('date')
-    if date:            
-        # Convert RFC2822 datestring to UTC
-        pdate = parsedate_tz(date)
-        if pdate:
-            utc = mktime_tz(pdate)
-            utcdate = datetime.datetime.utcfromtimestamp(utc)
-        else:
-            utcdate = self.fix_date(date)
-        if not utcdate:
-            raise DateError("Can't parsedate: %s" % date)
-        return utcdate
-
-
-        date_formats = ["%a %d %b %y %H:%M:%S-%Z",
-                        "%d %b %Y %H:%M-%Z",
-                        "%a %b %d %H:%M:%S %Y",
-                        "%a %b %d %H:%M:%S %Y %Z",
-                        "%a, %d %b %Y %H:%M:%S %Z"]
-        dt = None
-        
-        for format in date_formats:
-            try:
-                dt = tzparse(datestring,format)
-                break
-            except ValueError:
-                pass
-                
-        if not dt:
-            return None
-        dt_in_utc = dt.astimezone(pytz.utc)
-        dt_naive = dt_in_utc.replace(tzinfo=None)
-        return dt_naive
-        
-def get_envelope_date():
-    line = msg.get_from()
+    if not date:
+        return None
     
+    result = parsedate_to_datetime(date)
+    if result:
+        return result
+    
+    # try tzparse for some odd formations
+    date_formats = ["%a %d %b %y %H:%M:%S-%Z",
+                    "%d %b %Y %H:%M-%Z",
+                    "%Y-%m-%d %H:%M:%S",
+                    #"%a %b %d %H:%M:%S %Y",
+                    #"%a %b %d %H:%M:%S %Y %Z",
+                    #"%a, %d %b %Y %H:%M:%S %Z"
+                    ]
+    for format in date_formats:
+        try:
+            result = tzparse(datestring,format)
+            if result:
+                return result
+        except ValueError:
+            pass
+
+def get_envelope_date(msg):
+    line = msg.get_from()
+    if not line:
+        return None
+        
     if '@' in line:
-        # mhonarc archive
-        date_parts = line.split()[1:]
-        tuple = parsedate(' '.join(date_parts))
-        stamp = time.mktime(tuple)
-        utcdate = datetime.datetime.utcfromtimestamp(stamp)
-    elif parsedate_tz(line):    # sometimes Date: is first line of MMDF message
-        pdate = parsedate_tz(date)
-        utc = mktime_tz(pdate)
-        utcdate = datetime.datetime.utcfromtimestamp(utc)
-    return utcdate
+        return parsedate_to_datetime(line.split()[1:])
+    elif parsedate_to_datetime(line):    # sometimes Date: is first line of MMDF message
+        return parsedate_to_datetime(line)
+
+def get_received_date(msg):
+    rec = msg.get('received')
+    if not rec:
+        return None
+    
+    parts = rec.split(';')
+    return parsedate_to_datetime(parts[1])
+
+def is_aware(dt):
+    '''
+    This function takes a datetime object and returns True if the object is aware, False if
+    it is naive
+    '''
+    if not isinstance(dt,datetime.datetime)
+        return False
+    if dt.tzinfo and dt.tzinfo.utcoffset(dt):
+        return True
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------
@@ -135,10 +138,16 @@ class loader(object):
         which should contain an RFC2822 date.  Lastly we check the envelope header, which often 
         times does not contain timezone information.
         '''
+        fallback = None
         for func in (get_header_date,get_received_date,get_envelope_date):
             date = func(msg)
             if date:
-                return date
+                if is_aware(date):
+                    return date.astimezone(pytz.utc).replace(tzinfo=None)   # return as naive UTC
+                else:
+                    fallback = date
+        logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,'Used None or naive date',msg.get_from()))
+        return fallback
             
     def get_hash(self,msgid):
         '''

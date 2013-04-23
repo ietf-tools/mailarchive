@@ -16,6 +16,73 @@ import time
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
 
+# --------------------------------------------------
+# Helper Functions
+# --------------------------------------------------
+# from email standard library v3.3
+def parsedate_to_datetime(data):
+    *dtuple, tz = parsedate_tz(data)
+    if tz is None:
+        return datetime.datetime(*dtuple[:6])
+    return datetime.datetime(*dtuple[:6],
+            tzinfo=datetime.timezone(datetime.timedelta(seconds=tz)))
+
+def get_header_date(msg):
+    '''
+    This function takes a email.Message object and tries to parse the date from the Date: header
+    field.  It returns a Datetime object, either naive or aware, if it can, otherwise None.
+    '''
+    date = msg.get('date')
+    if date:            
+        # Convert RFC2822 datestring to UTC
+        pdate = parsedate_tz(date)
+        if pdate:
+            utc = mktime_tz(pdate)
+            utcdate = datetime.datetime.utcfromtimestamp(utc)
+        else:
+            utcdate = self.fix_date(date)
+        if not utcdate:
+            raise DateError("Can't parsedate: %s" % date)
+        return utcdate
+
+
+        date_formats = ["%a %d %b %y %H:%M:%S-%Z",
+                        "%d %b %Y %H:%M-%Z",
+                        "%a %b %d %H:%M:%S %Y",
+                        "%a %b %d %H:%M:%S %Y %Z",
+                        "%a, %d %b %Y %H:%M:%S %Z"]
+        dt = None
+        
+        for format in date_formats:
+            try:
+                dt = tzparse(datestring,format)
+                break
+            except ValueError:
+                pass
+                
+        if not dt:
+            return None
+        dt_in_utc = dt.astimezone(pytz.utc)
+        dt_naive = dt_in_utc.replace(tzinfo=None)
+        return dt_naive
+        
+def get_envelope_date():
+    line = msg.get_from()
+    
+    if '@' in line:
+        # mhonarc archive
+        date_parts = line.split()[1:]
+        tuple = parsedate(' '.join(date_parts))
+        stamp = time.mktime(tuple)
+        utcdate = datetime.datetime.utcfromtimestamp(stamp)
+    elif parsedate_tz(line):    # sometimes Date: is first line of MMDF message
+        pdate = parsedate_tz(date)
+        utc = mktime_tz(pdate)
+        utcdate = datetime.datetime.utcfromtimestamp(utc)
+    return utcdate
+# --------------------------------------------------
+# Classes
+# --------------------------------------------------
 class ListError(Exception):
     pass
     
@@ -53,69 +120,22 @@ class loader(object):
     def elapsedtime(self):
         return self.endtime - self.starttime
         
-    def fix_date(self, datestring):
-        '''
-        Call this function with a date that can't be parsed by parsedate.  It takes a string and
-        returns a naive datetime object that represents the UTC time.
-        '''
-        # EXAMPLE: Wed 23 Sep 92 00:15:15-PDT
-        date_formats = ["%a %d %b %y %H:%M:%S-%Z",
-                        "%d %b %Y %H:%M-%Z",
-                        "%a %b %d %H:%M:%S %Y",
-                        "%a %b %d %H:%M:%S %Y %Z",
-                        "%a, %d %b %Y %H:%M:%S %Z"]
-        
-        for format in date_formats:
-            try:
-                dt = tzparse(datestring,format)
-                break
-            except ValueError:
-                pass
-        dt_in_utc = dt.astimezone(pytz.utc)
-        dt_naive = dt_in_utc.replace(tzinfo=None)
-        return dt_naive
-        
-        #p = re.compile(r'.*\d{2}:\d{2}:\d{2}\-(PDT|PST|\d{4})')
-        #if p.match(date):
-        #    new_date = date.replace('-',' ')
-        #    pdate = parsedate_tz(new_date)
-        #    if pdate:
-        #        return pdate
-        
     def get_date(self,msg):
         '''
-        Gets the Date from the message headers.  Check for Date field which is supposed to be
-        the date and time the user sent the message.  Sometimes this field is empty or even
-        absent.  In this case get the date from the intial "From" line.  This is the date and
-        time the message was recieved by the list server.  Returns a naive Datetime object in UTC
-        time to simplify sorting.
+        This function gets the message date.  It takes an email.Message object and returns a naive
+        Datetime object in UTC time.
+        
+        First we inspect the Date: header field, since it should correspond with the date and 
+        time the message composer sent the email.  It also usually contains the timezone 
+        information which is important for calculating correct UTC.  Unfortunately the Date header 
+        can vary dramatically in format or even be missing.  Next we check for a Received header 
+        which should contain an RFC2822 date.  Lastly we check the envelope header, which often 
+        times does not contain timezone information.
         '''
-        date = msg.get('date')
-        if date:            
-            # Convert RFC2822 datestring to UTC
-            pdate = parsedate_tz(date)
-            if pdate:
-                utc = mktime_tz(pdate)
-                utcdate = datetime.datetime.utcfromtimestamp(utc)
-            else:
-                utcdate = self.fix_date(date)
-            if not utcdate:
-                raise DateError("Can't parsedate: %s" % date)
-            return utcdate
-        else:   # use envelope 
-            line = msg.get_from()
-            
-            if '@' in line:
-                # mhonarc archive
-                date_parts = line.split()[1:]
-                tuple = parsedate(' '.join(date_parts))
-                stamp = time.mktime(tuple)
-                utcdate = datetime.datetime.utcfromtimestamp(stamp)
-            elif parsedate_tz(line):    # sometimes Date: is first line of MMDF message
-                pdate = parsedate_tz(date)
-                utc = mktime_tz(pdate)
-                utcdate = datetime.datetime.utcfromtimestamp(utc)
-            return utcdate
+        for func in (get_header_date,get_received_date,get_envelope_date):
+            date = func(msg)
+            if date:
+                return date
             
     def get_hash(self,msgid):
         '''

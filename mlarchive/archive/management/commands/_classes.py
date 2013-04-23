@@ -82,7 +82,7 @@ def is_aware(dt):
     This function takes a datetime object and returns True if the object is aware, False if
     it is naive
     '''
-    if not isinstance(dt,datetime.datetime)
+    if not isinstance(dt,datetime.datetime):
         return False
     if dt.tzinfo and dt.tzinfo.utcoffset(dt):
         return True

@@ -53,7 +53,7 @@ def get_header_date(msg):
                     ]
     for format in date_formats:
         try:
-            result = tzparse(datestring,format)
+            result = tzparse(date,format)
             if result:
                 return result
         except ValueError:
@@ -143,7 +143,10 @@ class loader(object):
             date = func(msg)
             if date:
                 if is_aware(date):
-                    return date.astimezone(pytz.utc).replace(tzinfo=None)   # return as naive UTC
+                    try:
+                        return date.astimezone(pytz.utc).replace(tzinfo=None)   # return as naive UTC
+                    except ValueError:
+                        pass
                 else:
                     fallback = date
         logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,'Used None or naive date',msg.get_from()))

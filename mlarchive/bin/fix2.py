@@ -36,7 +36,7 @@ def main():
         mb = mailbox.mbox(file)
         for m in mb:
             count = 0
-            for line in splitlines(m.as_string()):
+            for line in m.as_string().splitlines():
                 count += 1
                 if line.startswith('Received: ') or line.startswith(' '):
                     continue

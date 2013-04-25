@@ -28,11 +28,19 @@ def main():
     with open('/a/home/rcross/tmp/fix1.txt') as f:
         files = f.read().splitlines()
         
+    #files = ('/a/www/ietf-mail-archive/text/policy/1999-04.mail',)
     for file in files:
         with open(file) as f:
+            curblank = False
             for line in f:
+                lastblank = curblank
+                if line == '\n':
+                    curblank = True
+                else:
+                    curblank = False
+                
                 if line.startswith('From '):
-                    if not PATTERN.match(line):
+                    if not PATTERN.match(line) and lastblank:
                         print line
     
 

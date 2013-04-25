@@ -22,13 +22,16 @@ logger = getLogger('mlarchive.custom')
 # --------------------------------------------------
 # from email standard library v3.3, converted to 2.x
 def parsedate_to_datetime(data):
-    tuple = parsedate_tz(data)
-    if not tuple:
+    try:
+        tuple = parsedate_tz(data)
+        if not tuple:
+            return None
+        tz = tuple[-1]
+        if tz is None:
+            return datetime.datetime(*tuple[:6])
+        return datetime.datetime(*tuple[:6],tzinfo=tzoffset(None,tz))
+    except ValueError:
         return None
-    tz = tuple[-1]
-    if tz is None:
-        return datetime.datetime(*tuple[:6])
-    return datetime.datetime(*tuple[:6],tzinfo=tzoffset(None,tz))
 
 def get_header_date(msg):
     '''
@@ -65,7 +68,7 @@ def get_envelope_date(msg):
         return None
         
     if '@' in line:
-        return parsedate_to_datetime(line.split()[1:])
+        return parsedate_to_datetime(' '.join(line.split()[1:]))
     elif parsedate_to_datetime(line):    # sometimes Date: is first line of MMDF message
         return parsedate_to_datetime(line)
 
@@ -84,8 +87,9 @@ def is_aware(dt):
     '''
     if not isinstance(dt,datetime.datetime):
         return False
-    if dt.tzinfo and dt.tzinfo.utcoffset(dt):
+    if dt.tzinfo and dt.tzinfo.utcoffset(dt) is not None:
         return True
+    return False
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------

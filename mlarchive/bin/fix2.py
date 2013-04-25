@@ -41,6 +41,8 @@ def main():
             curblank = False
             for line in f:
                 count += 1
+                if count == 1:  # skip first line
+                    continue
                 lastblank = curblank
                 if line == '\n':
                     curblank = True

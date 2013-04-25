@@ -27,7 +27,7 @@ import mailbox
 import re
 
 def main():
-    PATTERN = re.compile(r'^[a-zA-Z\-]: ')
+    PATTERN = re.compile(r'^[a-zA-Z\-]+: ')
     with open('/a/home/rcross/tmp/fix2.txt') as f:
         files = f.read().splitlines()
         

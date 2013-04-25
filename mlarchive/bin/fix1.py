@@ -32,7 +32,9 @@ def main():
     for file in files:
         with open(file) as f:
             curblank = False
+            count = 0
             for line in f:
+                count += 1
                 lastblank = curblank
                 if line == '\n':
                     curblank = True
@@ -41,7 +43,7 @@ def main():
                 
                 if line.startswith('From '):
                     if not PATTERN.match(line) and lastblank:
-                        print line
+                        print '%s:%d %s' % (file,count,line)
     
 
 if __name__ == "__main__":

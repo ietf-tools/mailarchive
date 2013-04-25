@@ -27,7 +27,8 @@ import mailbox
 import re
 
 def main():
-    PATTERN = re.compile(r'^[a-zA-Z\-]+: ')
+    REC_HEADER = re.compile(r'(Received: |\s)')
+    ANY_HEADER = re.compile(r'^[a-zA-Z\-]+: ')
     with open('/a/home/rcross/tmp/fix2.txt') as f:
         files = f.read().splitlines()
         
@@ -38,9 +39,9 @@ def main():
             count = 0
             for line in m.as_string().splitlines():
                 count += 1
-                if line.startswith('Received: ') or line.startswith(' '):
+                if REC_HEADER.match(line):
                     continue
-                if PATTERN.match(line):
+                if ANY_HEADER.match(line):
                     break
                 print "%s:%s:%s" % (file,count,line)
         mb.close()

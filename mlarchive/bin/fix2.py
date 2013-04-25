@@ -28,7 +28,7 @@ import re
 
 def main():
     REC_HEADER = re.compile(r'(Received: |\s)')
-    ANY_HEADER = re.compile(r'^[a-zA-Z\-]+: ')
+    ANY_HEADER = re.compile(r'[a-zA-Z\-]+:\s')
     ENV_HEADER = re.compile(r'From .*@.* .{24}')
     with open('/a/home/rcross/tmp/fix2.txt') as f:
         files = f.read().splitlines()

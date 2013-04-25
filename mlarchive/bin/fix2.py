@@ -29,22 +29,34 @@ import re
 def main():
     REC_HEADER = re.compile(r'(Received: |\s)')
     ANY_HEADER = re.compile(r'^[a-zA-Z\-]+: ')
+    ENV_HEADER = re.compile(r'From .*@.* .{24}')
     with open('/a/home/rcross/tmp/fix2.txt') as f:
         files = f.read().splitlines()
         
     #files = ('/a/www/ietf-mail-archive/text/policy/1999-04.mail',)
     for file in files:
-        mb = mailbox.mbox(file)
-        for m in mb:
+        with open(file) as f:
             count = 0
-            for line in m.as_string().splitlines():
+            inheader = True
+            curblank = False
+            for line in f:
                 count += 1
+                lastblank = curblank
+                if line == '\n':
+                    curblank = True
+                else:
+                    curblank = False
+                    
+                if ENV_HEADER.match(line) and lastblank:
+                    inheader = True
+                    continue
                 if REC_HEADER.match(line):
                     continue
                 if ANY_HEADER.match(line):
-                    break
-                print "%s:%s:%s" % (file,count,line)
-        mb.close()
-        
+                    inheader = False
+                    continue
+                if inheader:
+                    print "%s:%s:%s" % (file,count,line)
+
 if __name__ == "__main__":
     main()

@@ -11,12 +11,13 @@ import sys
 #sys.path.insert(0, '/a/home/rcross/src/amsl/mlabast')
 #sys.path.insert(0, '/a/home/rcross/src/amsl/mlabast/mlarchive')
 
-from django.core.management import setup_environ
+#from django.core.management import setup_environ
 from django.core.management.base import CommandError
 from django.db.utils import IntegrityError
-from mlarchive import settings
+#from mlarchive import settings
+from django.conf import settings
 
-setup_environ(settings)
+#setup_environ(settings)
 
 from django.core.management import call_command
 from mlarchive.archive.management.commands._classes import ListError
@@ -39,7 +40,7 @@ SOURCE_DIR = '/a/www/ietf-mail-archive/'
 SUBSET = ('abfab','alto','ancp','autoconf','bliss','ccamp','cga-ext','codec','dane','dmm','dnsop',
           'dime','discuss','emu','gen-art','grow','hipsec','homenet','i2rs','ietf82-team',
           'ietf83-team','ietf84-team','ipsec','netconf','sip','simple')
-MINI = ('iesg','ietf','printmib')
+MINI = ('ietf83-team',)
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
@@ -82,7 +83,7 @@ def main():
     
     total_count = 0
     error_count = 0
-    gc_count = 0
+    #gc_count = 0
     start_time = time.time()
     
     if options.full:
@@ -93,7 +94,7 @@ def main():
         dirs = [ x for x in ALL if os.path.basename(x) in SUBSET ]
     
     for dir in dirs:
-        gc_count += 1
+        #gc_count += 1
         print 'Loading: %s' % dir
         mboxs = [ f for f in os.listdir(dir) if FILE_PATTERN.match(f) ]
         
@@ -113,7 +114,7 @@ def main():
             
             # save output from command so we can aggregate statistics
             content = StringIO()
-            call_command('load', path, format=format, listname=dir, test=options.test, stdout=content)
+            call_command('load', path, format=format, listname=os.path.basename(dir), test=options.test, stdout=content)
             
             # gather stats from output
             content.seek(0)
@@ -123,8 +124,8 @@ def main():
             error_count += int(parts[3])
             
         # run garbage collection after every 10 lists loaded
-        if gc_count % 10 == 0:
-            gc.collect()
+        #if gc_count % 10 == 0:
+        #    gc.collect()
     
     elapsed_time = time.time() - start_time
     print 'Messages Pocessed: %d' % total_count

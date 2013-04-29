@@ -93,6 +93,40 @@ def is_aware(dt):
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------
+class CustomMbox(mailbox.mbox):
+    '''
+    Custom mbox class.  We are overriding the _generate_toc function to use a more restrictive
+    From line check.  Base on the deprecated UnixMailbox
+    '''
+    _fromlinepattern = (r'From (.*@.* |MAILER-DAEMON ).{24}')
+    _regexp = None
+    
+    def _generate_toc(self):
+        """Generate key-to-(start, stop) table of contents."""
+        starts, stops = [], []
+        self._file.seek(0)
+        while True:
+            line_pos = self._file.tell()
+            line = self._file.readline()
+            if line[:5] == 'From ' and self._isrealfromline(line):
+                if len(stops) < len(starts):
+                    stops.append(line_pos - len(os.linesep))
+                starts.append(line_pos)
+            elif line == '':
+                stops.append(line_pos)
+                break
+        self._toc = dict(enumerate(zip(starts, stops)))
+        self._next_key = len(self._toc)
+        self._file_length = self._file.tell()
+
+    def _strict_isrealfromline(self, line):
+        if not self._regexp:
+            import re
+            self._regexp = re.compile(self._fromlinepattern)
+        return self._regexp.match(line)
+
+    _isrealfromline = _strict_isrealfromline
+    
 class ListError(Exception):
     pass
     
@@ -114,8 +148,9 @@ class loader(object):
         if self.options.get('format') == 'mmdf':
             self.mb = mailbox.MMDF(filename)
         else:
-            self.mb = mailbox.mbox(filename)   # TODO: handle different types of input files
-        
+            #self.mb = mailbox.mbox(filename)   # TODO: handle different types of input files
+            self.mb = CustomMbox(filename)
+            
         if not self.listname:
             self.listname = self.guess_list()
         

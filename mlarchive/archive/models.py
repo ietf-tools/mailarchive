@@ -17,7 +17,7 @@ import os
 US_CHARSETS = ('us-ascii','ascii')
 DEFAULT_CHARSET = 'ascii'
 OTHER_CHARSETS = ('gb2312',)
-UNSUPPORTED_CHARSETS = ('unknown',)
+UNSUPPORTED_CHARSETS = ('unknown','x-unknown')
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
@@ -150,7 +150,10 @@ def handle_plain(part,text_only):
         except UnicodeDecodeError as err:
             logger.warn("UnicodeDecodeError [{0}, {1}]".format(err.encoding,err.reason))
             payload = unicode(payload,DEFAULT_CHARSET,errors='ignore')
-    
+        except LookupError as err:
+            logger.warn("Decode Error [{0}, {1}]".format(err.args,err.message))
+            payload = unicode(payload,DEFAULT_CHARSET,errors='ignore')
+            
     result = render_to_string('archive/message_plain.html', {'payload': payload})
     # undeclared charactersets can cause problems with template rendering
     # if result is empty template (len=28) try again with unicode

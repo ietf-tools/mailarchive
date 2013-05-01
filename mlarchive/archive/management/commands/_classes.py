@@ -144,6 +144,7 @@ class loader(object):
         self.starttime = 0
         self.stats = {'irts': 0,'mirts': 0,'count': 0, 'errors': 0}
         self.listname = options.get('listname')
+        self.private = options.get('private')
         # init mailbox iterator
         if self.options.get('format') == 'mmdf':
             self.mb = mailbox.MMDF(filename)
@@ -159,8 +160,8 @@ class loader(object):
             
         logger.info('loader called with: %s' % self.filename)
         
-        # TODO: handle private
-        self.email_list,created = EmailList.objects.get_or_create(name=self.listname,defaults={'description':self.listname})
+        self.email_list,created = EmailList.objects.get_or_create(
+            name=self.listname,defaults={'description':self.listname,'private':self.private})
         
     def elapsedtime(self):
         return self.endtime - self.starttime
@@ -174,8 +175,8 @@ class loader(object):
         time the message composer sent the email.  It also usually contains the timezone 
         information which is important for calculating correct UTC.  Unfortunately the Date header 
         can vary dramatically in format or even be missing.  Next we check for a Received header 
-        which should contain an RFC2822 date.  Lastly we check the envelope header, which often 
-        times does not contain timezone information.
+        which should contain an RFC2822 date.  Lastly we check the envelope header, which should
+        have an asctime date (no timezone info).
         '''
         fallback = None
         for func in (get_header_date,get_received_date,get_envelope_date):
@@ -205,6 +206,16 @@ class loader(object):
         '''
         return "%s:%s:%s:%s:%.3f\n" % (self.listname,os.path.basename(self.filename),
                                      self.stats['count'],self.stats['errors'],self.elapsedtime())
+    def get_subject(self):
+        '''
+        This function gets the message subject.  If the subject looks like spam, long line with
+        no spaces, truncate it so as not to cause index errors
+        '''
+        subject = handle_header(m.get('Subject',''))
+        if len(subject) > 120 and len(subject.split()) == 1:
+            subject = subject[:120]
+        return subject
+        
     def get_thread(self,msg):
         '''
         This is a very basic thread algorithm.  If 'In-Reply-To-' is set, look up that message 
@@ -252,6 +263,8 @@ class loader(object):
         This function takes an email.Message object and creates the archive.Message object
         '''
         self.stats['count'] += 1
+        
+        # handle message-id ========================
         msgid = handle_header(m.get('Message-ID',''))
         if msgid:
             msgid = msgid.strip('<>')
@@ -283,7 +296,7 @@ class loader(object):
                       hashcode=hashcode,
                       inrt=inrt,
                       msgid=msgid,
-                      subject=handle_header(m.get('Subject','')),
+                      subject=self.get_subject(m),
                       thread=self.get_thread(m),
                       to=handle_header(m.get('To','')))
         msg.save()

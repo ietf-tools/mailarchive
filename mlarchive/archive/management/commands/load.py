@@ -15,11 +15,12 @@ class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option('-l', '--listname', dest='listname',
             help='Specify the name of the email list'),
-        make_option('-t', '--test',
-            action='store_true', dest='test', default=False,
+        make_option('-t', '--test', action='store_true', dest='test', default=False,
             help="Test mode.  Write database but don't store message files."),
         make_option('-f', '--format', dest='format',
             help='Mailbox format.  Accepted values: mbox,mmdf'),
+        make_option('-p', '--private', action='store_true', dest='private', default=False,
+            help='Private list.  Default is public'),
         )
         
     def handle(self, *args, **options):

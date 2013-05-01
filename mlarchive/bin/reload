@@ -12,4 +12,4 @@ mysql -u rcross -p -e 'drop database rc_archive; create database rc_archive char
 export DJANGO_SETTINGS_MODULE=mlarchive.settings
 ./bin/loader.py
 
-#./manage.py rebuild_index --noinput
+./manage.py rebuild_index --noinput

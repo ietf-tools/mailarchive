@@ -83,7 +83,6 @@ def main():
     
     total_count = 0
     error_count = 0
-    #gc_count = 0
     start_time = time.time()
     
     if options.full:
@@ -94,7 +93,6 @@ def main():
         dirs = [ x for x in ALL if os.path.basename(x) in SUBSET ]
     
     for dir in dirs:
-        #gc_count += 1
         print 'Loading: %s' % dir
         mboxs = [ f for f in os.listdir(dir) if FILE_PATTERN.match(f) ]
         
@@ -105,16 +103,19 @@ def main():
         full = [ os.path.join(dir,x) for x in sorted_mboxs ]
         files = filter(os.path.isfile,full)
         
-        #for filename in sorted_mboxs:
         for path in files:
-            #path = os.path.join(dir,filename)
             if is_empty(path):
                 continue
             format = get_format(path)
-            
+            if 'text-secure' in path:
+                private = True
+            else:
+                private = False
+                
             # save output from command so we can aggregate statistics
             content = StringIO()
-            call_command('load', path, format=format, listname=os.path.basename(dir), test=options.test, stdout=content)
+            call_command('load', path, format=format, listname=os.path.basename(dir), 
+                         test=options.test, private=private, stdout=content)
             
             # gather stats from output
             content.seek(0)
@@ -122,10 +123,6 @@ def main():
             parts = output.split(':')
             total_count += int(parts[2])
             error_count += int(parts[3])
-            
-        # run garbage collection after every 10 lists loaded
-        #if gc_count % 10 == 0:
-        #    gc.collect()
     
     elapsed_time = time.time() - start_time
     print 'Messages Pocessed: %d' % total_count

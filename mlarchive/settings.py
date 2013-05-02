@@ -164,6 +164,7 @@ HAYSTACK_USE_REALTIME_SEARCH = False
 
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = '/a/home/rcross/data/archive'
+TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
 SERVER_MODE = 'development'
 LOG_FILE = '/a/home/rcross/data/log/mlarchive.log'
 

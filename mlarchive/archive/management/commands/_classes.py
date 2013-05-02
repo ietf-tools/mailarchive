@@ -163,6 +163,12 @@ class loader(object):
         self.email_list,created = EmailList.objects.get_or_create(
             name=self.listname,defaults={'description':self.listname,'private':self.private})
         
+    def cleanup(self):
+        '''
+        Call this function when you are done with the loader object
+        '''
+        self.mb.close()
+        
     def elapsedtime(self):
         return self.endtime - self.starttime
         
@@ -206,12 +212,12 @@ class loader(object):
         '''
         return "%s:%s:%s:%s:%.3f\n" % (self.listname,os.path.basename(self.filename),
                                      self.stats['count'],self.stats['errors'],self.elapsedtime())
-    def get_subject(self):
+    def get_subject(self,msg):
         '''
         This function gets the message subject.  If the subject looks like spam, long line with
         no spaces, truncate it so as not to cause index errors
         '''
-        subject = handle_header(m.get('Subject',''))
+        subject = handle_header(msg.get('Subject',''))
         if len(subject) > 120 and len(subject.split()) == 1:
             subject = subject[:120]
         return subject
@@ -318,7 +324,7 @@ class loader(object):
             except Exception as e:
                 logger.error("Import Error [{0}, {1}, {2}]".format(self.filename,e.args,m.get_from()))
                 self.stats['errors'] += 1
-        self.mb.close()
+        self.cleanup()
         
     def startclock(self):
         self.starttime = time.time()

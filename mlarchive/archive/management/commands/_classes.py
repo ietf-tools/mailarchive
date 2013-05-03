@@ -228,6 +228,7 @@ class loader(object):
         and return it's thread id, otherwise return a new thread id.  This is crude for many reasons.
         ie. what if the referenced message isn't loaded yet?  We load message files in date order
         to minimize this.
+        see http://www.jwz.org/doc/threading.html
         '''
         irt = msg.get('In-Reply-To','').strip('<>')
         if irt:

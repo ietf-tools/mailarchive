@@ -26,14 +26,14 @@ class ModelsTest(TestCase):
     loader = _classes.loader(path)
     
     def test_get_charset(self):
-        msg = self.loader.mb[1]
+        msg = self.loader.mb[0]
         charset = get_charset(msg)
         self.failUnless(charset)
-        self.assertEqual(charset,'iso-8859-1')
+        self.assertEqual(charset,'us-ascii')
         
     #def test_handle_header(self):
 
-    loader.cleanup()
+    #loader.cleanup()
 
 class LoadTest(TestCase):
     import mlarchive.archive.management.commands._classes as _classes

@@ -15,7 +15,7 @@ import mailbox
 import os
 
 US_CHARSETS = ('us-ascii','ascii')
-DEFAULT_CHARSET = 'ascii'
+DEFAULT_CHARSET = 'us-ascii'
 OTHER_CHARSETS = ('gb2312',)
 UNSUPPORTED_CHARSETS = ('unknown','x-unknown')
 
@@ -26,17 +26,15 @@ logger = getLogger('mlarchive.custom')
 # Helper Functions
 # --------------------------------------------------
 def get_charset(part):
-    # part.get_charset() doesn't work??
-    if part.get_content_charset():
-        charset = part.get_content_charset()
-    elif part.get_param('charset'):
-        charset = part.get_param('charset').lower()
-    else:
-        charset = US_CHARSETS[0]
-    return charset
+    '''
+    Get the character set from the Content-Type.
+    Use DEFAULT CHARSET if it isn't set.
+    '''
+    charset = part.get_content_charset()
+    return charset if charset else DEFAULT_CHARSET
     
-def handle_header(header_text, default="ascii"):
-    """Decode header_text if needed"""
+def handle_header(header_text, default=DEFAULT_CHARSET):
+    '''Decode header_text if needed'''
     try:
         headers=decode_header(header_text)
     except email.Errors.HeaderParseError:

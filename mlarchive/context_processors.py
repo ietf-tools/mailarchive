@@ -25,7 +25,7 @@ def facet_info(request):
     Sessions should be set to expire after 24 hours to avoid the counts getting stale.
     TODO: alternatively this could just overwrite "facets" when a filter has been applied.
     '''
-    if request.META['REQUEST_URI'].startswith('/archive/search/'):
+    if request.get_full_path().startswith('/archive/search/'):
         # strip any filters and lookup query
         query = get_base_query(request.GET)
         base_facets = request.session['queries'].get(query)

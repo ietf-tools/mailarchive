@@ -60,39 +60,43 @@ class QueryMiddleware(object):
     #@log_timing
     def process_request(self, request):
         logger.info('QueryMiddleware:process_request() %s' % request.META['QUERY_STRING'])
-        if request.META['REQUEST_URI'].startswith('/archive/search/'):
-            if not has_filters(request):
-                # init session dict
-                if 'queries' not in request.session:
-                    request.session['queries'] = {}
-                # - if the base query isn't already stored, get facets and store
-                query = get_base_query(request.GET)
-                if query not in request.session['queries']:
-                    # call search function from here
-                    data = request.GET
-                    form = AdvancedSearchForm(data,load_all=False,request=request)
-                    results = form.search()
-                    # calculating facet_counts on large results sets is too costly so skip it
-                    # TODO: this might also be implemented as a timeout
-                    #
-                    # If you call results.count() before results.facet_counts() the facet_counts
-                    # are corrupted.  The solution is to clone the query and call counts on that
-                    temp = results._clone()
-                    if temp.count() < 15000:
-                        base_facets = results.facet_counts()
-                        #assert False, (results,query,base_facets)
-                        for field in base_facets['fields']:
-                            # need to set a hard limit, can't disaply unlimited number of options
-                            logger.info('facets count for %s:%s' % (field,len(base_facets['fields'][field])))
-                            #if len(base_facets['fields'][field]) > 30:
-                                # get the top thirty sorted by facet count
-                            #    sorted_facets = sorted(base_facets['fields'][field], key=lambda k: k[1],reverse=True)
-                            #    base_facets['fields'][field] = sorted_facets[:30]
-                            base_facets['fields'][field].sort()  # sort by name
-                    else:
-                        base_facets = None
-                    request.session['queries'][query] = base_facets
-                    request.session.save()      # don't know why this is required but it is
-                    logger.info('middleware: %s' % request.session['queries'].keys())
-                    logger.info('middleware: %s' % request.session.session_key)
+       
+        # just return if this isn't a search without filters
+        if not request.get_full_path().startswith('/archive/search/') or has_filters(request):
+            return None
+            
+        # init session dict
+        if 'queries' not in request.session:
+            request.session['queries'] = {}
+        # - if the base query isn't already stored, get facets and store
+        query = get_base_query(request.GET)
+        if query not in request.session['queries']:
+            # call search function from here
+            data = request.GET
+            form = AdvancedSearchForm(data,load_all=False,request=request)
+            results = form.search()
+            # calculating facet_counts on large results sets is too costly so skip it
+            # TODO: this might also be implemented as a timeout
+            #
+            # If you call results.count() before results.facet_counts() the facet_counts
+            # are corrupted.  The solution is to clone the query and call counts on that
+            temp = results._clone()
+            if temp.count() < 15000:
+                base_facets = results.facet_counts()
+                #assert False, (results,query,base_facets)
+                for field in base_facets['fields']:
+                    # need to set a hard limit, can't disaply unlimited number of options
+                    logger.info('facets count for %s:%s' % (field,len(base_facets['fields'][field])))
+                    #if len(base_facets['fields'][field]) > 30:
+                        # get the top thirty sorted by facet count
+                    #    sorted_facets = sorted(base_facets['fields'][field], key=lambda k: k[1],reverse=True)
+                    #    base_facets['fields'][field] = sorted_facets[:30]
+                    base_facets['fields'][field].sort()  # sort by name
+            else:
+                base_facets = None
+            request.session['queries'][query] = base_facets
+            request.session.save()      # don't know why this is required but it is
+            logger.info('middleware: %s' % request.session['queries'].keys())
+            logger.info('middleware: %s' % request.session.session_key)
+        
         return None

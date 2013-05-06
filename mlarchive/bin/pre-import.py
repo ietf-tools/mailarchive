@@ -25,7 +25,7 @@ import re
 
 def main():
     PATTERN = re.compile(r'<!--X-Message-Id:\s+(.*)\s+-->')
-    for dir in glob.glob('/a/www/ietf-mail-archive/web*/abfab/current/'):
+    for dir in glob.glob('/a/www/ietf-mail-archive/web*/*/current/'):
         listname = dir.split('/')[-3]
         print "Importing %s" % listname
         for fil in glob.glob(dir + 'msg?????.html'):

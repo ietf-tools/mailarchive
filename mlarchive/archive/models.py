@@ -330,6 +330,11 @@ class Attachment(models.Model):
     def get_file_path():
         pass
         
+class Legacy(models.Model):
+    email_list_id = models.CharField(max_length=40)
+    msgid = models.CharField(max_length=255,db_index=True)
+    number = models.IntegerField()
+    
 class Reference(models.Model):
     source_message = models.ForeignKey(Message,related_name='ref_source_set')
     target_message = models.ForeignKey(Message,related_name='ref_target_set')

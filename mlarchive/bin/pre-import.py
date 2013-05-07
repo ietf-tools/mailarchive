@@ -22,6 +22,7 @@ from email.utils import parseaddr
 import glob
 import mailbox
 import re
+import warnings
 
 def main():
     PATTERN = re.compile(r'<!--X-Message-Id:\s+(.*)\s+-->')
@@ -43,10 +44,14 @@ def main():
                 
                 if not found:
                     print "No Message Id: %s" % fil
-                else:
+                else
                     number = int(os.path.basename(fil)[3:8])
                     Legacy.objects.create(msgid=msgid,email_list_id=listname,number=number)
                 
                 
 if __name__ == "__main__":
-    main()
+    # debug version: treat warnings as errors
+    with warnings.catch_warnings(record=True) as w:
+        # Cause all warnings to always be triggered.
+        warnings.simplefilter("error")
+        main()

@@ -45,13 +45,18 @@ def main():
                 if not found:
                     print "No Message Id: %s" % fil
                 else
+                    try:
+                        u = unicode(msgid)
+                    except UnicodeDecodeError:
+                        warnings.warn('UnicodeDecode: %s' % fil)
                     number = int(os.path.basename(fil)[3:8])
                     Legacy.objects.create(msgid=msgid,email_list_id=listname,number=number)
                 
                 
 if __name__ == "__main__":
     # debug version: treat warnings as errors
-    with warnings.catch_warnings(record=True) as w:
-        # Cause all warnings to always be triggered.
-        warnings.simplefilter("error")
-        main()
+    #with warnings.catch_warnings(record=True) as w:
+    #    # Cause all warnings to always be triggered.
+    #    warnings.simplefilter("error")
+    #    main()
+    main()

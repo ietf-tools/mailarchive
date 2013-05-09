@@ -347,7 +347,7 @@ class loader(object):
         else:
             path = os.path.join(settings.ARCHIVE_DIR,self.email_list.name,hashcode)
         if not os.path.exists(os.path.dirname(path)):
-            os.mkdir(os.path.dirname(path))
+            os.makedirs(os.path.dirname(path))
         with open(path,'w') as f:
             f.write(m.as_string())
         

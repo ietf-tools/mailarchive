@@ -18,6 +18,7 @@ setup_environ(settings)
 
 from mlarchive.archive.models import *
 from email.utils import parseaddr
+import HTMLParser
 import glob
 import mailbox
 import re
@@ -26,6 +27,7 @@ import warnings
 def main():
     PATTERN = re.compile(r'<!--X-Message-Id:\s+(.*)\s+-->')
     dirs = glob.glob('/a/www/ietf-mail-archive/web*/*/current/')
+    html_parser = HTMLParser.HTMLParser()
     for dir in sorted(dirs):
         listname = dir.split('/')[-3]
         print "Importing %s" % listname
@@ -38,6 +40,8 @@ def main():
                         if match:
                             found = True
                             msgid = match.groups()[0]
+                            # in msgNNNNN.html message-id's are escaped, need to unescape
+                            msgid = html_parser.unescape(msgid)
                         else:
                             raise Error('pattern failed (%s)' % fil)
                 

@@ -285,12 +285,13 @@ class loader(object):
         if not msgid:
             raise GenericWarning('No MessageID (%s)' % m.get_from())
             
+        hashcode = self.get_hash(msgid)
         # filter against legacy archive
         try: 
-            legacy = Legacy.objects.get(msgid=msgid,email_list_id=self.email_list.name):
+            legacy = Legacy.objects.get(msgid=msgid,email_list_id=self.email_list.name)
         except Legacy.DoesNotExist:
             #raise GenericWarning('Not in legacy DB (spam?): %s' % msgid)
-            self.write_msg(m,spam=True)
+            self.write_msg(m,hashcode,spam=True)
             self.stats['spam'] += 1
             return None
         
@@ -299,7 +300,6 @@ class loader(object):
             raise GenericWarning('Duplicate msgid: %s' % msgid)
             
         # check for duplicate hash
-        hashcode = self.get_hash(msgid)
         if Message.objects.filter(hashcode=hashcode):
             raise CommandError('Duplicate hash, msgid: %s' % msgid)
         
@@ -317,7 +317,7 @@ class loader(object):
                       thread=self.get_thread(m),
                       to=handle_header(m.get('To','')))
         msg.save()
-        self.write_msg(m)
+        self.write_msg(m,hashcode)
         
     def process(self):
         for m in self.mb:
@@ -336,7 +336,7 @@ class loader(object):
     def stopclock(self):
         self.endtime = time.time()
     
-    def write_msg(self,m,spam=False):
+    def write_msg(self,m,hashcode,spam=False):
         '''
         This function takes an email.Message object and writes a copy of it to the disk archive
         '''

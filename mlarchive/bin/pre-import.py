@@ -9,7 +9,6 @@ export DJANGO_SETTINGS_MODULE=mlarchive.settings
 
 import sys
 sys.path.insert(0, '/a/home/rcross/src/amsl/mailarch/trunk')
-#sys.path.insert(0, '/a/home/rcross/src/amsl/mlabast/mlarchive')
 
 from django.core.management import setup_environ
 from django.db.utils import IntegrityError
@@ -44,7 +43,7 @@ def main():
                 
                 if not found:
                     print "No Message Id: %s" % fil
-                else
+                else:
                     try:
                         u = unicode(msgid)
                     except UnicodeDecodeError:

@@ -4,6 +4,11 @@ This is a utility script that handles loading multiple archives
 Use "-f" to load entire archive, otherwise the script uses the
 subset of lists defined in SUBSET below.
 
+NOTE: this was built for running the initial import of the archive.
+Therefore it calls load with firstrun=True.  Never do this after
+the initial import, becase message that aren't in the legacy archive
+will be considered spam.
+
 to run first do
 export DJANGO_SETTINGS_MODULE=mlarchive.settings
 '''
@@ -114,8 +119,9 @@ def main():
                 
             # save output from command so we can aggregate statistics
             content = StringIO()
+            # TODO set firstrun=True
             call_command('load', path, format=format, listname=os.path.basename(dir), 
-                         test=options.test, private=private, stdout=content)
+                         test=options.test, private=private, firstrun=False, stdout=content)
             
             # gather stats from output
             content.seek(0)

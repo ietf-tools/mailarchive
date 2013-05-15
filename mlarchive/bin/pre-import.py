@@ -1,6 +1,10 @@
 #!/usr/bin/python
 '''
-Find record causing Term too long error in index build
+This script scans the MHonArc web archive, and creates a record in Legacy for each message
+(about 1.4 million as of 05-15-13).  This table in turn can be used by the initial import
+to filter out messages that aren't in the web archives, as a way to leverage all the manual
+work that was done purging spam from the web archives.  The Leagcy table will also be used
+for redirecting requests to the old archive to the new one.
 
 
 to run first do

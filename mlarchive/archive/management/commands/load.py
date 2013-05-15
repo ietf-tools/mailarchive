@@ -21,15 +21,19 @@ class Command(BaseCommand):
             help='Mailbox format.  Accepted values: mbox,mmdf'),
         make_option('-p', '--private', action='store_true', dest='private', default=False,
             help='Private list.  Default is public'),
+        make_option('--firstrun', action='store_true', dest='firstrun', default=False,
+            help='Only use this on the initial import of the archive'),
         )
         
     def handle(self, *args, **options):
         filename = args[0]
         
+        if options.get('firstrun') and Legacy.objects.all().count() == 0:
+            raise CommandError('ERROR: on firstrun, the leagcy archive index is empty')
         if not os.path.exists(filename):
             raise CommandError('File "%s" does not exist' % filename)
         
-        loader = _classes.loader(filename, **options)
+        loader = _classes.Loader(filename, **options)
         loader.startclock()
         loader.process()
         loader.stopclock()

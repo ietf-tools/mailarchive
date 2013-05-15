@@ -17,9 +17,17 @@ import time
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
 
+# Suppress database warnings
+#from warnings import filterwarnings
+#filterwarnings('ignore', category = MySQLdb.Warning)
+        
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
+def archive_message(msg,listname,private=False):
+    mw = MessageWrapper(msg,listname,private=private)
+    mw.save()
+    
 def parsedate_to_datetime(data):
     '''
     This function is from email standard library v3.3, converted to 2.x
@@ -137,8 +145,8 @@ class GenericWarning(Exception):
     
 class DateError(Exception):
     pass
-    
-class loader(object):
+
+class Loader(object):
     def __init__(self, filename, **options):
         self.endtime = 0
         self.filename = filename
@@ -162,9 +170,6 @@ class loader(object):
             
         logger.info('loader called with: %s' % self.filename)
         
-        self.email_list,created = EmailList.objects.get_or_create(
-            name=self.listname,defaults={'description':self.listname,'private':self.private})
-        
     def cleanup(self):
         '''
         Call this function when you are done with the loader object
@@ -174,76 +179,12 @@ class loader(object):
     def elapsedtime(self):
         return self.endtime - self.starttime
         
-    def get_date(self,msg):
-        '''
-        This function gets the message date.  It takes an email.Message object and returns a naive
-        Datetime object in UTC time.
-        
-        First we inspect the Date: header field, since it should correspond with the date and 
-        time the message composer sent the email.  It also usually contains the timezone 
-        information which is important for calculating correct UTC.  Unfortunately the Date header 
-        can vary dramatically in format or even be missing.  Next we check for a Received header 
-        which should contain an RFC2822 date.  Lastly we check the envelope header, which should
-        have an asctime date (no timezone info).
-        '''
-        fallback = None
-        for func in (get_header_date,get_received_date,get_envelope_date):
-            date = func(msg)
-            if date:
-                if is_aware(date):
-                    try:
-                        return date.astimezone(pytz.utc).replace(tzinfo=None)   # return as naive UTC
-                    except ValueError:
-                        pass
-                else:
-                    fallback = date
-        logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,'Used None or naive date',msg.get_from()))
-        return fallback
-            
-    def get_hash(self,msgid):
-        '''
-        Takes the name of the email list and msgid and returns the hashcode
-        '''
-        sha = hashlib.sha1(msgid)
-        sha.update(self.listname)
-        return base64.urlsafe_b64encode(sha.digest())
-        
     def get_stats(self):
         '''
         Return statistics from the process() function
         '''
         return "%s:%s:%s:%s:%.3f\n" % (self.listname,os.path.basename(self.filename),
                                      self.stats['count'],self.stats['errors'],self.elapsedtime())
-    def get_subject(self,msg):
-        '''
-        This function gets the message subject.  If the subject looks like spam, long line with
-        no spaces, truncate it so as not to cause index errors
-        '''
-        subject = handle_header(msg.get('Subject',''))
-        if len(subject) > 120 and len(subject.split()) == 1:
-            subject = subject[:120]
-        return subject
-        
-    def get_thread(self,msg):
-        '''
-        This is a very basic thread algorithm.  If 'In-Reply-To-' is set, look up that message 
-        and return it's thread id, otherwise return a new thread id.  This is crude for many reasons.
-        ie. what if the referenced message isn't loaded yet?  We load message files in date order
-        to minimize this.
-        see http://www.jwz.org/doc/threading.html
-        '''
-        irt = msg.get('In-Reply-To','').strip('<>')
-        if irt:
-            self.stats['irts'] += 1
-            try:
-                irt_msg = Message.objects.get(msgid=irt)
-                thread = irt_msg.thread
-            except (Message.DoesNotExist, Message.MultipleObjectsReturned):
-                self.stats['mirts'] += 1
-                thread = Thread.objects.create()
-        else:
-            thread = Thread.objects.create()
-        return thread
     
     def guess_list(self):
         '''
@@ -267,57 +208,29 @@ class loader(object):
             if match:
                 return match.groups()[0]
         
-    def load_message(self,m):
+    def load_message(self,msg):
         '''
-        This function takes an email.Message object and creates the archive.Message object
+        This function uses MessageWrapper to save a Message to the archive.  If we are in test
+        mode the save() step is skipped.  If this is the firstrun of the import, we filter
+        spam by checking that the message exists in the legacy web archive (which has been 
+        purged of spam) before saving.  NOTE: if the message is from the last week we skip this
+        step, because there will be some lag between when the legacy archive index was created
+        and the firstrun import completes
         '''
         self.stats['count'] += 1
+        mw = MessageWrapper(msg, self.listname, private=self.private)
         
-        # handle message-id ========================
-        msgid = handle_header(m.get('Message-ID',''))
-        if msgid:
-            msgid = msgid.strip('<>')
-        else:
-            # see if this is a resent Message, which sometimes have missing Message-ID field
-            resent_msgid = m.get('Resent-Message-ID')
-            if resent_msgid:
-                msgid = resent_msgid.strip('<>')
-        if not msgid:
-            raise GenericWarning('No MessageID (%s)' % m.get_from())
-            
-        hashcode = self.get_hash(msgid)
-        # filter against legacy archive
-        try: 
-            legacy = Legacy.objects.get(msgid=msgid,email_list_id=self.email_list.name)
-        except Legacy.DoesNotExist:
-            #raise GenericWarning('Not in legacy DB (spam?): %s' % msgid)
-            self.write_msg(m,hashcode,spam=True)
-            self.stats['spam'] += 1
-            return None
+        if self.options.get('test'):
+            return
         
-        # check for duplicate message id, and skip
-        if Message.objects.filter(msgid=msgid,email_list=self.email_list):
-            raise GenericWarning('Duplicate msgid: %s' % msgid)
-            
-        # check for duplicate hash
-        if Message.objects.filter(hashcode=hashcode):
-            raise CommandError('Duplicate hash, msgid: %s' % msgid)
+        if self.options.get('firstrun') and mw.get_date() < datetime.datetime.now() - datetime.timedelta(days=7):
+            try: 
+                legacy = Legacy.objects.get(msgid=mw.msgid,email_list_id=self.listname)
+            except Legacy.DoesNotExist:
+                self.stats['spam'] += 1
+                return
         
-        inrt = m.get('In-Reply-To','')
-        if inrt:
-            inrt = inrt.strip('<>')
-            
-        msg = Message(date=self.get_date(m),
-                      email_list=self.email_list,
-                      frm = handle_header(m.get('From','')),
-                      hashcode=hashcode,
-                      inrt=inrt,
-                      msgid=msgid,
-                      subject=self.get_subject(m),
-                      thread=self.get_thread(m),
-                      to=handle_header(m.get('To','')))
-        msg.save()
-        self.write_msg(m,hashcode)
+        mw.save()
         
     def process(self):
         for m in self.mb:
@@ -335,22 +248,151 @@ class loader(object):
         
     def stopclock(self):
         self.endtime = time.time()
+
+class MessageWrapper(object):
+    '''
+    This class takes a email.message.Message object (email_message) and constructs the 
+    mlarchive.archive.models.Message (archive_message) object.  Use the save() method to save
+    the message in the archive.
+    '''
+    def __init__(self, email_message, listname, private=False):
+        self.email_message = email_message
+        self.hashcode = None
+        self.listname = listname
+        self.private = private
+        self.msgid = self.get_msgid()
+        self._archive_message = None
+        
+    def _get_archive_message(self):
+        "Returns the archive.models.Message instance"
+        if self._archive_message is None:
+            self.process()
+        return self._archive_message
+    archive_message = property(_get_archive_message)
     
-    def write_msg(self,m,hashcode,spam=False):
+    def get_date(self):
         '''
-        This function takes an email.Message object and writes a copy of it to the disk archive
+        This function gets the message date.  It takes an email.Message object and returns a naive
+        Datetime object in UTC time.
+        
+        First we inspect the Date: header field, since it should correspond with the date and 
+        time the message composer sent the email.  It also usually contains the timezone 
+        information which is important for calculating correct UTC.  Unfortunately the Date header 
+        can vary dramatically in format or even be missing.  Next we check for a Received header 
+        which should contain an RFC2822 date.  Lastly we check the envelope header, which should
+        have an asctime date (no timezone info).
         '''
-        if self.options.get('test'):
-            return None
-        if spam:
-            path = os.path.join(settings.ARCHIVE_DIR,'spam',self.email_list.name,hashcode)
+        fallback = None
+        for func in (get_header_date,get_received_date,get_envelope_date):
+            date = func(self.email_message)
+            if date:
+                if is_aware(date):
+                    try:
+                        return date.astimezone(pytz.utc).replace(tzinfo=None)   # return as naive UTC
+                    except ValueError:
+                        pass
+                else:
+                    fallback = date
+        logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,'Used None or naive date',
+                                                         self.email_message.get_from()))
+        return fallback
+            
+    def get_hash(self,msgid):
+        '''
+        Takes the msgid and returns the hashcode
+        '''
+        sha = hashlib.sha1(msgid)
+        sha.update(self.listname)
+        return base64.urlsafe_b64encode(sha.digest())
+    
+    def get_msgid(self):
+        msgid = handle_header(self.email_message.get('Message-ID',''))
+        if msgid:
+            msgid = msgid.strip('<>')
         else:
-            path = os.path.join(settings.ARCHIVE_DIR,self.email_list.name,hashcode)
+            # see if this is a resent Message, which sometimes have missing Message-ID field
+            resent_msgid = self.email_message.get('Resent-Message-ID')
+            if resent_msgid:
+                msgid = resent_msgid.strip('<>')
+        if not msgid:
+            raise GenericWarning('No MessageID (%s)' % self.email_message.get_from())
+        return msgid
+            
+    def get_subject(self):
+        '''
+        This function gets the message subject.  If the subject looks like spam, long line with
+        no spaces, truncate it so as not to cause index errors
+        '''
+        subject = handle_header(self.email_message.get('Subject',''))
+        if len(subject) > 120 and len(subject.split()) == 1:
+            subject = subject[:120]
+        return subject
+        
+    def get_thread(self):
+        '''
+        This is a very basic thread algorithm.  If 'In-Reply-To-' is set, look up that message 
+        and return it's thread id, otherwise return a new thread id.  This is crude for many reasons.
+        ie. what if the referenced message isn't loaded yet?  We load message files in date order
+        to minimize this.
+        see http://www.jwz.org/doc/threading.html
+        '''
+        irt = self.email_message.get('In-Reply-To','').strip('<>')
+        if irt:
+            #self.stats['irts'] += 1
+            try:
+                irt_msg = Message.objects.get(msgid=irt)
+                thread = irt_msg.thread
+            except (Message.DoesNotExist, Message.MultipleObjectsReturned):
+                #self.stats['mirts'] += 1
+                thread = Thread.objects.create()
+        else:
+            thread = Thread.objects.create()
+        return thread
+        
+    def process(self):
+        self.hashcode = self.get_hash(self.msgid)
+        inrt = self.email_message.get('In-Reply-To','')
+        if inrt:
+            inrt = inrt.strip('<>')
+        
+        self.email_list,created = EmailList.objects.get_or_create(
+            name=self.listname,defaults={'description':self.listname,'private':self.private})
+            
+        self._archive_message = Message(date=self.get_date(),
+                             email_list=self.email_list,
+                             frm = handle_header(self.email_message.get('From','')),
+                             hashcode=self.hashcode,
+                             inrt=inrt,
+                             msgid=self.msgid,
+                             subject=self.get_subject(),
+                             thread=self.get_thread(),
+                             to=handle_header(self.email_message.get('To','')))
+        
+    def save(self):
+        # ensure process has been run
+        self._get_archive_message()
+        
+        # check for duplicate message id, and skip
+        if Message.objects.filter(msgid=self.msgid,email_list__name=self.listname):
+            raise GenericWarning('Duplicate msgid: %s' % self.msgid)
+            
+        # check for duplicate hash
+        if Message.objects.filter(hashcode=self.hashcode):
+            # TODO different error?
+            raise CommandError('Duplicate hash, msgid: %s' % self.msgid)
+            
+        self.archive_message.save()
+        self.write_msg()
+        
+    def write_msg(self,spam=False):
+        '''
+        This function writes a copy of the original email message to the disk archive
+        '''
+        if spam:
+            path = os.path.join(settings.ARCHIVE_DIR,'spam',self.listname,self.hashcode)
+        else:
+            path = os.path.join(settings.ARCHIVE_DIR,self.listname,self.hashcode)
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
         with open(path,'w') as f:
-            f.write(m.as_string())
-        
-        # Suppress database warnings
-        #from warnings import filterwarnings
-        #filterwarnings('ignore', category = MySQLdb.Warning)
+            f.write(self.email_message.as_string(unixfrom=True))

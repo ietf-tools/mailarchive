@@ -23,7 +23,7 @@ class MainTest(TestCase):
 class ModelsTest(TestCase):
     # fixtures = []
     path = os.path.join(settings.TEST_DATA_DIR,'test.mail')
-    loader = _classes.loader(path)
+    loader = _classes.Loader(path)
     
     def test_get_charset(self):
         msg = self.loader.mb[0]

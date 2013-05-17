@@ -268,6 +268,12 @@ class Message(models.Model):
     def get_absolute_url(self):
         return '/archive/detail/%s/%s' % (self.email_list.name,self.hashcode)
     
+    def get_attachment_path(self):
+        path = os.path.join(settings.ARCHIVE_DIR,self.email_list.name,'attachments')
+        if not os.path.exists(path):
+            os.makedirs(path)
+        return path
+        
     def get_body(self):
         '''
         Returns the contents of the message body, text only for use in indexing.

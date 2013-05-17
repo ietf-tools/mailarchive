@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.core.management.base import CommandError
 from dateutil.tz import tzoffset
-from email.utils import parsedate, parsedate_tz, mktime_tz
+from email.utils import parsedate, parsedate_tz, mktime_tz, getaddresses
 from mlarchive.archive.models import *
 from tzparse import tzparse
 
@@ -11,7 +11,9 @@ import hashlib
 import mailbox
 import os
 import pytz
+import random
 import re
+import string
 import time
 
 from django.utils.log import getLogger
@@ -318,6 +320,16 @@ class MessageWrapper(object):
             raise GenericWarning('No MessageID (%s)' % self.email_message.get_from())
         return msgid
             
+    def get_random_name(self, ext):
+        '''
+        This function generates a randomized filename for storing attachments.  It takes the
+        file extension as a string and builds a name like extXXXXXXXXXX.ext, where X is a random
+        letter digit or underscore, and ext is the file extension.
+        '''
+        chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + '_'
+        rand = ''.join(random.choice(chars) for x in range(10))
+        return '%s%s.%s' % (ext, rand, ext)
+        
     def get_subject(self):
         '''
         This function gets the message subject.  If the subject looks like spam, long line with
@@ -327,6 +339,20 @@ class MessageWrapper(object):
         if len(subject) > 120 and len(subject.split()) == 1:
             subject = subject[:120]
         return subject
+    
+    def get_to(self):
+        '''
+        Use utility functions to extract RFC2822 addresses.  Returns a string with space 
+        deliminated addresses and names.
+        '''
+        #handle_header()
+        result = []
+        addrs = get_addresses(self.email_message.get_all('to',[]))
+        # flatten list of tuples
+        for tuple in addrs:
+            result = result + list(tuple)
+        
+        return ' '.join(result)
         
     def get_thread(self):
         '''
@@ -366,8 +392,37 @@ class MessageWrapper(object):
                              msgid=self.msgid,
                              subject=self.get_subject(),
                              thread=self.get_thread(),
-                             to=handle_header(self.email_message.get('To','')))
+                             to=self.get_to())
         
+    def process_attachments(self):
+        '''
+        This function walks the message parts and saves any attachments
+        '''
+        for part in self.email_message.walk():
+            # TODO can we have an attachment without a filename (content disposition) ??
+            if part.get_filename():     # indicates an attachment
+                type = part.get_content_type()
+                if type in settings.SAFE_ATTACHMENT_TYPES:
+                    filename = part.get_filename()
+                    # convert invalid characters to underscores? mhmimetypes.pl
+                    name, extension = os.path.splitext(filename)
+                    # create record
+                    Attachment.objects.create(message=self.archive_message,name=filename)
+                    
+                    # write to disk
+                    for i in range(10):     # try up to ten random filenames
+                        diskname = self.get_random_name(extension)
+                        path = os.path.join(self.archive_message.get_attachment_path(),diskname)
+                        if not os.path.exist(path):
+                            with open(path, 'wb') as f:
+                                f.write(part.get_payload(decode=True))
+                            break
+                        else:
+                            logger.error("ERROR: couldn't pick unique attachment name in ten tries (list:%s)" % (self.listname))
+                else:
+                    logger.warn('WARN: unsafe attachment type not saved (msg:%s type:%s)' % (
+                                self.msgid, type))
+                                
     def save(self):
         # ensure process has been run
         self._get_archive_message()
@@ -383,6 +438,9 @@ class MessageWrapper(object):
             
         self.archive_message.save()
         self.write_msg()
+        
+        # now that the archive.Message object is created we can process any attachments
+        self.process_attachments()
         
     def write_msg(self,spam=False):
         '''

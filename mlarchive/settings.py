@@ -164,9 +164,12 @@ HAYSTACK_USE_REALTIME_SEARCH = False
 
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = '/a/home/rcross/data/archive'
-TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
-SERVER_MODE = 'development'
 LOG_FILE = '/a/home/rcross/data/log/mlarchive.log'
+SERVER_MODE = 'development'
+SAFE_ATTACHMENT_TYPES = ('application/x-zip-compressed',
+                         'application/pkcs7-signature',
+                         'image/png',)
+TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
 
 LOGIN_REDIRECT_URL = '/archive/'
 AUTHENTICATION_BACKENDS = (

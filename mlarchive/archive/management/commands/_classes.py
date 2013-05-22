@@ -1,7 +1,8 @@
 from django.conf import settings
 from django.core.management.base import CommandError
 from dateutil.tz import tzoffset
-from email.utils import parsedate, parsedate_tz, mktime_tz, getaddresses
+from email.header import decode_header
+from email.utils import parsedate, parsedate_tz, mktime_tz, getaddresses, make_msgid
 from mlarchive.archive.models import *
 from tzparse import tzparse
 
@@ -29,6 +30,67 @@ logger = getLogger('mlarchive.custom')
 def archive_message(msg,listname,private=False):
     mw = MessageWrapper(msg,listname,private=private)
     mw.save()
+    
+def decode_safely(s, charset='ascii'):
+    """Return s decoded according to charset, but do so safely."""
+    try:
+        return s.decode(charset or 'ascii', 'ignore')
+    except LookupError: # bogus charset
+        return s.decode('ascii', 'ignore')
+
+def decode_rfc2047_header(h):
+    return ' '.join(decode_safely(s, charset)
+                   for s, charset in decode_header(h))
+"""
+def handle_header(header_text, default=DEFAULT_CHARSET):
+    '''Decode header_text if needed'''
+    try:
+        headers=decode_header(header_text)
+    except email.Errors.HeaderParseError:
+        # This already append in email.base64mime.decode()
+        # instead return a sanitized ascii string 
+        return header_text.encode('ascii', 'replace').decode('ascii')
+    else:
+        for i, (text, charset) in enumerate(headers):
+            try:
+                headers[i]=unicode(text, charset or default, errors='replace')
+            except LookupError:
+                # if the charset is unknown, force default 
+                headers[i]=unicode(text, default, errors='replace')
+        return u"".join(headers)
+"""
+def handle_header(header_text, msg, default='iso-8859-1'):
+    '''
+    This function takes some header_text as a string and a email.message.Message object.  It
+    returns the decoded as needed.
+    Checks if the header needs decoding:
+    - if text contains encoded_words, "=?", use decode_header()
+    - if raw non-ascii text check Content-Types for charset
+    - default to iso-8859-1, replace
+    '''
+    if not header_text:         # just return if we are passed an empty string
+        return header_text
+        
+    if '=?' in header_text:
+        header_text = decode_rfc2047_header(header_text)
+        return header_text
+    
+    # if it's pure ascii we're done
+    try:
+        header_text.decode('ascii')
+        return header_text
+    except (UnicodeDecodeError, UnicodeEncodeError):
+        pass
+    
+    charset = seek_charset(msg)
+    if charset:
+        try:
+            header_text = unicode(header_text,charset)
+            return header_text
+        except UnicodeDecodeError:
+            pass
+    
+    return unicode(header_text,default,errors='replace')
     
 def parsedate_to_datetime(data):
     '''
@@ -102,13 +164,27 @@ def is_aware(dt):
     if dt.tzinfo and dt.tzinfo.utcoffset(dt) is not None:
         return True
     return False
+    
+def seek_charset(msg):
+    '''
+    Try and derive non-ascii charset from message payload(s).
+    Return None if none found.
+    '''
+    for part in msg.walk():
+        charset = part.get_content_charset()
+        if charset and charset not in ('ascii','us-ascii'):
+            break
+    if charset in ('ascii','us-ascii'):
+        return None
+    else:
+        return charset
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------
 class CustomMbox(mailbox.mbox):
     '''
     Custom mbox class.  We are overriding the _generate_toc function to use a more restrictive
-    From line check.  Base on the deprecated UnixMailbox
+    From line check.  Based on the deprecated UnixMailbox
     '''
     _fromlinepattern = (r'From (.*@.* |MAILER-DAEMON ).{24}')
     _regexp = None
@@ -253,17 +329,19 @@ class Loader(object):
 
 class MessageWrapper(object):
     '''
-    This class takes a email.message.Message object (email_message) and constructs the 
-    mlarchive.archive.models.Message (archive_message) object.  Use the save() method to save
-    the message in the archive.
+    This class takes a email.message.Message object (email_message) and listname as a string
+    and constructs the mlarchive.archive.models.Message (archive_message) object.
+    Use the save() method to save the message in the archive.
     '''
     def __init__(self, email_message, listname, private=False):
+        self._archive_message = None
         self.email_message = email_message
         self.hashcode = None
         self.listname = listname
         self.private = private
+        self.spam_score = 0
+        
         self.msgid = self.get_msgid()
-        self._archive_message = None
         
     def _get_archive_message(self):
         "Returns the archive.models.Message instance"
@@ -299,16 +377,16 @@ class MessageWrapper(object):
                                                          self.email_message.get_from()))
         return fallback
             
-    def get_hash(self,msgid):
+    def get_hash(self):
         '''
         Takes the msgid and returns the hashcode
         '''
-        sha = hashlib.sha1(msgid)
+        sha = hashlib.sha1(self.msgid)
         sha.update(self.listname)
         return base64.urlsafe_b64encode(sha.digest())
     
     def get_msgid(self):
-        msgid = handle_header(self.email_message.get('Message-ID',''))
+        msgid = handle_header(self.email_message.get('Message-ID',''),self.email_message)
         if msgid:
             msgid = msgid.strip('<>')
         else:
@@ -317,7 +395,9 @@ class MessageWrapper(object):
             if resent_msgid:
                 msgid = resent_msgid.strip('<>')
         if not msgid:
-            raise GenericWarning('No MessageID (%s)' % self.email_message.get_from())
+            msgid = make_msgid('ARCHIVE')
+            self.spam_score += 1
+            #raise GenericWarning('No MessageID (%s)' % self.email_message.get_from())
         return msgid
             
     def get_random_name(self, ext):
@@ -335,7 +415,7 @@ class MessageWrapper(object):
         This function gets the message subject.  If the subject looks like spam, long line with
         no spaces, truncate it so as not to cause index errors
         '''
-        subject = handle_header(self.email_message.get('Subject',''))
+        subject = handle_header(self.email_message.get('Subject',''),self.email_message)
         if len(subject) > 120 and len(subject.split()) == 1:
             subject = subject[:120]
         return subject
@@ -345,9 +425,11 @@ class MessageWrapper(object):
         Use utility functions to extract RFC2822 addresses.  Returns a string with space 
         deliminated addresses and names.
         '''
-        #handle_header()
+        to = self.email_message.get('to')
+        if not to: 
+            return ''
         result = []
-        addrs = get_addresses(self.email_message.get_all('to',[]))
+        addrs = getaddresses([decode_rfc2047_header(to)])   # getaddresses takes a sequence
         # flatten list of tuples
         for tuple in addrs:
             result = result + list(tuple)
@@ -376,7 +458,7 @@ class MessageWrapper(object):
         return thread
         
     def process(self):
-        self.hashcode = self.get_hash(self.msgid)
+        self.hashcode = self.get_hash()
         inrt = self.email_message.get('In-Reply-To','')
         if inrt:
             inrt = inrt.strip('<>')
@@ -386,11 +468,12 @@ class MessageWrapper(object):
             
         self._archive_message = Message(date=self.get_date(),
                              email_list=self.email_list,
-                             frm = handle_header(self.email_message.get('From','')),
+                             frm = handle_header(self.email_message.get('From',''),self.email_message),
                              hashcode=self.hashcode,
                              inrt=inrt,
                              msgid=self.msgid,
                              subject=self.get_subject(),
+                             spam_score=self.spam_score,
                              thread=self.get_thread(),
                              to=self.get_to())
         
@@ -400,22 +483,36 @@ class MessageWrapper(object):
         '''
         for part in self.email_message.walk():
             # TODO can we have an attachment without a filename (content disposition) ??
-            if part.get_filename():     # indicates an attachment
+            name = part.get_filename()
+            if name:     # indicates an attachment
                 type = part.get_content_type()
                 if type in settings.SAFE_ATTACHMENT_TYPES:
-                    filename = part.get_filename()
                     # convert invalid characters to underscores? mhmimetypes.pl
-                    name, extension = os.path.splitext(filename)
+                    base, extension = os.path.splitext(name)
+                    if extension:
+                        extension = extension.lstrip('.')
+                    else:
+                        extension = 'xxx'
+                        
                     # create record
-                    Attachment.objects.create(message=self.archive_message,name=filename)
+                    attach = Attachment.objects.create(message=self.archive_message,name=name)
                     
+                    # handle unrecognized
+                    payload = part.get_payload(decode=True)
+                    if not payload:
+                        attach.error = '<<< %s; name=%s: Unrecognized >>>' % (type,name)
+                        attach.save()
+                        continue
+                        
                     # write to disk
                     for i in range(10):     # try up to ten random filenames
-                        diskname = self.get_random_name(extension)
-                        path = os.path.join(self.archive_message.get_attachment_path(),diskname)
-                        if not os.path.exist(path):
+                        filename = self.get_random_name(extension)
+                        path = os.path.join(self.archive_message.get_attachment_path(),filename)
+                        if not os.path.exists(path):
                             with open(path, 'wb') as f:
-                                f.write(part.get_payload(decode=True))
+                                f.write(payload)
+                                attach.filename = filename
+                                attach.save()
                             break
                         else:
                             logger.error("ERROR: couldn't pick unique attachment name in ten tries (list:%s)" % (self.listname))

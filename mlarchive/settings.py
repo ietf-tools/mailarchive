@@ -166,9 +166,24 @@ HAYSTACK_USE_REALTIME_SEARCH = False
 ARCHIVE_DIR = '/a/home/rcross/data/archive'
 LOG_FILE = '/a/home/rcross/data/log/mlarchive.log'
 SERVER_MODE = 'development'
-SAFE_ATTACHMENT_TYPES = ('application/x-zip-compressed',
+SAFE_ATTACHMENT_TYPES = ('application/ms-tnef',
+                         'application/msword',
+                         'application/octet-stream',
+                         'application/pdf',
                          'application/pkcs7-signature',
-                         'image/png',)
+                         'application/vnd.ms-excel',
+                         'application/vnd.ms-powerpoint',
+                         'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                         'application/x-zip-compressed',
+                         'image/gif',
+                         'image/jpeg',
+                         'image/png',
+                         'message/external-body',
+                         'text/html',
+                         'text/plain',
+                         'text/v-card',
+                         'text/x-vcard')
 TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
 
 LOGIN_REDIRECT_URL = '/archive/'

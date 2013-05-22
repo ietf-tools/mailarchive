@@ -73,7 +73,9 @@ $("p").dblclick( function () { alert("Hello World!"); });
 
 <h2>Here is some decoded header &#xc0;&#xcc;&#xbd;&#xc2;&#xbf;&#xeb; </h2>
 
+{% for test in tests %}
 <h2>Here is unicode template variable {{ test }}</h2>
+{% endfor %}
 
 <h2>Here is a body test {{ body }}</h2>
 

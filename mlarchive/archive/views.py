@@ -188,11 +188,12 @@ def main(request):
 def test(request):
     #from django.core.exceptions import PermissionDenied
     #raise PermissionDenied
-    test = u'Ond\u0159ej Sur\xfd<ondrej.sury@nic.cz>'
-    msg = Message.objects.get(id=24190)
+    tests = [u'Ond\u0159ej Sur\xfd<ondrej.sury@nic.cz>',
+            u'P \xe4r Mattsson <per@defero.se>']
+    msg = Message.objects.get(id=1)
     body = msg.get_body()
     return render_to_response('archive/test.html', {
-        'test': test,
+        'tests': tests,
         'body': body},
         RequestContext(request, {}),
     )

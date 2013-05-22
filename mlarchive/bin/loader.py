@@ -45,7 +45,7 @@ SOURCE_DIR = '/a/www/ietf-mail-archive/'
 SUBSET = ('abfab','alto','ancp','autoconf','bliss','ccamp','cga-ext','codec','dane','dmm','dnsop',
           'dime','discuss','emu','gen-art','grow','hipsec','homenet','i2rs','ietf82-team',
           'ietf83-team','ietf84-team','ipsec','netconf','sip','simple')
-MINI = ('ietf83-team',)
+MINI = ('ccamp',)
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------

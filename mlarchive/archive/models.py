@@ -33,23 +33,6 @@ def get_charset(part):
     charset = part.get_content_charset()
     return charset if charset else DEFAULT_CHARSET
     
-def handle_header(header_text, default=DEFAULT_CHARSET):
-    '''Decode header_text if needed'''
-    try:
-        headers=decode_header(header_text)
-    except email.Errors.HeaderParseError:
-        # This already append in email.base64mime.decode()
-        # instead return a sanitized ascii string 
-        return header_text.encode('ascii', 'replace').decode('ascii')
-    else:
-        for i, (text, charset) in enumerate(headers):
-            try:
-                headers[i]=unicode(text, charset or default, errors='replace')
-            except LookupError:
-                # if the charset is unknown, force default 
-                headers[i]=unicode(text, default, errors='replace')
-        return u"".join(headers)
-        
 def skip_attachment(function):
     '''
     This is a decorator for custom MIME part handlers, handle_*.  
@@ -258,6 +241,7 @@ class Message(models.Model):
     legacy_number = models.IntegerField(blank=True,null=True,db_index=True)  # for mapping mhonarc
     msgid = models.CharField(max_length=255,db_index=True)
     references = models.ManyToManyField('self',through='Reference',symmetrical=False)
+    spam_score = models.IntegerField(default=0)             # >0 = spam
     subject = models.CharField(max_length=512,blank=True)
     thread = models.ForeignKey(Thread)
     to = models.TextField(blank=True,default='')
@@ -324,8 +308,10 @@ class Message(models.Model):
         return parseaddr(self.frm)[1].lower()
         
 class Attachment(models.Model):
-    name = models.CharField(max_length=255)
+    error = models.CharField(max_length=255,blank=True) # message if problem with attachment
+    filename = models.CharField(max_length=255)         # randomized archive filename
     message = models.ForeignKey(Message)
+    name = models.CharField(max_length=255)             # regular name of attachment
     
     def __unicode__(self):
         return self.name

@@ -62,7 +62,7 @@ def handle_header(header_text, default=DEFAULT_CHARSET):
 def handle_header(header_text, msg, default='iso-8859-1'):
     '''
     This function takes some header_text as a string and a email.message.Message object.  It
-    returns the decoded as needed.
+    returns the string decoded as needed.
     Checks if the header needs decoding:
     - if text contains encoded_words, "=?", use decode_header()
     - if raw non-ascii text check Content-Types for charset
@@ -483,8 +483,8 @@ class MessageWrapper(object):
         '''
         for part in self.email_message.walk():
             # TODO can we have an attachment without a filename (content disposition) ??
-            name = part.get_filename()
             if name:     # indicates an attachment
+                name = handle_header(part.get_filename(), self.email_message)
                 type = part.get_content_type()
                 if type in settings.SAFE_ATTACHMENT_TYPES:
                     # convert invalid characters to underscores? mhmimetypes.pl

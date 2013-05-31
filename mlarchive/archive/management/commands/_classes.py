@@ -438,30 +438,59 @@ class MessageWrapper(object):
         
     def get_thread(self):
         '''
-        This is a very basic thread algorithm.  If 'In-Reply-To-' is set, look up that message 
-        and return it's thread id, otherwise return a new thread id.  This is crude for many reasons.
-        ie. what if the referenced message isn't loaded yet?  We load message files in date order
-        to minimize this.
-        see http://www.jwz.org/doc/threading.html
+        This is a simplified version of the Zawinski threading algorithm.  The process is:
+        1) If there are References, lookup the first message-id in the list and return it's thread.
+           If the message isn't found try the next message-id, repeat.
+        2) If 'In-Reply-To-' is set, look up that message and return it's thread id.
+        3) If the subject line has a "Re:" prefix look for the message matching base-subject
+           and return it's thread
+        4) If none of the above, return a new thread id
+        
+        Messages must be loaded in chronological order for this to work.
+        
+        Referecnces:
+        - http://www.jwz.org/doc/threading.html
+        - http://tools.ietf.org/html/rfc5256
         '''
-        irt = self.email_message.get('In-Reply-To','').strip('<>')
+        PATTERN = re.compile(r'<([^>]+)>')
+        
+        # try References
+        refs = self.email_message.get('references')
+        if refs:
+            msgids = re.findall(PATTERN,refs)
+            for msgid in msgids:
+                try:
+                    message = Message.objects.get(msgid=msgid)
+                    return message.thread
+                except (Message.DoesNotExist, Message.MultipleObjectsReturned):
+                    pass
+                    
+        # try In-Reply-to.  Use first msgid found, typically only one
+        irt = self.email_message.get('in-reply-to')
         if irt:
-            #self.stats['irts'] += 1
-            try:
-                irt_msg = Message.objects.get(msgid=irt)
-                thread = irt_msg.thread
-            except (Message.DoesNotExist, Message.MultipleObjectsReturned):
-                #self.stats['mirts'] += 1
-                thread = Thread.objects.create()
-        else:
-            thread = Thread.objects.create()
-        return thread
+            msgids = re.findall(PATTERN,irt)
+            if msgids:
+                try:
+                    message = Message.objects.get(msgid=msgids[0])
+                    return message.thread
+                except (Message.DoesNotExist, Message.MultipleObjectsReturned):
+                    pass
+        
+        # check subject
+        subject = self.archive_message.subject  # this subject is decoded
+        if subject.startswith('Re: '):
+            base_subject = subject[3:].lstrip()
+            messages = Message.objects.filter(email_list=self.email_list,
+                                              date__lt=self.get_date).exclude(subject__startswith='Re: ').order_by('-date')
+            for message in messages:
+                if message.subject == base_subject:
+                    return message.thread
+            
+        # return a new thread
+        return Thread.objects.create()
         
     def process(self):
         self.hashcode = self.get_hash()
-        inrt = self.email_message.get('In-Reply-To','')
-        if inrt:
-            inrt = inrt.strip('<>')
         
         self.email_list,created = EmailList.objects.get_or_create(
             name=self.listname,defaults={'description':self.listname,'private':self.private})
@@ -470,12 +499,14 @@ class MessageWrapper(object):
                              email_list=self.email_list,
                              frm = handle_header(self.email_message.get('From',''),self.email_message),
                              hashcode=self.hashcode,
-                             inrt=inrt,
                              msgid=self.msgid,
                              subject=self.get_subject(),
                              spam_score=self.spam_score,
-                             thread=self.get_thread(),
+                             #thread=self.get_thread(),
                              to=self.get_to())
+                             
+        # set thread out here so we can use the decoded subject line
+        self._archive_message.thread = self.get_thread()
         
     def process_attachments(self):
         '''
@@ -483,8 +514,8 @@ class MessageWrapper(object):
         '''
         for part in self.email_message.walk():
             # TODO can we have an attachment without a filename (content disposition) ??
+            name = handle_header(part.get_filename(), self.email_message)
             if name:     # indicates an attachment
-                name = handle_header(part.get_filename(), self.email_message)
                 type = part.get_content_type()
                 if type in settings.SAFE_ATTACHMENT_TYPES:
                     # convert invalid characters to underscores? mhmimetypes.pl

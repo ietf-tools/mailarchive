@@ -237,7 +237,7 @@ class Message(models.Model):
     email_list = models.ForeignKey(EmailList,db_index=True)
     frm = models.CharField(max_length=125,db_index=True)    # really long from lines are spam
     hashcode = models.CharField(max_length=28,db_index=True)
-    inrt = models.CharField(max_length=1024,blank=True)     # in-reply-to header field
+    #inrt = models.CharField(max_length=1024,blank=True)     # in-reply-to header field
     legacy_number = models.IntegerField(blank=True,null=True,db_index=True)  # for mapping mhonarc
     msgid = models.CharField(max_length=255,db_index=True)
     references = models.ManyToManyField('self',through='Reference',symmetrical=False)

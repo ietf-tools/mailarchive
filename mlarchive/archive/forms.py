@@ -31,7 +31,7 @@ TIME_CHOICES = (('a','anytime'),
                 ('y','year'),
                 ('c','custom...'))
                 
-VALID_SORT_OPTIONS = ('frm','-frm','date','-date','email_list','-email_list')
+VALID_SORT_OPTIONS = ('frm','-frm','date','-date','email_list','-email_list', 'subject', '-subject')
 
 # --------------------------------------------------------
 # Helper Functions
@@ -174,7 +174,12 @@ class AdvancedSearchForm(FacetedSearchForm):
         
         # TODO: handle score
         if so:
-            sqs = sqs.order_by(so,sso)
+            if so == 'subject':
+                sqs = sqs.order_by('-thread','date')
+            elif so == '-subject':
+                sqs = sqs.order_by('-thread','-date')
+            else:
+                sqs = sqs.order_by(so,sso)
         else:
             # if there's no "so" param, and no query we are browsing, sort by -date
             if len(kwargs) == 1 and kwargs.get('email_list__in'):

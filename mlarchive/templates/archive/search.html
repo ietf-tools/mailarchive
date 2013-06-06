@@ -3,6 +3,7 @@
 {% load archive_extras %}
 
 {% block extrahead %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery.cookie.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.query.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/search.js"></script>
 {% endblock %}
@@ -98,7 +99,7 @@
                             <td>{{ result.object.date|date:"m/d/Y" }}</td>
                             {# <td><a href="{% url archive_detail id=result.object.hashcode %}">{{ result.object.subject }}</a></td> #}
                             <td class="nowrap">{{ result.object.subject|truncatechars:70 }}</td>
-                            <td>{{ result.object.friendly_frm|truncatechars:35 }}</td>
+                            <td>{{ result.object.frm_email|truncatechars:35 }}</td>
                             <td>{{ result.object.email_list }}</td>
                             <td>{{ result.score }}</td>
                             <td class="hidden">{{ result.object.get_absolute_url }}</td>

@@ -2,7 +2,7 @@
     <h1>{{ msg.subject }}</h1>
     <p id="msg-info" class="darkgray">
       <span id="msg-from" class="pipe">{{ msg.frm }}</span>
-      <span id="msg-date" class="pipe">{{ msg.date }}</span>
+      <span id="msg-date" class="pipe">{{ msg.date|date:"D, d F  Y H:i" }} UTC</span>
     </p>
     <div id="msg-header" class="darkgray">
       <p>

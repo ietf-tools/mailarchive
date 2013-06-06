@@ -93,7 +93,7 @@ def ajax_messages(request):
     results = messages.object_list
     messages = [dict(date=r.object.date.strftime('%m-%d-%Y'), 
                      subject=r.object.subject,
-                     frm=r.object.friendly_frm,
+                     frm=r.object.frm_email,
                      email_list=r.object.email_list.name) for r in results]
     response = {'success':True,
                 'total':message_list.count(),

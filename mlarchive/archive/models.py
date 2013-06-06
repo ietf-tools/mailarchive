@@ -245,6 +245,7 @@ class Message(models.Model):
     subject = models.CharField(max_length=512,blank=True)
     thread = models.ForeignKey(Thread)
     to = models.TextField(blank=True,default='')
+    updated = models.DateTimeField(auto_now=True)
     
     def __unicode__(self):
         return self.msgid
@@ -291,13 +292,7 @@ class Message(models.Model):
 
     @property
     def friendly_frm(self):
-        #TODO use safer method 
-        parts = self.frm.split()
-        if len(parts) >= 3 and parts[1] == 'at':
-            return '%s@%s' % (parts[0],parts[2])
-        else:
-            part = [p for p in parts if '@' in p]
-            return part[0].strip('<>')
+        pass
     
     @property
     def frm_email(self):

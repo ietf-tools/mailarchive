@@ -19,9 +19,13 @@ class MessageIndex(BaseSearch, indexes.Indexable):
     
     def get_model(self):
         return Message
-
+    
     #def index_queryset(self):
     #    """Used when the entire index for model is updated."""
     #    return Note.objects.filter(pub_date__lte=datetime.datetime.now())
-
+    
+    # this is required in order to use start_date, end_date when reindexing
+    def get_updated_field(self):
+        return 'updated'
+    
 #site.register(Message, MessageIndex)

@@ -67,6 +67,15 @@ def transform(val):
     return val
     
 # --------------------------------------------------------
+class AdminForm(forms.Form):
+    email_list = forms.ModelChoiceField(EmailList.objects.all(),empty_label='(All lists)',required=False)
+    end_date = forms.DateField(required=False)
+    frm = forms.CharField(max_length=255,required=False)
+    msgid = forms.CharField(max_length=255,required=False)
+    spam = forms.BooleanField(required=False)
+    start_date = forms.DateField(required=False)
+    subject = forms.CharField(max_length=255,required=False)
+    
 class AdvancedSearchForm(FacetedSearchForm):
     start_date = forms.DateField(required=False,help_text='YYYY-MM-DD')
     end_date = forms.DateField(required=False)

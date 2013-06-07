@@ -1,0 +1,46 @@
+{% extends "base2.html" %}
+
+{% block extrahead %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/browse.js"></script>
+{% endblock %} 
+
+{% block title %}Mail Archive{% endblock %}
+
+{% block content %}
+
+<div id="admin_page">
+<h1 class="title">Admin</h1>
+<div id="admin_top">
+<form id="id_admin_form" name="browse-form" action="." method="post">{% csrf_token %}
+    <table id="admin_search_table">
+        <tr><td>Subject:</td><td>{{ form.subject }}</td><td>Message-ID:</td><td>{{ form.msgid }}</td></tr>
+        <tr><td>From:</td><td>{{ form.frm }}</td><td>List:</td><td>{{ form.email_list }}</td></tr>
+        <tr><td>Date Range:</td><td>{{ form.start_date }} to {{ form.end_date }}</td><td>Spam:</td><td>{{ form.spam }}<input id="id_submit" type="submit" name="submit" value="Search"/></td></tr>
+        <tr><td colspan="4"></td></tr>
+    </table>
+</form>
+<hr>
+
+</div>
+
+
+<div class="results_section">
+<h2>Results{% if results %} ({{ results|length }}){% endif %}</h2>
+<table id="results_table">
+{% if results %}
+    {% for item in results %}
+      <tr><td>{{ forloop.counter }}</td><td>{{ item.object.subject }}</td></tr>
+    {% endfor %}
+{% else %}
+    <tr><td>No Results</td></tr>
+{% endif %}
+</table>
+</div>
+
+
+</div> <!-- admin_page -->
+
+
+{% endblock %}
+
+

@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout
+from django.contrib.auth.decorators import user_passes_test
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.forms.formsets import formset_factory
@@ -8,6 +9,7 @@ from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from haystack.views import SearchView, FacetedSearchView
+from haystack.query import SearchQuerySet
 #from mlarchive.archive.utils import get_html
 from mlarchive.utils.decorators import check_access, superuser_only
 
@@ -63,6 +65,52 @@ def chunks(l, n):
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
+#@user_passes_test(lambda u: u.is_superuser)
+@superuser_only
+def admin(request):
+    '''
+    Administrator View.  Only accessible by the superuser this view allows
+    the administrator to delete spam messages
+    '''
+    results = None
+    if request.method == 'POST':
+        form = AdminForm(request.POST)
+        if form.is_valid():
+            kwargs = {} 
+            email_list = form.cleaned_data['email_list']
+            end_date = form.cleaned_data['end_date']
+            frm = form.cleaned_data['frm']
+            msgid = form.cleaned_data['msgid']
+            subject = form.cleaned_data['subject']
+            spam = form.cleaned_data['spam']
+            start_date = form.cleaned_data['start_date']
+            if email_list:
+                kwargs['email_list'] = email_list.name
+            if end_date:
+                kwargs['date__lte'] = end_date
+            if frm:
+                kwargs['frm'] = frm
+            if msgid:
+                kwargs['msgid'] = msgid
+            if subject:
+                kwargs['subject'] = subject
+            if spam:
+                kwargs['spam_score__gt'] = 0
+            if start_date:
+                kwargs['date__gte'] = start_date
+                
+            if kwargs:
+                results = SearchQuerySet().filter(**kwargs)
+
+    else:
+        form = AdminForm()
+    
+    return render_to_response('archive/admin.html', {
+        'results': results,
+        'form': form},
+        RequestContext(request, {}),
+    )
+
 def advsearch(request):
     '''
     The Advanced Search View

@@ -20,6 +20,9 @@ $(function() {
   <ul id="navigation">
     <li><a href="{% url archive_advsearch %}">Advanced Search</a></li>
     <li><a href="{% url archive_browse %}">Browse</a></li>
+    {% if request.user.is_superuser %}
+        <li><a href="{% url archive_admin %}">Admin</a></li>
+    {% endif %}
   </ul>
 </div>
 

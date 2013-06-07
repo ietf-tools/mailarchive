@@ -16,6 +16,7 @@ class MessageIndex(BaseSearch, indexes.Indexable):
     msgid = indexes.CharField(model_attr='msgid')
     subject = indexes.CharField(model_attr='subject')
     to = indexes.CharField(model_attr='to')
+    spam_score = indexes.IntegerField(model_attr='spam_score')
     
     def get_model(self):
         return Message

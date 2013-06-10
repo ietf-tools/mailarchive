@@ -115,7 +115,7 @@ STATIC_URL = '/static/'
 # taken from conf/global_settings.py.
 # in Django 1.5 we can choose to add to (not override) global logging settings
 
-MY_LOG_FILENAME = '/a/home/rcross/data/log/mlarchive.log'
+MY_LOG_FILENAME = '/a/mailarch/data/log/mlarchive.log'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -158,13 +158,13 @@ LOGGING = {
 # HAYSTACK SETTINGS
 #HAYSTACK_SITECONF = 'mlarchive.search_sites'
 #HAYSTACK_SEARCH_ENGINE = 'xapian'
-HAYSTACK_XAPIAN_PATH = '/a/home/rcross/data/archive_index'
+HAYSTACK_XAPIAN_PATH = '/a/mailarch/data/archive_index'
 HAYSTACK_USE_REALTIME_SEARCH = False
 #HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
 # ARCHIVE SETTINGS
-ARCHIVE_DIR = '/a/home/rcross/data/archive'
-LOG_FILE = '/a/home/rcross/data/log/mlarchive.log'
+ARCHIVE_DIR = '/a/mailarch/data/archive'
+LOG_FILE = '/a/mailarch/data/log/mlarchive.log'
 SERVER_MODE = 'development'
 SAFE_ATTACHMENT_TYPES = ('application/ms-tnef',
                          'application/msword',

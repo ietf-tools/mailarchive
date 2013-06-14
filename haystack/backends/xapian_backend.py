@@ -234,7 +234,7 @@ class XapianSearchBackend(BaseSearchBackend):
                                 term_generator.index_text(term, weight)
                                 term_generator.index_text(term, weight, prefix)
                                 if len(term.split()) == 1:
-                                    document.add_term(term, weight)
+                                    # document.add_term(term, weight)
                                     document.add_term(prefix + term, weight)
                                 document.add_value(field['column'], _marshal_value(value))
                             else:
@@ -249,7 +249,7 @@ class XapianSearchBackend(BaseSearchBackend):
                             if field['multi_valued'] == 'false':
                                 term = _marshal_term(value)
                                 if len(term.split()) == 1:
-                                    document.add_term(term, weight)
+                                    # document.add_term(term, weight)
                                     document.add_term(prefix + term, weight)
                                     document.add_value(field['column'], _marshal_value(value))
                             else:
@@ -259,6 +259,9 @@ class XapianSearchBackend(BaseSearchBackend):
                                         document.add_term(term, weight)
                                         document.add_term(prefix + term, weight)
 
+                # custom add 2013-06-03.  we don't need full message text in data section of index
+                del data['text']
+                # end custom
                 document.set_data(pickle.dumps(
                     (obj._meta.app_label, obj._meta.module_name, obj.pk, data),
                     pickle.HIGHEST_PROTOCOL

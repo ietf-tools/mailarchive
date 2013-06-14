@@ -1,8 +1,9 @@
 {% extends "base2.html" %}
 
 {% block extrahead %}
-<script type="text/javascript" src="{{ STATIC_URL }}js/browse.js"></script>
-{% endblock %} 
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.8.23.custom.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/admin.js"></script>
+{% endblock %}
 
 {% block title %}Mail Archive{% endblock %}
 
@@ -11,7 +12,7 @@
 <div id="admin_page">
 <h1 class="title">Admin</h1>
 <div id="admin_top">
-<form id="id_admin_form" name="browse-form" action="." method="post">{% csrf_token %}
+<form id="id_admin_form" name="admin-search-form" action="." method="post">{% csrf_token %}
     <table id="admin_search_table">
         <tr><td>Subject:</td><td>{{ form.subject }}</td><td>Message-ID:</td><td>{{ form.msgid }}</td></tr>
         <tr><td>From:</td><td>{{ form.frm }}</td><td>List:</td><td>{{ form.email_list }}</td></tr>
@@ -20,21 +21,35 @@
     </table>
 </form>
 <hr>
+</div> <!-- admin_top -->
 
-</div>
 
-
-<div class="results_section">
+<div id="result-list" tabindex="-1">
 <h2>Results{% if results %} ({{ results|length }}){% endif %}</h2>
-<table id="results_table">
+<form id="id_admin_action" name="admin-action-form" action="." method="post">{% csrf_token %}
+
+<div id="admin-controls">
+<input type="checkbox" id="selectall" value="selectall" name="selectall"> Select All
+<label>Action: <select name="action">
+<option value="" selected="selected">---------</option>
+<option value="delete_selected">Delete selected messages</option>
+<option value="not_spam">Mark selected not spam</option>
+</select></label><input type="hidden" class="select-across" value="0" name="select_across" />
+    <button type="submit" class="button" title="Run the selected action" name="index" value="0">Go</button>
+</div> <!-- admin-controls -->
+
+<table id="result-table">
+<tr><th></th><th>#</th><th>Subject</th><th>From</th><th>To</th></tr>
 {% if results %}
     {% for item in results %}
-      <tr><td>{{ forloop.counter }}</td><td>{{ item.object.subject }}</td></tr>
+      <tr><td><input type="checkbox" class="action-select" value="{{ item.object.pk }}" name="_selected_action"></td><td>{{ forloop.counter }}</td><td class="subj">{{ item.object.subject }}</td><td>{{ item.object.frm }}</td><td>{{ item.object.to }}</td></tr>
     {% endfor %}
 {% else %}
     <tr><td>No Results</td></tr>
 {% endif %}
 </table>
+
+</form>
 </div>
 
 

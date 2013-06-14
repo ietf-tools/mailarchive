@@ -11,6 +11,7 @@ sortDefault['date'] = '-date';
 sortDefault['email_list'] = 'email_list';
 sortDefault['frm'] = 'frm';
 sortDefault['score'] = '-score';
+sortDefault['subject'] = 'subject';
 
 $(function() {
     
@@ -36,13 +37,20 @@ $(function() {
         }
     }
     
+    function set_splitter(top) {
+        // set page elements when splitter moves
+        $("#list-pane").css("height",top-3);
+        $("#view-pane").css("top",top+3);
+        $("#splitter-pane").css("top",top);
+    }
+    
     function init_search() {
         sync_tables();
         $(window).resize(function(){
             sync_tables();
         });
         
-        // init splitter
+        // init splitter ------------------------------------
         $("#splitter-pane").draggable({
             axis:"y",
             //containment:"parent",
@@ -51,13 +59,18 @@ $(function() {
                 var top = ui.position.top;
                 $("#list-pane").css("height",top-3);
                 $("#view-pane").css("top",top+3);
+                $.cookie("splitter",top);
             }
         });
         
-        // optimize for 1024x768
-        $("#list-pane").css("height",175);
-        $("#view-pane").css("top",181);
-        $("#splitter-pane").css("top",175);
+        // check for saved setting
+        var splitterValue = parseInt($.cookie("splitter"));
+        if(splitterValue) {
+            set_splitter(splitterValue);
+        } else {
+            set_splitter(175);  // optimize for 1024x768
+        }
+        // end splitter ------------------------------------
         
         function scrGrid(row){
             // changed formula because rpos is always within clientheight

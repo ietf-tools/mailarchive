@@ -6,8 +6,8 @@ import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-DEBUG = True
-TEMPLATE_DEBUG = True
+DEBUG = False
+TEMPLATE_DEBUG = False
 
 ADMINS = (
     # ('Ryan Cross', 'rcross@amsl.com'),
@@ -88,12 +88,12 @@ TEMPLATE_DIRS = (
     BASE_DIR + '/templates',
 )
 
-# STATIC_URL = 
+# STATIC_URL =
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
-    'django.contrib.sites',
+    #'django.contrib.sites',
     'django.contrib.messages',
     #'django.contrib.staticfiles',
     # Uncomment the next line to enable the admin:
@@ -159,7 +159,7 @@ LOGGING = {
 #HAYSTACK_SITECONF = 'mlarchive.search_sites'
 #HAYSTACK_SEARCH_ENGINE = 'xapian'
 HAYSTACK_XAPIAN_PATH = '/a/mailarch/data/archive_index'
-HAYSTACK_USE_REALTIME_SEARCH = False
+HAYSTACK_USE_REALTIME_SEARCH = True
 #HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
 # ARCHIVE SETTINGS
@@ -184,6 +184,7 @@ SAFE_ATTACHMENT_TYPES = ('application/ms-tnef',
                          'application/x-zip-compressed',
                          'application/zip',
                          'audio/wav',
+                         'image/bmp',
                          'image/gif',
                          'image/jpeg',
                          'image/png',

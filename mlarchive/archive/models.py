@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import pre_delete
+from django.dispatch.dispatcher import receiver
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
@@ -13,6 +15,7 @@ from HTMLParser import HTMLParser, HTMLParseError
 
 import mailbox
 import os
+import shutil
 
 US_CHARSETS = ('us-ascii','ascii')
 DEFAULT_CHARSET = 'us-ascii'
@@ -32,10 +35,10 @@ def get_charset(part):
     '''
     charset = part.get_content_charset()
     return charset if charset else DEFAULT_CHARSET
-    
+
 def skip_attachment(function):
     '''
-    This is a decorator for custom MIME part handlers, handle_*.  
+    This is a decorator for custom MIME part handlers, handle_*.
     If the part passed is an attachment then it is skipped (None is returned).
     '''
     def _inner(*args, **kwargs):
@@ -43,7 +46,7 @@ def skip_attachment(function):
             return None
         return function(*args, **kwargs)
     return _inner
-    
+
 class MLStripper(HTMLParser):
     def __init__(self):
         self.reset()
@@ -76,13 +79,13 @@ def handle_external_body(part,text_only):
         size=92; creation-date="Mon, 14 Mar 2011 22:39:25 GMT";
         modification-date="Mon, 14 Mar 2011 22:39:25 GMT"
     Content-Transfer-Encoding: base64
-    
+
     W0ludGVybmV0U2hvcnRjdXRdDQpVUkw9ZnRwOi8vZnRwLmlldGYub3JnL2ludGVybmV0LWRyYWZ0
     cy9kcmFmdC1ob3dsZXR0LXJhZHNlYy1rbnAtMDEudHh0DQo=
     '''
     if text_only:
         return None
-    
+
     # handle B format
     if part.get_filename() and part.get_filename().endswith('url'):
         codec = part['Content-Transfer-Encoding']
@@ -113,14 +116,14 @@ def handle_html(part,text_only):
         payload = part.get_payload(decode=True)
         uni = unicode(payload,errors='ignore')
         # tried many solutions here
-        # text = strip_tags(part.get_payload(decode=True)) # problems with bad html 
-        # soup = BeautifulSoup(part.get_payload(decode=True)) # errors with lxml 
+        # text = strip_tags(part.get_payload(decode=True)) # problems with bad html
+        # soup = BeautifulSoup(part.get_payload(decode=True)) # errors with lxml
         # text = html2text(uni) # errors with malformed tags
         soup = BeautifulSoup(part.get_payload(decode=True),'html5') # included "html" and css
         text = soup.get_text()
-        
+
         return text
-        
+
 @skip_attachment
 def handle_plain(part,text_only):
     charset = get_charset(part)
@@ -134,7 +137,7 @@ def handle_plain(part,text_only):
         except LookupError as err:
             logger.warn("Decode Error [{0}, {1}]".format(err.args,err.message))
             payload = unicode(payload,DEFAULT_CHARSET,errors='ignore')
-            
+
     result = render_to_string('archive/message_plain.html', {'payload': payload})
     # undeclared charactersets can cause problems with template rendering
     # if result is empty template (len=28) try again with unicode
@@ -142,7 +145,7 @@ def handle_plain(part,text_only):
         payload = unicode(payload,DEFAULT_CHARSET,errors='ignore')
         result = render_to_string('archive/message_plain.html', {'payload': payload})
     return result
-    
+
 # a dictionary of supported mime types
 HANDLERS = {'message/external-body':handle_external_body,
             'text/plain':handle_plain,
@@ -154,14 +157,14 @@ def handle(part,text_only):
     handler = HANDLERS.get(type,None)
     if handler:
         return handler(part,text_only)
-    
+
 def parse(entity, text_only=False):
     '''
     This function recursively traverses a MIME email and returns a list of email.Message objects
     '''
     #print "calling parse %s:%s" % (entity.__class__,entity.get_content_type())
     parts = []
-    # messages with type message/external-body are marked multipart, but we need to treat them 
+    # messages with type message/external-body are marked multipart, but we need to treat them
     # otherwise
     if entity.is_multipart() and entity.get_content_type() != 'message/external-body':
         if entity.get_content_type() == 'multipart/alternative':
@@ -186,10 +189,10 @@ def parse(entity, text_only=False):
         body = handle(entity,text_only)
         if body:
             parts.append(body)
-    
+
     #print "returning parse %s:%s" % (type(parts),parts)
     return parts
-    
+
 def parse_body(msg, text_only=False, request=None):
     try:
         with open(msg.get_file_path()) as f:
@@ -198,7 +201,7 @@ def parse_body(msg, text_only=False, request=None):
             parts = parse(mm,text_only)
     except IOError:
         return 'Error reading message'
-        
+
     if not text_only:
         return render_to_string('archive/message.html', {
             'msg': msg,
@@ -215,10 +218,10 @@ def parse_body(msg, text_only=False, request=None):
 # --------------------------------------------------
 
 class Thread(models.Model):
-    
+
     def __unicode__(self):
         return str(self.id)
-    
+
 class EmailList(models.Model):
     active = models.BooleanField(default=True,db_index=True)
     date_created = models.DateTimeField(auto_now_add=True)
@@ -230,7 +233,7 @@ class EmailList(models.Model):
 
     def __unicode__(self):
         return self.name
-    
+
 class Message(models.Model):
     cc = models.TextField(blank=True,default='')
     date = models.DateTimeField(db_index=True)
@@ -246,29 +249,29 @@ class Message(models.Model):
     thread = models.ForeignKey(Thread)
     to = models.TextField(blank=True,default='')
     updated = models.DateTimeField(auto_now=True)
-    
+
     def __unicode__(self):
         return self.msgid
 
     def get_absolute_url(self):
         return '/archive/detail/%s/%s' % (self.email_list.name,self.hashcode)
-    
+
     def get_attachment_path(self):
         path = os.path.join(settings.ARCHIVE_DIR,self.email_list.name,'attachments')
         if not os.path.exists(path):
             os.makedirs(path)
         return path
-        
+
     def get_body(self):
         '''
         Returns the contents of the message body, text only for use in indexing.
         ie. HTML is stripped.
         '''
         return parse_body(self, text_only=True)
-        
+
     def get_body_html(self, request=None):
         return parse_body(self, request=request)
-        
+
     def get_body_raw(self):
         '''
         Utility function.  Returns the raw contents of the message file.
@@ -282,10 +285,10 @@ class Message(models.Model):
             #logger.warning('IOError %s' % e)
             # TODO: handle this better
             return 'Error: message not found.'
-            
+
     def get_file_path(self):
         return os.path.join(settings.ARCHIVE_DIR,self.email_list.name,self.hashcode)
-        
+
     def export(self):
         '''export this message'''
         pass
@@ -293,7 +296,7 @@ class Message(models.Model):
     @property
     def friendly_frm(self):
         pass
-    
+
     @property
     def frm_email(self):
         '''
@@ -301,32 +304,45 @@ class Message(models.Model):
         is stripped).  It is used in faceting search results as well as display.
         '''
         return parseaddr(self.frm)[1].lower()
-        
+
 class Attachment(models.Model):
     error = models.CharField(max_length=255,blank=True) # message if problem with attachment
     filename = models.CharField(max_length=255)         # randomized archive filename
     message = models.ForeignKey(Message)
     name = models.CharField(max_length=255)             # regular name of attachment
-    
+
     def __unicode__(self):
         return self.name
-        
+
     def get_absolute_url(self):
         pass
-        
+
     def get_file_path():
         pass
-        
+
 class Legacy(models.Model):
     email_list_id = models.CharField(max_length=40)
     msgid = models.CharField(max_length=255,db_index=True)
     number = models.IntegerField()
-    
+
 class Reference(models.Model):
     source_message = models.ForeignKey(Message,related_name='ref_source_set')
     target_message = models.ForeignKey(Message,related_name='ref_target_set')
     order = models.IntegerField()
-    
+
     class Meta:
         ordering = ('order',)
+
+# Signal Handlers ----------------------------------------
+@receiver(pre_delete, sender=Message)
+def _message_delete(sender, instance, **kwargs):
+    '''
+    When messages are deteled, via the admin page, we need to move the message
+    archive file to the "deleted" directory
+    '''
+    path = instance.get_file_path()
+    target = os.path.join(os.path.dirname(path),'deleted')
+    if not os.path.exists(target):
+        os.mkdir(target)
+    shutil.move(path,target)
 

@@ -59,7 +59,7 @@ input[disabled='disabled'] {
 }
 
 #footer {
-    /* background-color: #DDDDDD; 
+    /* background-color: #DDDDDD;
     background-color: #EEEEFF; */
     background-color: #FFF;
     border-top: 1px solid #CCC;
@@ -123,6 +123,49 @@ a:hover {
 .errorlist li {
     background: #FF8080 url(../img/admin/icon_alert.gif) no-repeat scroll 5px 0.3em;
     border: 1px solid #FF8080;
+}
+
+/* Django Messages
+   ========================================================================== */
+
+ul.messages {
+    padding: 0 0 5px 0;
+    margin: 0;
+}
+
+ul.messages li {
+    font-size: 12px;
+    display: block;
+    padding: 4px 5px 4px 25px;
+    margin: 0 0 3px 0;
+    border-bottom: 1px solid #ddd;
+    color: #666;
+}
+
+.info,
+.success,
+.warning,
+.error,
+.validation {
+    padding: 4px 5px 4px 25px;
+    margin: 0 0 3px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.info {
+    background: #ffc url(../img/admin/icon_success.gif) 5px .3em no-repeat;
+}
+
+.success {
+    background: #ffc url(../img/admin/icon_success.gif) 5px .3em no-repeat;
+}
+
+.warning {
+    background: #ffc url(../img/admin/icon_alert.gif) 5px .3em no-repeat;
+}
+
+.error {
+    background: #ffc url(../img/admin/icon_error.gif) 5px .3em no-repeat;
 }
 
 /* ==========================================================================
@@ -212,14 +255,14 @@ ul#navigation {
     width: 300px;
 }
 
-ul#navigation li { 
+ul#navigation li {
     border-right: 1px solid #5b80b2;;
     display: inline;
     padding: 0 10px 0 10px;
     font-size: 0.75em;
 }
 
-ul#navigation li:last-child { 
+ul#navigation li:last-child {
     border-right: none;
 }
 
@@ -381,11 +424,11 @@ ul#navigation li:last-child {
 }
 
 /* Source: http://snipplr.com/view/10979/css-cross-browser-word-wrap */
-.wordwrap { 
-   white-space: pre-line;      /* CSS3 */   
-   white-space: -moz-pre-wrap; /* Firefox */    
-   white-space: -pre-wrap;     /* Opera <7 */   
-   white-space: -o-pre-wrap;   /* Opera 7 */    
+.wordwrap {
+   white-space: pre-line;      /* CSS3 */
+   white-space: -moz-pre-wrap; /* Firefox */
+   white-space: -pre-wrap;     /* Opera <7 */
+   white-space: -o-pre-wrap;   /* Opera 7 */
    word-wrap: break-word;      /* IE */
 }
 
@@ -394,7 +437,7 @@ ul#navigation li:last-child {
    Search Results
    ========================================================================== */
 
-/*   
+/*
 .ascending {
     background: url(/static/admin/img/sorting-icons.gif) -5px -50px no-repeat;
 }
@@ -644,7 +687,7 @@ table.clean td {
     padding: 5px 5px 5px 0;
     vertical-align: middle;
 }
-    
+
 /* ==========================================================================
    Browse
    ========================================================================== */
@@ -656,6 +699,7 @@ a.private:hover {
     color: #FF4040;
 }
 
+/*
 #content2 {
     bottom: 27px;
     left: 0;
@@ -663,6 +707,10 @@ a.private:hover {
     position: absolute;
     right: 0;
     top: 3em;
+}
+*/
+#content2 {
+    margin-bottom: 15px;
 }
 
 h1.title {
@@ -771,4 +819,63 @@ div.browse_section h2 {
 .defaultTextActive {
     color: #909090;
 }
+/* ==========================================================================
+   Admin
+   ========================================================================== */
+#admin_page {
+    width: 960px;
+    margin: 0 auto;
+    clear: both;
+}
 
+#admin_page h2 {
+    text-align: center;
+    color: white;
+    background: #5b80b2;
+}
+
+#admin_page input#id_subject {
+    width: 320px;
+}
+
+#admin_page input#id_frm {
+    width: 320px;
+}
+
+#admin_page input#id_msgid {
+    width: 320px;
+}
+
+#admin_page label {
+    display: inline;
+}
+
+#admin_page .title {
+    margin-bottom: 0;
+}
+
+#admin_page input#id_submit {
+    margin-left: 100px;
+}
+
+#admin_search_table td {
+    border-bottom: 0;
+}
+
+#admin_page th {
+    background: url("smoothness/images/ui-bg_glass_75_e6e6e6_1x400.png") repeat-x scroll 50% 50% #E6E6E6;
+    color: black;
+}
+
+#result-table {
+    table-layout: fixed;
+}
+
+#result-table td.subj {
+    width: 400px;
+}
+
+#admin-controls {
+    margin-top: 4px;
+    margin-bottom: 4px;
+}

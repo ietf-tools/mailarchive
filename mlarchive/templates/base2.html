@@ -39,9 +39,9 @@
                 <a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>
             {% endif %}
             </div>
-        {% endif %}  
+        {% endif %}
     </div> <!-- header -->
-    
+
         <!-- Django Messages -->
         {% if messages %}
         <ul class="messages">
@@ -51,19 +51,20 @@
         </ul>
         {% endif %}
 
-    
+
     <!-- Content -->
     <div id="content2">
         {% block content %}{% endblock %}
     </div>
     <!-- END Content -->
 
+    <!--
     {% block footer %}
     <div id="footer">
         <p>Email Archive v1.00 {{ version_num }}</p>
-    </div> <!-- footer -->
+    </div>
     {% endblock %}
-
+    -->
 </div> <!-- END Container -->
 
 </body>

@@ -10,8 +10,10 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from haystack.views import SearchView, FacetedSearchView
 from haystack.query import SearchQuerySet
+
 #from mlarchive.archive.utils import get_html
 from mlarchive.utils.decorators import check_access, superuser_only
+from mlarchive.archive import actions
 
 from models import *
 from forms import *
@@ -38,7 +40,7 @@ class CustomSearchView(FacetedSearchView):
         return "CustomSearchView"
 
     def build_form(self, form_kwargs=None):
-        return super(self.__class__,self).build_form(form_kwargs={ 'request' : self.request }) 
+        return super(self.__class__,self).build_form(form_kwargs={ 'request' : self.request })
 
     def extra_context(self):
         extra = super(CustomSearchView, self).extra_context()
@@ -51,7 +53,7 @@ class CustomSearchView(FacetedSearchView):
         else:
             browse_list = None
         extra['browse_list'] = browse_list
-        return extra 
+        return extra
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
@@ -74,37 +76,44 @@ def admin(request):
     '''
     results = None
     if request.method == 'POST':
-        form = AdminForm(request.POST)
-        if form.is_valid():
-            kwargs = {} 
-            email_list = form.cleaned_data['email_list']
-            end_date = form.cleaned_data['end_date']
-            frm = form.cleaned_data['frm']
-            msgid = form.cleaned_data['msgid']
-            subject = form.cleaned_data['subject']
-            spam = form.cleaned_data['spam']
-            start_date = form.cleaned_data['start_date']
-            if email_list:
-                kwargs['email_list'] = email_list.name
-            if end_date:
-                kwargs['date__lte'] = end_date
-            if frm:
-                kwargs['frm'] = frm
-            if msgid:
-                kwargs['msgid'] = msgid
-            if subject:
-                kwargs['subject'] = subject
-            if spam:
-                kwargs['spam_score__gt'] = 0
-            if start_date:
-                kwargs['date__gte'] = start_date
-                
-            if kwargs:
-                results = SearchQuerySet().filter(**kwargs)
+        if 'action' not in request.POST:
+            form = AdminForm(request.POST)
+            if form.is_valid():
+                kwargs = {}
+                email_list = form.cleaned_data['email_list']
+                end_date = form.cleaned_data['end_date']
+                frm = form.cleaned_data['frm']
+                msgid = form.cleaned_data['msgid']
+                subject = form.cleaned_data['subject']
+                spam = form.cleaned_data['spam']
+                start_date = form.cleaned_data['start_date']
+                if email_list:
+                    kwargs['email_list'] = email_list.name
+                if end_date:
+                    kwargs['date__lte'] = end_date
+                if frm:
+                    kwargs['frm'] = frm
+                if msgid:
+                    kwargs['msgid'] = msgid
+                if subject:
+                    kwargs['subject'] = subject
+                if spam:
+                    kwargs['spam_score__gt'] = 0
+                if start_date:
+                    kwargs['date__gte'] = start_date
+
+                if kwargs:
+                    results = SearchQuerySet().filter(**kwargs)
+        else:
+            action = request.POST.get('action')
+            func = getattr(actions, action)
+            selected = request.POST.getlist('_selected_action')
+            queryset = Message.objects.filter(pk__in=selected)
+            return func(request, queryset)
 
     else:
         form = AdminForm()
-    
+
     return render_to_response('archive/admin.html', {
         'results': results,
         'form': form},
@@ -126,7 +135,7 @@ def advsearch(request):
         'not_formset': not_formset},
         RequestContext(request, {}),
     )
-    
+
 def browse(request):
     '''
     This view presents a list of Email Lists the user has access to
@@ -141,17 +150,16 @@ def browse(request):
         private_columns = chunks(lists,int(math.ceil(lists.count()/float(display_columns))))
     else:
         private_columns = []
-        
+
     lists = EmailList.objects.filter(active=True,private=False).order_by('name')
     active_columns = chunks(lists,int(math.ceil(lists.count()/float(display_columns))))
-    
+
     lists = EmailList.objects.filter(active=False,private=False).order_by('name')
     if lists:
         inactive_columns = chunks(lists,int(math.ceil(lists.count()/float(display_columns))))
     else:
         inactive_columns = []
-    #assert False, (private_columns,active_columns,inactive_columns)
-    
+
     return render_to_response('archive/browse.html', {
         'form': form,
         'private_columns': private_columns,
@@ -166,13 +174,13 @@ def browse_list(request, list_name):
     Browse emails by list
     '''
     list_obj = get_object_or_404(EmailList, name=list_name)
-    
+
     # default sort order is date descending
     order = request.GET.get('so','-date')
     if not order in ('date','-date','frm','-frm'):
         order = '-date'
     msgs = Message.objects.filter(email_list=list_obj).order_by(order)
-    
+
     return render_to_response('archive/browse_list.html', {
         'list_obj': list_obj,
         'msgs': msgs},
@@ -186,7 +194,7 @@ def detail(request, list_name, id, msg):
     NOTE: the "msg" argument is a Message object added by the check_access decorator
     '''
     msg_html = msg.get_body_html()
-    
+
     return render_to_response('archive/detail.html', {
         'msg_html': msg_html},
         RequestContext(request, {}),
@@ -200,7 +208,7 @@ def load(request):
     # TODO do real implementation
     with open('/a/home/rcross/data/members') as f:
         members = f.readlines()
-    
+
     return render_to_response('archive/load.html', {
         'members': members},
         RequestContext(request, {}),
@@ -211,9 +219,9 @@ def logout_view(request):
     Logout the user
     '''
     logout(request)
-    
+
     return HttpResponseRedirect('/archive/')
-    
+
 def main(request):
     '''
     The main page.  This page contains a simple search form and some links.
@@ -224,7 +232,7 @@ def main(request):
             os.chmod(settings.LOG_FILE,0666)
         except OSError:
             pass
-    
+
     return render_to_response('archive/main.html', {
         'form': form},
         RequestContext(request, {}),

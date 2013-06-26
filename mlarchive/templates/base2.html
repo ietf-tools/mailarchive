@@ -29,7 +29,7 @@
 <div id="container">
 
     <div id="header">
-        <div id="header-text">Email Archive</div>
+        <div id="header-text">{% block header %}{% endblock %}</div>
         {% if user %}
             <div id="login" class="noprint">
             {% if user.is_authenticated %}

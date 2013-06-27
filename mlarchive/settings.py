@@ -160,43 +160,12 @@ LOGGING = {
 #HAYSTACK_SEARCH_ENGINE = 'xapian'
 HAYSTACK_XAPIAN_PATH = '/a/mailarch/data/archive_index'
 HAYSTACK_USE_REALTIME_SEARCH = True
-#HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = '/a/mailarch/data/archive'
 LOG_FILE = '/a/mailarch/data/log/mlarchive.log'
 SERVER_MODE = 'development'
-SAFE_ATTACHMENT_TYPES = ('application/ms-tnef',
-                         'application/msword',
-                         'application/octet-stream',
-                         'application/pdf',
-                         'application/pgp-signature',
-                         'application/pkcs7-signature',
-                         'application/ppt',
-                         'application/rtf',
-                         'application/vnd.ms-excel',
-                         'application/vnd.ms-powerpoint',
-                         'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                         'application/x-pkcs7-signature',
-                         'application/x-x509-ca-cert',
-                         'application/x-zip-compressed',
-                         'application/zip',
-                         'audio/wav',
-                         'image/bmp',
-                         'image/gif',
-                         'image/jpeg',
-                         'image/png',
-                         'message/external-body',
-                         'message/rfc822',
-                         'text/html',
-                         'text/plain',
-                         'text/v-card',
-                         'text/x-diff',
-                         'text/x-patch',
-                         'text/x-vcard',
-                         'text/xml')
 TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
 
 LOGIN_REDIRECT_URL = '/archive/'

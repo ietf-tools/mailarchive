@@ -307,6 +307,7 @@ class Message(models.Model):
 
 class Attachment(models.Model):
     error = models.CharField(max_length=255,blank=True) # message if problem with attachment
+    description = models.CharField(max_length=255)      # description of file contents
     filename = models.CharField(max_length=255)         # randomized archive filename
     message = models.ForeignKey(Message)
     name = models.CharField(max_length=255)             # regular name of attachment
@@ -315,25 +316,21 @@ class Attachment(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        pass
+        path = os.path.join('/',self.message.email_list.name,'attachments',self.filename)
+        return path
 
     def get_file_path():
-        pass
+        dir = os.path.dirname(self.message.get_file_path())
+        path = os.path.join(dir,'attachments',self.filename)
+        return path
 
 class Legacy(models.Model):
     email_list_id = models.CharField(max_length=40)
     msgid = models.CharField(max_length=255,db_index=True)
     number = models.IntegerField()
 
-class Reference(models.Model):
-    source_message = models.ForeignKey(Message,related_name='ref_source_set')
-    target_message = models.ForeignKey(Message,related_name='ref_target_set')
-    order = models.IntegerField()
-
-    class Meta:
-        ordering = ('order',)
-
 # Signal Handlers ----------------------------------------
+
 @receiver(pre_delete, sender=Message)
 def _message_delete(sender, instance, **kwargs):
     '''

@@ -15,18 +15,19 @@ import json
 def ajax_get_list(request):
     '''
     Ajax function for use with jQuery UI Autocomplete.  Returns list of EmailList objects
+    that start with value of "term" GET parameter.
     '''
     if request.method != 'GET' or not request.GET.has_key('term'):
         return { 'success' : False, 'error' : 'No term submitted or not GET' }
     term = request.GET.get('term')
     user = request.user
-    
+
     results = EmailList.objects.filter(name__startswith=term)
     if not user.is_authenticated():
         results = results.exclude(private=True)
     else:
         results = results.filter(Q(private=False)|Q(private=True,members=user))
-        
+
     if results.count() > 20:
         results = results[:20]
     elif results.count() == 0:
@@ -38,12 +39,10 @@ def ajax_get_list(request):
 @check_access
 def ajax_get_msg(request, msg):
     '''
-    Ajax method to retrieve message details.  One URL parameter expected, "id" which 
-    is the ID of the message.  We return the results of get_html(), which is 
-    an HTML'ized presentation of the message.
+    Ajax method to retrieve message details.  One URL parameter expected, "id" which
+    is the ID of the message.  Return an HTMLized message body via get_body_html().
     NOTE: the "msg" argument is Message object added by the check_access decorator
     '''
-    #return HttpResponse(get_html(msg,request))
     return HttpResponse(msg.get_body_html(request))
 
 @jsonapi
@@ -55,7 +54,7 @@ def ajax_messages(request):
     page = request.GET.get('page')
     sort = request.GET.get('sort',None)
     email_list = request.GET.get('email_list',None)
-    
+
     if email_list:
         # convert comma separated names into list of IDs
         ids = []
@@ -65,10 +64,10 @@ def ajax_messages(request):
             except EmailList.DoesNotExist:
                 pass
         kwargs['email_list__in'] = ids
-    
+
     # do the query
     message_list = SearchQuerySet().filter(**kwargs)
-    
+
     # handle sort
     if sort:
         obj = json.loads(sort)
@@ -78,9 +77,9 @@ def ajax_messages(request):
         if obj[0]['direction'] == 'DESC':
             by = '-' + by
         message_list = message_list.order_by(by)
-    
+
     paginator = Paginator(message_list, 200) # Show 200 messages per page
-    
+
     try:
         messages = paginator.page(page)
     except PageNotAnInteger:
@@ -89,9 +88,9 @@ def ajax_messages(request):
     except EmptyPage:
         # If page is out of range (e.g. 9999), deliver last page of results.
         messages = paginator.page(paginator.num_pages)
-    
+
     results = messages.object_list
-    messages = [dict(date=r.object.date.strftime('%m-%d-%Y'), 
+    messages = [dict(date=r.object.date.strftime('%m-%d-%Y'),
                      subject=r.object.subject,
                      frm=r.object.frm_email,
                      email_list=r.object.email_list.name) for r in results]

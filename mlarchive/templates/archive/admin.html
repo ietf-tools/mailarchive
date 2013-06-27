@@ -48,20 +48,35 @@
 </div> <!-- admin-controls -->
 
 <table id="result-table">
-<tr><th class="col1"></th><th class="col2">#</th><th class="col3">Subject</th><th class="col4">From</th><th class="col5">To</th></tr>
-{% if results %}
-    {% for item in results %}
-      <tr>
-        <td class="col1"><input type="checkbox" class="action-select" value="{{ item.object.pk }}" name="_selected_action"></td>
-        <td class="col2">{{ forloop.counter }}</td>
-        <td class="col3">{{ item.object.subject }}</td>
-        <td class="col4">{{ item.object.frm }}</td>
-        <td class="col5">{{ item.object.to }}</td>
-      </tr>
-    {% endfor %}
-{% else %}
-    <tr><td>No Results</td></tr>
-{% endif %}
+    <tr>
+        <th class="col1"></th>
+        <th class="col2">#</th>
+        <th class="col3">Subject</th>
+        <th class="col4">From</th>
+        <th class="col5">To</th>
+    </tr>
+    {% if results %}
+        {% for item in results %}
+          <tr>
+            <td><input type="checkbox" class="action-select" value="{{ item.object.pk }}" name="_selected_action"></td>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ item.object.subject }}</td>
+            <td>{{ item.object.frm }}</td>
+            <td>{{ item.object.to }}</td>
+            <td class="hidden">{{ item.object.get_absolute_url }}</td>
+          </tr>
+        {% endfor %}
+    {% else %}
+        {% if request.method == "POST" %}
+        <tr>
+            <td></td>
+            <td></td>
+            <td>No Results</td>
+            <td></td>
+            <td></td>
+        </tr>
+        {% endif %}
+    {% endif %}
 </table>
 
 </form>

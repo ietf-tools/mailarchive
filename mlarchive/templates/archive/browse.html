@@ -6,10 +6,11 @@
 
 {% block title %}Mail Archive{% endblock %}
 
+{% block header %}Mail Archive - Browse{% endblock %}
+
 {% block content %}
 
 <div id="browse_page">
-<h1 class="title">Browse Archive</h1>
 <div id="browse_top">
 <form id="id_browse_form" name="browse-form" action="." method="post">{% csrf_token %}
     <label for="id_list_name">Enter list name:</label> <input id="id_list_name" type="text" name="list_name" maxlength="100" />

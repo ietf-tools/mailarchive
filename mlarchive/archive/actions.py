@@ -1,3 +1,7 @@
+"""
+Built-in, globally-available admin actions. (ala Django)
+"""
+
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect, HttpResponse

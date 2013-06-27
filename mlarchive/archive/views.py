@@ -11,7 +11,6 @@ from django.template import RequestContext
 from haystack.views import SearchView, FacetedSearchView
 from haystack.query import SearchQuerySet
 
-#from mlarchive.archive.utils import get_html
 from mlarchive.utils.decorators import check_access, superuser_only
 from mlarchive.archive import actions
 
@@ -19,14 +18,12 @@ from models import *
 from forms import *
 
 import datetime
-import mailbox
 import math
 import re
 import os
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
-
 
 # --------------------------------------------------
 # Classes
@@ -200,26 +197,11 @@ def detail(request, list_name, id, msg):
         RequestContext(request, {}),
     )
 
-@superuser_only
-def load(request):
-    '''
-    Load private list memebership
-    '''
-    # TODO do real implementation
-    with open('/a/home/rcross/data/members') as f:
-        members = f.readlines()
-
-    return render_to_response('archive/load.html', {
-        'members': members},
-        RequestContext(request, {}),
-    )
-
 def logout_view(request):
     '''
     Logout the user
     '''
     logout(request)
-
     return HttpResponseRedirect('/archive/')
 
 def main(request):

@@ -69,7 +69,7 @@ def get_mime_extension(type):
     if type in CONTENT_TYPES:
         return CONTENT_TYPES[type]
     # TODO: type without x
-    elif type.startswith 'text/':
+    elif type.startswith('text/'):
         return ('txt','Text Data')
     else:
         return (UNKNOWN_CONTENT_TYPE,type)

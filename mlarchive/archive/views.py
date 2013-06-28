@@ -21,6 +21,9 @@ import datetime
 import math
 import re
 import os
+import shutil
+import tempfile
+import zipfile
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
@@ -60,6 +63,36 @@ def chunks(l, n):
     '''
     for i in xrange(0, len(l), n):
         yield l[i:i+n]
+
+def export(queryset, type=None):
+    '''
+    This function takes a queryset, which is the result of a search.  All messages are copied
+    to a temporary directory and zipped.  The function returns the name of the zipfile.
+    '''
+    # don't allow export of huge querysets
+    if queryset.count() > 50000:
+        raise Exception
+
+    tempdir = tempfile.mkdtemp(prefix='export')
+    zipname = tempdir + '.zip'
+    for result in queryset:
+        path = os.path.join(tempdir,result.object.email_list.name)
+        if not os.path.exists(path):
+            os.mkdir(path)
+        shutil.copy(result.object.get_file_path(),path)
+    zip = zipfile.ZipFile(zipname, 'w', zipfile.ZIP_DEFLATED)
+    rootlen = len(tempdir) + 1
+    for base, dirs, files in os.walk(tempdir):
+        for file in files:
+            fn = os.path.join(base, file)
+            zip.write(fn, fn[rootlen:])
+    zip.close()
+
+    # -------------------
+    #with tarfile.open(output_filename, "w:gz") as tar:
+    #    tar.add(source_dir, arcname=os.path.basename(source_dir))
+
+    return zipname
 
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS

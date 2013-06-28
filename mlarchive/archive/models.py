@@ -243,7 +243,7 @@ class Message(models.Model):
     #inrt = models.CharField(max_length=1024,blank=True)     # in-reply-to header field
     legacy_number = models.IntegerField(blank=True,null=True,db_index=True)  # for mapping mhonarc
     msgid = models.CharField(max_length=255,db_index=True)
-    references = models.ManyToManyField('self',through='Reference',symmetrical=False)
+    #references = models.ManyToManyField('self',through='Reference',symmetrical=False)
     spam_score = models.IntegerField(default=0)             # >0 = spam
     subject = models.CharField(max_length=512,blank=True)
     thread = models.ForeignKey(Thread)

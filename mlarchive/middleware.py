@@ -31,7 +31,7 @@ def get_base_query(querydict):
         if filter in qd_copy:
             del qd_copy[filter]
     return qd_copy.urlencode()
-    
+
 def log_timing(func):
     '''
     This is a decorator that logs the time it took to complete the decorated function.
@@ -59,12 +59,12 @@ class QueryMiddleware(object):
     '''
     #@log_timing
     def process_request(self, request):
-        logger.info('QueryMiddleware:process_request() %s' % request.META['QUERY_STRING'])
-       
         # just return if this isn't a search without filters
         if not request.get_full_path().startswith('/archive/search/') or has_filters(request):
             return None
-            
+
+        logger.info('QueryMiddleware:process_request() %s' % request.META['QUERY_STRING'])
+
         # init session dict
         if 'queries' not in request.session:
             request.session['queries'] = {}
@@ -98,5 +98,5 @@ class QueryMiddleware(object):
             request.session.save()      # don't know why this is required but it is
             logger.info('middleware: %s' % request.session['queries'].keys())
             logger.info('middleware: %s' % request.session.session_key)
-        
+
         return None

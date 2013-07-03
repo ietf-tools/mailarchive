@@ -10,7 +10,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from haystack.views import SearchView, FacetedSearchView
 from haystack.query import SearchQuerySet
-
+from StringIO import StringIO
 from mlarchive.utils.decorators import check_access, superuser_only
 from mlarchive.archive import actions
 
@@ -21,9 +21,11 @@ import datetime
 import math
 import re
 import os
-import shutil
+import random
+import string
+import tarfile
 import tempfile
-import zipfile
+
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
@@ -54,6 +56,9 @@ class CustomSearchView(FacetedSearchView):
             browse_list = None
         extra['browse_list'] = browse_list
         return extra
+
+    # override this for export
+    #def create_response(self):
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
@@ -64,35 +69,20 @@ def chunks(l, n):
     for i in xrange(0, len(l), n):
         yield l[i:i+n]
 
-def export(queryset, type=None):
+def aexport(queryset, type=None):
     '''
-    This function takes a queryset, which is the result of a search.  All messages are copied
-    to a temporary directory and zipped.  The function returns the name of the zipfile.
+    This function takes a queryset, which is the result of a search.  All messages are added to
+    a gzip compressed tar archive.
     '''
-    # don't allow export of huge querysets
-    if queryset.count() > 50000:
-        raise Exception
-
-    tempdir = tempfile.mkdtemp(prefix='export')
-    zipname = tempdir + '.zip'
+    handle, filename = tempfile.mkstemp(prefix='exp_',suffix='.tar.gz')
+    # with tarfile.open(filename, "w:gz") as tar:   # not supported until 2.7
+    tar = tarfile.open(filename, "w:gz")
     for result in queryset:
-        path = os.path.join(tempdir,result.object.email_list.name)
-        if not os.path.exists(path):
-            os.mkdir(path)
-        shutil.copy(result.object.get_file_path(),path)
-    zip = zipfile.ZipFile(zipname, 'w', zipfile.ZIP_DEFLATED)
-    rootlen = len(tempdir) + 1
-    for base, dirs, files in os.walk(tempdir):
-        for file in files:
-            fn = os.path.join(base, file)
-            zip.write(fn, fn[rootlen:])
-    zip.close()
+        arcname = os.path.join(result.object.email_list.name,result.object.hashcode)
+        tar.add(result.object.get_file_path(),arcname=arcname)
+    tar.close()
 
-    # -------------------
-    #with tarfile.open(output_filename, "w:gz") as tar:
-    #    tar.add(source_dir, arcname=os.path.basename(source_dir))
-
-    return zipname
+    return filename
 
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
@@ -229,6 +219,79 @@ def detail(request, list_name, id, msg):
         'msg_html': msg_html},
         RequestContext(request, {}),
     )
+
+def export(request, type):
+    '''
+    This view takes a search query string and builds a gzipped tar archive of the messages
+    in the query results  Two formats are supported: maildir and mbox.
+    '''
+    # force sort order and run query
+    data = request.GET.copy()
+    data['so'] = ['email_list']
+    data['sso'] = ['-date']
+    form = AdvancedSearchForm(data,load_all=False,request=request)
+    results = form.search()
+
+    # don't allow export of huge querysets and skip empty querysets
+    count = results.count()
+    if count > 50000:
+        # message user
+        # return to original query
+        pass
+    elif count == 0:
+        # message user
+        # return to original query
+        pass
+
+    tardata = StringIO()
+    tar = tarfile.open(fileobj=tardata, mode='w:gz')
+
+    if type == 'maildir':
+        for result in results:
+            arcname = os.path.join(result.object.email_list.name,result.object.hashcode)
+            tar.add(result.object.get_file_path(),arcname=arcname)
+    elif type == 'mbox':
+        # there are varios problems adding non-file objects (ie. StringIO) to tar files
+        # therefore the mbox files are first built on disk
+        mbox_date = results[0].object.date.strftime('%Y-%m')
+        mbox_list = results[0].object.email_list.name
+        fd, temp_path = tempfile.mkstemp()
+        mbox_file = os.fdopen(fd,'w')
+        for result in results:
+            date = result.object.date.strftime('%Y-%m')
+            mlist = result.object.email_list.name
+            if date != mbox_date or mlist != mbox_list:
+                mbox_file.close()
+                tar.add(temp_path,arcname=mbox_list + '/' + mbox_date + '.mail')
+                os.remove(temp_path)
+                fd, temp_path = tempfile.mkstemp()
+                mbox_file = os.fdopen(fd,'w')
+                mbox_date = date
+                mbox_list = mlist
+
+            with open(result.object.get_file_path()) as input:
+                # TODO: if no envelope add one
+                mbox_file.write(input.read())
+                mbox_file.write('\n')   #TODO mbox newline?
+
+        mbox_file.close()
+        tar.add(temp_path,arcname=mbox_list + '/' + mbox_date + '.mail')
+        os.remove(temp_path)
+
+    tar.close()
+    tardata.seek(0)
+
+    # make filename
+    chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + '_'
+    rand = ''.join(random.choice(chars) for x in range(5))
+    now = datetime.datetime.now()
+    filename = 'exp%s_%s.tgz' % (now.strftime('%m%d'),rand)
+
+    response = HttpResponse(tardata.read())
+    response['Content-Disposition'] = 'attachment; filename=%s' % filename
+    response['Content-Type'] = 'application/x-gzip'
+    tardata.close()
+    return response
 
 def logout_view(request):
     '''

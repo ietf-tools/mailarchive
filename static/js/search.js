@@ -1,6 +1,6 @@
 /* search.js */
 
-/* 
+/*
 This script uses the JQuery Query String Object plugin
 http://archive.plugins.jquery.com/project/query-object
 */
@@ -14,19 +14,19 @@ sortDefault['score'] = '-score';
 sortDefault['subject'] = 'subject';
 
 $(function() {
-    
+
     function add_to_list(list, id, label) {
         list.append('<li><a href="' + id + '"><img src="/static/admin/img/icon_deletelink.gif" alt="delete"></a> ' + label + '</li>');
     }
 
     function get_string(datastore) {
         var values = [];
-        for (var i in datastore) { 
+        for (var i in datastore) {
             values.push(datastore[i]);
         }
         return values.join();
     }
-    
+
     function sync_tables() {
         // synchronize the message list header table with the scrollable content table
         $("#msg-list-header-table").width($("#msg-table").width());
@@ -36,20 +36,20 @@ $(function() {
             });
         }
     }
-    
+
     function set_splitter(top) {
         // set page elements when splitter moves
         $("#list-pane").css("height",top-3);
         $("#view-pane").css("top",top+3);
         $("#splitter-pane").css("top",top);
     }
-    
+
     function init_search() {
         sync_tables();
         $(window).resize(function(){
             sync_tables();
         });
-        
+
         // init splitter ------------------------------------
         $("#splitter-pane").draggable({
             axis:"y",
@@ -62,7 +62,7 @@ $(function() {
                 $.cookie("splitter",top);
             }
         });
-        
+
         // check for saved setting
         var splitterValue = parseInt($.cookie("splitter"));
         if(splitterValue) {
@@ -71,7 +71,7 @@ $(function() {
             set_splitter(175);  // optimize for 1024x768
         }
         // end splitter ------------------------------------
-        
+
         function scrGrid(row){
             // changed formula because rpos is always within clientheight
             var ch = $('#msg-list')[0].clientHeight,
@@ -83,7 +83,7 @@ $(function() {
                 $('#msg-list').scrollTop(st+rpos);
             }
         }
-        
+
         // SETUP KEY BINDING
         $('#msg-list').bind("keydown", function(event) {
             var keyCode = event.keyCode || event.which,
@@ -113,17 +113,17 @@ $(function() {
                 break;
             }
         });
-        
+
         // set focus on msg-list pane
         $('#msg-list').focus();
-        
+
         // SETUP DOUBLE CLICK MESSAGE
         $('#msg-table tr').dblclick(function() {
-            var url = $(this).find("td:nth-child(6)").html()
+            var url = $(this).find("td:nth-child(6)").html();
             window.open(url);
         });
     }
-    
+
     function setup_ajax_browse(field, list, searchfield, url) {
         searchfield.autocomplete({
             source: url,
@@ -163,14 +163,14 @@ $(function() {
         $('input.facetchk[type=checkbox]').change(function() {
             var values = [];
             var name = $(this).attr('name');
-            $("input[name=" + name + "][type=checkbox]:checked").each(function() { 
+            $("input[name=" + name + "][type=checkbox]:checked").each(function() {
                 values.push($(this).val());
             });
             var value = values.join(',');
             location.search = $.query.set(name,value);
         });
         // END FILTERS =========================================
-        
+
         // SORTING =============================================
         $('a.sortbutton').button();
         var so = $.query.get('so');
@@ -214,8 +214,29 @@ $(function() {
             });
         }
         // END SORTING =========================================
+
+        // EXPORT ==============================================
+        $('#export-button').bind("click", function(event) {
+            event.preventDefault();
+            $(this).next('div').show().focus();
+        });
+        $('.export-menu-item').click(function(ev) {
+            var value = $(this).html().toLowerCase();
+            alert(value);
+            var path = window.location.pathname;
+
+            if(value == "mbox"){
+                var target = path.replace('/search/','/export/mbox/');
+                window.location = target;
+            }
+            if(value == ""){
+                var target = path.replace('/search/','/export/mbox/');
+                window.location = target;
+            }
+        });
+        // END EXPORT ==========================================
     }
-    
+
     // given the row of the msg list, load the message text in the mag view pane
     function load_msg(row) {
         var msgId = row.find("td:last").html();
@@ -223,28 +244,28 @@ $(function() {
         $('#view-pane').load('/archive/ajax/msg/?id=' + msgId, function() {
             $('#msg-header').hide()
             $('#msg-date').after('<a id="toggle" href="#">Show header</a>');
-            $('#toggle').click(function(ev) { 
-                $('#msg-header').toggle(); 
+            $('#toggle').click(function(ev) {
+                $('#msg-header').toggle();
                 $(this).html(($('#toggle').text() == 'Show header') ? 'Hide header' : 'Show header');
             });
             $('#view-pane').scrollTop(0);    // should this be msg-body?
         });
     }
-    
+
     /* auto select first item in result list */
     function select_first_msg() {
         var row = $('table#msg-table tr:first');
         row.addClass('row-selected');
         load_msg(row);
     }
-    
+
     /* handle message select from list */
     $('table#msg-table tr').click(function () {
         $('table#msg-table tr').removeClass('row-selected');
         $(this).addClass('row-selected');
         load_msg($(this));
     });
-    
+
     setup_buttons();
     init_search();
     select_first_msg();

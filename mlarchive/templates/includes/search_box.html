@@ -4,7 +4,18 @@
         {{ form.so }}
         {{ form.q }}
         <input class="hidden-submit" type="submit" value="Search" />
-        <button id="" class="unsorted small-button" onclick="window.history.back()">Change Search</button>
-        <button id="" class="unsorted small-button">Export</button>
+        <!-- <button id="" class="unsorted small-button" onclick="window.history.back()">Change Search</button> -->
+        <button class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false" onclick="window.history.back()">
+            <span class="ui-button-text">Search</span>
+        </button>
+        <button id="export-button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false">
+            <span class="ui-button-text">Export</span>
+        </button>
+        <div id="export-menu">
+            <ul id="export-choices">
+                <li class="export-menu-item">Mbox</li>
+                <li><a href="/archive/export/maildir/?q=corrosive">Maildir</a></li>
+            </ul>
+        </div>
       </form>
   </div> <!-- basic-search -->

@@ -577,7 +577,7 @@ a.selected {
 /* Export
    ========================================================================== */
 
-#export-menu {
+#export-options {
     background: none repeat scroll 0 0 #FFFFFF;
     border: 1px solid #D6D6D6;
     box-shadow: 0 2px 4px #D6D6D6;
@@ -593,16 +593,28 @@ a.selected {
     overflow-x: hidden;
     overflow-y: auto;
     max-height: 450px;
-    width: 220px;
+    width: 175px;
 }
 
-#export-choices li {
-    width: 100%;
-    list-style: none;
+#export-options li {
+    list-style: none outside none;
 }
 
-#export-choices li:hover {
-    background: none repeat scroll 0 0 rgba(0,0,0,0.24);
+#export-options li:hover {
+    background: none repeat scroll 0 0 #F1F1F1;
+}
+
+#export-options li a {
+    color: #777777;
+    display: block;
+    font-family: Verdana,Arial,sanserif;
+    font-size: 13px;
+    padding: 4px 16px;
+    text-decoration: none;
+}
+
+#export-options li a:hover {
+    color: #222222;
 }
 
 /* ==========================================================================

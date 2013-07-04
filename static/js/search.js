@@ -218,21 +218,12 @@ $(function() {
         // EXPORT ==============================================
         $('#export-button').bind("click", function(event) {
             event.preventDefault();
-            $(this).next('div').show().focus();
+            $(this).next('ul').show().focus();
         });
-        $('.export-menu-item').click(function(ev) {
-            var value = $(this).html().toLowerCase();
-            alert(value);
-            var path = window.location.pathname;
-
-            if(value == "mbox"){
-                var target = path.replace('/search/','/export/mbox/');
-                window.location = target;
-            }
-            if(value == ""){
-                var target = path.replace('/search/','/export/mbox/');
-                window.location = target;
-            }
+        $('ul#export-options').blur(function() {
+            var myList = $(this)
+            window.setTimeout(function() { $(myList).hide(); },500);
+            //$(this).hide();   # need to use timeout or element hides before control triggered
         });
         // END EXPORT ==========================================
     }

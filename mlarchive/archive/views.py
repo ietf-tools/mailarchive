@@ -55,6 +55,8 @@ class CustomSearchView(FacetedSearchView):
         else:
             browse_list = None
         extra['browse_list'] = browse_list
+        extra['export_mbox'] = self.request.META['REQUEST_URI'].replace('/archive/search/','/archive/export/mbox/')
+        extra['export_maildir'] = self.request.META['REQUEST_URI'].replace('/archive/search/','/archive/export/maildir/')
         return extra
 
     # override this for export
@@ -68,21 +70,6 @@ def chunks(l, n):
     '''
     for i in xrange(0, len(l), n):
         yield l[i:i+n]
-
-def aexport(queryset, type=None):
-    '''
-    This function takes a queryset, which is the result of a search.  All messages are added to
-    a gzip compressed tar archive.
-    '''
-    handle, filename = tempfile.mkstemp(prefix='exp_',suffix='.tar.gz')
-    # with tarfile.open(filename, "w:gz") as tar:   # not supported until 2.7
-    tar = tarfile.open(filename, "w:gz")
-    for result in queryset:
-        arcname = os.path.join(result.object.email_list.name,result.object.hashcode)
-        tar.add(result.object.get_file_path(),arcname=arcname)
-    tar.close()
-
-    return filename
 
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
@@ -227,8 +214,8 @@ def export(request, type):
     '''
     # force sort order and run query
     data = request.GET.copy()
-    data['so'] = ['email_list']
-    data['sso'] = ['-date']
+    data['so'] = 'email_list'
+    data['sso'] = 'date'
     form = AdvancedSearchForm(data,load_all=False,request=request)
     results = form.search()
 
@@ -237,7 +224,7 @@ def export(request, type):
     if count > 50000:
         # message user
         # return to original query
-        pass
+        raise Exception
     elif count == 0:
         # message user
         # return to original query
@@ -251,7 +238,7 @@ def export(request, type):
             arcname = os.path.join(result.object.email_list.name,result.object.hashcode)
             tar.add(result.object.get_file_path(),arcname=arcname)
     elif type == 'mbox':
-        # there are varios problems adding non-file objects (ie. StringIO) to tar files
+        # there are various problems adding non-file objects (ie. StringIO) to tar files
         # therefore the mbox files are first built on disk
         mbox_date = results[0].object.date.strftime('%Y-%m')
         mbox_list = results[0].object.email_list.name
@@ -272,7 +259,7 @@ def export(request, type):
             with open(result.object.get_file_path()) as input:
                 # TODO: if no envelope add one
                 mbox_file.write(input.read())
-                mbox_file.write('\n')   #TODO mbox newline?
+                mbox_file.write('\n')
 
         mbox_file.close()
         tar.add(temp_path,arcname=mbox_list + '/' + mbox_date + '.mail')

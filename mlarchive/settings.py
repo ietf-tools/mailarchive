@@ -161,6 +161,12 @@ LOGGING = {
 HAYSTACK_XAPIAN_PATH = '/a/mailarch/data/archive_index'
 HAYSTACK_USE_REALTIME_SEARCH = False
 #HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+HAYSTACK_CONNECTIONS = {
+    'default': {
+        'ENGINE': 'haystack.backends.xapian_backend.XapianEngine',
+        'PATH': '/a/mailarch/data/archive_index',
+    },
+}
 
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = '/a/mailarch/data/archive'

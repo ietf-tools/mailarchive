@@ -4,7 +4,7 @@ from django.contrib import messages
 from haystack.backends.xapian_backend import XapianSearchBackend
 from haystack.forms import SearchForm, FacetedSearchForm
 from haystack.query import SearchQuerySet
-from mlarchive.archive.getSQ import parse
+from mlarchive.archive.query_utils import parse
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
 

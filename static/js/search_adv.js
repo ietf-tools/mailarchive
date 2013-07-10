@@ -10,12 +10,12 @@ $(function() {
 
     function get_string(datastore) {
         var values = [];
-        for (var i in datastore) { 
+        for (var i in datastore) {
             values.push(datastore[i]);
         }
         return values.join();
     }
-    
+
     function setup_ajax(field, list, searchfield, url) {
         var datastore = {};
         if(field.val() != '') {
@@ -25,11 +25,11 @@ $(function() {
                 datastore[value] = value;
             });
         }
-        
+
         $.each(datastore, function(k, v) {
             add_to_list(list, k, v);
         });
-        
+
         searchfield.autocomplete({
             source: url,
             minLength: 1,
@@ -53,13 +53,19 @@ $(function() {
         });
     }
 
+    function init_forms() {
+        var val = $('#email_list').val();
+        alert(val);
+    }
+
     setup_ajax($("#email_list"), $("#email_list_list"), $("#email_list_search"), "archive/ajax/list/");
+    init_forms();
 
     // hide selected lists div when empty
     if($('#email_list_list li').length==0) {
         $('.list-fieldset').hide();
     }
-    
+
     // setup inline help messages
     $(".defaultText").focus(function(srcc)
     {
@@ -69,7 +75,7 @@ $(function() {
             $(this).val("");
         }
     });
-    
+
     $(".defaultText").blur(function()
     {
         if ($(this).val() == "")
@@ -78,9 +84,9 @@ $(function() {
             $(this).val($(this)[0].title);
         }
     });
-    
+
     $(".defaultText").blur();
-    
+
     $("#advanced-search-form").submit(function() {
         $(".defaultText").each(function() {
         if($(this).val() == $(this)[0].title) {
@@ -89,7 +95,7 @@ $(function() {
         });
     });
     // end setup inline help
-    
+
     $("#id_qdr").change(function() {
         if($(this).val()=="c") {
             $("#custom_date").show();

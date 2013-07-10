@@ -158,7 +158,7 @@ def handle(part,text_only):
     if handler:
         return handler(part,text_only)
 
-def parse(entity, text_only=False):
+def parse_entity(entity, text_only=False):
     '''
     This function recursively traverses a MIME email and returns a list of email.Message objects
     '''
@@ -178,13 +178,13 @@ def parse(entity, text_only=False):
             # --clip
             for x in contents:
                 # only return first readable item
-                r = parse(x,text_only)
+                r = parse_entity(x,text_only)
                 if r:
                     parts.extend(r)
                     break
         else:
             for part in entity.get_payload():
-                parts.extend(parse(part,text_only))
+                parts.extend(parse_entity(part,text_only))
     else:
         body = handle(entity,text_only)
         if body:
@@ -198,7 +198,7 @@ def parse_body(msg, text_only=False, request=None):
         with open(msg.get_file_path()) as f:
             mm = mailbox.MaildirMessage(f)
             headers = mm.items()
-            parts = parse(mm,text_only)
+            parts = parse_entity(mm,text_only)
     except IOError:
         return 'Error reading message'
 

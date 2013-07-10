@@ -57,6 +57,7 @@ class CustomSearchView(FacetedSearchView):
         extra['browse_list'] = browse_list
         extra['export_mbox'] = self.request.META['REQUEST_URI'].replace('/archive/search/','/archive/export/mbox/')
         extra['export_maildir'] = self.request.META['REQUEST_URI'].replace('/archive/search/','/archive/export/maildir/')
+        extra['modify_search_url'] = self.request.META['REQUEST_URI'].replace('/archive/search/','/archive/advsearch/')
         return extra
 
     # override this for export
@@ -131,10 +132,21 @@ def advsearch(request):
     '''
     The Advanced Search View
     '''
-    form = AdvancedSearchForm(request=request)
-    RulesFormset = formset_factory(RulesForm)
-    query_formset = RulesFormset(prefix='query')
-    not_formset = RulesFormset(prefix='not')
+    if request.GET:
+        # reverse engineer advanced search form from query string
+        # assert False, request.GET
+
+        initial = {'qdr':request.GET.get('qdr'),
+                   'email_list':request.GET.get('email_list')}
+        form = AdvancedSearchForm(request=request,initial=request.GET)
+        RulesFormset = formset_factory(RulesForm)
+        query_formset = RulesFormset(prefix='query')
+        not_formset = RulesFormset(prefix='not')
+    else:
+        form = AdvancedSearchForm(request=request)
+        RulesFormset = formset_factory(RulesForm)
+        query_formset = RulesFormset(prefix='query')
+        not_formset = RulesFormset(prefix='not')
 
     return render_to_response('archive/advsearch.html', {
         'form': form,

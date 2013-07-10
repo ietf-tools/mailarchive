@@ -231,6 +231,15 @@ table#msg-table {
     float: right;
 }
 
+a#modify-search {
+    display: inline;
+    margin-right: 15px;
+}
+
+#id_search_form {
+    display: inline;
+}
+
 #basic-search input#id_q {
     width: 28em;
 }

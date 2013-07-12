@@ -1,16 +1,18 @@
-{% extends "base.html" %}
+{% extends "base_960.html" %}
 
 {% block extrahead %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery.query.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/search_form.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/search_adv.js"></script>
-{% endblock %} 
+{% endblock %}
 
 {% block title %}Mail Archive{% endblock %}
+
+{% block header %}Mail Archive - Advanced Search{% endblock %}
 
 {% block content %}
 
 <div id="adv-search-container">
-  <h1>Advanced Search</h1>
   {% include "includes/advsearch_form.html" %}
 </div>
 

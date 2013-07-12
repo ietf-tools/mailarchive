@@ -1,5 +1,9 @@
-
 /* search_adv.js */
+
+/*
+This script uses the JQuery Query String Object plugin
+http://archive.plugins.jquery.com/project/query-object
+*/
 
 $(function() {
     function add_to_list(list, id, label) {
@@ -54,12 +58,11 @@ $(function() {
     }
 
     function init_forms() {
-        var val = $('#email_list').val();
-        alert(val);
+        // build query if returning to search form with parameters
+        if(document.location.search.length) {
+            $('#id_qdr').trigger('change');
+        }
     }
-
-    setup_ajax($("#email_list"), $("#email_list_list"), $("#email_list_search"), "archive/ajax/list/");
-    init_forms();
 
     // hide selected lists div when empty
     if($('#email_list_list li').length==0) {
@@ -105,4 +108,7 @@ $(function() {
             $("#custom_date").hide();
         }
     });
+
+    setup_ajax($("#id_email_list"), $("#email_list_list"), $("#email_list_search"), "archive/ajax/list/");
+    init_forms();
 });

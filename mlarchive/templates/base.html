@@ -29,7 +29,7 @@
 <div id="container">
 
     <div id="header">
-        <div id="header-text">Email Archive</div>
+        <div id="header-text">Mail Archive</div>
         {% if user %}
             <div id="login" class="noprint">
             {% if user.is_authenticated %}
@@ -39,9 +39,9 @@
                 <a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>
             {% endif %}
             </div>
-        {% endif %}  
+        {% endif %}
     </div> <!-- header -->
-    
+
         <!-- Django Messages -->
         {% if messages %}
         <ul class="messages">
@@ -51,7 +51,7 @@
         </ul>
         {% endif %}
 
-    
+
     <!-- Content -->
     <div id="content">
         {% block content %}{% endblock %}

@@ -2,8 +2,8 @@
 
 {% block extrahead %}
 <style>
-#test { 
-  border: 1px solid black; 
+#test {
+  border: 1px solid black;
   width: 300px;
   white-space: pre-wrap;
 }
@@ -35,8 +35,14 @@ $('#target').dblclick(function() {
     alert('Handler for .dblclick() called.');
 });
 $("p").dblclick( function () { alert("Hello World!"); });
+
+$(function() {
+$('button').button();
+});
+
 </script>
-{% endblock %} 
+
+{% endblock %}
 
 
 {% block title %}Archive{% endblock %}
@@ -45,6 +51,13 @@ $("p").dblclick( function () { alert("Hello World!"); });
 
 <div>
   <h2>Archive</h2>
+  <button>Button</button>
+          <button id="search-button" onclick="window.history.back()">Search</button>
+        <button id="export-button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-icon-secondary" role="button" aria-disabled="false">
+            <span class="ui-button-text">Export</span>
+            <span class="ui-button-icon-secondary ui-icon ui-icon-triangle-1-s"></span>
+        </button>
+        <button id="a">A button element</button>
   <p>
   This is some random text.
   </p>
@@ -52,7 +65,7 @@ $("p").dblclick( function () { alert("Hello World!"); });
     <li><a href="./haystack">Haystack</a></li>
     <li><a href="./custom">Custom Haystack</a></li>
   </ul>
-  
+
   <p>
     <ul>
       <li>{{ request.session.keys }}</li>

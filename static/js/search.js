@@ -27,7 +27,7 @@ $(function() {
         return values.join();
     }
 
-    function sync_tables() {
+    function set_widths() {
         // synchronize the message list header table with the scrollable content table
         $("#msg-list-header-table").width($("#msg-table").width());
         if($('#msg-table').find("tr:first td").length != 1) {
@@ -35,7 +35,12 @@ $(function() {
                 $(this).width($($("#msg-table tr:first td")[i]).width() + 10);
             });
         }
+        // stretch query box to fill toolbar
+        var w = $('#content').width() - $('#browse-header').width() - 400;
+        $('#id_q').width(w);
     }
+
+
 
     function set_splitter(top) {
         // set page elements when splitter moves
@@ -45,9 +50,9 @@ $(function() {
     }
 
     function init_search() {
-        sync_tables();
+        set_widths();
         $(window).resize(function(){
-            sync_tables();
+            set_widths();
         });
 
         // init splitter ------------------------------------
@@ -136,6 +141,15 @@ $(function() {
     }
 
     function setup_buttons() {
+        // TOOLBAR =============================================
+        $('#search-button').button();
+        $('#export-button').button({
+            icons: {
+                secondary: "ui-icon-triangle-1-s"
+            }
+        });
+        // END TOOLBAR =========================================
+
         // FILTERS =============================================
         $('.more-link').bind("click", function(event) {
             event.preventDefault();
@@ -187,19 +201,22 @@ $(function() {
             else {
                 new_so = sortDefault[col];
             }
+
             // if there already was a sort order and the new sort order is not just a reversal
             // of the previous sort, save it as the secondary sort order
-            if(so!='' && so.replace('-','') != new_so.replace('-','')) {
-                var query = $.query.set('so',new_so).set('sso',so);
+            if(so!="" && so!=true){
+                if(so.replace('-','') != new_so.replace('-','')) {
+                    var query = $.query.set('so',new_so).set('sso',so);
+                } else {
+                    var query = $.query.set('so',new_so);
+                }
             } else {
                 var query = $.query.set('so',new_so);
             }
             location.search = query;
-            // $('#id_so').val(new_so);
-            // $('form#id_search_form').submit();
         });
         // show appropriate sort arrow icon
-        if(so!='null'){
+        if(so && so!=true){
             var col = so.replace('-','');
             var elem = $("#sort-button-" + col);
             if(so.match("^-")){
@@ -232,15 +249,17 @@ $(function() {
     function load_msg(row) {
         var msgId = row.find("td:last").html();
         /* TODO: this call needs auth */
-        $('#view-pane').load('/archive/ajax/msg/?id=' + msgId, function() {
-            $('#msg-header').hide()
-            $('#msg-date').after('<a id="toggle" href="#">Show header</a>');
-            $('#toggle').click(function(ev) {
-                $('#msg-header').toggle();
-                $(this).html(($('#toggle').text() == 'Show header') ? 'Hide header' : 'Show header');
+        if(/^\d+$/.test(msgId)){
+            $('#view-pane').load('/archive/ajax/msg/?id=' + msgId, function() {
+                $('#msg-header').hide()
+                $('#msg-date').after('<a id="toggle" href="#">Show header</a>');
+                $('#toggle').click(function(ev) {
+                    $('#msg-header').toggle();
+                    $(this).html(($('#toggle').text() == 'Show header') ? 'Hide header' : 'Show header');
+                });
+                $('#view-pane').scrollTop(0);    // should this be msg-body?
             });
-            $('#view-pane').scrollTop(0);    // should this be msg-body?
-        });
+        }
     }
 
     /* auto select first item in result list */

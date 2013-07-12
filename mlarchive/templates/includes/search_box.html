@@ -1,18 +1,12 @@
   <div id="basic-search">
-      <a id="modify-search" href="{{ modify_search_url }}">Modify search</a>
       <form name="search-form" id="id_search_form" action="" method="get">
         {{ form.email_list }}
         {{ form.so }}
         {{ form.q }}
         <input class="hidden-submit" type="submit" value="Search" />
         <!-- <button id="" class="unsorted small-button" onclick="window.history.back()">Change Search</button> -->
-        <button class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false" onclick="window.history.back()">
-            <span class="ui-button-text">Search</span>
-        </button>
-        <button id="export-button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-icon-secondary" role="button" aria-disabled="false">
-            <span class="ui-button-text">Export</span>
-            <span class="ui-button-icon-secondary ui-icon ui-icon-triangle-1-s"></span>
-        </button>
+        <button id="search-button" onclick="window.history.back()">Search</button>
+        <button id="export-button">Export</button>
         <ul id="export-options" class="ui-widget-content" tabindex="-1">
             <li><a href="{{ export_mbox }}">Mbox</a></li>
             <li><a href="{{ export_maildir }}">Maildir</a></li>

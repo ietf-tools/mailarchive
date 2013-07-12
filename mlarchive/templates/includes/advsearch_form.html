@@ -1,6 +1,6 @@
   <div id="adv-search" class="adv-search">
       <form id="rules-form" class="advanced" action="../search" method="get">
-        
+
         <fieldset id="query_parts">
         <span class="label">Include {{ form.operator }}:</span>
         {% for form in query_formset.forms %}
@@ -18,7 +18,7 @@
             <a id="add_query_part" class="addlink addParamBtn" href="#">Add another</a>
         {% endfor %}
         </fieldset>
-        
+
         <fieldset id="not_parts">
         <span class="label">but do not include: </span>
             {% for form in not_formset.forms %}
@@ -37,7 +37,7 @@
         {% endfor %}
         </fieldset>
       </form>
-      
+
       <form id="advanced-search-form" class="advanced" action="../search" method="get">
         <fieldset id="not_parts">
         <span class="label">filter results by:</span>
@@ -47,27 +47,29 @@
                     <td>{{ form.qdr }}</td>
                 </tr>
                 <tr id="custom_date">
-                        <td>Start:</td><td><input id="id_start_date" name="start_date" class="defaultText" type="text" size="15" title="YYYY-MM-DD"></td><td>End:</td><td><input id="id_end_date" name="end_date" class="defaultText" type="text" size="15" title="YYYY-MM-DD"></td>
+                        <td>Start:</td><td>{{ form.start_date }}</td><td>End:</td><td>{{ form.end_date }}</td>
                 </tr>
                 <tr>
                     <td>List:</td>
                     <td><input id="email_list_search" class="defaultText" type="text" size="30" title="Start typing name and pick from list"></td>
                 </tr>
-                <input type="hidden" name="email_list" id="email_list" />
+                <!-- <input type="hidden" name="email_list" id="email_list" /> -->
+                {{ form.email_list }}
             </table>
-            
+
             <fieldset id="list-fieldset2" class="list-fieldset">
               <legend>Lists to Search</legend>
               <ul id="email_list_list"></ul>
             </fieldset>
-        
+
         </fieldset>
-      
+
         <br />
         <hr />
-      
-        <input id="id_q" type="text" name="q" readonly="readonly">
-        
+
+        <input id="id_q" type="text" name="q" readonly="readonly" />
+        <input id="as" type="hidden" name="as" value="1" />
+
         <div class="button-group">
           <ul>
             <li><button type="submit">Search</button></li>

@@ -6,7 +6,7 @@ $(function() {
     $('#id_q').focus();
 });
 </script>
-{% endblock %} 
+{% endblock %}
 
 {% block title %}Mail Archive{% endblock %}
 
@@ -14,7 +14,8 @@ $(function() {
 
 <div id="search-container">
   <form id="id_search_form" name="search-form" action="search" method="get">
-    <input id="id_q" type="text" name="q">
+    <!-- <input id="id_q" type="text" name="q"> -->
+    {{ form.q }}
     <input class="search_button" type="submit" value="Search" title="Search" alt="Search">
   </form>
   <ul id="navigation">
@@ -25,7 +26,6 @@ $(function() {
     {% endif %}
   </ul>
 </div>
-
 
 {% endblock %}
 

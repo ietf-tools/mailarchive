@@ -57,7 +57,10 @@ class CustomSearchView(FacetedSearchView):
         extra['browse_list'] = browse_list
         extra['export_mbox'] = self.request.META['REQUEST_URI'].replace('/archive/search/','/archive/export/mbox/')
         extra['export_maildir'] = self.request.META['REQUEST_URI'].replace('/archive/search/','/archive/export/maildir/')
-        extra['modify_search_url'] = self.request.META['REQUEST_URI'].replace('/archive/search/','/archive/advsearch/')
+        if 'as' not in self.request.GET:
+            extra['modify_search_url'] = self.request.META['REQUEST_URI'].replace('/archive/search/','/archive/')
+        else:
+            extra['modify_search_url'] = self.request.META['REQUEST_URI'].replace('/archive/search/','/archive/advsearch/')
         return extra
 
     # override this for export
@@ -134,14 +137,33 @@ def advsearch(request):
     '''
     if request.GET:
         # reverse engineer advanced search form from query string
-        # assert False, request.GET
-
-        initial = {'qdr':request.GET.get('qdr'),
-                   'email_list':request.GET.get('email_list')}
         form = AdvancedSearchForm(request=request,initial=request.GET)
-        RulesFormset = formset_factory(RulesForm)
-        query_formset = RulesFormset(prefix='query')
-        not_formset = RulesFormset(prefix='not')
+        qinitial = []
+        ninitial = []
+        params = request.GET.get('q').split()
+        for param in params:
+            d = {}
+            key,val = param.split(':')
+            d['field'] = key.lstrip('-')
+            d['value'] = val.strip('"')
+            if '"' in val:
+                d['qualifier'] = 'exact'
+            else:
+                d['qualifier'] = 'contains'
+            if key.startswith('-'):
+                ninitial.append(d)
+            else:
+                qinitial.append(d)
+        RulesFormset0 = formset_factory(RulesForm,extra=0)
+        RulesFormset1 = formset_factory(RulesForm,extra=1)
+        if qinitial:
+            query_formset = RulesFormset0(prefix='query',initial=qinitial)
+        else:
+            query_formset = RulesFormset1(prefix='query',initial=qinitial)
+        if ninitial:
+            not_formset = RulesFormset0(prefix='not',initial=ninitial)
+        else:
+            not_formset = RulesFormset1(prefix='not',initial=ninitial)
     else:
         form = AdvancedSearchForm(request=request)
         RulesFormset = formset_factory(RulesForm)
@@ -303,7 +325,11 @@ def main(request):
     '''
     The main page.  This page contains a simple search form and some links.
     '''
-    form = SearchForm()
+    if request.GET:
+        form = SearchForm(request.GET)
+    else:
+        form = SearchForm()
+
     if os.path.exists(settings.LOG_FILE):
         try:
             os.chmod(settings.LOG_FILE,0666)

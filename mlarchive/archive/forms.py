@@ -20,8 +20,8 @@ FIELD_CHOICES = (('text','Subject and Body'),
                  ('msgid','Message-ID'))
 
 QUALIFIER_CHOICES = (('contains','contains'),
-                     ('exact','exact'),
-                     ('startswith','startswith'))
+                     ('exact','exact'))
+                     #('startswith','startswith'))
 
 TIME_CHOICES = (('a','anytime'),
                 ('d','day'),
@@ -76,8 +76,8 @@ class AdminForm(forms.Form):
     subject = forms.CharField(max_length=255,required=False)
 
 class AdvancedSearchForm(FacetedSearchForm):
-    start_date = forms.DateField(required=False,help_text='YYYY-MM-DD')
-    end_date = forms.DateField(required=False)
+    start_date = forms.DateField(required=False,widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
+    end_date = forms.DateField(required=False,widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
     email_list = forms.CharField(max_length=255,required=False,widget=forms.HiddenInput)
     subject = forms.CharField(max_length=255,required=False)
     frm = forms.CharField(max_length=255,required=False)

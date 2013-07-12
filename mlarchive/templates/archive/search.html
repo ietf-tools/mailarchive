@@ -13,18 +13,20 @@
 {% block content %}
 
     <!-- use context "form" to re-display search form -->
-    
-    <div id="msg-headers">
+
+    <div id="toolbar">
         <div id="browse-header" class="{% if browse_list.private %} private{% endif %}">
             {% if browse_list %}
-              {{ browse_list.name }}
+              Browse: {{ browse_list.name }}
+            {% else %}
+              <a id="modify-search" href="{{ modify_search_url }}">Modify search</a>
             {% endif %}
         </div>
         <div id="search-header">
           {% include "includes/search_box.html" %}
         </div> <!-- search-header -->
-    </div> <!-- msg-headers -->
-    
+    </div> <!-- toolbar -->
+
     <div id="msg-container">
         <div id="sidebar">
             <div id="search-filters">
@@ -76,8 +78,8 @@
                 </ul>
             </div> <!-- search-filters -->
         </div> <!-- msg-left-nav -->
-        
-        <div id="msg-panes">    
+
+        <div id="msg-panes">
             <div id="list-pane">
                 <div id="msg-list-header">
                     <table id="msg-list-header-table">
@@ -110,11 +112,11 @@
                     {% endfor %}
                     </table>
                 </div> <!-- msg-list -->
-                
+
                 <div id="msg-list-controls">
                     {# Showing {{ page.object_list|length }} of {{ page.paginator.count }} #}
                     {{ page.paginator.count }} Messages
-        
+
                     {% if page.has_previous or page.has_next %}
                         <span class="right">
                             {{ page|cut:"<"|cut:">" }}&nbsp;

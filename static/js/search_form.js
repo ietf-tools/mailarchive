@@ -21,7 +21,7 @@ $(function() {
         var part_pattern="{param}:{keyword}";
         var not_pattern="-{param}:{keyword}";
         var op_value=$('#id_operator').val();
-        
+
         // regular query fields'
         var operands=new Array();
         $('.query_chunk').each(function() {
@@ -34,7 +34,7 @@ $(function() {
             }
         });
         query_string += operands.join(' '+op_value+' ');
-        
+
         // not feilds
         var not_operands=new Array();
         $('.not_chunk').each(function() {
@@ -52,7 +52,7 @@ $(function() {
         }
         $('#id_q').val(query_string);
     }
-    
+
     function handle_qualifier(ev) {
         var field_id = $(ev.target).attr('id').replace('qualifier','field');
         if($(ev.target).val()=='startswith') {
@@ -75,7 +75,7 @@ $(function() {
         }
         build_query(ev);
     }
-    
+
     function increment_ids(el) {
         var from = $(el).attr('id').split('_')[2];
         var to = parseInt(from)+1;
@@ -90,7 +90,7 @@ $(function() {
             $(e).attr('id', old_id.replace(from, to));
         })
     }
-    
+
     function init() {
         // bind build_query() to change events
         $('#id_query-0-value').focus().bind('change keyup',build_query);
@@ -98,7 +98,7 @@ $(function() {
         $('#id_not-0-value').bind('change keyup',build_query);
         $('#id_not-0-field').change(build_query);
         $('#id_query-0-qualifier').change(handle_qualifier);
-        
+
         $('a.remove_btn').click(function() {
             var remove_index = $(this).attr('id').split('_')[1];
             $('div#query_chunk_' + remove_index).remove()
@@ -107,7 +107,7 @@ $(function() {
             }
             build_query();
         });
-        
+
         $('a.not_remove_btn').click(function() {
             var remove_index = $(this).attr('id').split('_')[2];
             //alert(remove_index);
@@ -116,8 +116,8 @@ $(function() {
                 $('.not_chunk:first').removeClass('removable');
             }
         });
-        
-        $('#add_query_part').click(function() {        
+
+        $('#add_query_part').click(function() {
             $('.query_chunk:first').addClass('removable');
             var count = $('.query_chunk').length;
             var cloned = $('.query_chunk').last().clone(true);
@@ -126,8 +126,8 @@ $(function() {
             cloned.insertAfter(last);
             increment_ids($('.query_chunk').last(), $('.query_chunk').length-1);;
         });
-        
-        $('#add_not_part').click(function() {        
+
+        $('#add_not_part').click(function() {
             $('.not_chunk:first').addClass('removable');
             var cloned = $('.not_chunk').last().clone(true);
             var last = $('.not_chunk:last');
@@ -135,8 +135,12 @@ $(function() {
             cloned.insertAfter(last);
             increment_ids($('.not_chunk').last());;
         });
+
+        if(document.location.search.length) {
+            build_query();
+        }
     }
-    
+
     init();
 
 });

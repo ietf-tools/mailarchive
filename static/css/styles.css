@@ -220,6 +220,7 @@ table#msg-table {
     display: inline;
     font-size: 20px;
     margin-left: 200px;
+    color: #808080;
 }
 
 #browse-header.private {
@@ -503,6 +504,10 @@ input.hidden-submit {
     color: #666;
 }
 
+a#modify-search {
+    font-size: 12px;
+}
+
 /* Header sort buttons
    ========================================================================== */
 
@@ -650,6 +655,10 @@ a.selected {
 
 #advanced-search input.date {
     width: 107px;
+}
+
+#id_start_date, #id_end_date {
+    width: 120px;
 }
 
 ul#email_list_list li {
@@ -823,9 +832,9 @@ div.browse_section {
 }
 
 div.browse_section h2 {
-    text-align: center;
+    background: #417690;
     color: white;
-    background: #5b80b2;
+    text-align: center;
 }
 
 #browse_help {
@@ -895,10 +904,9 @@ div#admin_top {
 }
 
 #admin_page h2 {
-    text-align: center;
-    color: white;
-    /* background: #5b80b2; */
     background: #417690;
+    color: white;
+    text-align: center;
 }
 
 #admin_page input#id_subject {

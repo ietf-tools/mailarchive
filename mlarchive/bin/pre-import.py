@@ -29,13 +29,19 @@ import re
 import warnings
 
 def main():
+    errors = 0
+    count = 0
+    noid = 0
+    NOIDPATTERN = re.compile(r'.*@NO-ID-FOUND.mhonarc.com')
     PATTERN = re.compile(r'<!--X-Message-Id:\s+(.*)\s+-->')
-    dirs = glob.glob('/a/www/ietf-mail-archive/web*/*/current/')
+    #dirs = glob.glob('/a/www/ietf-mail-archive/web*/*/current/')
+    dirs = glob.glob('/a/www/ietf-mail-archive/web/pwe3/current/')
     html_parser = HTMLParser.HTMLParser()
     for dir in sorted(dirs):
         listname = dir.split('/')[-3]
         print "Importing %s" % listname
         for fil in glob.glob(dir + 'msg?????.html'):
+            count += 1
             with open(fil) as f:
                 found = False
                 for line in f:
@@ -46,20 +52,26 @@ def main():
                             msgid = match.groups()[0]
                             # in msgNNNNN.html message-id's are escaped, need to unescape
                             msgid = html_parser.unescape(msgid)
+                            if re.match(NOIDPATTERN,msgid):
+                                noid += 1
                         else:
                             raise Error('pattern failed (%s)' % fil)
-                
-                if not found:
-                    print "No Message Id: %s" % fil
-                else:
-                    try:
-                        u = unicode(msgid)
-                    except UnicodeDecodeError:
-                        warnings.warn('UnicodeDecode: %s' % fil)
-                    number = int(os.path.basename(fil)[3:8])
-                    Legacy.objects.create(msgid=msgid,email_list_id=listname,number=number)
-                
-                
+                        break
+
+                try:
+                    if found:
+                        u = unicode(msgid) # test for unknown encodings
+                        number = int(os.path.basename(fil)[3:8])
+                        Legacy.objects.create(msgid=msgid,email_list_id=listname,number=number)
+                    else:
+                        raise Exception("No Message Id: %s" % fil)
+                except Exception as e:
+                    print "Import Error [{0}, {1}]".format(fil,e.args)
+                    errors += 1
+    print "Errors: %d" % errors
+    print "Files: %d" % count
+    print "NO IDs: %d" % noid
+
 if __name__ == "__main__":
     # debug version: treat warnings as errors
     #with warnings.catch_warnings(record=True) as w:

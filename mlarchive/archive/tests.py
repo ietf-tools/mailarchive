@@ -53,7 +53,9 @@ class ParseQueryTest(TestCase):
                    ('term1 term2','<SQ: AND (content__contains=term1 AND content__contains=term2)>'),
                    ('term1 AND term2','<SQ: AND (content__contains=term1 AND content__contains=term2)>'),
                    ('term1 OR term2','<SQ: OR (content__contains=term1 OR content__contains=term2)>'),
-                   ('term1 NOT term2','<SQ: AND (content__contains=term1 AND NOT (content__contains=term2))>')]
+                   ('term1 NOT term2','<SQ: AND (content__contains=term1 AND NOT (content__contains=term2))>'),
+                   ('term1-term2','<SQ: AND (content__contains=term1 AND content__contains=term2)>'),
+                   ('term1-term2-term3','<SQ: AND (content__contains=term1 AND content__contains=term2 AND content__contains=term3)>')]
         for q in queries:
             self.assertEqual(repr(parse(q[0])),q[1])
 

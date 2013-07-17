@@ -307,9 +307,12 @@ class Loader(object):
         This function uses MessageWrapper to save a Message to the archive.  If we are in test
         mode the save() step is skipped.  If this is the firstrun of the import, we filter
         spam by checking that the message exists in the legacy web archive (which has been
-        purged of spam) before saving.  NOTE: if the message is from the last week we skip this
-        step, because there will be some lag between when the legacy archive index was created
-        and the firstrun import completes
+        purged of spam) before saving.
+
+        NOTE: if the message is from the last week we skip this step, because there will be some
+        lag between when the legacy archive index was created and the firstrun import completes.
+        The check will also be skipped if not msgid was found in the original message and we
+        had to create one, becasue it obviously won't exist in the web archive.
         '''
         self.stats['count'] += 1
         mw = MessageWrapper(msg, self.listname, private=self.private)
@@ -317,7 +320,7 @@ class Loader(object):
         if self.options.get('test'):
             return
 
-        if self.options.get('firstrun') and mw.get_date() < datetime.datetime.now() - datetime.timedelta(days=7):
+        if self.options.get('firstrun') and mw.date < (datetime.datetime.now() - datetime.timedelta(days=7)) and self.created_id == False:
             try:
                 legacy = Legacy.objects.get(msgid=mw.msgid,email_list_id=self.listname)
             except Legacy.DoesNotExist:
@@ -351,6 +354,8 @@ class MessageWrapper(object):
     '''
     def __init__(self, email_message, listname, private=False):
         self._archive_message = None
+        self._date = None
+        self.created_id = False
         self.email_message = email_message
         self.hashcode = None
         self.listname = listname
@@ -365,6 +370,12 @@ class MessageWrapper(object):
             self.process()
         return self._archive_message
     archive_message = property(_get_archive_message)
+
+    def _get_date(self):
+        if not self._date:
+            self._date = self.get_date()
+        return self._date
+    date = property(_get_date)
 
     def get_date(self):
         '''
@@ -412,6 +423,7 @@ class MessageWrapper(object):
                 msgid = resent_msgid.strip('<>')
         if not msgid:
             msgid = make_msgid('ARCHIVE')
+            self.created_id = True
             self.spam_score += 1
             #raise GenericWarning('No MessageID (%s)' % self.email_message.get_from())
         return msgid
@@ -497,7 +509,7 @@ class MessageWrapper(object):
         if subject.startswith('Re: '):
             base_subject = subject[3:].lstrip()
             messages = Message.objects.filter(email_list=self.email_list,
-                                              date__lt=self.get_date).exclude(subject__startswith='Re: ').order_by('-date')
+                                              date__lt=self.date).exclude(subject__startswith='Re: ').order_by('-date')
             for message in messages:
                 if message.subject == base_subject:
                     return message.thread
@@ -511,7 +523,7 @@ class MessageWrapper(object):
         self.email_list,created = EmailList.objects.get_or_create(
             name=self.listname,defaults={'description':self.listname,'private':self.private})
 
-        self._archive_message = Message(date=self.get_date(),
+        self._archive_message = Message(date=self.date,
                              email_list=self.email_list,
                              frm = handle_header(self.email_message.get('From',''),self.email_message),
                              hashcode=self.hashcode,

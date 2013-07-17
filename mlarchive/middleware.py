@@ -14,7 +14,7 @@ FILTER_PARAMS = ['f_list','f_from', 'so', 'sso', 'page']
 def has_filters(request):
     '''
     Returns True if the request URL contains search filters.
-    NOTE: function will return false if filters exist with no value.  ie.  "f_List="
+    NOTE: function will return false if filters exist but with no value.  ie.  "f_List="
     '''
     for filter in FILTER_PARAMS:
         if request.GET.get(filter):

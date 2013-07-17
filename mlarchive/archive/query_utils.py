@@ -13,10 +13,12 @@ HAYSTACK_DEFAULT_OPERATOR = getattr(settings,'HAYSTACK_DEFAULT_OPERATOR','AND')
 # RE PATTERNS
 # --------------------------------------------------
 #FIELD_PATTERN = re.compile(r"^(\w+):(\w+)\s*",re.U)
+# re.findall(r'\w+(?:-\w+)+',text)  # match hyphenated word(s)
 FIELD_PATTERN = re.compile(r"^(\w+):([a-zA-Z0-9\.\@\-\_\+\=\$]+)\s*",re.U)
 NEGATED_FIELD_PATTERN = re.compile(r"^(\-\w+):([a-zA-Z0-9\.\@\-\_\+\=\$]+)\s*",re.U)
 FIELD_EXACT_PATTERN = re.compile(r"^(\w+):\"(.+)\"\s*",re.U)
-SIMPLE_QUERY_PATTERN = re.compile(r"^(\w+)\s*",re.U)
+#SIMPLE_QUERY_PATTERN = re.compile(r"^(\w+)\s*",re.U)
+SIMPLE_QUERY_PATTERN = re.compile(r"^(\w+)\-*\s*",re.U)
 NEGATED_QUERY_PATTERN = re.compile(r"^(\-\w+)\s*",re.U)
 OPERATOR_PATTERN = re.compile(r"^(AND|OR|NOT)\s*",re.U)
 QUOTED_TEXT_PATTERN = re.compile(r"^\"(.+)\"\s*",re.U)

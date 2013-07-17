@@ -3,9 +3,10 @@
         {{ form.email_list }}
         {{ form.so }}
         {{ form.q }}
-        <input class="hidden-submit" type="submit" value="Search" />
+        <!-- <input class="hidden-submit" type="submit" value="Search" /> -->
         <!-- <button id="" class="unsorted small-button" onclick="window.history.back()">Change Search</button> -->
-        <button id="search-button" onclick="window.history.back()">Search</button>
+        <!-- <button id="search-button" onclick="window.history.back()">Search</button> -->
+        <button id="search-button" type="submit">Search</button>
         <button id="export-button">Export</button>
         <ul id="export-options" class="ui-widget-content" tabindex="-1">
             <li><a href="{{ export_mbox }}">Mbox</a></li>

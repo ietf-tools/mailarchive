@@ -34,8 +34,8 @@ def main():
     noid = 0
     NOIDPATTERN = re.compile(r'.*@NO-ID-FOUND.mhonarc.com')
     PATTERN = re.compile(r'<!--X-Message-Id:\s+(.*)\s+-->')
-    #dirs = glob.glob('/a/www/ietf-mail-archive/web*/*/current/')
-    dirs = glob.glob('/a/www/ietf-mail-archive/web/pwe3/current/')
+    dirs = glob.glob('/a/www/ietf-mail-archive/web*/*/current/')
+    #dirs = glob.glob('/a/www/ietf-mail-archive/web/pwe3/current/')
     html_parser = HTMLParser.HTMLParser()
     for dir in sorted(dirs):
         listname = dir.split('/')[-3]

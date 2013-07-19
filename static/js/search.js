@@ -40,8 +40,6 @@ $(function() {
         $('#id_q').width(w);
     }
 
-
-
     function set_splitter(top) {
         // set page elements when splitter moves
         $("#list-pane").css("height",top-3);
@@ -151,15 +149,31 @@ $(function() {
         // END TOOLBAR =========================================
 
         // FILTERS =============================================
+        $('.filter').blur(function() {
+            // must use a timeout, or else list disappears before link gets activated
+            var obj = $(this);
+            window.setTimeout(function() {
+                $(obj).removeClass('filter-popup');
+                $('li.filter-option', obj).slice(6).hide();
+            },500);
+        });
+        // put checked items up top
+        $($('li:has(:checked)').get().reverse()).each(function() {
+            p = $(this).parent();
+            elem = $(this).detach();
+            p.prepend(elem);
+        });
         $('.more-link').bind("click", function(event) {
             event.preventDefault();
-            $(this).parent().next('div').show().focus();
+            var container = $(this).parents('div:eq(0)')
+            container.addClass('filter-popup').focus();
+            $('li.filter-option', container).show();
         });
-        $('.filter-extra-div').blur(function() {
-            var myDiv = $(this)
-            // must use a timeout, or else list disappears before link gets activated
-            window.setTimeout(function() { $(myDiv).hide(); },500);
+        // hide extra filter options
+        $('.filter-options').each(function(){
+            $('li.filter-option', this).slice(6).hide();
         });
+
         $('#list-filter-clear').bind("click", function(event) {
             event.preventDefault();
             location.search = $.query.set("f_list",'');

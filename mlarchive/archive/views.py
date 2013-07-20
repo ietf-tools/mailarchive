@@ -183,18 +183,22 @@ def browse(request):
     '''
     display_columns = 5
     form = BrowseForm()
+
+    # private columns
+    private_columns = []
     if request.user.is_authenticated():
         if request.user.is_superuser:
             lists = EmailList.objects.filter(private=True).order_by('name')
         else:
             lists = EmailList.objects.filter(private=True,members=request.user.pk).order_by('name')
-        private_columns = chunks(lists,int(math.ceil(lists.count()/float(display_columns))))
-    else:
-        private_columns = []
+        if lists:
+            private_columns = chunks(lists,int(math.ceil(lists.count()/float(display_columns))))
 
+    # active columns
     lists = EmailList.objects.filter(active=True,private=False).order_by('name')
     active_columns = chunks(lists,int(math.ceil(lists.count()/float(display_columns))))
 
+    # inactive columns
     lists = EmailList.objects.filter(active=False,private=False).order_by('name')
     if lists:
         inactive_columns = chunks(lists,int(math.ceil(lists.count()/float(display_columns))))

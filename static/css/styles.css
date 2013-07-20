@@ -33,7 +33,7 @@ input[disabled='disabled'] {
 
 #header {
     background: #417690;
-    color: #ffc;
+    color: white;
     overflow: hidden;
 }
 
@@ -175,8 +175,12 @@ ul.messages li {
     background: url("../admin/img/icon_addlink.gif") 0 .2em no-repeat;
 }
 /* ==========================================================================
-   Login
+   Header
    ========================================================================== */
+#header-text a {
+    color: white;
+}
+
 #login-container {
     margin: 50px auto;
     width: 155px;

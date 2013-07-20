@@ -14,6 +14,7 @@ HAYSTACK_DEFAULT_OPERATOR = getattr(settings,'HAYSTACK_DEFAULT_OPERATOR','AND')
 # --------------------------------------------------
 #FIELD_PATTERN = re.compile(r"^(\w+):(\w+)\s*",re.U)
 # re.findall(r'\w+(?:-\w+)+',text)  # match hyphenated word(s)
+# HYPHENATED_PATTERN = re.compile(r"^(\w+-\w+")
 FIELD_PATTERN = re.compile(r"^(\w+):([a-zA-Z0-9\.\@\-\_\+\=\$]+)\s*",re.U)
 NEGATED_FIELD_PATTERN = re.compile(r"^(\-\w+):([a-zA-Z0-9\.\@\-\_\+\=\$]+)\s*",re.U)
 FIELD_EXACT_PATTERN = re.compile(r"^(\w+):\"(.+)\"\s*",re.U)
@@ -21,7 +22,7 @@ FIELD_EXACT_PATTERN = re.compile(r"^(\w+):\"(.+)\"\s*",re.U)
 SIMPLE_QUERY_PATTERN = re.compile(r"^(\w+)\-*\s*",re.U)
 NEGATED_QUERY_PATTERN = re.compile(r"^(\-\w+)\s*",re.U)
 OPERATOR_PATTERN = re.compile(r"^(AND|OR|NOT)\s*",re.U)
-QUOTED_TEXT_PATTERN = re.compile(r"^\"(.+)\"\s*",re.U)
+QUOTED_TEXT_PATTERN = re.compile(r"^\"(.+?)\"\s*",re.U)
 
 # --------------------------------------------------
 # Custom Exceptions
@@ -121,6 +122,15 @@ def parse(q):
     try:
         sq= SQ()
         current = HAYSTACK_DEFAULT_OPERATOR
+
+        # pre-process: convert hyphenated words to quoted phrase without hyphens
+        terms = re.findall(r'\w+(?:-\w+)+',q)
+        if terms:
+            terms.sort(key=len,reverse=True)    # start with longest word first
+            for term in terms:
+                new = '"%s"' % term.replace('-',' ')
+                q = q.replace(term,new)
+                print q
 
         while q:
             q=q.lstrip()

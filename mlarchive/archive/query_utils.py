@@ -1,6 +1,7 @@
 from haystack.query import SQ
 from django.conf import settings
 from django.utils.log import getLogger
+from datetime import datetime, timedelta
 
 import re
 import sys
@@ -41,7 +42,58 @@ class UnhandledException(Exception):
         return self.value
 
 # --------------------------------------------------
-# Functions
+# Functions handle URL parameters
+# --------------------------------------------------
+def get_qdr_time(val):
+    '''
+    This function expects the value of the qdr search parameter [h,d,w,m,y]
+    and returns the corresponding datetime to use in the search filter.
+    EXAMPLE: h -> now - one hour
+    '''
+    now = datetime.now()
+    if val == 'h':
+        return now - timedelta(hours=1)
+    elif val == 'd':
+        return now - timedelta(days=1)
+    elif val == 'w':
+        return now - timedelta(weeks=1)
+    elif val == 'm':
+        return now - timedelta(days=30)
+    elif val == 'y':
+        return now - timedelta(days=365)
+
+def get_kwargs(data):
+    '''
+    This function takes a dictionary from form.cleaned_data and returns
+    a dictionary to be used as kwargs for the SearchQuerySet.  This function
+    can be used with multiple forms which may not include exactly the same fields,
+    so we use the get() method.
+    '''
+    kwargs = {}
+    for key in ('msgid',):
+        if data.get(key):
+            kwargs[key] = data[key]
+    if data.get('start_date'):
+        kwargs['date__gte'] = data['start_date']
+    if data.get('end_date'):
+        kwargs['date__lte'] = data['end_date']
+    if data.get('email_list'):
+        kwargs['email_list__in'] = data['email_list']
+    if data.get('frm'):
+        if '@' in data['frm']:
+            kwargs['frm_email'] = data['frm']
+        else:
+            kwargs['frm__icontains'] = data['frm']
+    if data.get('qdr') and data['qdr'] not in ('a','c'):
+            kwargs['date__gte'] = get_qdr_time(data['qdr'])
+    if data.get('subject'):
+            kwargs['subject__icontains'] = data['subject']
+    if data.get('spam'):
+            kwargs['spam_score__gt'] = 0
+    return kwargs
+
+# --------------------------------------------------
+# Functions to parse the q field
 # --------------------------------------------------
 def handle_brackets(sq,q,current=HAYSTACK_DEFAULT_OPERATOR):
     no_brackets = 1
@@ -130,7 +182,7 @@ def parse(q):
             for term in terms:
                 new = '"%s"' % term.replace('-',' ')
                 q = q.replace(term,new)
-                print q
+                #print q
 
         while q:
             q=q.lstrip()

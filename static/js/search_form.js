@@ -33,7 +33,8 @@ $(function() {
                 operands.push(jQuery.substitute(part_pattern,obj))
             }
         });
-        query_string += operands.join(' '+op_value+' ');
+        // query_string += operands.join(' '+op_value+' ');
+        query_string += operands.join(' ');
 
         // not feilds
         var not_operands=new Array();
@@ -135,6 +136,14 @@ $(function() {
             cloned.insertAfter(last);
             increment_ids($('.not_chunk').last());;
         });
+
+        if($('.query_chunk').length>1) {
+            $('.query_chunk').addClass('removable');
+        }
+
+        if($('.not_chunk').length>1) {
+            $('.not_chunk').addClass('removable');
+        }
 
         if(document.location.search.length) {
             build_query();

@@ -156,11 +156,13 @@ LOGGING = {
 }
 
 # HAYSTACK SETTINGS
+# from haystack 1.x
 #HAYSTACK_SITECONF = 'mlarchive.search_sites'
 #HAYSTACK_SEARCH_ENGINE = 'xapian'
+HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+HAYSTACK_USE_REALTIME_SEARCH = True
+
 HAYSTACK_XAPIAN_PATH = '/a/mailarch/data/archive_index'
-HAYSTACK_USE_REALTIME_SEARCH = False
-#HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 HAYSTACK_CONNECTIONS = {
     'default': {
         'ENGINE': 'haystack.backends.xapian_backend.XapianEngine',
@@ -173,6 +175,7 @@ ARCHIVE_DIR = '/a/mailarch/data/archive'
 LOG_FILE = '/a/mailarch/data/log/mlarchive.log'
 SERVER_MODE = 'development'
 TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
+MAILMAN_DIR = '/usr/lib/mailman'
 
 LOGIN_REDIRECT_URL = '/archive/'
 AUTHENTICATION_BACKENDS = (

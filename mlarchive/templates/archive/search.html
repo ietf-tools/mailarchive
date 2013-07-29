@@ -85,7 +85,6 @@
                                 <th><a id="sort-button-subject" class="unsorted sortbutton" href="#">Subject</a></th>
                                 <th><a id="sort-button-frm" class="unsorted sortbutton" href="#">From</a></th>
                                 <th><a id="sort-button-email_list" class="unsorted sortbutton" href="#">List</a></th>
-                                <th><a id="sort-button-score" class="unsorted sortbutton" href="#">S.</a></th>
                             </tr>
                         </thead>
                     </table>
@@ -99,7 +98,7 @@
                             <td class="nowrap">{{ result.object.subject|truncatechars:70 }}</td>
                             <td>{{ result.object.frm_email|truncatechars:35 }}</td>
                             <td>{{ result.object.email_list }}</td>
-                            <td>{{ result.score }}</td>
+                            <td class="hidden">{{ result.score }}</td>
                             <td class="hidden">{{ result.object.get_absolute_url }}</td>
                             <td class="hidden">{{ result.object.id }}</td>
                         </tr>

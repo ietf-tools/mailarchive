@@ -230,6 +230,7 @@ class EmailList(models.Model):
     private = models.BooleanField(default=False,db_index=True)
     alias = models.CharField(max_length=255,blank=True)
     members = models.ManyToManyField(User)
+    members_digest = models.CharField(max_length=28,blank=True)
 
     def __unicode__(self):
         return self.name

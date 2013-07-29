@@ -21,7 +21,11 @@ def not_spam(request, queryset):
     Mark selected messages as not spam (spam_score=0)
     '''
     count = queryset.count()
-    queryset.update(spam_score=0)
+    # update() on querysets doesn't call save signals, need to loop through and call save()
+    #queryset.update(spam_score=0)
+    for message in queryset:
+        message.spam_score=0
+        message.save()
     messages.success(request, '%d Messages Marked not Spam' % count)
     url = reverse('archive_admin')
     return HttpResponseRedirect(url)

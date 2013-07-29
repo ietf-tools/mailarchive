@@ -4,11 +4,9 @@ from django.contrib import messages
 from haystack.backends.xapian_backend import XapianSearchBackend
 from haystack.forms import SearchForm, FacetedSearchForm
 from haystack.query import SearchQuerySet
-from mlarchive.archive.query_utils import parse
+from mlarchive.archive.query_utils import parse, get_kwargs
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
-
-from datetime import datetime, timedelta
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
@@ -35,25 +33,6 @@ VALID_SORT_OPTIONS = ('frm','-frm','date','-date','email_list','-email_list', 's
 # --------------------------------------------------------
 # Helper Functions
 # --------------------------------------------------------
-def get_qdr_time(val):
-    '''
-    This function expects the value of the qdr search parameter [h,d,w,m,y]
-    and returns the corresponding datetime to use in the search filter.
-    EXAMPLE: h -> now - one hour
-    '''
-    now = datetime.now()
-    if val == 'h':
-        return now - timedelta(hours=1)
-    elif val == 'd':
-        return now - timedelta(days=1)
-    elif val == 'w':
-        return now - timedelta(weeks=1)
-    elif val == 'm':
-        return now - timedelta(days=30)
-    elif val == 'y':
-        return now - timedelta(days=365)
-
-
 def transform(val):
     '''
     This function takes a sort parameter and validates and transforms it for use
@@ -74,6 +53,12 @@ class AdminForm(forms.Form):
     spam = forms.BooleanField(required=False)
     start_date = forms.DateField(required=False)
     subject = forms.CharField(max_length=255,required=False)
+
+    def clean_email_list(self):
+        # return a list of names even though there's ever only one, so we match get_kwargs() api
+        email_list = self.cleaned_data['email_list']
+        if email_list:
+            return [email_list.name]
 
 class AdvancedSearchForm(FacetedSearchForm):
     start_date = forms.DateField(required=False,widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
@@ -126,33 +111,8 @@ class AdvancedSearchForm(FacetedSearchForm):
         else:
             sqs = self.searchqueryset
 
-        #assert False, self.cleaned_data
         # handle URL parameters ------------------------------------
-        kwargs = {}
-        if self.cleaned_data['email_list']:
-            kwargs['email_list__in'] = self.cleaned_data['email_list']
-
-        if self.cleaned_data['end_date']:
-            kwargs['date__lte'] = self.cleaned_data['end_date']
-
-        frm = self.cleaned_data['frm']
-        if frm:
-            if frm.find('@')!=-1:
-                kwargs['frm_email'] = frm
-            else:
-                kwargs['frm__icontains'] = frm
-
-        if self.cleaned_data['msgid']:
-            kwargs['msgid'] = self.cleaned_data['msgid']
-
-        if self.cleaned_data['qdr'] and self.cleaned_data['qdr'] not in ('a','c'):
-            kwargs['date__gte'] = get_qdr_time(self.cleaned_data['qdr'])
-
-        if self.cleaned_data['start_date']:
-            kwargs['date__gte'] = self.cleaned_data['start_date']
-
-        if self.cleaned_data['subject']:
-            kwargs['subject__icontains'] = self.cleaned_data['subject']
+        kwargs = get_kwargs(self.cleaned_data)
 
         if kwargs:
             sqs = sqs.filter(**kwargs)

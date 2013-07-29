@@ -19,10 +19,10 @@
 </form>
 </div>
 
-{% if private_columns %}
+{% if columns.private %}
 <div class="browse_section">
 <h2>Private Lists</h2>
-{% with private_columns as columns %}
+{% with columns.private as columns %}
     {% include "includes/browse_columns.html" %}
 {% endwith %}
 </div>
@@ -30,15 +30,15 @@
 
 <div class="browse_section">
 <h2>Active Lists</h2>
-{% with active_columns as columns %}
+{% with columns.active as columns %}
     {% include "includes/browse_columns.html" %}
 {% endwith %}
 </div>
 
-{% if inactive_columns %}
+{% if columns.inactive %}
 <div class="browse_section">
 <h2>Inactive Lists</h2>
-{% with inactive_columns as columns %}
+{% with columns.inactive as columns %}
     {% include "includes/browse_columns.html" %}
 {% endwith %}
 </div>

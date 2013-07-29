@@ -333,13 +333,13 @@ class Legacy(models.Model):
 # Signal Handlers ----------------------------------------
 
 @receiver(pre_delete, sender=Message)
-def _message_delete(sender, instance, **kwargs):
+def _message_remove(sender, instance, **kwargs):
     '''
-    When messages are deteled, via the admin page, we need to move the message
-    archive file to the "deleted" directory
+    When messages are removed, via the admin page, we need to move the message
+    archive file to the "removed" directory
     '''
     path = instance.get_file_path()
-    target = os.path.join(os.path.dirname(path),'deleted')
+    target = os.path.join(os.path.dirname(path),'removed')
     if not os.path.exists(target):
         os.mkdir(target)
     shutil.move(path,target)

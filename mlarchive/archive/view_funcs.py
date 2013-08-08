@@ -22,8 +22,11 @@ def chunks(l, n):
     '''
     Yield successive n-sized chunks from l
     '''
+    result = []
     for i in xrange(0, len(l), n):
-        yield l[i:i+n]
+        #yield l[i:i+n]
+        result.append(l[i:i+n])
+    return result
 
 # --------------------------------------------------
 # View Functions

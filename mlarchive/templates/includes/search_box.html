@@ -1,5 +1,9 @@
   <div id="basic-search">
       <form name="search-form" id="id_search_form" action="" method="get">
+        <div id="radio">
+            <input type="radio" id="radio_date" name="sort" value="date" /><label for="radio_date">Date</label>
+            <input type="radio" id="radio_thread" name="sort" value="thread" /><label for="radio_thread">Thread</label>
+        </div>
         {{ form.email_list }}
         {{ form.so }}
         {{ form.q }}

@@ -40,12 +40,12 @@ def test_initialize_formsets():
 @pytest.mark.django_db
 def test_get_columns():
     user = UserFactory.build()
-    x = EmailListFactory.create()
+    # x = EmailListFactory.create()
     EmailList.objects.create(name='bob')
     columns = get_columns(user)
-    qs = EmailList.objects.all()
-    print columns, qs
+    # qs = EmailList.objects.all()
+    # print columns, qs
     assert len(columns) == 3
-    assert len(columns['active']) == 3
+    assert len(columns['active']) == 1
 
 #def test_get_export()

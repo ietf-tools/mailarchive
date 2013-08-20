@@ -514,6 +514,9 @@ a#modify-search {
 
 /* Header sort buttons
    ========================================================================== */
+#radio {
+    display: inline-block;
+}
 
 a.sortbutton:visited, a.sortbutton:link {
     color: #555;

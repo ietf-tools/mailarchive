@@ -36,7 +36,7 @@ $(function() {
             });
         }
         // stretch query box to fill toolbar
-        var w = $('#content').width() - $('#browse-header').width() - 400;
+        var w = $('#content').width() - $('#browse-header').width() - 500;
         $('#id_q').width(w);
     }
 
@@ -146,6 +146,7 @@ $(function() {
                 secondary: "ui-icon-triangle-1-s"
             }
         });
+        $('#radio').buttonset();
         // END TOOLBAR =========================================
 
         // FILTERS =============================================

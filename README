@@ -1,0 +1,11 @@
+DEPENDENCIES:
+xapian-core
+python-xapian
+
+pip install python-dateutil
+pip install pytest-dajngo
+pip install factory-boy
+
+TESTING:
+$ py.test tests
+

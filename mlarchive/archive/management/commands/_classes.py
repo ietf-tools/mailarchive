@@ -320,7 +320,7 @@ class Loader(object):
         if self.options.get('test'):
             return
 
-        if self.options.get('firstrun') and mw.date < (datetime.datetime.now() - datetime.timedelta(days=7)) and self.created_id == False:
+        if self.options.get('firstrun') and mw.date < (datetime.datetime.now() - datetime.timedelta(days=7)) and mw.created_id == False:
             try:
                 legacy = Legacy.objects.get(msgid=mw.msgid,email_list_id=self.listname)
             except Legacy.DoesNotExist:

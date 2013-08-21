@@ -85,29 +85,31 @@ def main():
     parser.add_option("-m", "--mini", help="perform import of one list",
                       action="store_true", default=False)
     (options, args) = parser.parse_args()
-    
+
     total_count = 0
     error_count = 0
+    firstrun = False
     start_time = time.time()
-    
+
     if options.full:
         dirs = ALL
+        firstrun = True
     elif options.mini:
         dirs = [ x for x in ALL if os.path.basename(x) in MINI ]
     else:
         dirs = [ x for x in ALL if os.path.basename(x) in SUBSET ]
-    
+
     for dir in dirs:
         print 'Loading: %s' % dir
         mboxs = [ f for f in os.listdir(dir) if FILE_PATTERN.match(f) ]
-        
+
         # we need to import the files in chronological order so thread resolution works
         sorted_mboxs = sorted(mboxs)
-        
-        # exclude directories 
+
+        # exclude directories
         full = [ os.path.join(dir,x) for x in sorted_mboxs ]
         files = filter(os.path.isfile,full)
-        
+
         for path in files:
             if is_empty(path):
                 continue
@@ -116,25 +118,24 @@ def main():
                 private = True
             else:
                 private = False
-                
+
             # save output from command so we can aggregate statistics
             content = StringIO()
-            # TODO set firstrun=True
-            call_command('load', path, format=format, listname=os.path.basename(dir), 
-                         test=options.test, private=private, firstrun=False, stdout=content)
-            
+            call_command('load', path, format=format, listname=os.path.basename(dir),
+                         test=options.test, private=private, firstrun=firstrun, stdout=content)
+
             # gather stats from output
             content.seek(0)
             output = content.read()
             parts = output.split(':')
             total_count += int(parts[2])
             error_count += int(parts[3])
-    
+
     elapsed_time = time.time() - start_time
     print 'Messages Pocessed: %d' % total_count
     print 'Errors: %d' % error_count
     print 'Elapsed Time: %s' % str(datetime.timedelta(seconds=elapsed_time))
-    
-            
+
+
 if __name__ == "__main__":
     main()

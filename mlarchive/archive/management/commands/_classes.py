@@ -168,7 +168,10 @@ def get_received_date(msg):
         return None
 
     parts = rec.split(';')
-    return parsedate_to_datetime(parts[1])
+    try:
+        return parsedate_to_datetime(parts[1])
+    except IndexError:
+        return None
 
 def is_aware(dt):
     '''
@@ -336,7 +339,7 @@ class Loader(object):
 
     def process(self):
         '''
-        If the "break" option is set let real exception be raised
+        If the "break" option is set propogate the exception
         '''
         for m in self.mb:
             try:

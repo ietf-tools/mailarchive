@@ -284,7 +284,7 @@ class Loader(object):
         '''
         Helper function to determine the list we are importing based on header values
         '''
-        # not enought info in MMDF-style mailbox to guess list
+        # not enough info in MMDF-style mailbox to guess list
         if isinstance(self.mb,mailbox.MMDF):
             return None
 
@@ -309,9 +309,9 @@ class Loader(object):
         spam by checking that the message exists in the legacy web archive (which has been
         purged of spam) before saving.
 
-        NOTE: if the message is from the last week we skip this step, because there will be some
+        NOTE: if the message is from the last 30 days we skip this step, because there will be some
         lag between when the legacy archive index was created and the firstrun import completes.
-        The check will also be skipped if not msgid was found in the original message and we
+        The check will also be skipped if msgid was not found in the original message and we
         had to create one, becasue it obviously won't exist in the web archive.
         '''
         self.stats['count'] += 1
@@ -320,22 +320,35 @@ class Loader(object):
         if self.options.get('test'):
             return
 
-        if self.options.get('firstrun') and mw.date < (datetime.datetime.now() - datetime.timedelta(days=7)) and mw.created_id == False:
+        # filter using Legacy archive
+        if self.options.get('firstrun') and mw.date < (datetime.datetime.now() - datetime.timedelta(days=30)) and mw.created_id == False:
             try:
                 legacy = Legacy.objects.get(msgid=mw.msgid,email_list_id=self.listname)
             except Legacy.DoesNotExist:
                 self.stats['spam'] += 1
                 return
 
-        mw.save()
+        if self.options.get('dryrun'):
+            # process message
+            x = mw.archive_message
+        else:
+            mw.save()
 
     def process(self):
+        '''
+        If the "break" option is set let real exception be raised
+        '''
+        if self.options.get('break'):
+            exception_type = GenericWarning
+        else:
+            exception_type = Exception
+
         for m in self.mb:
             try:
                 self.load_message(m)
             except GenericWarning as e:
                 logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,e.args,m.get_from()))
-            except Exception as e:
+            except exception_type as e:
                 logger.error("Import Error [{0}, {1}, {2}]".format(self.filename,e.args,m.get_from()))
                 self.stats['errors'] += 1
         self.cleanup()
@@ -400,7 +413,7 @@ class MessageWrapper(object):
                         pass
                 else:
                     fallback = date
-        logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,'Used None or naive date',
+        logger.warn("Import Warn [{0}, {1}, {2}]".format(self.msgid,'Used None or naive date',
                                                          self.email_message.get_from()))
         return fallback
 

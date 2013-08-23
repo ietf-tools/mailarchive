@@ -28,6 +28,14 @@
     width: 100%;
 }
 
+#radio_date, #radio_thread {
+    line-height: 0;
+}
+
+#radio label {
+    margin-top: 0;
+}
+
 </style>
 
 <script type="text/javascript">
@@ -39,7 +47,7 @@ $("p").dblclick( function () { alert("Hello World!"); });
 
 $(function() {
     $('button').button();
-
+    $('#radio').buttonset();
     $('#filter-list li').slice(2).hide();
 });
 
@@ -65,16 +73,27 @@ $(function() {
 <hr>
 <div>
   <h2>Archive</h2>
+
+  <div>
+  <div id="radio">
+            <input type="radio" id="radio_date" name="sort" value="date" /><label for="radio_date">Date</label>
+            <input type="radio" id="radio_thread" name="sort" value="thread" /><label for="radio_thread">Thread</label>
+  </div>
+
   <button>Button</button>
-          <button id="search-button" onclick="window.history.back()">Search</button>
-        <button id="export-button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-icon-secondary" role="button" aria-disabled="false">
-            <span class="ui-button-text">Export</span>
-            <span class="ui-button-icon-secondary ui-icon ui-icon-triangle-1-s"></span>
-        </button>
-        <button id="a">A button element</button>
+  <button id="search-button" onclick="window.history.back()">Search</button>
+
+  <button id="a">A button element</button>
+  </div>
   <p>
   This is some random text.
   </p>
+
+  <button id="export-button" class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-icon-secondary" role="button" aria-disabled="false">
+     <span class="ui-button-text">Export</span>
+     <span class="ui-button-icon-secondary ui-icon ui-icon-triangle-1-s"></span>
+  </button>
+
   <ul>
     <li><a href="./haystack">Haystack</a></li>
     <li><a href="./custom">Custom Haystack</a></li>

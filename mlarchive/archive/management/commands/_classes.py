@@ -338,19 +338,19 @@ class Loader(object):
         '''
         If the "break" option is set let real exception be raised
         '''
-        if self.options.get('break'):
-            exception_type = GenericWarning
-        else:
-            exception_type = Exception
-
         for m in self.mb:
             try:
                 self.load_message(m)
             except GenericWarning as e:
                 logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,e.args,m.get_from()))
-            except exception_type as e:
-                logger.error("Import Error [{0}, {1}, {2}]".format(self.filename,e.args,m.get_from()))
+            except Exception as e:
+                log_msg = "Import Error [{0}, {1}, {2}]".format(self.filename,e.args,m.get_from())
+                logger.error(log_msg)
                 self.stats['errors'] += 1
+                if self.options.get('break'):
+                    print log_msg
+                    raise
+
         self.cleanup()
 
     def startclock(self):

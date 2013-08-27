@@ -49,6 +49,12 @@ class CustomSearchView(FacetedSearchView):
         else:
             browse_list = None
         extra['browse_list'] = browse_list
+        match = re.search(r"so=thread",self.request.META['QUERY_STRING'])
+        if match:
+            extra['thread_sorted'] = True
+        else:
+            extra['thread_sorted'] = False
+
         extra['export_mbox'] = self.request.META['REQUEST_URI'].replace('/archive/search/','/archive/export/mbox/')
         extra['export_maildir'] = self.request.META['REQUEST_URI'].replace('/archive/search/','/archive/export/maildir/')
         if 'as' not in self.request.GET:

@@ -147,6 +147,14 @@ $(function() {
             }
         });
         $('#radio').buttonset();
+        $('#radio_date').bind("click", function(event) {
+            event.preventDefault();
+            location.search = $.query.set('so','date');
+        });
+        $('#radio_thread').bind("click", function(event) {
+            event.preventDefault();
+            location.search = $.query.set('so','thread');
+        });
         // END TOOLBAR =========================================
 
         // FILTERS =============================================

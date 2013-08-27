@@ -142,10 +142,11 @@ class AdvancedSearchForm(FacetedSearchForm):
 
         # TODO: handle score
         if so:
-            if so == 'subject':
-                sqs = sqs.order_by('-thread','date')
-            elif so == '-subject':
-                sqs = sqs.order_by('-thread','-date')
+            if so == 'thread':
+                # run through jwz thread
+                # flatten results
+                # sort siblings
+                pass
             else:
                 sqs = sqs.order_by(so,sso)
         else:

@@ -80,7 +80,7 @@ def handle_header(header_text, msg, default='iso-8859-1'):
     This function takes some header_text as a string and a email.message.Message object.  It
     returns the string decoded as needed.
     Checks if the header needs decoding:
-    - if text contains encoded_words, "=?", use decode_header()
+    - if text contains encoded_words, "=?", use decode_rfc2047_header()
     - if raw non-ascii text check Content-Types for charset
     - default to iso-8859-1, replace
     '''
@@ -153,6 +153,10 @@ def get_header_date(msg):
             pass
 
 def get_envelope_date(msg):
+    '''
+    This function takes a email.message.Message object and returns a datetime object
+    derived from the envelope header
+    '''
     line = msg.get_from()
     if not line:
         return None
@@ -163,6 +167,10 @@ def get_envelope_date(msg):
         return parsedate_to_datetime(line)
 
 def get_received_date(msg):
+    '''
+    This function takes a email.message.Message object and returns a datetime object
+    derived from the Received header or else None
+    '''
     rec = msg.get('received')
     if not rec:
         return None
@@ -320,22 +328,20 @@ class Loader(object):
         self.stats['count'] += 1
         mw = MessageWrapper(msg, self.listname, private=self.private)
 
-        if self.options.get('test'):
-            return
-
         # filter using Legacy archive
         if self.options.get('firstrun') and mw.date < (datetime.datetime.now() - datetime.timedelta(days=30)) and mw.created_id == False:
-            try:
-                legacy = Legacy.objects.get(msgid=mw.msgid,email_list_id=self.listname)
-            except Legacy.DoesNotExist:
+            legacy = Legacy.objects.filter(msgid=mw.msgid,email_list_id=self.listname)
+            if legacy:
                 self.stats['spam'] += 1
+                if not self.options.get('dryrun'):
+                    mw.write_msg(spam=True)
                 return
 
         if self.options.get('dryrun'):
             # process message
             x = mw.archive_message
         else:
-            mw.save()
+            mw.save(test=self.options.get('test'))
 
     def process(self):
         '''
@@ -416,6 +422,10 @@ class MessageWrapper(object):
                         pass
                 else:
                     fallback = date
+            # if get_received_date fails could be spam or corrupt message, flag it
+            elif func.__name__ == 'get_received_date':
+                self.spam_score = 2
+
         logger.warn("Import Warn [{0}, {1}, {2}]".format(self.msgid,'Used None or naive date',
                                                          self.email_message.get_from()))
         return fallback
@@ -588,7 +598,7 @@ class MessageWrapper(object):
                     else:
                         logger.error("ERROR: couldn't pick unique attachment name in ten tries (list:%s)" % (self.listname))
 
-    def save(self):
+    def save(self, test=False):
         # ensure process has been run
         self._get_archive_message()
 
@@ -602,7 +612,8 @@ class MessageWrapper(object):
             raise CommandError('Duplicate hash, msgid: %s' % self.msgid)
 
         self.archive_message.save()
-        self.write_msg()
+        if not test:
+            self.write_msg()
 
         # now that the archive.Message object is created we can process any attachments
         self.process_attachments()

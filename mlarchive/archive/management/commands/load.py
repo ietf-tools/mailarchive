@@ -15,7 +15,7 @@ def guess_list(path):
     '''
     Determine the list we are importing based on header values
     '''
-    mb = get_mb(path)
+    mb = _classes.get_mb(path)
 
     # not enough info in MMDF-style mailbox to guess list
     if mb.__class__ == 'mmdf':

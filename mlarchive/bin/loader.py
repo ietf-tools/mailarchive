@@ -25,10 +25,10 @@ from django.conf import settings
 #setup_environ(settings)
 
 from django.core.management import call_command
-from mlarchive.archive.management.commands._classes import ListError
 from optparse import OptionParser
 from StringIO import StringIO
 
+import ast
 import datetime
 import gc
 import glob
@@ -46,31 +46,7 @@ SUBSET = ('abfab','alto','ancp','autoconf','bliss','ccamp','cga-ext','codec','da
           'dime','discuss','emu','gen-art','grow','hipsec','homenet','i2rs','ietf82-team',
           'ietf83-team','ietf84-team','ipsec','netconf','sip','simple')
 MINI = ('yang',)
-# --------------------------------------------------
-# Helper Functions
-# --------------------------------------------------
-def get_format(filename):
-    '''
-    Function to determine the type of mailbox file whose filename is provided.
-    mmdf: starts with 4 control-A's
-    mbox: starts with "From "
-    '''
-    with open(filename) as f:
-        line = f.readline()
-        if line == '\x01\x01\x01\x01\n':
-            return 'mmdf'
-        elif line.startswith('From '):
-            return 'mbox'
 
-def is_empty(filename):
-    '''
-    Takes a filename as string.  Returns true if file is empty
-    '''
-    statinfo = os.stat(filename)
-    if statinfo.st_size == 0:
-        return True
-    else:
-        return False
 # --------------------------------------------------
 # MAIN
 # --------------------------------------------------
@@ -80,14 +56,13 @@ def main():
     parser = OptionParser(usage=usage)
     parser.add_option("-f", "--full", help="perform import of entire archive",
                       action="store_true", default=False)
-    parser.add_option("-t", "--test", help="test mode",
-                      action="store_true", default=False)
     parser.add_option("-m", "--mini", help="perform import of one list",
+                      action="store_true", default=False)
+    parser.add_option("-t", "--test", help="test mode",
                       action="store_true", default=False)
     (options, args) = parser.parse_args()
 
-    total_count = 0
-    error_count = 0
+    stats = {}
     firstrun = False
     start_time = time.time()
 
@@ -101,41 +76,28 @@ def main():
 
     for dir in dirs:
         print 'Loading: %s' % dir
-        mboxs = [ f for f in os.listdir(dir) if FILE_PATTERN.match(f) ]
 
-        # we need to import the files in chronological order so thread resolution works
-        sorted_mboxs = sorted(mboxs)
+        if 'text-secure' in path:
+            private = True
+        else:
+            private = False
 
-        # exclude directories
-        full = [ os.path.join(dir,x) for x in sorted_mboxs ]
-        files = filter(os.path.isfile,full)
+        # save output from command so we can aggregate statistics
+        content = StringIO()
+        call_command('load', path, listname=os.path.basename(dir), summary=True,
+                     test=options.test, private=private, firstrun=firstrun, stdout=content)
 
-        for path in files:
-            if is_empty(path):
-                continue
-            format = get_format(path)
-            if 'text-secure' in path:
-                private = True
-            else:
-                private = False
-
-            # save output from command so we can aggregate statistics
-            content = StringIO()
-            call_command('load', path, format=format, listname=os.path.basename(dir),
-                         test=options.test, private=private, firstrun=firstrun, stdout=content)
-
-            # gather stats from output
-            content.seek(0)
-            output = content.read()
-            parts = output.split(':')
-            total_count += int(parts[2])
-            error_count += int(parts[3])
+        # gather stats from output
+        content.seek(0)
+        output = content.read()
+        results = ast.literal_eval(output)
+        for key,val in results.items:
+            stats[key] = stats.get(key,0) + val
 
     elapsed_time = time.time() - start_time
-    print 'Messages Pocessed: %d' % total_count
-    print 'Errors: %d' % error_count
+    print 'Messages Pocessed: %d' % stats['count']
+    print 'Errors: %d' % stats['errors']
     print 'Elapsed Time: %s' % str(datetime.timedelta(seconds=elapsed_time))
-
 
 if __name__ == "__main__":
     main()

@@ -32,6 +32,10 @@ def archive_message(msg,listname,private=False):
     mw = MessageWrapper(msg,listname,private=private)
     mw.save()
 
+def decode_rfc2047_header(h):
+    return ' '.join(decode_safely(s, charset)
+                   for s, charset in decode_header(h))
+
 def decode_safely(s, charset='ascii'):
     """Return s decoded according to charset, but do so safely."""
     try:
@@ -39,9 +43,7 @@ def decode_safely(s, charset='ascii'):
     except LookupError: # bogus charset
         return s.decode('ascii', 'ignore')
 
-def decode_rfc2047_header(h):
-    return ' '.join(decode_safely(s, charset)
-                   for s, charset in decode_header(h))
+
 """
 def handle_header(header_text, default=DEFAULT_CHARSET):
     '''Decode header_text if needed'''
@@ -61,6 +63,74 @@ def handle_header(header_text, default=DEFAULT_CHARSET):
         return u"".join(headers)
 """
 
+def get_envelope_date(msg):
+    '''
+    This function takes a email.message.Message object and returns a datetime object
+    derived from the envelope header
+    '''
+    line = msg.get_from()
+    if not line:
+        return None
+
+    if '@' in line:
+        return parsedate_to_datetime(' '.join(line.split()[1:]))
+    elif parsedate_to_datetime(line):    # sometimes Date: is first line of MMDF message
+        return parsedate_to_datetime(line)
+
+def get_format(path):
+    '''
+    Determine the type of mailbox file whose path is provided.
+    mmdf: starts with 4 control-A's
+    mbox: starts with "From "
+    '''
+    with open(path) as f:
+        line = f.readline()
+        if line == '\x01\x01\x01\x01\n':
+            return 'mmdf'
+        elif line.startswith('From '):
+            return 'mbox'
+    return None
+
+def get_header_date(msg):
+    '''
+    This function takes a email.Message object and tries to parse the date from the Date: header
+    field.  It returns a Datetime object, either naive or aware, if it can, otherwise None.
+    '''
+    date = msg.get('date')
+    if not date:
+        return None
+
+    result = parsedate_to_datetime(date)
+    if result:
+        return result
+
+    # try tzparse for some odd formations
+    date_formats = ["%a %d %b %y %H:%M:%S-%Z",
+                    "%d %b %Y %H:%M-%Z",
+                    "%Y-%m-%d %H:%M:%S",
+                    #"%a %b %d %H:%M:%S %Y",
+                    #"%a %b %d %H:%M:%S %Y %Z",
+                    #"%a, %d %b %Y %H:%M:%S %Z"
+                    ]
+    for format in date_formats:
+        try:
+            result = tzparse(date,format)
+            if result:
+                return result
+        except ValueError:
+            pass
+
+def get_mb(path):
+    '''
+    This function takes the path to a file and returns a mailbox object of the type
+    mailbox.mmdf or CustomMbox (derived from mailbox.mbox)
+    '''
+    format = get_format(path)
+    if format == 'mmdf':
+        return mailbox.MMDF(filename)
+    elif format == 'mbox':
+        return CustomMbox(filename)
+
 def get_mime_extension(type):
     '''
     Looks up the proper file extension for the given mime content type (string),
@@ -74,6 +144,20 @@ def get_mime_extension(type):
     else:
         return (UNKNOWN_CONTENT_TYPE,type)
 
+def get_received_date(msg):
+    '''
+    This function takes a email.message.Message object and returns a datetime object
+    derived from the Received header or else None
+    '''
+    rec = msg.get('received')
+    if not rec:
+        return None
+
+    parts = rec.split(';')
+    try:
+        return parsedate_to_datetime(parts[1])
+    except IndexError:
+        return None
 
 def handle_header(header_text, msg, default='iso-8859-1'):
     '''
@@ -108,6 +192,17 @@ def handle_header(header_text, msg, default='iso-8859-1'):
 
     return unicode(header_text,default,errors='replace')
 
+def is_aware(dt):
+    '''
+    This function takes a datetime object and returns True if the object is aware, False if
+    it is naive
+    '''
+    if not isinstance(dt,datetime.datetime):
+        return False
+    if dt.tzinfo and dt.tzinfo.utcoffset(dt) is not None:
+        return True
+    return False
+
 def parsedate_to_datetime(data):
     '''
     This function is from email standard library v3.3, converted to 2.x
@@ -122,75 +217,6 @@ def parsedate_to_datetime(data):
         return datetime.datetime(*tuple[:6],tzinfo=tzoffset(None,tz))
     except ValueError:
         return None
-
-def get_header_date(msg):
-    '''
-    This function takes a email.Message object and tries to parse the date from the Date: header
-    field.  It returns a Datetime object, either naive or aware, if it can, otherwise None.
-    '''
-    date = msg.get('date')
-    if not date:
-        return None
-
-    result = parsedate_to_datetime(date)
-    if result:
-        return result
-
-    # try tzparse for some odd formations
-    date_formats = ["%a %d %b %y %H:%M:%S-%Z",
-                    "%d %b %Y %H:%M-%Z",
-                    "%Y-%m-%d %H:%M:%S",
-                    #"%a %b %d %H:%M:%S %Y",
-                    #"%a %b %d %H:%M:%S %Y %Z",
-                    #"%a, %d %b %Y %H:%M:%S %Z"
-                    ]
-    for format in date_formats:
-        try:
-            result = tzparse(date,format)
-            if result:
-                return result
-        except ValueError:
-            pass
-
-def get_envelope_date(msg):
-    '''
-    This function takes a email.message.Message object and returns a datetime object
-    derived from the envelope header
-    '''
-    line = msg.get_from()
-    if not line:
-        return None
-
-    if '@' in line:
-        return parsedate_to_datetime(' '.join(line.split()[1:]))
-    elif parsedate_to_datetime(line):    # sometimes Date: is first line of MMDF message
-        return parsedate_to_datetime(line)
-
-def get_received_date(msg):
-    '''
-    This function takes a email.message.Message object and returns a datetime object
-    derived from the Received header or else None
-    '''
-    rec = msg.get('received')
-    if not rec:
-        return None
-
-    parts = rec.split(';')
-    try:
-        return parsedate_to_datetime(parts[1])
-    except IndexError:
-        return None
-
-def is_aware(dt):
-    '''
-    This function takes a datetime object and returns True if the object is aware, False if
-    it is naive
-    '''
-    if not isinstance(dt,datetime.datetime):
-        return False
-    if dt.tzinfo and dt.tzinfo.utcoffset(dt) is not None:
-        return True
-    return False
 
 def seek_charset(msg):
     '''
@@ -242,9 +268,6 @@ class CustomMbox(mailbox.mbox):
 
     _isrealfromline = _strict_isrealfromline
 
-class ListError(Exception):
-    pass
-
 class GenericWarning(Exception):
     pass
 
@@ -252,66 +275,20 @@ class DateError(Exception):
     pass
 
 class Loader(object):
-    def __init__(self, filename, **options):
-        self.endtime = 0
+    def __init__(self, filename, listname, **options):
         self.filename = filename
         self.options = options
-        self.starttime = 0
-        self.stats = {'irts': 0,'mirts': 0,'count': 0, 'errors': 0, 'spam': 0}
-        self.listname = options.get('listname')
+        self.stats = {'irts': 0,'mirts': 0,'count': 0, 'errors': 0, 'spam': 0, 'bytes_loaded': 0}
         self.private = options.get('private')
-        # init mailbox iterator
-        if self.options.get('format') == 'mmdf':
-            self.mb = mailbox.MMDF(filename)
-        else:
-            #self.mb = mailbox.mbox(filename)   # TODO: handle different types of input files
-            self.mb = CustomMbox(filename)
-
-        if not self.listname:
-            self.listname = self.guess_list()
-
-        if not self.listname:
-            raise ListError
-
+        self.mb = get_mb(filename)
         logger.info('loader called with: %s' % self.filename)
 
     def cleanup(self):
         '''
         Call this function when you are done with the loader object
         '''
+        #logger.info('size: %s, loaded: %s' % (self.mb._file_length,self.stats['bytes_loaded']))
         self.mb.close()
-
-    def elapsedtime(self):
-        return self.endtime - self.starttime
-
-    def get_stats(self):
-        '''
-        Return statistics from the process() function
-        '''
-        return "%s:%s:%s:%s:%.3f\n" % (self.listname,os.path.basename(self.filename),
-                                     self.stats['count'],self.stats['errors'],self.elapsedtime())
-
-    def guess_list(self):
-        '''
-        Helper function to determine the list we are importing based on header values
-        '''
-        # not enough info in MMDF-style mailbox to guess list
-        if isinstance(self.mb,mailbox.MMDF):
-            return None
-
-        if len(self.mb) == 0:
-            return None
-
-        msg = self.mb[0]
-        if msg.get('X-BeenThere'):
-            val = msg.get('X-BeenThere').split('@')[0]
-            if val:
-                return val
-        if msg.get('List-Post'):
-            val = msg.get('List-Post')
-            match = re.match(r'<mailto:(.*)@.*',val)
-            if match:
-                return match.groups()[0]
 
     def load_message(self,msg):
         '''
@@ -334,13 +311,14 @@ class Loader(object):
             if legacy:
                 self.stats['spam'] += 1
                 if not self.options.get('dryrun'):
-                    mw.write_msg(spam=True)
+                    mw.write_msg(subdir='spam')
                 return
 
-        if self.options.get('dryrun'):
-            # process message
-            x = mw.archive_message
-        else:
+        # process message
+        x = mw.archive_message
+        self.stats['bytes_loaded'] += mw.bytes
+
+        if not self.options.get('dryrun'):
             mw.save(test=self.options.get('test'))
 
     def process(self):
@@ -355,6 +333,7 @@ class Loader(object):
             except Exception as e:
                 log_msg = "Import Error [{0}, {1}, {2}]".format(self.filename,e.args,m.get_from())
                 logger.error(log_msg)
+                self.save_failed_msg(m)
                 self.stats['errors'] += 1
                 if self.options.get('break'):
                     print log_msg
@@ -362,17 +341,18 @@ class Loader(object):
 
         self.cleanup()
 
-    def startclock(self):
-        self.starttime = time.time()
-
-    def stopclock(self):
-        self.endtime = time.time()
+    def save_failed_msg(msg):
+        mw = MessageWrapper(msg, self.listname, private=self.private)
+        mw.write_msg(subdir='failed')
 
 class MessageWrapper(object):
     '''
     This class takes a email.message.Message object (email_message) and listname as a string
     and constructs the mlarchive.archive.models.Message (archive_message) object.
     Use the save() method to save the message in the archive.
+
+    Use lazy initialization.  On init only get message-id.  If this message is being filtered
+    by message id, no use performing rest of message parsing.
     '''
     def __init__(self, email_message, listname, private=False):
         self._archive_message = None
@@ -383,6 +363,7 @@ class MessageWrapper(object):
         self.listname = listname
         self.private = private
         self.spam_score = 0
+        self.bytes = len(email_message.as_string(unixfrom=True))
 
         self.msgid = self.get_msgid()
 
@@ -600,7 +581,7 @@ class MessageWrapper(object):
 
     def save(self, test=False):
         # ensure process has been run
-        self._get_archive_message()
+        # self._get_archive_message()
 
         # check for duplicate message id, and skip
         if Message.objects.filter(msgid=self.msgid,email_list__name=self.listname):
@@ -611,19 +592,21 @@ class MessageWrapper(object):
             # TODO different error?
             raise CommandError('Duplicate hash, msgid: %s' % self.msgid)
 
-        self.archive_message.save()
+        self.archive_message.save()     # save to database
         if not test:
-            self.write_msg()
+            self.write_msg()            # write to disk archive
 
         # now that the archive.Message object is created we can process any attachments
         self.process_attachments()
 
-    def write_msg(self,spam=False):
+    def write_msg(self,subdir=None):
         '''
-        This function writes a copy of the original email message to the disk archive
+        Write a copy of the original email message to the disk archive.
+        Use optional argument subdir to specify a special location,
+        ie. "spam" or "failure" subdirectory.
         '''
-        if spam:
-            path = os.path.join(settings.ARCHIVE_DIR,'spam',self.listname,self.hashcode)
+        if subdir:
+            path = os.path.join(settings.ARCHIVE_DIR,subdir,self.listname,self.hashcode)
         else:
             path = os.path.join(settings.ARCHIVE_DIR,self.listname,self.hashcode)
         if not os.path.exists(os.path.dirname(path)):

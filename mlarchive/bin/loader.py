@@ -32,7 +32,6 @@ import ast
 import datetime
 import gc
 import glob
-import re
 import os
 import time
 
@@ -40,7 +39,6 @@ import time
 # Globals
 # --------------------------------------------------
 ALL = sorted(glob.glob('/a/www/ietf-mail-archive/text*/*'))
-FILE_PATTERN = re.compile(r'^\d{4}-\d{2}(|.mail)$')
 SOURCE_DIR = '/a/www/ietf-mail-archive/'
 SUBSET = ('abfab','alto','ancp','autoconf','bliss','ccamp','cga-ext','codec','dane','dmm','dnsop',
           'dime','discuss','emu','gen-art','grow','hipsec','homenet','i2rs','ietf82-team',

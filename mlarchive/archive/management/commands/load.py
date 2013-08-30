@@ -4,6 +4,7 @@ from mlarchive.archive.models import *
 
 import _classes
 import datetime
+import re
 import time
 
 from django.utils.log import getLogger

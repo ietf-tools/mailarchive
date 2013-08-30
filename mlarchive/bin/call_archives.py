@@ -16,6 +16,9 @@ import subprocess
 import sys
 import syslog
 
+from django.utils.log import getLogger
+logger = getLogger('mlarchive.custom')
+
 MHONARC = '/a/ietf/scripts/archive-mail.pl'
 MAILARCH= '/a/mailarch/current/mlarchive/bin/archive-mail.py'
 
@@ -24,6 +27,7 @@ data = sys.stdin.read()
 
 p = subprocess.Popen([MHONARC] + args, stdin=subprocess.PIPE)
 p.communicate(input=data)
+logger.info("Import Info [{0}, returncode {1}]".format([MHONARC] + args,p.returncode))
 if p.returncode != 0:
     sys.exit(p.returncode)
 

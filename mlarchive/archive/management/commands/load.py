@@ -15,10 +15,10 @@ def guess_list(path):
     '''
     Determine the list we are importing based on header values
     '''
-    mb = _classes.get_mb(path)
+    mb, format = _classes.get_mb(path)
 
     # not enough info in MMDF-style mailbox to guess list
-    if mb.__class__ == 'mmdf':
+    if format == 'mmdf':
         return None
 
     if len(mb) == 0:
@@ -105,18 +105,22 @@ class Command(BaseCommand):
 
         start_time = time.time()
         for filename in files:
-            loader = _classes.Loader(filename, listname, **options)
-            loader.process()
-            # compile stats
-            for key,val in loader.stats.items:
-                stats[key] = stats.get(key,0) + val
+            try:
+                loader = _classes.Loader(filename, listname, **options)
+                loader.process()
+                for key,val in loader.stats.items:          # compile stats
+                    stats[key] = stats.get(key,0) + val
+            except UnknownFormat as e:
+                logger.error("Import Error [{0}]".format(e.args))
+                stats['unknown'] = stats.get('unknown',0) + 1
 
         stats['time'] = time.time() - start_time
 
         if options.get('summary'):
             return stats.__str__()
         else:
-            output = 'Messages Processed: %d' % stats['count']
-            output += 'Errors: %d' % stats['errors']
-            output += 'Elapsed Time: %s' % stats['time']
-            return output
+            items = [ '%s:%s' % (k,v) for k,v in stats ]
+            #output = 'Messages Processed: %d' % stats['count']
+            #output += 'Errors: %d' % stats['errors']
+            #output += 'Elapsed Time: %s' % stats['time']
+            return '\n'.join(items)

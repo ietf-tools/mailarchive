@@ -26,6 +26,18 @@ logger = getLogger('mlarchive.custom')
 #filterwarnings('ignore', category = MySQLdb.Warning)
 
 # --------------------------------------------------
+# Custom Exceptions
+# --------------------------------------------------
+class GenericWarning(Exception):
+    pass
+
+class DateError(Exception):
+    pass
+
+class UnknownFormat(Exception):
+    pass
+
+# --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
 def archive_message(msg,listname,private=False):
@@ -85,11 +97,13 @@ def get_format(path):
     '''
     with open(path) as f:
         line = f.readline()
+        while not line or line == '\n':
+            line = f.readline()
         if line == '\x01\x01\x01\x01\n':
             return 'mmdf'
         elif line.startswith('From '):
             return 'mbox'
-    return None
+    raise UnknownFormat(path)
 
 def get_header_date(msg):
     '''
@@ -122,14 +136,16 @@ def get_header_date(msg):
 
 def get_mb(path):
     '''
-    This function takes the path to a file and returns a mailbox object of the type
-    mailbox.mmdf or CustomMbox (derived from mailbox.mbox)
+    This function takes the path to a file and returns a tuple of mailbox object
+    and format.  Currently supported types are:
+    - mailbox.mmdf
+    - CustomMbox (derived from mailbox.mbox)
     '''
     format = get_format(path)
     if format == 'mmdf':
-        return mailbox.MMDF(filename)
-    elif format == 'mbox':
-        return CustomMbox(filename)
+        return mailbox.MMDF(filename), format
+    else:
+        return CustomMbox(filename), format
 
 def get_mime_extension(type):
     '''
@@ -268,19 +284,16 @@ class CustomMbox(mailbox.mbox):
 
     _isrealfromline = _strict_isrealfromline
 
-class GenericWarning(Exception):
-    pass
-
-class DateError(Exception):
-    pass
-
 class Loader(object):
     def __init__(self, filename, listname, **options):
         self.filename = filename
         self.options = options
-        self.stats = {'irts': 0,'mirts': 0,'count': 0, 'errors': 0, 'spam': 0, 'bytes_loaded': 0}
+        #self.stats = {'irts': 0,'mirts': 0,'count': 0, 'errors': 0, 'spam': 0, 'bytes_loaded': 0}
+        self.stats = {}
         self.private = options.get('private')
-        self.mb = get_mb(filename)
+        self.mb, format = get_mb(filename)
+        self.stats[format] = self.stats.get(format, 0) + 1
+
         logger.info('loader called with: %s' % self.filename)
 
     def cleanup(self):

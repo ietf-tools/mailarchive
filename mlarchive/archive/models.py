@@ -339,6 +339,8 @@ def _message_remove(sender, instance, **kwargs):
     archive file to the "removed" directory
     '''
     path = instance.get_file_path()
+    if not os.path.exists(path):
+        return
     target = os.path.join(os.path.dirname(path),'removed')
     if not os.path.exists(target):
         os.mkdir(target)

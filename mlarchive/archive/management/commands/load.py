@@ -44,7 +44,7 @@ def isfile(path):
     '''
     if not os.path.isfile(path):
         return False
-    statinfo = os.stat(filename)
+    statinfo = os.stat(path)
     if statinfo.st_size == 0:
         return False
     return True

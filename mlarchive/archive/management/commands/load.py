@@ -3,6 +3,7 @@ from django.core.management.base import BaseCommand, CommandError
 from mlarchive.archive.models import *
 
 import _classes
+import time
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')

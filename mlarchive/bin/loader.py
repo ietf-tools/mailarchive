@@ -82,7 +82,7 @@ def main():
 
         # save output from command so we can aggregate statistics
         content = StringIO()
-        call_command('load', path, listname=os.path.basename(dir), summary=True,
+        call_command('load', dir, listname=os.path.basename(dir), summary=True,
                      test=options.test, private=private, firstrun=firstrun, stdout=content)
 
         # gather stats from output

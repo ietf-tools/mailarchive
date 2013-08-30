@@ -8,7 +8,6 @@ The default is public.
 # standalone script ---------------------------------------
 import os
 import sys
-import uuid
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.abspath(BASE_DIR + "/../.."))
@@ -19,8 +18,13 @@ setup_environ(settings)
 # ---------------------------------------------------------
 
 import email
+import uuid
+
 from optparse import OptionParser
 import mlarchive.archive.management.commands._classes as _classes
+
+from django.utils.log import getLogger
+logger = getLogger('mlarchive.custom')
 
 def main():
     usage = "usage: %prog LISTNAME [options]"

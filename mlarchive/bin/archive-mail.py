@@ -40,7 +40,7 @@ def main():
         sys.exit("%s: invalid arguments\nTry `%s --help for more information" %
                  (sys.argv[0],sys.argv[0]))
 
-    msg = email.message_as_string(sys.stdin.read())
+    msg = email.message_from_string(sys.stdin.read())
     _classes.archive_message(msg,listname,private=options.private)
 
 if __name__ == "__main__":

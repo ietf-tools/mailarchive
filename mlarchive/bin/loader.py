@@ -91,10 +91,10 @@ def main():
         content.seek(0)
         output = content.read()
         results = ast.literal_eval(output)
-        for key,val in results.items:
+        for key,val in results.items():
             stats[key] = stats.get(key,0) + val
 
-    elapsed_time = time.time() - start_time
+    elapsed_time = int(time.time() - start_time)
     print 'Messages Pocessed: %d' % stats['count']
     print 'Errors: %d' % stats['errors']
     print 'Elapsed Time: %s' % str(datetime.timedelta(seconds=elapsed_time))

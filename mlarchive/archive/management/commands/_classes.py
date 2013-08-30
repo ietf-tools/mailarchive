@@ -289,7 +289,7 @@ class Loader(object):
         self.filename = filename
         self.options = options
         #self.stats = {'irts': 0,'mirts': 0,'count': 0, 'errors': 0, 'spam': 0, 'bytes_loaded': 0}
-        self.stats = {}
+        self.stats = {'count': 0, 'errors': 0, 'spam': 0, 'bytes_loaded': 0}
         self.private = options.get('private')
         self.listname = options.get('listname')
         self.mb, format = get_mb(filename)
@@ -345,7 +345,7 @@ class Loader(object):
             except GenericWarning as e:
                 logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,e.args,m.get_from()))
             except Exception as e:
-                log_msg = "Import Error [{0}, {1}, {2}]".format(self.filename,e.args,m.get_from())
+                log_msg = "Import Error [{0}, {1}, {2}]".format(self.filename,(e.__class__,e.args),m.get_from())
                 logger.error(log_msg)
                 self.save_failed_msg(m)
                 self.stats['errors'] += 1
@@ -619,7 +619,9 @@ class MessageWrapper(object):
         Use optional argument subdir to specify a special location,
         ie. "spam" or "failure" subdirectory.
         '''
+        assert self.hashcode
         if subdir:
+            print settings.ARCHIVE_DIR,subdir,self.listname,self.hashcode
             path = os.path.join(settings.ARCHIVE_DIR,subdir,self.listname,self.hashcode)
         else:
             path = os.path.join(settings.ARCHIVE_DIR,self.listname,self.hashcode)

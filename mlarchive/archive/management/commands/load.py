@@ -3,6 +3,7 @@ from django.core.management.base import BaseCommand, CommandError
 from mlarchive.archive.models import *
 
 import _classes
+import datetime
 import time
 
 from django.utils.log import getLogger
@@ -108,18 +109,20 @@ class Command(BaseCommand):
             try:
                 loader = _classes.Loader(filename, **options)
                 loader.process()
-                for key,val in loader.stats.items:          # compile stats
+                for key,val in loader.stats.items():          # compile stats
                     stats[key] = stats.get(key,0) + val
             except _classes.UnknownFormat as e:
                 logger.error("Import Error [{0}]".format(e.args))
                 stats['unknown'] = stats.get('unknown',0) + 1
 
-        stats['time'] = time.time() - start_time
+        stats['time'] = int(time.time() - start_time)
 
         if options.get('summary'):
             return stats.__str__()
         else:
-            items = [ '%s:%s' % (k,v) for k,v in stats ]
+            items = [ '%s:%s' % (k,v) for k,v in stats.items() if k != 'time']
+            items.append('Elapsed Time:%s' % str(datetime.timedelta(seconds=stats['time'])))
+            items.append('\n')
             #output = 'Messages Processed: %d' % stats['count']
             #output += 'Errors: %d' % stats['errors']
             #output += 'Elapsed Time: %s' % stats['time']

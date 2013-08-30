@@ -355,7 +355,7 @@ class Loader(object):
 
         self.cleanup()
 
-    def save_failed_msg(msg):
+    def save_failed_msg(self,msg):
         mw = MessageWrapper(msg, self.listname, private=self.private)
         mw.write_msg(subdir='failed')
 

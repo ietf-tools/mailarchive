@@ -111,7 +111,7 @@ class Command(BaseCommand):
                 loader.process()
                 for key,val in loader.stats.items:          # compile stats
                     stats[key] = stats.get(key,0) + val
-            except UnknownFormat as e:
+            except _classes.UnknownFormat as e:
                 logger.error("Import Error [{0}]".format(e.args))
                 stats['unknown'] = stats.get('unknown',0) + 1
 

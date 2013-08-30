@@ -143,9 +143,9 @@ def get_mb(path):
     '''
     format = get_format(path)
     if format == 'mmdf':
-        return mailbox.MMDF(filename), format
+        return mailbox.MMDF(path), format
     else:
-        return CustomMbox(filename), format
+        return CustomMbox(path), format
 
 def get_mime_extension(type):
     '''

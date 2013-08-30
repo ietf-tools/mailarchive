@@ -8,6 +8,8 @@ The default is public.
 # standalone script ---------------------------------------
 import os
 import sys
+import uuid
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.abspath(BASE_DIR + "/../.."))
 
@@ -40,8 +42,14 @@ def main():
         sys.exit("%s: invalid arguments\nTry `%s --help for more information" %
                  (sys.argv[0],sys.argv[0]))
 
-    msg = email.message_from_string(sys.stdin.read())
-    _classes.archive_message(msg,listname,private=options.private)
+    try:
+        msg = email.message_from_string(sys.stdin.read())
+        _classes.archive_message(msg,listname,private=options.private)
+    except Exception as e:
+        filename = str(uuid.uuid4())
+        log_msg = "Import Error [{0}, {1}, {2}]".format(listname,filename,(e.__class__,e.args))
+        logger.error(log_msg)
+        #self.save_failed_msg(m)
 
 if __name__ == "__main__":
     main()

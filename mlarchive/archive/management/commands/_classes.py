@@ -285,12 +285,13 @@ class CustomMbox(mailbox.mbox):
     _isrealfromline = _strict_isrealfromline
 
 class Loader(object):
-    def __init__(self, filename, listname, **options):
+    def __init__(self, filename, **options):
         self.filename = filename
         self.options = options
         #self.stats = {'irts': 0,'mirts': 0,'count': 0, 'errors': 0, 'spam': 0, 'bytes_loaded': 0}
         self.stats = {}
         self.private = options.get('private')
+        self.listname = options.get('listname')
         self.mb, format = get_mb(filename)
         self.stats[format] = self.stats.get(format, 0) + 1
 

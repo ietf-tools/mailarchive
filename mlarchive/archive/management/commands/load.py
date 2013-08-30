@@ -98,16 +98,15 @@ class Command(BaseCommand):
             raise CommandError("%s is not a file or directory" % source)
 
         # determine list
-        listname = options.get('listname')
-        if not listname:
-            listname = guess_list(files[0])
-        if not listname:
+        if not options['listname']:
+            options['listname'] = guess_list(files[0])
+        if not options['listname']:
             raise CommandError("list not specified and not guessable")
 
         start_time = time.time()
         for filename in files:
             try:
-                loader = _classes.Loader(filename, listname, **options)
+                loader = _classes.Loader(filename, **options)
                 loader.process()
                 for key,val in loader.stats.items:          # compile stats
                     stats[key] = stats.get(key,0) + val

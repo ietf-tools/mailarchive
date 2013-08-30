@@ -75,7 +75,7 @@ def main():
     for dir in dirs:
         print 'Loading: %s' % dir
 
-        if 'text-secure' in path:
+        if 'text-secure' in dir:
             private = True
         else:
             private = False

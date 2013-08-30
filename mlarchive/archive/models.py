@@ -330,6 +330,9 @@ class Legacy(models.Model):
     msgid = models.CharField(max_length=255,db_index=True)
     number = models.IntegerField()
 
+    def __unicode__(self):
+        return '%s:%s' % (email_list_id,msgid)
+
 # Signal Handlers ----------------------------------------
 
 @receiver(pre_delete, sender=Message)

@@ -17,6 +17,7 @@ import random
 import re
 import string
 import time
+import uuid
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
@@ -619,12 +620,11 @@ class MessageWrapper(object):
         Use optional argument subdir to specify a special location,
         ie. "spam" or "failure" subdirectory.
         '''
-        assert self.hashcode
+        filename = uuid.uuid4()
         if subdir:
-            print settings.ARCHIVE_DIR,subdir,self.listname,self.hashcode
-            path = os.path.join(settings.ARCHIVE_DIR,subdir,self.listname,self.hashcode)
+            path = os.path.join(settings.ARCHIVE_DIR,subdir,self.listname,filename)
         else:
-            path = os.path.join(settings.ARCHIVE_DIR,self.listname,self.hashcode)
+            path = os.path.join(settings.ARCHIVE_DIR,self.listname,filename)
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
         with open(path,'w') as f:

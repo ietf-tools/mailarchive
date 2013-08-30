@@ -25,7 +25,7 @@ MAILARCH= '/a/mailarch/current/mlarchive/bin/archive-mail.py'
 args = sys.argv[1:]
 data = sys.stdin.read()
 
-p = subprocess.Popen([MHONARC] + args, stdin=subprocess.PIPE)
+p = subprocess.Popen([MHONARC, args[0], args[1][1:]], stdin=subprocess.PIPE)    # strip dash
 p.communicate(input=data)
 logger.info("Import Info [{0}, returncode {1}]".format([MHONARC] + args,p.returncode))
 if p.returncode != 0:

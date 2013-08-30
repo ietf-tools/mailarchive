@@ -23,9 +23,9 @@ import mlarchive.archive.management.commands._classes as _classes
 def main():
     usage = "usage: %prog LISTNAME [options]"
     parser = OptionParser(usage=usage)
-    parser.add_option("-public", help="archive message to public archive (default)",
+    parser.add_option("--public", help="archive message to public archive (default)",
                       action="store_true", dest='public', default=False)
-    parser.add_option("-private", help="archive message to private archive",
+    parser.add_option("--private", help="archive message to private archive",
                       action="store_true", dest='private', default=False)
     (options, args) = parser.parse_args()
 

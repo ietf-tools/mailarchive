@@ -331,7 +331,7 @@ class Legacy(models.Model):
     number = models.IntegerField()
 
     def __unicode__(self):
-        return '%s:%s' % (email_list_id,msgid)
+        return '%s:%s' % (self.email_list_id,self.msgid)
 
 # Signal Handlers ----------------------------------------
 

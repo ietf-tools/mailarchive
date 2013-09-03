@@ -29,10 +29,13 @@ logger = getLogger('mlarchive.custom')
 # --------------------------------------------------
 # Custom Exceptions
 # --------------------------------------------------
+class DateError(Exception):
+    pass
+
 class GenericWarning(Exception):
     pass
 
-class DateError(Exception):
+class NoHeaders(Exception):
     pass
 
 class UnknownFormat(Exception):
@@ -293,8 +296,8 @@ class Loader(object):
         self.stats = {'count': 0, 'errors': 0, 'spam': 0, 'bytes_loaded': 0}
         self.private = options.get('private')
         self.listname = options.get('listname')
-        self.mb, format = get_mb(filename)
-        self.stats[format] = self.stats.get(format, 0) + 1
+        self.mb, self.format = get_mb(filename)
+        self.stats[self.format] = self.stats.get(self.format, 0) + 1
 
         logger.info('loader called with: %s' % self.filename)
 
@@ -318,6 +321,10 @@ class Loader(object):
         had to create one, becasue it obviously won't exist in the web archive.
         '''
         self.stats['count'] += 1
+
+        if not msg.items():         # no headers, something is wrong
+            raise NoHeaders
+
         mw = MessageWrapper(msg, self.listname, private=self.private)
 
         # filter using Legacy archive
@@ -346,7 +353,11 @@ class Loader(object):
             except GenericWarning as e:
                 logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,e.args,m.get_from()))
             except Exception as e:
-                log_msg = "Import Error [{0}, {1}, {2}]".format(self.filename,(e.__class__,e.args),m.get_from())
+                if self.format == 'mbox':
+                    identifier = m.get_from()
+                else:
+                    identifier = m.get('Message-ID','')
+                log_msg = "Import Error [{0}, {1}, {2}]".format(self.filename,(e.__class__,e.args),identifier)
                 logger.error(log_msg)
                 self.save_failed_msg(m)
                 self.stats['errors'] += 1

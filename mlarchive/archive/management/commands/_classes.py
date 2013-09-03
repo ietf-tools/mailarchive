@@ -330,7 +330,7 @@ class Loader(object):
         # filter using Legacy archive
         if self.options.get('firstrun') and mw.date < (datetime.datetime.now() - datetime.timedelta(days=30)) and mw.created_id == False:
             legacy = Legacy.objects.filter(msgid=mw.msgid,email_list_id=self.listname)
-            if legacy:
+            if not legacy:
                 self.stats['spam'] += 1
                 if not self.options.get('dryrun'):
                     mw.write_msg(subdir='spam')

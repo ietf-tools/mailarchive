@@ -113,7 +113,7 @@ class Command(BaseCommand):
                 for key,val in loader.stats.items():          # compile stats
                     stats[key] = stats.get(key,0) + val
             except _classes.UnknownFormat as e:
-                logger.error("Import Error [{0}]".format(e.args))
+                logger.error("Import Error [Unknown file format, {0}]".format(e.args))
                 stats['unknown'] = stats.get('unknown',0) + 1
 
         stats['time'] = int(time.time() - start_time)

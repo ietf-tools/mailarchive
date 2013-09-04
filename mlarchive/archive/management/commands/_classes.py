@@ -98,7 +98,10 @@ def get_format(path):
     Determine the type of mailbox file whose path is provided.
     mmdf: starts with 4 control-A's
     mbox: starts with "From "
+    custom: starts with Return-Path|Envelope-to|Received
     '''
+    headerRE = re.compile(r'^(Return-Path:|Envelope-to:|Received:)')
+
     with open(path) as f:
         line = f.readline()
         while not line or line == '\n':
@@ -107,6 +110,9 @@ def get_format(path):
             return 'mmdf'
         elif line.startswith('From '):
             return 'mbox'
+        elif customRE.match(line):
+            return 'custom'
+
     raise UnknownFormat(path)
 
 def get_header_date(msg):
@@ -143,12 +149,14 @@ def get_mb(path):
     This function takes the path to a file and returns a tuple of mailbox object
     and format.  Currently supported types are:
     - mailbox.mmdf
-    - CustomMbox (derived from mailbox.mbox)
+    - BetterMbox (derived from mailbox.mbox)
     '''
     format = get_format(path)
-    if format == 'mmdf':
+    if format == 'mbox':
+        return BetterMbox(path), format
+    elif format == 'mmdf':
         return mailbox.MMDF(path), format
-    else:
+    elif format == 'custom':
         return CustomMbox(path), format
 
 def get_mime_extension(type):
@@ -254,9 +262,9 @@ def seek_charset(msg):
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------
-class CustomMbox(mailbox.mbox):
+class BetterMbox(mailbox.mbox):
     '''
-    Custom mbox class.  We are overriding the _generate_toc function to use a more restrictive
+    A better mbox class.  We are overriding the _generate_toc function to use a more restrictive
     From line check.  Based on the deprecated UnixMailbox
     '''
     _fromlinepattern = (r'From (.*@.* |MAILER-DAEMON ).{24}')
@@ -287,6 +295,51 @@ class CustomMbox(mailbox.mbox):
         return self._regexp.match(line)
 
     _isrealfromline = _strict_isrealfromline
+
+class CustomMbox(mailbox.mbox):
+    '''
+    Custom mbox class.  Designed to handle mbox-like files which do not have "From " envelope
+    headers.  Find the first line that looks like a header (ie Received: ....) and use
+    it to identify new messages.  This isn't fool proof but should work for the small
+    number of files (~2000) it will be used on.
+    '''
+    def __init__(self, *args, **kwargs):
+        mailbox.mbox.__init__(self, *args, **kwargs)
+        self._separator = None
+
+    def _generate_toc(self):
+        """Generate key-to-(start, stop) table of contents."""
+        starts, stops = [], []
+        startRE = re.compile(r'^([\041-\071\073-\176]{1,}:)')
+        line = ''
+        self._file.seek(0)
+        while True:
+            line_pos = self._file.tell()
+            previous_line = line
+            line = self._file.readline()
+            if not self._separator and startRE.match(line):
+                self._separator = startRE.match(line).group(0)
+            if self._separator and line.startswith(self._separator) and (previous_line == '\n' or line_pos == 1):
+                if len(stops) < len(starts):
+                    stops.append(line_pos - len(os.linesep))
+                starts.append(line_pos)
+            elif line == '':
+                stops.append(line_pos)
+                break
+        self._toc = dict(enumerate(zip(starts, stops)))
+        self._next_key = len(self._toc)
+        self._file_length = self._file.tell()
+
+    def get_message(self, key):
+        """Return a Message representation or raise a KeyError."""
+        start, stop = self._lookup(key)
+        self._file.seek(start)
+        #from_line = self._file.readline().replace(os.linesep, '')
+        from_line = 'From dummy@from_line'
+        string = self._file.read(stop - self._file.tell())
+        msg = self._message_factory(string.replace(os.linesep, '\n'))
+        msg.set_from(from_line[5:])
+        return msg
 
 class Loader(object):
     def __init__(self, filename, **options):

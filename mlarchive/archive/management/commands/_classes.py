@@ -100,7 +100,7 @@ def get_format(path):
     mbox: starts with "From "
     custom: starts with Return-Path|Envelope-to|Received
     '''
-    headerRE = re.compile(r'^(Return-Path:|Envelope-to:|Received:)')
+    customRE = re.compile(r'^(Return-Path:|Envelope-to:|Received:)')
 
     with open(path) as f:
         line = f.readline()
@@ -150,6 +150,7 @@ def get_mb(path):
     and format.  Currently supported types are:
     - mailbox.mmdf
     - BetterMbox (derived from mailbox.mbox)
+    - CustomMbox (like mbox but no from line)
     '''
     format = get_format(path)
     if format == 'mbox':

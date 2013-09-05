@@ -27,9 +27,20 @@ logger = getLogger('mlarchive.custom')
 #filterwarnings('ignore', category = MySQLdb.Warning)
 
 # --------------------------------------------------
+# Globals
+# --------------------------------------------------
+SEPARATOR_PATTERNS = [ re.compile(r'^Return-Path:'),
+                       re.compile(r'^Return-path:'),
+                       re.compile(r'^Envelope-to:'),
+                       re.compile(r'^Received:'),
+                       re.compile(r'^X-Envelope-From:'),
+                       re.compile(r'^From:'),
+                       re.compile(r'^20[0-1][0-9]$') ]
+
+# --------------------------------------------------
 # Custom Exceptions
 # --------------------------------------------------
-class DateError(Exception):
+class NoDate(Exception):
     pass
 
 class GenericWarning(Exception):
@@ -58,7 +69,6 @@ def decode_safely(s, charset='ascii'):
         return s.decode(charset or 'ascii', 'ignore')
     except LookupError: # bogus charset
         return s.decode('ascii', 'ignore')
-
 
 """
 def handle_header(header_text, default=DEFAULT_CHARSET):
@@ -92,28 +102,6 @@ def get_envelope_date(msg):
         return parsedate_to_datetime(' '.join(line.split()[1:]))
     elif parsedate_to_datetime(line):    # sometimes Date: is first line of MMDF message
         return parsedate_to_datetime(line)
-
-def get_format(path):
-    '''
-    Determine the type of mailbox file whose path is provided.
-    mmdf: starts with 4 control-A's
-    mbox: starts with "From "
-    custom: starts with Return-Path|Envelope-to|Received
-    '''
-    customRE = re.compile(r'^(Return-Path:|Envelope-to:|Received:)')
-
-    with open(path) as f:
-        line = f.readline()
-        while not line or line == '\n':
-            line = f.readline()
-        if line == '\x01\x01\x01\x01\n':
-            return 'mmdf'
-        elif line.startswith('From '):
-            return 'mbox'
-        elif customRE.match(line):
-            return 'custom'
-
-    raise UnknownFormat(path)
 
 def get_header_date(msg):
     '''
@@ -152,13 +140,19 @@ def get_mb(path):
     - BetterMbox (derived from mailbox.mbox)
     - CustomMbox (like mbox but no from line)
     '''
-    format = get_format(path)
-    if format == 'mbox':
-        return BetterMbox(path), format
-    elif format == 'mmdf':
-        return mailbox.MMDF(path), format
-    elif format == 'custom':
-        return CustomMbox(path), format
+    with open(path) as f:
+        line = f.readline()
+        while not line or line == '\n':
+            line = f.readline()
+        if line.startswith('From '):
+            return BetterMbox(path), 'mbox'
+        elif line == '\x01\x01\x01\x01\n':
+            return mailbox.MMDF(path), 'mmdf'
+        for pattern in SEPARATOR_PATTERNS:
+            if pattern.match(line):
+                return CustomMbox(path,separator=pattern), 'custom'
+
+    raise UnknownFormat('%s, %s' % (path,line))
 
 def get_mime_extension(type):
     '''
@@ -200,6 +194,9 @@ def handle_header(header_text, msg, default='iso-8859-1'):
     if not header_text:         # just return if we are passed an empty string
         return header_text
 
+    if type(header_text) is unicode:    # return if already unicode
+        return header_text              # ie. get_filename() for example sometimes returns unicode
+
     if '=?' in header_text:
         header_text = decode_rfc2047_header(header_text)
         return header_text
@@ -216,7 +213,8 @@ def handle_header(header_text, msg, default='iso-8859-1'):
         try:
             header_text = unicode(header_text,charset)
             return header_text
-        except UnicodeDecodeError:
+        except (UnicodeDecodeError, LookupError):
+            # TODO mark as spam?
             pass
 
     return unicode(header_text,default,errors='replace')
@@ -274,11 +272,13 @@ class BetterMbox(mailbox.mbox):
     def _generate_toc(self):
         """Generate key-to-(start, stop) table of contents."""
         starts, stops = [], []
+        line = None
         self._file.seek(0)
         while True:
             line_pos = self._file.tell()
+            previous_line = line
             line = self._file.readline()
-            if line[:5] == 'From ' and self._isrealfromline(line):
+            if line[:5] == 'From ' and self._isrealfromline(line) and (previous_line == '\n' or line_pos == 1):
                 if len(stops) < len(starts):
                     stops.append(line_pos - len(os.linesep))
                 starts.append(line_pos)
@@ -300,27 +300,24 @@ class BetterMbox(mailbox.mbox):
 class CustomMbox(mailbox.mbox):
     '''
     Custom mbox class.  Designed to handle mbox-like files which do not have "From " envelope
-    headers.  Find the first line that looks like a header (ie Received: ....) and use
-    it to identify new messages.  This isn't fool proof but should work for the small
-    number of files (~2000) it will be used on.
+    headers.  Keyword argument "separator" is required.  It is an RE object that is the pattern
+    of the separator line.  ie. "^Envelope-to:".  Separator lines must be preceeded by a blank
+    line.
     '''
     def __init__(self, *args, **kwargs):
-        mailbox.mbox.__init__(self, *args, **kwargs)
-        self._separator = None
+        self._separator = kwargs.pop('separator')
+        mailbox.mbox.__init__(self, *args, **kwargs)    # can't use super because mbox is old style class
 
     def _generate_toc(self):
         """Generate key-to-(start, stop) table of contents."""
         starts, stops = [], []
-        startRE = re.compile(r'^([\041-\071\073-\176]{1,}:)')
-        line = ''
+        line = None
         self._file.seek(0)
         while True:
             line_pos = self._file.tell()
             previous_line = line
             line = self._file.readline()
-            if not self._separator and startRE.match(line):
-                self._separator = startRE.match(line).group(0)
-            if self._separator and line.startswith(self._separator) and (previous_line == '\n' or line_pos == 1):
+            if self._separator.match(line) and (previous_line == '\n' or line_pos == 1):
                 if len(stops) < len(starts):
                     stops.append(line_pos - len(os.linesep))
                 starts.append(line_pos)
@@ -335,8 +332,10 @@ class CustomMbox(mailbox.mbox):
         """Return a Message representation or raise a KeyError."""
         start, stop = self._lookup(key)
         self._file.seek(start)
-        #from_line = self._file.readline().replace(os.linesep, '')
-        from_line = 'From dummy@from_line'
+        if self._separator.match('2000'):       # scoop up year line (like from line)
+            from_line = self._file.readline().replace(os.linesep, '')
+        else:
+            from_line = 'From dummy@from_line'
         string = self._file.read(stop - self._file.tell())
         msg = self._message_factory(string.replace(os.linesep, '\n'))
         msg.set_from(from_line[5:])
@@ -487,9 +486,14 @@ class MessageWrapper(object):
             elif func.__name__ == 'get_received_date':
                 self.spam_score = 2
 
-        logger.warn("Import Warn [{0}, {1}, {2}]".format(self.msgid,'Used None or naive date',
-                                                         self.email_message.get_from()))
-        return fallback
+        #logger.warn("Import Warn [{0}, {1}, {2}]".format(self.msgid,'Used None or naive date',
+        #                                                 self.email_message.get_from()))
+
+        if fallback:
+            return fallback
+        else:
+            # can't really proceed without a date, this likely indicates bigger parsing error
+            raise DateError
 
     def get_hash(self):
         '''

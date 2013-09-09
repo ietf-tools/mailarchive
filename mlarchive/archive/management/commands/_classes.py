@@ -5,6 +5,7 @@ from email.header import decode_header
 from email.utils import parsedate, parsedate_tz, mktime_tz, getaddresses, make_msgid
 from mlarchive.archive.models import *
 from mlarchive.archive.management.commands._mimetypes import *
+from mlarchive.utils.decorators import check_datetime
 from tzparse import tzparse
 
 import base64
@@ -35,12 +36,14 @@ SEPARATOR_PATTERNS = [ re.compile(r'^Return-Path:'),
                        re.compile(r'^Received:'),
                        re.compile(r'^X-Envelope-From:'),
                        re.compile(r'^From:'),
-                       re.compile(r'^20[0-1][0-9]$') ]
+                       re.compile(r'^20[0-1][0-9]$') ]          # odd one, see forces
 
+HEADER_PATTERN = re.compile(r'^[\041-\071\073-\176]{1,}:')
+SENT_PATTERN = re.compile(r'^(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(\d{1,2})/(\d{1,2})/(\d{4,4})\s+(\d{1,2}):(\d{2,2})\s+(AM|PM)')
 # --------------------------------------------------
 # Custom Exceptions
 # --------------------------------------------------
-class NoDate(Exception):
+class DateError(Exception):
     pass
 
 class GenericWarning(Exception):
@@ -110,6 +113,9 @@ def get_header_date(msg):
     '''
     date = msg.get('date')
     if not date:
+        date = msg.get('sent')
+
+    if not date:
         return None
 
     result = parsedate_to_datetime(date)
@@ -131,6 +137,24 @@ def get_header_date(msg):
                 return result
         except ValueError:
             pass
+
+    # try some known patterns that require transformation
+    try:
+        return datetime.datetime.strptime(date,'%A, %B %d, %Y %I:%M %p')
+    except ValueError:
+        pass
+
+    match = SENT_PATTERN.match(date)
+    if match:
+        date_string = '{0} {1}/{2}/{3} {4}:{5} {6}'.format(match.group(1),
+                                                           match.group(2).zfill(2),
+                                                           match.group(3).zfill(2),
+                                                           match.group(4),
+                                                           match.group(5),
+                                                           match.group(6),
+                                                           match.group(7))
+
+        return datetime.datetime.strptime(date_string,'%a %m/%d/%Y %I:%M %p')
 
 def get_mb(path):
     '''
@@ -191,7 +215,7 @@ def handle_header(header_text, msg, default='iso-8859-1'):
     - if raw non-ascii text check Content-Types for charset
     - default to iso-8859-1, replace
     '''
-    if not header_text:         # just return if we are passed an empty string
+    if not header_text:                 # just return if we are passed an empty string
         return header_text
 
     if type(header_text) is unicode:    # return if already unicode
@@ -272,13 +296,13 @@ class BetterMbox(mailbox.mbox):
     def _generate_toc(self):
         """Generate key-to-(start, stop) table of contents."""
         starts, stops = [], []
-        line = None
+        line = ''
         self._file.seek(0)
         while True:
             line_pos = self._file.tell()
             previous_line = line
             line = self._file.readline()
-            if line[:5] == 'From ' and self._isrealfromline(line) and (previous_line == '\n' or line_pos == 1):
+            if line[:5] == 'From ' and self._isrealfromline(line) and not previous_line.strip():
                 if len(stops) < len(starts):
                     stops.append(line_pos - len(os.linesep))
                 starts.append(line_pos)
@@ -311,13 +335,13 @@ class CustomMbox(mailbox.mbox):
     def _generate_toc(self):
         """Generate key-to-(start, stop) table of contents."""
         starts, stops = [], []
-        line = None
+        line = ''
         self._file.seek(0)
         while True:
             line_pos = self._file.tell()
             previous_line = line
             line = self._file.readline()
-            if self._separator.match(line) and (previous_line == '\n' or line_pos == 1):
+            if self._separator.match(line) and not previous_line.strip():
                 if len(stops) < len(starts):
                     stops.append(line_pos - len(os.linesep))
                 starts.append(line_pos)
@@ -332,10 +356,9 @@ class CustomMbox(mailbox.mbox):
         """Return a Message representation or raise a KeyError."""
         start, stop = self._lookup(key)
         self._file.seek(start)
-        if self._separator.match('2000'):       # scoop up year line (like from line)
-            from_line = self._file.readline().replace(os.linesep, '')
-        else:
-            from_line = 'From dummy@from_line'
+        from_line = self._file.readline().replace(os.linesep, '')
+        if HEADER_PATTERN.match(from_line):
+            self._file.seek(start)                      # reset pointer to keep first header line
         string = self._file.read(stop - self._file.tell())
         msg = self._message_factory(string.replace(os.linesep, '\n'))
         msg.set_from(from_line[5:])
@@ -459,6 +482,7 @@ class MessageWrapper(object):
         return self._date
     date = property(_get_date)
 
+    @check_datetime
     def get_date(self):
         '''
         This function gets the message date.  It takes an email.Message object and returns a naive
@@ -493,7 +517,7 @@ class MessageWrapper(object):
             return fallback
         else:
             # can't really proceed without a date, this likely indicates bigger parsing error
-            raise DateError
+            raise DateError("%s, %s" % (self.msgid,self.email_message.get_from()))
 
     def get_hash(self):
         '''

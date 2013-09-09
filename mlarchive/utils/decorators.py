@@ -4,13 +4,15 @@ from django.shortcuts import render_to_response, get_object_or_404
 from functools import wraps
 from mlarchive.archive.models import Message
 
+import datetime
+
 def superuser_only(function):
     '''
     Limit view to superusers only.
     '''
     def _inner(request, *args, **kwargs):
         if not request.user.is_superuser:
-            raise PermissionDenied           
+            raise PermissionDenied
         return function(request, *args, **kwargs)
     return _inner
 
@@ -18,7 +20,7 @@ def check_access(func):
     """
     This decorator checks that the user making the request has access to the
     Message being requested.  Expects "id" as an argument, in the case of a regular
-    view URL, or "id" as a URL parameter, in the case of an AJAX request.  It also 
+    view URL, or "id" as a URL parameter, in the case of an AJAX request.  It also
     adds the message object to the function arguments so we don't have to repeat the
     lookup.
     """
@@ -31,7 +33,7 @@ def check_access(func):
             msg = get_object_or_404(Message,hashcode=kwargs['id'])
         else:
             raise Http404
-        
+
         if msg.email_list.private and not request.user.is_superuser:
             if not request.user.is_authenticated() or not msg.email_list.members.filter(id=request.user.id):
                 raise PermissionDenied
@@ -42,4 +44,17 @@ def check_access(func):
 
     return wraps(func)(wrapper)
 
-
+def check_datetime(func):
+    '''
+    This decorator checks the datetime return value of func for dates incorrectly derived
+    from two digit years and fixes them.
+    '''
+    def wrapper(*args, **kwargs):
+        dt = func(*args, **kwargs)
+        if isinstance(dt,datetime.datetime):
+            if 69 <= dt.year < 100:
+                dt = datetime.datetime(dt.year + 1900,dt.month,dt.day,dt.hour,dt.minute)
+            elif 0 <= dt.year < 69:
+                dt = datetime.datetime(dt.year + 2000,dt.month,dt.day,dt.hour,dt.minute)
+        return dt
+    return wraps(func)(wrapper)

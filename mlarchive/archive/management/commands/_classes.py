@@ -8,6 +8,8 @@ from mlarchive.archive.management.commands._mimetypes import *
 from mlarchive.utils.decorators import check_datetime
 from tzparse import tzparse
 
+from collections import deque
+
 import base64
 import datetime
 import hashlib
@@ -36,6 +38,7 @@ SEPARATOR_PATTERNS = [ re.compile(r'^Return-Path:'),
                        re.compile(r'^Received:'),
                        re.compile(r'^X-Envelope-From:'),
                        re.compile(r'^From:'),
+                       re.compile(r'^Date:'),
                        re.compile(r'^20[0-1][0-9]$') ]          # odd one, see forces
 
 HEADER_PATTERN = re.compile(r'^[\041-\071\073-\176]{1,}:')
@@ -335,17 +338,19 @@ class CustomMbox(mailbox.mbox):
     def _generate_toc(self):
         """Generate key-to-(start, stop) table of contents."""
         starts, stops = [], []
-        line = ''
+        #line = ''
+        lines = deque(' ',maxlen=2)
         self._file.seek(0)
         while True:
             line_pos = self._file.tell()
-            previous_line = line
-            line = self._file.readline()
-            if self._separator.match(line) and not previous_line.strip():
+            # previous_line = line
+            lines.append(self._file.readline())
+            # if self._separator.match(line) and not previous_line.strip():
+            if self._separator.match(lines[1]) and not lines[0].strip():
                 if len(stops) < len(starts):
                     stops.append(line_pos - len(os.linesep))
                 starts.append(line_pos)
-            elif line == '':
+            elif lines[1] == '':
                 stops.append(line_pos)
                 break
         self._toc = dict(enumerate(zip(starts, stops)))

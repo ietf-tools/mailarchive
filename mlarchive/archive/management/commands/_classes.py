@@ -379,7 +379,7 @@ class Loader(object):
         self.private = options.get('private')
         self.listname = options.get('listname')
         self.mb = get_mb(filename)
-        self.klass = mb.__class__.__name__
+        self.klass = self.mb.__class__.__name__
         self.stats[self.klass] = self.stats.get(self.klass, 0) + 1
 
         logger.info('loader called with: %s' % self.filename)
@@ -696,6 +696,10 @@ class MessageWrapper(object):
                             logger.error("ERROR: couldn't pick unique attachment name in ten tries (list:%s)" % (self.listname))
 
     def save(self, test=False):
+        '''
+        Ensure message is not duplicate message-id or hash.  Save message to database.  Save
+        to disk (if not test mode) and process attachments.
+        '''
         # ensure process has been run
         # self._get_archive_message()
 

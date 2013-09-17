@@ -48,15 +48,18 @@ SENT_PATTERN = re.compile(r'^(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(\d{1,2})/(\d{1,2})
 # Custom Exceptions
 # --------------------------------------------------
 class DateError(Exception):
+    # failed to parse the message date
     pass
 
 class GenericWarning(Exception):
     pass
 
 class NoHeaders(Exception):
+    # the message contains no header fields, usually indicates problem with parsing
     pass
 
 class UnknownFormat(Exception):
+    # the mail file format is unrecognized
     pass
 
 # --------------------------------------------------
@@ -67,8 +70,7 @@ def archive_message(msg,listname,private=False):
     mw.save()
 
 def decode_rfc2047_header(h):
-    return ' '.join(decode_safely(s, charset)
-                   for s, charset in decode_header(h))
+    return ' '.join(decode_safely(s, charset) for s, charset in decode_header(h))
 
 def decode_safely(s, charset='ascii'):
     """Return s decoded according to charset, but do so safely."""
@@ -112,8 +114,9 @@ def get_envelope_date(msg):
 
 def get_header_date(msg):
     '''
-    This function takes a email.Message object and tries to parse the date from the Date: header
-    field.  It returns a Datetime object, either naive or aware, if it can, otherwise None.
+    This function takes a email.message.Message object and tries to parse the date from the
+    Date: header field.  It returns a Datetime object, either naive or aware, if it can,
+    otherwise None.
     '''
     date = msg.get('date')
     if not date:
@@ -213,8 +216,8 @@ def get_received_date(msg):
 
 def handle_header(header_text, msg, default='iso-8859-1'):
     '''
-    This function takes some header_text as a string and a email.message.Message object.  It
-    returns the string decoded as needed.
+    This function takes some header_text as a string and a email.message.Message object.
+    It returns the string decoded as needed.
     Checks if the header needs decoding:
     - if text contains encoded_words, "=?", use decode_rfc2047_header()
     - if raw non-ascii text check Content-Types for charset
@@ -293,7 +296,8 @@ def seek_charset(msg):
 class BetterMbox(mailbox.mbox):
     '''
     A better mbox class.  We are overriding the _generate_toc function to use a more restrictive
-    From line check.  Based on the deprecated UnixMailbox
+    From line check.  Based on the deprecated UnixMailbox.  Also, separator lines must be preceeded
+    by a blank line.
     '''
     _fromlinepattern = (r'From (.*@.* |MAILER-DAEMON ).{24}')
     _regexp = None
@@ -371,7 +375,6 @@ class Loader(object):
     def __init__(self, filename, **options):
         self.filename = filename
         self.options = options
-        #self.stats = {'irts': 0,'mirts': 0,'count': 0, 'errors': 0, 'spam': 0, 'bytes_loaded': 0}
         self.stats = {'count': 0, 'errors': 0, 'spam': 0, 'bytes_loaded': 0}
         self.private = options.get('private')
         self.listname = options.get('listname')
@@ -412,7 +415,7 @@ class Loader(object):
             legacy = Legacy.objects.filter(msgid=mw.msgid,email_list_id=self.listname)
             if not legacy:
                 self.stats['spam'] += 1
-                if not self.options.get('dryrun'):
+                if not (self.options.get('dryrun') or self.options.get('test')):
                     mw.write_msg(subdir='spam')
                 return
 
@@ -655,7 +658,7 @@ class MessageWrapper(object):
         # set thread out here so we can use the decoded subject line
         self._archive_message.thread = self.get_thread()
 
-    def process_attachments(self):
+    def process_attachments(self, test=False):
         '''
         This function walks the message parts and saves any attachments
         '''
@@ -679,17 +682,18 @@ class MessageWrapper(object):
                     continue
 
                 # write to disk
-                for i in range(10):     # try up to ten random filenames
-                    filename = self.get_random_name(extension)
-                    path = os.path.join(self.archive_message.get_attachment_path(),filename)
-                    if not os.path.exists(path):
-                        with open(path, 'wb') as f:
-                            f.write(payload)
-                            attach.filename = filename
-                            attach.save()
-                        break
-                    else:
-                        logger.error("ERROR: couldn't pick unique attachment name in ten tries (list:%s)" % (self.listname))
+                if not test:
+                    for i in range(10):     # try up to ten random filenames
+                        filename = self.get_random_name(extension)
+                        path = os.path.join(self.archive_message.get_attachment_path(),filename)
+                        if not os.path.exists(path):
+                            with open(path, 'wb') as f:
+                                f.write(payload)
+                                attach.filename = filename
+                                attach.save()
+                            break
+                        else:
+                            logger.error("ERROR: couldn't pick unique attachment name in ten tries (list:%s)" % (self.listname))
 
     def save(self, test=False):
         # ensure process has been run
@@ -709,7 +713,7 @@ class MessageWrapper(object):
             self.write_msg()            # write to disk archive
 
         # now that the archive.Message object is created we can process any attachments
-        self.process_attachments()
+        self.process_attachments(test=test)
 
     def write_msg(self,subdir=None):
         '''

@@ -82,7 +82,11 @@ def main():
 
         # save output from command so we can aggregate statistics
         content = StringIO()
-        call_command('load', dir, listname=os.path.basename(dir), summary=True,
+        listname = os.path.basename(dir)
+        if listname.endswith('.old'):       # strip .old from listname
+            listname = listname[:-4]
+
+        call_command('load', dir, listname=listname, summary=True,
                      test=options.test, private=private, firstrun=firstrun, stdout=content)
 
         # gather stats from output
@@ -93,9 +97,13 @@ def main():
             stats[key] = stats.get(key,0) + val
 
     elapsed_time = int(time.time() - start_time)
-    print 'Messages Pocessed: %d' % stats['count']
-    print 'Errors: %d' % stats['errors']
-    print 'Elapsed Time: %s' % str(datetime.timedelta(seconds=elapsed_time))
+    #print 'Messages Pocessed: %d' % stats['count']
+    #print 'Errors: %d' % stats['errors']
+    #print 'Elapsed Time: %s' % str(datetime.timedelta(seconds=elapsed_time))
+    items = [ '%s:%s' % (k,v) for k,v in stats.items() if k != 'time']
+    items.append('Elapsed Time:%s' % str(datetime.timedelta(seconds=elapsed_time)))
+    items.append('\n')
+    print '\n'.join(items)
 
 if __name__ == "__main__":
     main()

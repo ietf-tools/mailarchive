@@ -39,6 +39,7 @@ SEPARATOR_PATTERNS = [ re.compile(r'^Return-Path:'),
                        re.compile(r'^X-Envelope-From:'),
                        re.compile(r'^From:'),
                        re.compile(r'^Date:'),
+                       re.compile(r'^To:'),
                        re.compile(r'^20[0-1][0-9]$') ]          # odd one, see forces
 
 HEADER_PATTERN = re.compile(r'^[\041-\071\073-\176]{1,}:')
@@ -161,7 +162,7 @@ def get_header_date(msg):
 
 def get_mb(path):
     '''
-    This function takes the path to a file and returns a tuple of mailbox object
+    This function takes the path to a file and returns a mailbox object
     and format.  Currently supported types are:
     - mailbox.mmdf
     - BetterMbox (derived from mailbox.mbox)
@@ -172,13 +173,14 @@ def get_mb(path):
         while not line or line == '\n':
             line = f.readline()
         if line.startswith('From '):
-            return BetterMbox(path), 'mbox'
+            return BetterMbox(path)
         elif line == '\x01\x01\x01\x01\n':
-            return mailbox.MMDF(path), 'mmdf'
+            return mailbox.MMDF(path)
         for pattern in SEPARATOR_PATTERNS:
             if pattern.match(line):
-                return CustomMbox(path,separator=pattern), 'custom'
+                return CustomMbox(path,separator=pattern)
 
+    # if we get here the file isn't recognized.  Raise an error
     raise UnknownFormat('%s, %s' % (path,line))
 
 def get_mime_extension(type):
@@ -299,13 +301,12 @@ class BetterMbox(mailbox.mbox):
     def _generate_toc(self):
         """Generate key-to-(start, stop) table of contents."""
         starts, stops = [], []
-        line = ''
+        lines = deque(' ',maxlen=2)
         self._file.seek(0)
         while True:
             line_pos = self._file.tell()
-            previous_line = line
-            line = self._file.readline()
-            if line[:5] == 'From ' and self._isrealfromline(line) and not previous_line.strip():
+            lines.append(self._file.readline())
+            if lines[1][:5] == 'From ' and self._isrealfromline(lines[1]) and not lines[0].strip():
                 if len(stops) < len(starts):
                     stops.append(line_pos - len(os.linesep))
                 starts.append(line_pos)
@@ -338,14 +339,11 @@ class CustomMbox(mailbox.mbox):
     def _generate_toc(self):
         """Generate key-to-(start, stop) table of contents."""
         starts, stops = [], []
-        #line = ''
         lines = deque(' ',maxlen=2)
         self._file.seek(0)
         while True:
             line_pos = self._file.tell()
-            # previous_line = line
             lines.append(self._file.readline())
-            # if self._separator.match(line) and not previous_line.strip():
             if self._separator.match(lines[1]) and not lines[0].strip():
                 if len(stops) < len(starts):
                     stops.append(line_pos - len(os.linesep))
@@ -377,8 +375,9 @@ class Loader(object):
         self.stats = {'count': 0, 'errors': 0, 'spam': 0, 'bytes_loaded': 0}
         self.private = options.get('private')
         self.listname = options.get('listname')
-        self.mb, self.format = get_mb(filename)
-        self.stats[self.format] = self.stats.get(self.format, 0) + 1
+        self.mb = get_mb(filename)
+        self.klass = mb.__class__.__name__
+        self.stats[self.klass] = self.stats.get(self.klass, 0) + 1
 
         logger.info('loader called with: %s' % self.filename)
 
@@ -434,7 +433,7 @@ class Loader(object):
             except GenericWarning as e:
                 logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,e.args,m.get_from()))
             except Exception as e:
-                if self.format == 'mbox':
+                if self.klass == 'BetterMbox':
                     identifier = m.get_from()
                 else:
                     identifier = m.get('Message-ID','')

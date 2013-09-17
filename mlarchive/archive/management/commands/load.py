@@ -5,6 +5,7 @@ from mlarchive.archive.models import *
 import _classes
 import datetime
 import re
+import shutil
 import time
 
 from django.utils.log import getLogger
@@ -68,7 +69,7 @@ class Command(BaseCommand):
             help='specify the name of the email list'),
         make_option('-p', '--private', action='store_true', dest='private', default=False,
             help='private list (default is public)'),
-        make_option('-s', '--summary', action='store_true', dest='test', default=False,
+        make_option('-s', '--summary', action='store_true', dest='summary', default=False,
             help="summarize statistics, for use with aggregator"),
         make_option('-t', '--test', action='store_true', dest='test', default=False,
             help="test mode.  write database but don't store message files"),
@@ -113,6 +114,11 @@ class Command(BaseCommand):
                 for key,val in loader.stats.items():          # compile stats
                     stats[key] = stats.get(key,0) + val
             except _classes.UnknownFormat as e:
+                if not (options['dryrun'] or options['test']):
+                    target = os.path.join(settings.ARCHIVE_DIR,'failed',options['listname'])
+                    if not os.path.exists(target):
+                        os.makedirs(target)
+                    shutil.copy(filename,target)
                 logger.error("Import Error [Unknown file format, {0}]".format(e.args))
                 stats['unknown'] = stats.get('unknown',0) + 1
 

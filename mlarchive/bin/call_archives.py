@@ -3,14 +3,25 @@
 The purpose of this script is to allow mailman to use multiple archiving systems.
 The script should be configured in mm_cfg.py as follows:
 
-PUBLIC_EXTERNAL_ARCHIVER = '/a/mailarch/current/mlarchive/bin/call-archives.py %(listname)s -public'
-PRIVATE_EXTERNAL_ARCHIVER = '/a/mailarch/current/mlarchive/bin/call-archives.py %(listname)s -private'
+PUBLIC_EXTERNAL_ARCHIVER = '/a/mailarch/current/mlarchive/bin/call-archives.py %(listname)s --public'
+PRIVATE_EXTERNAL_ARCHIVER = '/a/mailarch/current/mlarchive/bin/call-archives.py %(listname)s --private'
 
 Be sure to use the correct path.  The script will save STDIN and use it to make calls to both
 archive systems.  It first calls the mhonarc system.  If that fails we return exit code of the
 mhonarc script, allowing for retries from mailman.  If it succeeds we proceed to the mail archive,
 logging errors to syslog.
 '''
+# standalone script ---------------------------------------
+#import os
+#import sys
+
+#BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+#sys.path.append(os.path.abspath(BASE_DIR + "/../.."))
+
+from django.core.management import setup_environ
+from mlarchive import settings
+setup_environ(settings)
+# ---------------------------------------------------------
 
 import subprocess
 import sys

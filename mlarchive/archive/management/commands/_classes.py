@@ -314,7 +314,7 @@ class BetterMbox(mailbox.mbox):
                 if len(stops) < len(starts):
                     stops.append(line_pos - len(os.linesep))
                 starts.append(line_pos)
-            elif line == '':
+            elif lines[1] == '':
                 stops.append(line_pos)
                 break
         self._toc = dict(enumerate(zip(starts, stops)))

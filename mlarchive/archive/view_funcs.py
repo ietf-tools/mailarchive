@@ -46,7 +46,8 @@ def initialize_formsets(query):
     params = query.split()
     for param in params:
         d = {}
-        key,val = param.split(':')
+        parts = param.split(':')
+        key, val = parts[0], param[len(parts[0])+1:]
         d['field'] = key.lstrip('-')
         d['value'] = val.strip('"')
         if '"' in val:

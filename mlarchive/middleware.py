@@ -4,6 +4,7 @@ from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
 
 import time
+import urllib
 
 # --------------------------------------------------
 # Helper Functions
@@ -21,6 +22,7 @@ def has_filters(request):
             return True
     return False
 
+"""
 def get_base_query(querydict):
     '''
     Takes a QueryDict object, strips any filter parameters (FILTER_PARAMS) and returns
@@ -31,6 +33,15 @@ def get_base_query(querydict):
         if filter in qd_copy:
             del qd_copy[filter]
     return qd_copy.urlencode()
+"""
+
+def get_base_query(querydict):
+    '''
+    Takes a QueryDict object, strips any filter parameters (FILTER_PARAMS) and returns
+    the resulting base query string.  For use with calculating base facets.
+    '''
+    d = dict((k,v) for k,v in querydict.iteritems() if k not in FILTER_PARAMS)
+    return urllib.urlencode(d)
 
 def log_timing(func):
     '''
@@ -51,16 +62,19 @@ def log_timing(func):
 
 class QueryMiddleware(object):
     '''
-    Check the submitted query, if it is an original query, in other words not a secondary
-    filter query, as indicated by the lack of f_* parameters, save the base facet counts
-    in the session.  We have to do this in order to retain the full set of facet counts.  Once
-    a user selects a facet for filtering the original base set is no longer available in the
-    query response.  session['base_facets'] will be used in a context processor.
+    Get the base query (strip filters and sorts).  Get facet counts for base query if they
+    aren't already cached in the Session.  We have to do this in order to retain the full set
+    of facet counts.  Once a user selects a facet for filtering the original base set is no
+    longer available in the query response.  session['base_facets'] will be used in a context
+    processor.
+
+    NOTE: the base query string we are using as a key is urlencoded.  Another option is to save
+    the query unquoted using urlib.unquote_plus()
     '''
     #@log_timing
     def process_request(self, request):
         # just return if this isn't a search without filters
-        if not request.get_full_path().startswith('/archive/search/') or has_filters(request):
+        if not request.get_full_path().startswith('/archive/search/'):
             return None
 
         logger.info('QueryMiddleware:process_request() %s' % request.META['QUERY_STRING'])
@@ -68,7 +82,9 @@ class QueryMiddleware(object):
         # init session dict
         if 'queries' not in request.session:
             request.session['queries'] = {}
+
         # - if the base query isn't already stored, get facets and store
+        # assert False, request.GET
         query = get_base_query(request.GET)
         if query not in request.session['queries']:
             # call search function from here
@@ -86,7 +102,7 @@ class QueryMiddleware(object):
                 #assert False, (results,query,base_facets)
                 for field in base_facets['fields']:
                     # need to set a hard limit, can't disaply unlimited number of options
-                    logger.info('facets count for %s:%s' % (field,len(base_facets['fields'][field])))
+                    # logger.info('facets count for %s:%s' % (field,len(base_facets['fields'][field])))
                     #if len(base_facets['fields'][field]) > 30:
                         # get the top thirty sorted by facet count
                     #    sorted_facets = sorted(base_facets['fields'][field], key=lambda k: k[1],reverse=True)

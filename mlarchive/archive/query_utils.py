@@ -4,6 +4,7 @@ from django.utils.log import getLogger
 from datetime import datetime, timedelta
 
 import re
+import string
 import sys
 
 logger = getLogger('mlarchive.custom')
@@ -16,7 +17,7 @@ HAYSTACK_DEFAULT_OPERATOR = getattr(settings,'HAYSTACK_DEFAULT_OPERATOR','AND')
 #FIELD_PATTERN = re.compile(r"^(\w+):(\w+)\s*",re.U)
 # re.findall(r'\w+(?:-\w+)+',text)  # match hyphenated word(s)
 # HYPHENATED_PATTERN = re.compile(r"^(\w+-\w+")
-FIELD_PATTERN = re.compile(r"^(\w+):([a-zA-Z0-9\.\@\-\_\+\=\$]+)\s*",re.U)
+FIELD_PATTERN = re.compile(r"^(text|date|email_list|from|frm|frm_email|msgid|subject|to|spam_score):([a-zA-Z0-9\.\@\-\_\+\=\$]+)\s*",re.U)
 NEGATED_FIELD_PATTERN = re.compile(r"^(\-\w+):([a-zA-Z0-9\.\@\-\_\+\=\$]+)\s*",re.U)
 FIELD_EXACT_PATTERN = re.compile(r"^(\w+):\"(.+)\"\s*",re.U)
 #SIMPLE_QUERY_PATTERN = re.compile(r"^(\w+)\s*",re.U)
@@ -114,7 +115,7 @@ def handle_brackets(sq,q,current=HAYSTACK_DEFAULT_OPERATOR):
 def handle_field_exact_query(sq,q,current=HAYSTACK_DEFAULT_OPERATOR):
     mat = re.search(FIELD_EXACT_PATTERN,q)
     query = mat.group(2)
-    #it seams that haystack exact only works if there is a space in the query.So adding a space
+    # append space if there isn't one in query
     if not re.search(r'\s',query):
         query+=" "
     sq.add(SQ(**{str(mat.group(1)+"__exact"):query}),current)
@@ -158,9 +159,14 @@ def handle_normal_query(sq,q,current):
 def handle_quoted_query(sq,q,current):
     mat = re.search(QUOTED_TEXT_PATTERN,q)
     query = mat.group(1)
-    #it seams that haystack exact only works if there is a space in the query.So adding a space
+    # append space if there isn't one in query
     if not re.search(r'\s',query):
         query+=" "
+    # punctuation characters are not indexed so replace with spaces
+    #replace_punctuation = string.maketrans(string.punctuation, ' '*len(string.punctuation))
+    #query = query.translate(replace_punctuation)
+    query = translate_non_alphanumerics(query)
+
     sq.add(SQ(content__exact=query),current)
     q,n = re.subn(QUOTED_TEXT_PATTERN,'',q,1)
     return sq,q,HAYSTACK_DEFAULT_OPERATOR
@@ -202,7 +208,7 @@ def parse(q):
                 sq, q,current = handle_brackets(sq,q,current)
             else:
                 q=q[1:]
-    except:
+    except IOError:
         raise UnhandledException(sys.exc_info()[0])
     return sq
 
@@ -224,3 +230,8 @@ def translate(field,value):
         field = 'frm_email'
 
     return field,value
+
+def translate_non_alphanumerics(to_translate, translate_to=u' '):
+    not_letters_or_digits = u'!"#%\'()*+,-./:;<=>?@[\]^_`{|}~'
+    translate_table = dict((ord(char), translate_to) for char in not_letters_or_digits)
+    return to_translate.translate(translate_table)

@@ -12,6 +12,13 @@
 <li>Simple search input and Advanced Search keywords search message subject and body</li>
 </ul>
 
+<h1>Search Query Tips</h1>
+<h2>Punctuation Characters</h2>
+<p>Punctuation characters are treated as word separators when indexing.  Therefore they are excluded
+from search queries.  For example a search for "http://www.ietf.org" is translated to "http" and
+"www" and "ietf" and "org", returning any documents containing all these terms.  To improve results
+you can quote the URL, which will return documents where these terms are adjacent to each other.
+</p>
 {% endblock %}
 
 

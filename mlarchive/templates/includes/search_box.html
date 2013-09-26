@@ -1,11 +1,11 @@
   <div id="basic-search">
-      <form name="search-form" id="id_search_form" action="" method="get">
+      <form name="search-form" id="id_search_form" method="get">
         <div id="radio">
             <input type="radio" id="radio_date" name="sort" value="date" {% if not thread_sorted %}checked{% endif %} /><label for="radio_date">Date</label>
             <input type="radio" id="radio_thread" name="sort" value="thread" {% if thread_sorted %}checked{% endif %} /><label for="radio_thread">Thread</label>
         </div>
-        {{ form.email_list }}
-        {{ form.so }}
+        <!-- {{ form.email_list }} -->
+        <!-- {{ form.so }} -->
         {{ form.q }}
         <!-- <input class="hidden-submit" type="submit" value="Search" /> -->
         <!-- <button id="" class="unsorted small-button" onclick="window.history.back()">Change Search</button> -->

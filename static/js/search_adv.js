@@ -70,8 +70,7 @@ $(function() {
     }
 
     // setup inline help messages
-    $(".defaultText").focus(function(srcc)
-    {
+    $(".defaultText").focus(function(srcc) {
         if ($(this).val() == $(this)[0].title)
         {
             $(this).removeClass("defaultTextActive");
@@ -79,8 +78,7 @@ $(function() {
         }
     });
 
-    $(".defaultText").blur(function()
-    {
+    $(".defaultText").blur(function() {
         if ($(this).val() == "")
         {
             $(this).addClass("defaultTextActive");

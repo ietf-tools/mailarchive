@@ -180,6 +180,6 @@ class FilterForm(forms.Form):
 
 class RulesForm(forms.Form):
     field = forms.ChoiceField(choices=FIELD_CHOICES,widget=forms.Select(attrs={'class':'parameter'}))
-    qualifier = forms.ChoiceField(choices=QUALIFIER_CHOICES)
+    qualifier = forms.ChoiceField(choices=QUALIFIER_CHOICES,widget=forms.Select(attrs={'class':'qualifier'}))
     value = forms.CharField(max_length=120,widget=forms.TextInput(attrs={'class':'operand'}))
 

@@ -31,6 +31,14 @@ input[disabled='disabled'] {
     background: none repeat scroll 0 0 #E5ECF9;
 }
 
+td.hidden {
+    display: none;
+}
+
+tr.hidden {
+    display: none;
+}
+
 #header {
     background: #417690;
     color: white;
@@ -193,13 +201,6 @@ ul.messages li {
 /* ==========================================================================
    Search
    ========================================================================== */
-td.hidden {
-    display: none;
-}
-
-tr.hidden {
-    display: none;
-}
 
 table#msg-table {
     cursor: pointer;
@@ -231,14 +232,15 @@ table#msg-table {
     color: #FF7373;
 }
 
+#browse-header a {
+    display: inline;
+    font-size: 12px;
+    margin-right: 15px;
+}
+
 #search-header {
     display: inline;
     float: right;
-}
-
-a#modify-search {
-    display: inline;
-    margin-right: 15px;
 }
 
 #id_search_form {
@@ -508,14 +510,13 @@ input.hidden-submit {
     color: #666;
 }
 
-a#modify-search {
-    font-size: 12px;
-}
-
 /* Header sort buttons
    ========================================================================== */
 #radio {
-    display: inline;
+    /* display: inline; */
+    float: left;
+    margin-right: 14px;
+    margin-top: -1px;
 }
 
 #radio label {

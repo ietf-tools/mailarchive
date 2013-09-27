@@ -9,3 +9,11 @@ pip install factory-boy
 TESTING:
 $ py.test tests
 
+
+SETUP:
+configure mailman, mm_cfg.py
+PUBLIC_EXTERNAL_ARCHIVER = '/a/mailarch/current/mlarchive/bin/call-archives.py %(listname)s -public'
+PRIVATE_EXTERNAL_ARCHIVER = '/a/mailarch/current/mlarchive/bin/call-archives.py %(listname)s -private'
+
+install cronscript
+

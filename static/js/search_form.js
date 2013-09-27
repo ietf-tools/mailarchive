@@ -94,11 +94,10 @@ $(function() {
 
     function init() {
         // bind build_query() to change events
-        $('#id_query-0-value').focus().bind('change keyup',build_query);
-        $('#id_query-0-field').change(build_query);
-        $('#id_not-0-value').bind('change keyup',build_query);
-        $('#id_not-0-field').change(build_query);
-        $('#id_query-0-qualifier').change(handle_qualifier);
+        $('#id_query-0-value').focus();
+        $('input.operand').bind('change keyup',build_query);
+        $('input.parameter').change(build_query);
+        $('input.qualifier').change(handle_qualifier);
 
         $('a.remove_btn').click(function() {
             var remove_index = $(this).attr('id').split('_')[1];

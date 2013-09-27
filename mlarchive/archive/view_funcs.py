@@ -149,6 +149,6 @@ def get_export(queryset, type):
     chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + '_'
     rand = ''.join(random.choice(chars) for x in range(5))
     now = datetime.datetime.now()
-    filename = 'exp%s_%s.tgz' % (now.strftime('%m%d'),rand)
+    filename = '%s%s_%s.tgz' % (type,now.strftime('%m%d'),rand)
 
     return tardata,filename

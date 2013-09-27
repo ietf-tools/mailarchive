@@ -11,17 +11,17 @@
             {{ form.field }}
             {{ form.qualifier }}
             {{ form.value }}
-            <a id="remove_0" class="remove_btn" onclick="false" href="#" name="remove_0">
+            <a id="remove_{{ forloop.counter0 }}" class="remove_btn" onclick="false" href="#">
                 <img title="Remove" src="{{ STATIC_URL }}admin/img/icon_deletelink.gif" alt="Remove">
             </a>
             </div>
-            <a id="add_query_part" class="addlink addParamBtn" href="#">Add another</a>
         {% endfor %}
+        <a id="add_query_part" class="addlink addParamBtn" href="#">Add another</a>
         </fieldset>
 
         <fieldset id="not_parts">
         <span class="label">but do not include: </span>
-            {% for form in not_formset.forms %}
+        {% for form in not_formset.forms %}
             <div id="not_chunk_{{ forloop.counter0 }}" class="not_chunk">
             {% if form.non_field_errors %}
               {{ form.non_field_errors }}
@@ -29,12 +29,12 @@
             {{ form.field }}
             {{ form.qualifier }}
             {{ form.value }}
-            <a id="not_remove_0" class="not_remove_btn" onclick="false" href="#" name="not_remove_0">
+            <a id="not_remove_{{ forloop.counter0 }}" class="not_remove_btn" onclick="false" href="#">
                 <img title="Remove" src="{{ STATIC_URL }}admin/img/icon_deletelink.gif" alt="Remove">
             </a>
             </div>
-            <a id="add_not_part" class="addlink addParamBtn" href="#">Add another</a>
         {% endfor %}
+        <a id="add_not_part" class="addlink addParamBtn" href="#">Add another</a>
         </fieldset>
       </form>
 

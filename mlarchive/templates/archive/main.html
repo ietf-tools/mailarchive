@@ -19,10 +19,10 @@ $(function() {
     <input class="search_button" type="submit" value="Search" title="Search" alt="Search">
   </form>
   <ul id="navigation">
-    <li><a href="{% url archive_advsearch %}">Advanced Search</a></li>
-    <li><a href="{% url archive_browse %}">Browse</a></li>
+    <li><a href="{% url "archive_advsearch" %}">Advanced Search</a></li>
+    <li><a href="{% url "archive_browse" %}">Browse</a></li>
     {% if request.user.is_superuser %}
-        <li><a href="{% url archive_admin %}">Admin</a></li>
+        <li><a href="{% url "archive_admin" %}">Admin</a></li>
     {% endif %}
   </ul>
 </div>

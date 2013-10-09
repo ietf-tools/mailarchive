@@ -7,8 +7,8 @@
 <div>
   <h2>{{ list_obj.name }}</h2>
   
-  <a href="{% url archive_browse_list list_name=list_obj.name %}?so=date">Date</a>
-  <a href="{% url archive_browse_list list_name=list_obj.name %}?so=frm">Sender</a>
+  <a href="{% url "archive_browse_list" list_name=list_obj.name %}?so=date">Date</a>
+  <a href="{% url "archive_browse_list" list_name=list_obj.name %}?so=frm">Sender</a>
 
   <table>
     {% for msg in msgs %}

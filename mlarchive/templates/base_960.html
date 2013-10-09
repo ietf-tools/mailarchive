@@ -34,7 +34,7 @@
             <div id="login" class="noprint">
             {% if user.is_authenticated %}
                 <span class="pipe">{{ user }}</span>
-                <a href="{% url archive_logout %}">Sign out</a>
+                <a href="{% url "archive_logout" %}">Sign out</a>
             {% else %}
                 <a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>
             {% endif %}

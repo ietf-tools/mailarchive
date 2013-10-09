@@ -95,7 +95,7 @@
                     {% for result in page.object_list %}
                         <tr>
                             <td>{{ result.object.date|date:"m/d/Y" }}</td>
-                            {# <td><a href="{% url archive_detail id=result.object.hashcode %}">{{ result.object.subject }}</a></td> #}
+                            {# <td><a href="{% url "archive_detail" id=result.object.hashcode %}">{{ result.object.subject }}</a></td> #}
                             <td class="nowrap">{{ result.object.subject|truncatechars:70 }}</td>
                             <td>{{ result.object.frm_email|truncatechars:35 }}</td>
                             <td>{{ result.object.email_list }}</td>

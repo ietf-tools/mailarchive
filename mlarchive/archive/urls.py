@@ -1,5 +1,5 @@
 from django.conf.urls.defaults import *
-from django.views.generic.simple import direct_to_template
+from django.views.generic import TemplateView
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.views import CustomSearchView
 from haystack.views import search_view_factory
@@ -20,14 +20,14 @@ urlpatterns += patterns('mlarchive.archive.views',
     url(r'^browse/(?P<list_name>\w+)/', 'browse_list', name='archive_browse_list'),
     url(r'^detail/(?P<list_name>[a-z0-9_\-]+)/(?P<id>[a-zA-Z0-9_\-\=]+)/$', 'detail', name='archive_detail'),
     url(r'^export/(?P<type>mbox|maildir)/', 'export', name='archive_export'),
-    url(r'^help/$', direct_to_template, {'template':'archive/help.html'}),
+    url(r'^help/$', TemplateView.as_view(template_name="archive/help.html")),
     url(r'^logout/$', 'logout_view', name='archive_logout'),
     url(r'^search/', search_view_factory(form_class=AdvancedSearchForm,
                                          view_class=CustomSearchView,
                                          template='archive/search.html'), name='archive_search'),
 
     # test pages ----------------
-    (r'^layout/$', direct_to_template, {'template':'archive/layout.html'}),
+    (r'^layout/$', TemplateView.as_view(template_name="archive/layout.html")),
     #(r'^test/$', direct_to_template, {'template':'archive/test.html'}),
     (r'^test/$', 'test'),
 )

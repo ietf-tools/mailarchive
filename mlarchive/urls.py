@@ -1,5 +1,5 @@
 from django.conf.urls.defaults import *
-from django.views.generic.simple import redirect_to
+from django.views.generic import RedirectView
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
@@ -7,7 +7,7 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
     # default to archive app
-    (r'^$', redirect_to, {'url': '/archive/'}),
+    (r'^$', RedirectView.as_view(url='/archive/')),
     (r'^accounts/login/$', 'django.contrib.auth.views.login', {'template_name': 'archive/login.html'}),
     (r'^archive/', include('mlarchive.archive.urls')),
 

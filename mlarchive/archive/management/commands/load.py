@@ -114,6 +114,7 @@ class Command(BaseCommand):
                 for key,val in loader.stats.items():          # compile stats
                     stats[key] = stats.get(key,0) + val
             except _classes.UnknownFormat as error:
+                # save failed message
                 if not (options['dryrun'] or options['test']):
                     target = os.path.join(settings.ARCHIVE_DIR,'failed',options['listname'])
                     if not os.path.exists(target):

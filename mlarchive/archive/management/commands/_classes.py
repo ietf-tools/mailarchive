@@ -725,7 +725,10 @@ class MessageWrapper(object):
         Use optional argument subdir to specify a special location,
         ie. "spam" or "failure" subdirectory.
         '''
-        filename = str(uuid.uuid4())
+        filename = self.hashcode
+        if not filename:
+            filename = str(uuid.uuid4())
+
         if subdir:
             path = os.path.join(settings.ARCHIVE_DIR,subdir,self.listname,filename)
         else:

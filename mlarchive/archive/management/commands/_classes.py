@@ -433,14 +433,14 @@ class Loader(object):
         for m in self.mb:
             try:
                 self.load_message(m)
-            except GenericWarning as e:
-                logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,e.args,m.get_from()))
-            except Exception as e:
+            except GenericWarning as error:
+                logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,error.args,m.get_from()))
+            except Exception as error:
                 if self.klass == 'BetterMbox':
                     identifier = m.get_from()
                 else:
                     identifier = m.get('Message-ID','')
-                log_msg = "Import Error [{0}, {1}, {2}]".format(self.filename,(e.__class__,e.args),identifier)
+                log_msg = "Import Error [{0}, {1}, {2}]".format(self.filename,(error.__class__,error.args),identifier)
                 logger.error(log_msg)
                 self.save_failed_msg(m)
                 self.stats['errors'] += 1

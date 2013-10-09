@@ -113,13 +113,13 @@ class Command(BaseCommand):
                 loader.process()
                 for key,val in loader.stats.items():          # compile stats
                     stats[key] = stats.get(key,0) + val
-            except _classes.UnknownFormat as e:
+            except _classes.UnknownFormat as error:
                 if not (options['dryrun'] or options['test']):
                     target = os.path.join(settings.ARCHIVE_DIR,'failed',options['listname'])
                     if not os.path.exists(target):
                         os.makedirs(target)
                     shutil.copy(filename,target)
-                logger.error("Import Error [Unknown file format, {0}]".format(e.args))
+                logger.error("Import Error [Unknown file format, {0}]".format(error.args))
                 stats['unknown'] = stats.get('unknown',0) + 1
 
         stats['time'] = int(time.time() - start_time)

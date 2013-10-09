@@ -65,8 +65,8 @@ def main():
                         Legacy.objects.create(msgid=msgid,email_list_id=listname,number=number)
                     else:
                         raise Exception("No Message Id: %s" % fil)
-                except Exception as e:
-                    print "Import Error [{0}, {1}]".format(fil,e.args)
+                except Exception as error:
+                    print "Import Error [{0}, {1}]".format(fil,error.args)
                     errors += 1
     print "Errors: %d" % errors
     print "Files: %d" % count

@@ -107,6 +107,10 @@ def handle_external_body(part,text_only):
 
 @skip_attachment
 def handle_html(part,text_only):
+    '''
+    Handler for text/HTML MIME parts.  Takes a message.message part and a boolean, text_only,
+    which specifies if the handler should return text only, for use with indexing
+    '''
     if not text_only:
         payload = part.get_payload(decode=True)
         charset = part.get_content_charset()
@@ -131,11 +135,11 @@ def handle_plain(part,text_only):
     if charset not in US_CHARSETS and charset not in UNSUPPORTED_CHARSETS:
         try:
             payload = payload.decode(charset)
-        except UnicodeDecodeError as err:
-            logger.warn("UnicodeDecodeError [{0}, {1}]".format(err.encoding,err.reason))
+        except UnicodeDecodeError as error:
+            logger.warn("UnicodeDecodeError [{0}, {1}]".format(error.encoding,error.reason))
             payload = unicode(payload,DEFAULT_CHARSET,errors='ignore')
-        except LookupError as err:
-            logger.warn("Decode Error [{0}, {1}]".format(err.args,err.message))
+        except LookupError as error:
+            logger.warn("Decode Error [{0}, {1}]".format(error.args,error.message))
             payload = unicode(payload,DEFAULT_CHARSET,errors='ignore')
 
     result = render_to_string('archive/message_plain.html', {'payload': payload})
@@ -281,9 +285,8 @@ class Message(models.Model):
         try:
             with open(self.get_file_path()) as f:
                 return f.read()
-        except IOError, e:
-            #logger = logging.getLogger(__name__)
-            #logger.warning('IOError %s' % e)
+        except IOError as error:
+            #logger.warning('IOError %s' % error)
             # TODO: handle this better
             return 'Error: message not found.'
 

@@ -1,4 +1,5 @@
 DEPENDENCIES:
+Python 2.7.3
 xapian-core
 python-xapian
 

@@ -1,7 +1,7 @@
 __version__ = "0.70"
 
-__date__    = "$Date: 2011/07/26 14:29:17 $"
+__date__    = "$Date$"
 
-__rev__     = "$Rev: 3113 $"
+__rev__     = "$Rev$"
 
-__id__      = "$Id: __init__.py,v 1.5 2011/07/26 14:29:17 rcross Exp $"
+__id__      = "$Id$"

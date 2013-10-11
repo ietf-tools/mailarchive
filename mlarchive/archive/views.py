@@ -155,6 +155,13 @@ def browse_list(request, list_name):
         RequestContext(request, {}),
     )
 
+def console(request):
+    form = None
+    return render_to_response('archive/console.html', {
+        'form': form},
+        RequestContext(request, {}),
+    )
+    
 @check_access
 def detail(request, list_name, id, msg):
     '''

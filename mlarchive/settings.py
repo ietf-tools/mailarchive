@@ -9,8 +9,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEBUG = False
 TEMPLATE_DEBUG = False
 
+ALLOWED_HOSTS = ['.ietf.org']
 ADMINS = (
-    # ('Ryan Cross', 'rcross@amsl.com'),
+    ('Ryan Cross', 'rcross@amsl.com'),
 )
 
 MANAGERS = ADMINS
@@ -97,7 +98,8 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     #'django.contrib.staticfiles',
     # Uncomment the next line to enable the admin:
-     'django.contrib.admin',
+    'django.contrib.admin',
+    'django.contrib.admindocs',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
     'haystack',
@@ -119,17 +121,7 @@ MY_LOG_FILENAME = '/a/mailarch/data/log/mlarchive.log'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'filters': {
-        'require_debug_false': {
-            '()': 'django.utils.log.RequireDebugFalse',
-        }
-    },
     'handlers': {
-        'mail_admins': {
-            'level': 'ERROR',
-            'filters': ['require_debug_false'],
-            'class': 'django.utils.log.AdminEmailHandler'
-        },
         'rotating_file':
         {
             'level' : 'DEBUG',
@@ -142,11 +134,6 @@ LOGGING = {
         }
     },
     'loggers': {
-        'django.request': {
-            'handlers': ['mail_admins'],
-            'level': 'ERROR',
-            'propagate': True,
-        },
         'mlarchive.custom': {
             'handlers': ['rotating_file'],
             'level': 'DEBUG',

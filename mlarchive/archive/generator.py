@@ -3,6 +3,7 @@ import mailbox
 from bs4 import BeautifulSoup
 from django.template.loader import render_to_string
 from email.utils import collapse_rfc2231_value
+from HTMLParser import HTMLParser, HTMLParseError
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')

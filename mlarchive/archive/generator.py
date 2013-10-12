@@ -6,6 +6,7 @@ from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
 
 DEFAULT_CHARSET = 'us-ascii'
+UNDERSCORE = '_'
 
 # --------------------------------------------------
 # Helper Functions

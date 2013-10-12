@@ -211,7 +211,7 @@ class Generator:
                         break
             else:
                 for part in entity.get_payload():
-                    parts.extend(parse_entity(part))
+                    parts.extend(self.parse_entity(part))
         else:
             body = self._dispatch(entity)
             if body:

@@ -80,7 +80,7 @@ class Generator:
             if meth is None:
                 #meth = self._writeBody
                 return None
-        meth(part)
+        return meth(part)
 
     def _handle_message_external_body(self,part):
         '''
@@ -171,7 +171,6 @@ class Generator:
             return text
 
     def parse_body(self, request=None):
-
         headers = self.mdmsg.items()
         parts = self.parse_entity(self.mdmsg)
 

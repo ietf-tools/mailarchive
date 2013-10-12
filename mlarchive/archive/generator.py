@@ -1,3 +1,5 @@
+import mailbox
+
 from bs4 import BeautifulSoup
 
 from django.utils.log import getLogger

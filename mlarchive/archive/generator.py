@@ -210,7 +210,7 @@ class Generator:
                 for part in entity.get_payload():
                     parts.extend(parse_entity(part))
         else:
-            body = _dispatch(entity)
+            body = self._dispatch(entity)
             if body:
                 parts.append(body)
 

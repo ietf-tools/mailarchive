@@ -25,7 +25,7 @@ def skip_attachment(function):
     If the part passed is an attachment then it is skipped (None is returned).
     '''
     def _inner(*args, **kwargs):
-        if args[0].get_filename():
+        if args[1].get_filename():
             return None
         return function(*args, **kwargs)
     return _inner

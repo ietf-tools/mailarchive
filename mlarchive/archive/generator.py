@@ -35,12 +35,21 @@ class Generator:
     '''
     Generates output from a Message object tree.
 
-    Based on email.generator.Generator
+    Based on email.generator.Generator.  Takes a mlarchive Message object
+
+    msg: mlarchive Message
+    mdmsg: mailbox.MaildirMessage
     '''
 
     def __init__(self, msg):
         self.msg = msg
         self.text_only = False
+        try:
+            with open(msg.get_file_path()) as f:
+                self.mdmsg = mailbox.MaildirMessage(f)
+        except IOError:
+            return 'Error reading message'
+
 
     def as_html(self, request):
         self.text_only = False
@@ -55,8 +64,8 @@ class Generator:
         # self._handle_<maintype>_<subtype>().  If there's no handler for the
         # full MIME type, then dispatch to self._handle_<maintype>().  If
         # that's missing too, then skip it.
-        main = msg.get_content_maintype()
-        sub = msg.get_content_subtype()
+        main = part.get_content_maintype()
+        sub = part.get_content_subtype()
         specific = UNDERSCORE.join((main, sub)).replace('-', '_')
         meth = getattr(self, '_handle_' + specific, None)
         if meth is None:
@@ -65,7 +74,7 @@ class Generator:
             if meth is None:
                 #meth = self._writeBody
                 return None
-        meth(msg)
+        meth(part)
 
     def _handle_message_external_body(self,part):
         '''
@@ -157,13 +166,13 @@ class Generator:
 
     def parse_body(self, request=None):
 
-        headers = mm.items()
-        parts = self.parse_entity(mm)
+        headers = self.mdmsg.items()
+        parts = self.parse_entity(self.mdmsg)
 
         if not self.text_only:
             return render_to_string('archive/message.html', {
-                'msg': msg,
-                'maildirmessage': mm,
+                'msg': self.msg,
+                'maildirmessage': self.mdmsg,
                 'headers': headers,
                 'parts': parts,
                 'request': request}

@@ -5,7 +5,9 @@ from bs4 import BeautifulSoup
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
 
+US_CHARSETS = ('us-ascii','ascii')
 DEFAULT_CHARSET = 'us-ascii'
+UNSUPPORTED_CHARSETS = ('unknown','x-unknown')
 UNDERSCORE = '_'
 
 # --------------------------------------------------

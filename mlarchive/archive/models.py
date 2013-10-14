@@ -78,7 +78,7 @@ class Message(models.Model):
         '''
         A method that returns the message formated as HTML.  Uses MHonarc standalone
         '''
-        with open(self.get_file_path) as f:
+        with open(self.get_file_path()) as f:
             mhout = subprocess.check_output(TXT2HTML,stdin=f)
         soup = BeautifulSoup(mhout)
         return soup.body

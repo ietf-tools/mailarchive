@@ -187,7 +187,8 @@ class Generator:
 
     def parse_body(self, request=None):
         headers = self.mdmsg.items()
-        parts = self.parse_entity(self.mdmsg)
+        #parts = self.parse_entity(self.mdmsg)
+        parts = [self.msg.as_html()]                # use Mhonarc
 
         if not self.text_only:
             return render_to_string('archive/message.html', {

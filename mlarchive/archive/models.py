@@ -25,6 +25,7 @@ OTHER_CHARSETS = ('gb2312',)
 UNSUPPORTED_CHARSETS = ('unknown','x-unknown')
 
 TXT2HTML = ['/usr/bin/mhonarc','-single']
+ATTACHMENT_PATTERN = r'<p><strong>Attachment:((?:.|\n)*?)</p>'
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
@@ -81,6 +82,8 @@ class Message(models.Model):
         '''
         with open(self.get_file_path()) as f:
             mhout = subprocess.check_output(TXT2HTML,stdin=f)
+
+        # extract body
         within = False
         body = []
         for line in mhout.splitlines():
@@ -91,9 +94,12 @@ class Message(models.Model):
             if line == '<!--X-Body-of-Message-->':
                 within = True
 
-        return '\n'.join(body)
-        #soup = BeautifulSoup(mhout)
-        #return soup.body
+        str = '\n'.join(body)
+
+        # strip attachment links
+        body = re.sub(ATTACHMENT_PATTERN,'',str)
+
+        return body
 
     def get_absolute_url(self):
         return '/archive/detail/%s/%s' % (self.email_list.name,self.hashcode)

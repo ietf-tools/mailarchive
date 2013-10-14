@@ -17,6 +17,7 @@ from mlarchive.archive.generator import Generator
 import mailbox
 import os
 import shutil
+import subprocess
 
 US_CHARSETS = ('us-ascii','ascii')
 DEFAULT_CHARSET = 'us-ascii'

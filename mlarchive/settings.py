@@ -163,6 +163,7 @@ LOG_FILE = '/a/mailarch/data/log/mlarchive.log'
 SERVER_MODE = 'development'
 TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
 MAILMAN_DIR = '/usr/lib/mailman'
+USE_EXTERNAL_PROCESSOR = False
 
 LOGIN_REDIRECT_URL = '/archive/'
 AUTHENTICATION_BACKENDS = (

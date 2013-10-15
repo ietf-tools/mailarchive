@@ -1,9 +1,10 @@
-import mailbox
-
 from bs4 import BeautifulSoup
+from django.conf import settings
 from django.template.loader import render_to_string
 from email.utils import collapse_rfc2231_value
 from HTMLParser import HTMLParser, HTMLParseError
+
+import mailbox
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
@@ -99,14 +100,11 @@ class Generator:
 
     def _handle_message_external_body(self,part):
         '''
-        Two common formats:
+        Two common supported formats:
         A) in content type parameters
         Content-Type: Message/External-body; name="draft-ietf-alto-reqs-03.txt";
             site="ftp.ietf.org"; access-type="anon-ftp";
             directory="internet-drafts"
-
-        Content-Type: text/plain
-        Content-ID: <2010-02-17021922.I-D@ietf.org>
 
         B) as an attachment
         Content-Type: message/external-body; name="draft-howlett-radsec-knp-01.url"
@@ -116,8 +114,7 @@ class Generator:
             modification-date="Mon, 14 Mar 2011 22:39:25 GMT"
         Content-Transfer-Encoding: base64
 
-        W0ludGVybmV0U2hvcnRjdXRdDQpVUkw9ZnRwOi8vZnRwLmlldGYub3JnL2ludGVybmV0LWRyYWZ0
-        cy9kcmFmdC1ob3dsZXR0LXJhZHNlYy1rbnAtMDEudHh0DQo=
+        At this time other access-types are not supported (MAIL-SERVER)
         '''
         if self.text_only:
             return None
@@ -130,7 +127,8 @@ class Generator:
             link = payload.decode(codec)
             return link
         # handle A format
-        else:
+
+        if part.get_param('access-type') == 'anon-ftp':
             rawsite = part.get_param('site')
             site = collapse_rfc2231_value(rawsite)
             rawdir = part.get_param('directory')
@@ -140,6 +138,8 @@ class Generator:
             link = 'ftp://%s/%s/%s' % (site,dir,name)
             html = '<div><a rel="nofollow" href="%s">&lt;%s&gt;</a></div>' % (link,link)
             return html
+
+        return None
 
     @skip_attachment
     def _handle_text_plain(self,part):
@@ -168,6 +168,8 @@ class Generator:
         '''
         Handler for text/HTML MIME parts.  Takes a message.message part
         '''
+        if settings.DEBUG:
+            logger.debug('called: _handle_text_html [{0}]'.format(self.msg.msgid))
         if not self.text_only:
             payload = part.get_payload(decode=True)
             charset = part.get_content_charset()
@@ -187,8 +189,10 @@ class Generator:
 
     def parse_body(self, request=None):
         headers = self.mdmsg.items()
-        #parts = self.parse_entity(self.mdmsg)
-        parts = [self.msg.as_html()]                # use Mhonarc
+        if settings.USE_EXTERNAL_PROCESSOR:
+            parts = [self.msg.as_html()]
+        else:
+            parts = self.parse_entity(self.mdmsg)
 
         if not self.text_only:
             return render_to_string('archive/message.html', {

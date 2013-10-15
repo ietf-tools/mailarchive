@@ -157,6 +157,7 @@ def browse_list(request, list_name):
 
 def console(request):
     form = None
+    assert False
     return render_to_response('archive/console.html', {
         'form': form},
         RequestContext(request, {}),

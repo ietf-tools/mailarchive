@@ -665,8 +665,8 @@ class MessageWrapper(object):
         for part in self.email_message.walk():
             # TODO can we have an attachment without a filename (content disposition) ??
             name = handle_header(part.get_filename(), self.email_message)
-            if name:     # indicates an attachment
-                type = part.get_content_type()
+            type = part.get_content_type()
+            if name and type in CONTENT_TYPES:     # indicates an attachment
                 extension,description = get_mime_extension(type)
 
                 # create record

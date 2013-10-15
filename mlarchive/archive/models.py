@@ -5,35 +5,19 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
-
-from email.utils import parseaddr, collapse_rfc2231_value
-from email.Header import decode_header
-
-from bs4 import BeautifulSoup
-from HTMLParser import HTMLParser, HTMLParseError
-#from html2text import html2text
+from email.utils import parseaddr
 from mlarchive.archive.generator import Generator
 
-import mailbox
 import os
+import re
 import shutil
 import subprocess
-
-US_CHARSETS = ('us-ascii','ascii')
-DEFAULT_CHARSET = 'us-ascii'
-OTHER_CHARSETS = ('gb2312',)
-UNSUPPORTED_CHARSETS = ('unknown','x-unknown')
 
 TXT2HTML = ['/usr/bin/mhonarc','-single']
 ATTACHMENT_PATTERN = r'<p><strong>Attachment:((?:.|\n)*?)</p>'
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
-
-# --------------------------------------------------
-# Helper Functions
-# --------------------------------------------------
-
 
 # --------------------------------------------------
 # Models

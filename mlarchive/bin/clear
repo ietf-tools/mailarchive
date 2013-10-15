@@ -4,7 +4,7 @@
 
 # drop and create database
 echo Drop/Create rc_archive
-mysql -u rcross -p -e 'drop database rc_archive; create database rc_archive character set utf8;'
+mysql -u rcross -p -e 'drop database rc_archivec; create database rc_archivec character set utf8;'
 
 # sync
 ./manage.py syncdb --noinput

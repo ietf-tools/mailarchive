@@ -42,6 +42,7 @@ class EmailList(models.Model):
         return self.name
 
 class Message(models.Model):
+    base_subject.CharField(max_length=512,blank=True)
     cc = models.TextField(blank=True,default='')
     date = models.DateTimeField(db_index=True)
     email_list = models.ForeignKey(EmailList,db_index=True)
@@ -84,6 +85,12 @@ class Message(models.Model):
         body = re.sub(ATTACHMENT_PATTERN,'',str)
 
         return body
+
+    def base_subject(self):
+        '''
+        Implement "base subject" as defined in RFC5256
+        '''
+        pass
 
     def get_absolute_url(self):
         return '/archive/detail/%s/%s' % (self.email_list.name,self.hashcode)

@@ -69,13 +69,19 @@ def archive_message(msg,listname,private=False):
     mw = MessageWrapper(msg,listname,private=private)
     mw.save()
 
+def clean_spaces(s):
+    "Reduce all whitespaces to one space"
+    s = re.sub(r'\s+',' ',s)
+    return s
+
 def decode_rfc2047_header(h):
     return ' '.join(decode_safely(s, charset) for s, charset in decode_header(h))
 
 def decode_safely(s, charset='ascii'):
-    """Return s decoded according to charset, but do so safely."""
+    "Return s decoded according to charset, but do so safely."
     try:
-        return s.decode(charset or 'ascii', 'ignore')
+        # return s.decode(charset or 'ascii', 'ignore')
+        return unicode(s,charset or 'ascii')
     except LookupError: # bogus charset
         return s.decode('ascii', 'ignore')
 
@@ -97,6 +103,50 @@ def handle_header(header_text, default=DEFAULT_CHARSET):
                 headers[i]=unicode(text, default, errors='replace')
         return u"".join(headers)
 """
+
+def get_base_subject(str):
+    '''
+    Function to compute the "base subject" of a message.  This is the subject which has
+    specific subject artifacts removed.  This function implements the algorithm defined
+    in section 2.1 of rfc5256
+    '''
+    subj_trailer = r'\s*\(fwd\)$'
+    subj_leader = r'^(\[[\040-\132\134\136-\176]{1,}\]\s*)*([Rr]e|Fw[d])\s*(\[[\040-\132\134\136-\176]{1,}\]\s*)?:\s'
+    subj_blob = r'^(\[[\040-\132\134\136-\176]{1,}\]\s*)'
+
+    # step 1
+    uni = decode_rfc2047_header(line)
+    utf8 = uni.encode('utf8')
+    str = clean_spaces(utf8)
+    str = str.rstrip()
+
+    # step 2
+    while True:
+        while str.endswith('(fwd)'):
+            str = re.sub(subj_trailer,'',str)
+
+        while True:
+            strin = str
+            # step 3
+            str = re.sub(subj_leader,'',str)
+
+            # step 4
+            m = re.match(subj_blob,str)
+            if m:
+                temp = re.sub(subj_blob,'',str)
+                if temp:
+                    str = temp
+            if str == strin:    # step 5 (else repeat 3 & 4)
+                break
+
+        # step 6
+        if str.startswith('[Fwd:') and str.endswith(']'):
+            str = str[5:-1]
+            str = str.lstrip()
+        else:
+            break
+
+    return str
 
 def get_envelope_date(msg):
     '''
@@ -651,6 +701,7 @@ class MessageWrapper(object):
                              hashcode=self.hashcode,
                              msgid=self.msgid,
                              subject=self.get_subject(),
+                             base_subject=get_base_subject(self.email_message.get('Subject','')),
                              spam_score=self.spam_score,
                              #thread=self.get_thread(),
                              to=self.get_to())

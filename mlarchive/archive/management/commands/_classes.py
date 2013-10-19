@@ -32,18 +32,33 @@ logger = getLogger('mlarchive.custom')
 # --------------------------------------------------
 # Globals
 # --------------------------------------------------
-SEPARATOR_PATTERNS = [ re.compile(r'^Return-Path:'),
-                       re.compile(r'^Return-path:'),
+
+# spam_score bits
+NON_ASCII_HEADER = 0b0001
+NO_RECVD_DATE = 0b0010
+NO_MSGID = 0b0100
+
+SEPARATOR_PATTERNS = [ re.compile(r'^Return-[Pp]ath:'),
                        re.compile(r'^Envelope-to:'),
                        re.compile(r'^Received:'),
                        re.compile(r'^X-Envelope-From:'),
                        re.compile(r'^From:'),
                        re.compile(r'^Date:'),
                        re.compile(r'^To:'),
-                       re.compile(r'^20[0-1][0-9]$') ]          # odd one, see forces
+                       re.compile(r'^20[0-1][0-9]$') ]      # odd one, see forces
 
 HEADER_PATTERN = re.compile(r'^[\041-\071\073-\176]{1,}:')
 SENT_PATTERN = re.compile(r'^(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(\d{1,2})/(\d{1,2})/(\d{4,4})\s+(\d{1,2}):(\d{2,2})\s+(AM|PM)')
+MSGID_PATTERN = re.compile(r'<([^>]+)>')                    # [^>] means any character except ">"
+
+subj_blob_pattern = r'(\[[\040-\132\134\136-\176]{1,}\]\s*)'
+subj_refwd_pattern = r'([Rr][eE]|F[Ww][d]?)\s*' + subj_blob_pattern + r'?:\s'
+subj_leader_pattern = subj_blob_pattern + r'*' + subj_refwd_pattern
+subj_blob_regex = re.compile(r'^' + subj_blob_pattern)
+subj_leader_regex = re.compile(r'^' + subj_leader_pattern)
+
+#subj_leader = r'^(\[[\040-\132\134\136-\176]{1,}\]\s*)*([Rr][eE]|F[Ww][d]?)\s*(\[[\040-\132\134\136-\176]{1,}\]\s*)?:\s'
+
 # --------------------------------------------------
 # Custom Exceptions
 # --------------------------------------------------
@@ -77,63 +92,40 @@ def clean_spaces(s):
 def decode_rfc2047_header(h):
     return ' '.join(decode_safely(s, charset) for s, charset in decode_header(h))
 
-def decode_safely(s, charset='ascii'):
+def decode_safely(s, charset='latin-1'):
     "Return s decoded according to charset, but do so safely."
     try:
         # return s.decode(charset or 'ascii', 'ignore')
-        return unicode(s,charset or 'ascii')
+        return unicode(s,charset or 'latin-1')
     except LookupError: # bogus charset
-        return s.decode('ascii', 'ignore')
-
-"""
-def handle_header(header_text, default=DEFAULT_CHARSET):
-    '''Decode header_text if needed'''
-    try:
-        headers=decode_header(header_text)
-    except email.Errors.HeaderParseError:
-        # This already append in email.base64mime.decode()
-        # instead return a sanitized ascii string
-        return header_text.encode('ascii', 'replace').decode('ascii')
-    else:
-        for i, (text, charset) in enumerate(headers):
-            try:
-                headers[i]=unicode(text, charset or default, errors='replace')
-            except LookupError:
-                # if the charset is unknown, force default
-                headers[i]=unicode(text, default, errors='replace')
-        return u"".join(headers)
-"""
+        # return s.decode('ascii','ignore')
+        return unicode(s,'latin-1','replace')
 
 def get_base_subject(str):
     '''
-    Function to compute the "base subject" of a message.  This is the subject which has
-    specific subject artifacts removed.  This function implements the algorithm defined
-    in section 2.1 of rfc5256
+    Get the "base subject" of a message.  This is the subject which has specific subject artifacts
+    removed.  This function implements the algorithm defined in section 2.1 of RFC5256
     '''
-    subj_trailer = r'\s*\(fwd\)$'
-    subj_leader = r'^(\[[\040-\132\134\136-\176]{1,}\]\s*)*([Rr]e|Fw[d])\s*(\[[\040-\132\134\136-\176]{1,}\]\s*)?:\s'
-    subj_blob = r'^(\[[\040-\132\134\136-\176]{1,}\]\s*)'
+    # step 1 - now all handled by normalize
+    # uni = decode_rfc2047_header(str)
+    # utf8 = uni.encode('utf8')
+    # str = clean_spaces(utf8)
+    # str = str.rstrip()
 
-    # step 1
-    uni = decode_rfc2047_header(line)
-    utf8 = uni.encode('utf8')
-    str = clean_spaces(utf8)
-    str = str.rstrip()
-
-    # step 2
     while True:
+        # step 2
         while str.endswith('(fwd)'):
-            str = re.sub(subj_trailer,'',str)
+            str = str[:-5].rstrip()
 
         while True:
-            strin = str
             # step 3
-            str = re.sub(subj_leader,'',str)
+            strin = str
+            str = subj_leader_regex.sub('',str)
 
             # step 4
-            m = re.match(subj_blob,str)
+            m = subj_blob_regex.match(str)
             if m:
-                temp = re.sub(subj_blob,'',str)
+                temp = subj_blob_regex.sub('',str)
                 if temp:
                     str = temp
             if str == strin:    # step 5 (else repeat 3 & 4)
@@ -142,7 +134,7 @@ def get_base_subject(str):
         # step 6
         if str.startswith('[Fwd:') and str.endswith(']'):
             str = str[5:-1]
-            str = str.lstrip()
+            str = str.strip()
         else:
             break
 
@@ -263,43 +255,6 @@ def get_received_date(msg):
         return parsedate_to_datetime(parts[1])
     except IndexError:
         return None
-
-def handle_header(header_text, msg, default='iso-8859-1'):
-    '''
-    This function takes some header_text as a string and a email.message.Message object.
-    It returns the string decoded as needed.
-    Checks if the header needs decoding:
-    - if text contains encoded_words, "=?", use decode_rfc2047_header()
-    - if raw non-ascii text check Content-Types for charset
-    - default to iso-8859-1, replace
-    '''
-    if not header_text:                 # just return if we are passed an empty string
-        return header_text
-
-    if type(header_text) is unicode:    # return if already unicode
-        return header_text              # ie. get_filename() for example sometimes returns unicode
-
-    if '=?' in header_text:
-        header_text = decode_rfc2047_header(header_text)
-        return header_text
-
-    # if it's pure ascii we're done
-    try:
-        header_text.decode('ascii')
-        return header_text
-    except (UnicodeDecodeError, UnicodeEncodeError):
-        pass
-
-    charset = seek_charset(msg)
-    if charset:
-        try:
-            header_text = unicode(header_text,charset)
-            return header_text
-        except (UnicodeDecodeError, LookupError):
-            # TODO mark as spam?
-            pass
-
-    return unicode(header_text,default,errors='replace')
 
 def is_aware(dt):
     '''
@@ -565,7 +520,7 @@ class MessageWrapper(object):
                     fallback = date
             # if get_received_date fails could be spam or corrupt message, flag it
             elif func.__name__ == 'get_received_date':
-                self.spam_score = 2
+                self.spam_score = self.spam_score| NO_RECVD_DATE
 
         #logger.warn("Import Warn [{0}, {1}, {2}]".format(self.msgid,'Used None or naive date',
         #                                                 self.email_message.get_from()))
@@ -585,7 +540,7 @@ class MessageWrapper(object):
         return base64.urlsafe_b64encode(sha.digest())
 
     def get_msgid(self):
-        msgid = handle_header(self.email_message.get('Message-ID',''),self.email_message)
+        msgid = self.normalize(self.email_message.get('Message-ID',''))
         if msgid:
             msgid = msgid.strip('<>')
         else:
@@ -596,7 +551,7 @@ class MessageWrapper(object):
         if not msgid:
             msgid = make_msgid('ARCHIVE')
             self.created_id = True
-            self.spam_score += 1
+            self.spam_score = self.spam_score| NO_MSGID
             #raise GenericWarning('No MessageID (%s)' % self.email_message.get_from())
         return msgid
 
@@ -615,9 +570,10 @@ class MessageWrapper(object):
         This function gets the message subject.  If the subject looks like spam, long line with
         no spaces, truncate it so as not to cause index errors
         '''
-        subject = handle_header(self.email_message.get('Subject',''),self.email_message)
-        if len(subject) > 120 and len(subject.split()) == 1:
-            subject = subject[:120]
+        subject = self.normalize(self.email_message.get('Subject',''))
+        # TODO: spam?
+        #if len(subject) > 120 and len(subject.split()) == 1:
+        #    subject = subject[:120]
         return subject
 
     def get_to(self):
@@ -640,24 +596,25 @@ class MessageWrapper(object):
         '''
         This is a simplified version of the Zawinski threading algorithm.  The process is:
         1) If there are References, lookup the first message-id in the list and return it's thread.
-           If the message isn't found try the next message-id, repeat.
+           If the message isn't found try the next message-id, repeat.  According to RFC1036
+           the references list is ordered oldest first.  To start searching from the nearest
+           thread sibling reverse the list.
         2) If 'In-Reply-To-' is set, look up that message and return it's thread id.
         3) If the subject line has a "Re:" prefix look for the message matching base-subject
            and return it's thread
         4) If none of the above, return a new thread id
 
-        Messages must be loaded in chronological order for this to work.
+        Messages must be loaded in chronological order for this to work properly.
 
         Referecnces:
         - http://www.jwz.org/doc/threading.html
         - http://tools.ietf.org/html/rfc5256
         '''
-        PATTERN = re.compile(r'<([^>]+)>')
+        # TODO: one option is to leave these fields off the model instance
 
         # try References
-        refs = self.email_message.get('references')
-        if refs:
-            msgids = re.findall(PATTERN,refs)
+        if self.references:
+            msgids = re.findall(MSGID_PATTERN,self.references)
             for msgid in msgids:
                 try:
                     message = Message.objects.get(msgid=msgid)
@@ -666,9 +623,8 @@ class MessageWrapper(object):
                     pass
 
         # try In-Reply-to.  Use first msgid found, typically only one
-        irt = self.email_message.get('in-reply-to')
-        if irt:
-            msgids = re.findall(PATTERN,irt)
+        if self.in_reply_to:
+            msgids = re.findall(MSGID_PATTERN,self.in_reply_to)
             if msgids:
                 try:
                     message = Message.objects.get(msgid=msgids[0])
@@ -677,37 +633,86 @@ class MessageWrapper(object):
                     pass
 
         # check subject
-        subject = self.archive_message.subject  # this subject is decoded
-        if subject.startswith('Re: '):
-            base_subject = subject[3:].lstrip()
+        if self.subject != self.base_subject:
             messages = Message.objects.filter(email_list=self.email_list,
-                                              date__lt=self.date).exclude(subject__startswith='Re: ').order_by('-date')
-            for message in messages:
-                if message.subject == base_subject:
-                    return message.thread
+                                              date__lt=self.date,
+                                              subject=self.base_subject).order_by('-date')
+            if messages:
+                return messages[0].thread
 
         # return a new thread
         return Thread.objects.create()
 
-    def process(self):
-        self.hashcode = self.get_hash()
+    def normalize(self, header_text, default='latin-1'):
+        '''
+        This function takes some header_text as a string and a email.message.Message object.
+        It returns the string decoded as needed.
+        Checks if the header needs decoding:
+        - if text contains encoded_words, "=?", use decode_rfc2047_header()
+        - if raw non-ascii text check Content-Types for charset
+        - default to latin-1, replace
+        - finally, compress whitespace characters to one space
+        '''
+        # TODO: do we need to return UTF8?
 
+        if not header_text:                  # just return if we are passed an empty string
+            return header_text
+
+        # TODO: need this?
+        #if type(header_text) is unicode:    # return if already unicode
+        #    return header_text              # ie. get_filename() for example sometimes returns unicode
+
+        if '=?' in header_text:              # handle RFC2047 encoded-words
+            normal = decode_rfc2047_header(header_text)
+
+        else:
+            try:                             # if it's pure ascii we're done
+                normal = unicode(header_text,'ascii')
+            except (UnicodeDecodeError, UnicodeEncodeError):
+                normal = unicode(header_text,default,errors='replace')
+                self.spam_score = self.spam_score | NON_ASCII_HEADER      # mark as possible spam
+
+
+        # TODO: refactor with get_charsets(), or simply remove
+        #charset = seek_charset(msg)
+        #if charset:
+        #    try:
+        #        return unicode(header_text,charset)
+        #    except (UnicodeDecodeError, LookupError):
+        #        pass
+
+        # encode as UTF8 and compress whitespace
+        normal = normal.encode('utf8')
+        normal = clean_spaces(normal)
+        return normal.rstrip()
+
+    def process(self):
+        '''
+        Perform the rest of the parsing and construct the Message object.  Note, we are not
+        saving the object to the database.  This happens in the save() function.
+        '''
         self.email_list,created = EmailList.objects.get_or_create(
             name=self.listname,defaults={'description':self.listname,'private':self.private})
+        self.hashcode = self.get_hash()
+        self.in_reply_to = self.email_message.get('In-Reply-To','')
+        self.references = self.email_message.get('References','')
+        self.subject = self.get_subject()
+        self.base_subject = get_base_subject(self.subject)
+        self.thread = self.get_thread()
 
         self._archive_message = Message(date=self.date,
                              email_list=self.email_list,
-                             frm = handle_header(self.email_message.get('From',''),self.email_message),
+                             frm = self.normalize(self.email_message.get('From','')),
                              hashcode=self.hashcode,
+                             in_reply_to=self.in_reply_to,
                              msgid=self.msgid,
-                             subject=self.get_subject(),
-                             base_subject=get_base_subject(self.email_message.get('Subject','')),
+                             subject=self.subject,
+                             references=self.references,
+                             base_subject=self.base_subject,
                              spam_score=self.spam_score,
-                             #thread=self.get_thread(),
+                             thread=self.thread,
                              to=self.get_to())
-
-        # set thread out here so we can use the decoded subject line
-        self._archive_message.thread = self.get_thread()
+        # not saving here.
 
     def process_attachments(self, test=False):
         '''
@@ -715,7 +720,7 @@ class MessageWrapper(object):
         '''
         for part in self.email_message.walk():
             # TODO can we have an attachment without a filename (content disposition) ??
-            name = handle_header(part.get_filename(), self.email_message)
+            name = self.normalize(part.get_filename())
             type = part.get_content_type()
             if name and type in CONTENT_TYPES:     # indicates an attachment
                 extension,description = get_mime_extension(type)

@@ -10,13 +10,13 @@ DUMMY_DAY = datetime.datetime(2013,1,1)
 # Factories
 # --------------------------------------------------
 
-class UserFactory(factory.django.DjangoModelFactory):
+class UserFactory(factory.DjangoModelFactory):
     FACTORY_FOR = User
 
     username = 'admin'
     password = 'pass'
 
-class EmailListFactory(factory.django.DjangoModelFactory):
+class EmailListFactory(factory.DjangoModelFactory):
     FACTORY_FOR = EmailList
 
     name = 'test'

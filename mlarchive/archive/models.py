@@ -42,17 +42,17 @@ class EmailList(models.Model):
         return self.name
 
 class Message(models.Model):
-    base_subject.CharField(max_length=512,blank=True)
+    base_subject = models.CharField(max_length=512,blank=True)
     cc = models.TextField(blank=True,default='')
     date = models.DateTimeField(db_index=True)
     email_list = models.ForeignKey(EmailList,db_index=True)
     frm = models.CharField(max_length=125,db_index=True)    # really long from lines are spam
     hashcode = models.CharField(max_length=28,db_index=True)
-    #inrt = models.CharField(max_length=1024,blank=True)     # in-reply-to header field
+    in_reply_to = models.CharField(max_length=1024,blank=True)     # in-reply-to header field
     legacy_number = models.IntegerField(blank=True,null=True,db_index=True)  # for mapping mhonarc
     msgid = models.CharField(max_length=255,db_index=True)
-    #references = models.ManyToManyField('self',through='Reference',symmetrical=False)
-    spam_score = models.IntegerField(default=0)             # >0 = spam
+    references = models.TextField(blank=True,default='')
+    spam_score = models.IntegerField(default=0)             # > 0 = spam
     subject = models.CharField(max_length=512,blank=True)
     thread = models.ForeignKey(Thread)
     to = models.TextField(blank=True,default='')
@@ -85,12 +85,6 @@ class Message(models.Model):
         body = re.sub(ATTACHMENT_PATTERN,'',str)
 
         return body
-
-    def base_subject(self):
-        '''
-        Implement "base subject" as defined in RFC5256
-        '''
-        pass
 
     def get_absolute_url(self):
         return '/archive/detail/%s/%s' % (self.email_list.name,self.hashcode)

@@ -19,6 +19,7 @@ from django.contrib.auth.models import User
 from ietf.person.models import Email
 from optparse import OptionParser
 from mlarchive.archive.models import EmailList
+from subprocess import CalledProcessError
 import hashlib
 import base64
 
@@ -44,7 +45,8 @@ def lookup(address):
     except AttributeError:
         return None
 
-    return username
+    # TODO: use Django 1.5 Custom User to support username max_length = 64
+    return username[:30]
 
 def process_members(mlist, emails):
     '''
@@ -71,7 +73,11 @@ def main():
         if not options.quiet:
             print "Processing: %s" % mlist.name
 
-        output = check_output([cmd,mlist.name])
+        try:
+            output = check_output([cmd,mlist.name])
+        except CalledProcessError:
+            # some lists don't exist in mailman
+            continue
         sha = hashlib.sha1(output)
         digest = base64.urlsafe_b64encode(sha.digest())
         if mlist.members_digest != digest:

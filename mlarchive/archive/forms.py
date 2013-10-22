@@ -8,6 +8,8 @@ from mlarchive.archive.query_utils import parse, get_kwargs
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
 
+import operator
+
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
 
@@ -33,6 +35,31 @@ VALID_SORT_OPTIONS = ('frm','-frm','date','-date','email_list','-email_list', 's
 # --------------------------------------------------------
 # Helper Functions
 # --------------------------------------------------------
+def sort_by_thread(qs, reverse=False):
+    '''Sort the given query by thread'''
+    new_query = qs._clone()
+    # pass one, create thread-latest_date mapping
+    map = {}
+    for item in new_query:                          # this causes causes cache to be filled
+        val = map.get(item.object.thread.id,None)
+        if not val:
+            map[item.object.thread.id] = item.date
+            continue
+        if val < item.date:
+            map[item.object.thread.id] = item.date
+
+    # order map by date
+    map = sorted(map.iteritems(),key=operator.itemgetter(1))
+    order = { x[0]:i for i,x in enumerate(map) }
+
+    # build sorted list of SearchResult objects
+    result = sorted(new_query, key=lambda x: (order[x.object.thread.id],x.date),reverse=reverse)
+
+    # swap in sorted list
+    new_query._result_cache = result
+
+    return new_query
+
 def transform(val):
     '''
     This function takes a sort parameter and validates and transforms it for use
@@ -83,7 +110,7 @@ class AdvancedSearchForm(FacetedSearchForm):
     def search(self):
         '''
         Custom search function.  This completely overrides the parent
-        search().
+        search().  Should return a SearchQuerySet object.
         '''
         # for now if search form doesn't validate return empty results
         if not self.is_valid():
@@ -136,30 +163,31 @@ class AdvancedSearchForm(FacetedSearchForm):
             private_lists = [ str(x.name) for x in EmailList.objects.filter(private=True) ]
             sqs = sqs.exclude(email_list__in=private_lists)
 
+        # Populate all all SearchResult.object with efficient db query
+        # when called via urls.py / search_view_factory default load_all=True
+        if self.load_all:
+            sqs = sqs.load_all()
+
+        # faceting ------------------------------------------------
+        # calling sqs.facet() causes query to be rerun, therefore this
+        # needs to be run before doing any custom sorts, ie. thread
+        sqs = sqs.facet('email_list').facet('frm_email')
+
         # sorting -------------------------------------------------
+        # perform this step last because other operations may cause
+        # query to be re-run which loses custom sort order
         so = transform(self.cleaned_data.get('so'))
         sso = transform(self.cleaned_data.get('sso'))
 
-        # TODO: handle score
         if so:
             if so == 'thread':
-                # run through jwz thread
-                # flatten results
-                # sort siblings
-                pass
+                sqs = sort_by_thread(sqs,reverse=True)
             else:
                 sqs = sqs.order_by(so,sso)
         else:
             # if there's no "so" param, and no query we are browsing, sort by -date
             if len(kwargs) == 1 and kwargs.get('email_list__in'):
                 sqs = sqs.order_by('-date')
-
-        # faceting ------------------------------------------------
-        sqs = sqs.facet('email_list').facet('frm_email')
-
-        # TODO: do we need this?
-        if self.load_all:
-            sqs = sqs.load_all()
 
         return sqs
 

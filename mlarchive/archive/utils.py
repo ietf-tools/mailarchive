@@ -10,7 +10,6 @@ from django.shortcuts import render_to_response
 from mlarchive.archive.models import EmailList
 
 import mailbox
-import operator
 
 # --------------------------------------------------
 # Helper Functions
@@ -57,24 +56,3 @@ def template(template):
                     )
         return render
     return decorator
-
-def sort_query(qs):
-    '''Sort the given query by thread'''
-    # pass one, create thread-latest_date mapping
-    map = {}
-    for item in qs:
-        val = map.get(item.object.thread.id,None)
-        if not val:
-            map[item.object.thread.id] = item.date
-            continue
-        if val < item.date:
-            map[item.object.thread.id] = item.date
-
-    # order map by date
-    map = sorted(map.iteritems(),key=operator.itemgetter(1))
-    order = { x[0]:i for i,x in enumerate(map) }
-
-    # build return set
-    result = sorted(qs, key=lambda x: (order[x.object.thread.id],x.date),reverse=True)
-
-    return result

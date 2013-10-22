@@ -8,6 +8,7 @@ https://github.com/blairmitchelmore/jquery.plugins/blob/master/jquery.query.js
 
 // GLOBAL VARIABLES
 var sortDefault = new Array();
+var urlParams;
 sortDefault['date'] = '-date';
 sortDefault['email_list'] = 'email_list';
 sortDefault['frm'] = 'frm';
@@ -96,10 +97,21 @@ $(function() {
         // SEARCH SUBMIT
         $('#id_search_form').submit(function(event) {
             event.preventDefault();
-            query = $.query.get();
-            query['q'] = $('#id_q').val();
-            location.search = $.param(query);
+            // query = $.query.get();
+            urlParams['q'] = $('#id_q').val();
+            location.search = $.param(urlParams);
         });
+
+        // GET URL PARAMETERS
+        var match;
+        var pl = /\+/g;  // Regex for replacing addition symbol with a space
+        var search = /([^&=]+)=?([^&]*)/g;
+        decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); };
+        query  = window.location.search.substring(1);
+
+        urlParams = {};
+        while (match = search.exec(query))
+            urlParams[decode(match[1])] = decode(match[2]);
     }
 
     // given the row of the msg list, load the message text in the mag view pane
@@ -121,8 +133,11 @@ $(function() {
 
     function reset_sort(){
         // set sort options back to defaults
-        query = $.query.remove('so').remove('sso');
-        location.search = $.param(query.keys);
+        //query = $.query.remove('so').remove('sso');
+        //location.search = $.param(query.keys);
+        delete urlParams.so;
+        delete urlParams.sso;
+        location.search = $.param(urlParams);
     }
 
     function scrGrid(row){
@@ -175,11 +190,15 @@ $(function() {
         $('#radio').buttonset();
         $('#radio_date').bind("click", function(event) {
             event.preventDefault();
-            location.search = $.param($.query.set('so','date').keys);
+            //location.search = $.param($.query.set('so','date').keys);
+            urlParams['so'] = 'date';
+            location.search = $.param(urlParams);
         });
         $('#radio_thread').bind("click", function(event) {
             event.preventDefault();
-            location.search = $.param($.query.set('so','thread').keys);
+            //location.search = $.param($.query.set('so','thread').keys);
+            urlParams['so'] = 'thread';
+            location.search = $.param(urlParams);
         });
         // END TOOLBAR =========================================
 
@@ -211,11 +230,15 @@ $(function() {
 
         $('#list-filter-clear').bind("click", function(event) {
             event.preventDefault();
-            location.search = $.param($.query.set("f_list",'').keys);
+            //location.search = $.param($.query.set("f_list",'').keys);
+            urlParams['f_list'] = '';
+            location.search = $.param(urlParams);
         });
         $('#from-filter-clear').bind("click", function(event) {
             event.preventDefault();
-            location.search = $.param($.query.set("f_from",'').keys);
+            //location.search = $.param($.query.set("f_from",'').keys);
+            urlParams['f_from'] = '';
+            location.search = $.param(urlParams);
         });
         if ($('input.list-facet[type=checkbox]:checked').length == 0) {
             $('#list-filter-clear').hide();
@@ -230,7 +253,9 @@ $(function() {
                 values.push($(this).val());
             });
             var value = values.join(',');
-            location.search = $.param($.query.set(name,value).keys);
+            //location.search = $.param($.query.set(name,value).keys);
+            urlParams[name] = value;
+            location.search = $.param(urlParams);
         });
         // END FILTERS =========================================
 
@@ -261,14 +286,19 @@ $(function() {
             // of the previous sort, save it as the secondary sort order
             if(so!="" && so!=true){
                 if(so.replace('-','') != new_so.replace('-','')) {
-                    var query = $.query.set('so',new_so).set('sso',so);
+                    urlParams['so'] = new_so;
+                    urlParams['sso'] = so;
+                    //var query = $.query.set('so',new_so).set('sso',so);
                 } else {
-                    var query = $.query.set('so',new_so);
+                    //var query = $.query.set('so',new_so);
+                    urlParams['so'] = new_so;
                 }
             } else {
-                var query = $.query.set('so',new_so);
+                //var query = $.query.set('so',new_so);
+                urlParams['so'] = new_so;
             }
-            location.search = $.param(query.keys);
+            //location.search = $.param(query.keys);
+            location.search = $.param(urlParams);
         });
         // show appropriate sort arrow icon
         if(so && so!=true){

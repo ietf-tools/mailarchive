@@ -30,7 +30,8 @@ TIME_CHOICES = (('a','anytime'),
                 ('y','year'),
                 ('c','custom...'))
 
-VALID_SORT_OPTIONS = ('frm','-frm','date','-date','email_list','-email_list', 'subject', '-subject')
+VALID_SORT_OPTIONS = ('frm','-frm','date','-date','email_list','-email_list',
+                      'subject','-subject','thread')
 
 # --------------------------------------------------------
 # Helper Functions
@@ -189,6 +190,8 @@ class AdvancedSearchForm(FacetedSearchForm):
             if len(kwargs) == 1 and kwargs.get('email_list__in'):
                 sqs = sqs.order_by('-date')
 
+        #if self.load_all:
+        #    assert False, sqs
         return sqs
 
     def clean_email_list(self):

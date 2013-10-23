@@ -96,8 +96,8 @@ $(function() {
         // bind build_query() to change events
         $('#id_query-0-value').focus();
         $('input.operand').bind('change keyup',build_query);
-        $('input.parameter').change(build_query);
-        $('input.qualifier').change(handle_qualifier);
+        $('select.parameter').change(build_query);
+        $('select.qualifier').change(handle_qualifier);
 
         $('a.remove_btn').click(function() {
             var remove_index = $(this).attr('id').split('_')[1];

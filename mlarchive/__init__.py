@@ -1,4 +1,4 @@
-__version__ = "0.70"
+__version__ = "0.71"
 
 __date__    = "$Date$"
 

@@ -7,8 +7,8 @@ https://github.com/blairmitchelmore/jquery.plugins/blob/master/jquery.query.js
 */
 
 // GLOBAL VARIABLES
-var sortDefault = new Array();
 var urlParams;
+var sortDefault = new Array();
 sortDefault['date'] = '-date';
 sortDefault['email_list'] = 'email_list';
 sortDefault['frm'] = 'frm';
@@ -97,7 +97,6 @@ $(function() {
         // SEARCH SUBMIT
         $('#id_search_form').submit(function(event) {
             event.preventDefault();
-            // query = $.query.get();
             urlParams['q'] = $('#id_q').val();
             location.search = $.param(urlParams);
         });
@@ -112,12 +111,20 @@ $(function() {
         urlParams = {};
         while (match = search.exec(query))
             urlParams[decode(match[1])] = decode(match[2]);
+
+        // delete blank keys
+        for(var key in urlParams){
+            if (urlParams.hasOwnProperty(key)) {
+                if (!urlParams[key])
+                    delete urlParams[key];
+            }
+        }
+
     }
 
     // given the row of the msg list, load the message text in the mag view pane
     function load_msg(row) {
         var msgId = row.find("td:last").html();
-        /* TODO: this call needs auth */
         if(/^\d+$/.test(msgId)){
             $('#view-pane').load('/archive/ajax/msg/?id=' + msgId, function() {
                 $('#msg-header').hide()
@@ -133,8 +140,6 @@ $(function() {
 
     function reset_sort(){
         // set sort options back to defaults
-        //query = $.query.remove('so').remove('sso');
-        //location.search = $.param(query.keys);
         delete urlParams.so;
         delete urlParams.sso;
         location.search = $.param(urlParams);
@@ -190,13 +195,11 @@ $(function() {
         $('#radio').buttonset();
         $('#radio_date').bind("click", function(event) {
             event.preventDefault();
-            //location.search = $.param($.query.set('so','date').keys);
             urlParams['so'] = 'date';
             location.search = $.param(urlParams);
         });
         $('#radio_thread').bind("click", function(event) {
             event.preventDefault();
-            //location.search = $.param($.query.set('so','thread').keys);
             urlParams['so'] = 'thread';
             location.search = $.param(urlParams);
         });
@@ -230,14 +233,12 @@ $(function() {
 
         $('#list-filter-clear').bind("click", function(event) {
             event.preventDefault();
-            //location.search = $.param($.query.set("f_list",'').keys);
-            urlParams['f_list'] = '';
+            delete urlParams.f_list;
             location.search = $.param(urlParams);
         });
         $('#from-filter-clear').bind("click", function(event) {
             event.preventDefault();
-            //location.search = $.param($.query.set("f_from",'').keys);
-            urlParams['f_from'] = '';
+            delete urlParams.f_from;
             location.search = $.param(urlParams);
         });
         if ($('input.list-facet[type=checkbox]:checked').length == 0) {
@@ -253,7 +254,6 @@ $(function() {
                 values.push($(this).val());
             });
             var value = values.join(',');
-            //location.search = $.param($.query.set(name,value).keys);
             urlParams[name] = value;
             location.search = $.param(urlParams);
         });
@@ -288,16 +288,12 @@ $(function() {
                 if(so.replace('-','') != new_so.replace('-','')) {
                     urlParams['so'] = new_so;
                     urlParams['sso'] = so;
-                    //var query = $.query.set('so',new_so).set('sso',so);
                 } else {
-                    //var query = $.query.set('so',new_so);
                     urlParams['so'] = new_so;
                 }
             } else {
-                //var query = $.query.set('so',new_so);
                 urlParams['so'] = new_so;
             }
-            //location.search = $.param(query.keys);
             location.search = $.param(urlParams);
         });
         // show appropriate sort arrow icon

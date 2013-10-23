@@ -17,9 +17,19 @@ HAYSTACK_DEFAULT_OPERATOR = getattr(settings,'HAYSTACK_DEFAULT_OPERATOR','AND')
 #FIELD_PATTERN = re.compile(r"^(\w+):(\w+)\s*",re.U)
 # re.findall(r'\w+(?:-\w+)+',text)  # match hyphenated word(s)
 # HYPHENATED_PATTERN = re.compile(r"^(\w+-\w+")
-FIELD_PATTERN = re.compile(r"^(text|date|email_list|from|frm|frm_email|msgid|subject|to|spam_score):([a-zA-Z0-9\.\@\-\_\+\=\$]+)\s*",re.U)
-NEGATED_FIELD_PATTERN = re.compile(r"^(\-\w+):([a-zA-Z0-9\.\@\-\_\+\=\$]+)\s*",re.U)
-FIELD_EXACT_PATTERN = re.compile(r"^(\w+):\"(.+)\"\s*",re.U)
+TERM_PATTERN = r"([a-zA-Z0-9\.\@\-\_\+\=\$]+)\s*"
+REGULAR_FIELDS = ['date','email_list','from','frm','frm_email','msgid','subject',
+                  'to','spam_score','text']
+EXACT_FIELDS = ['frm__exact','msgid__exact','subject__exact','text__exact','to__exact']
+REGULAR_FIELDS_PATTERN = r"^({0}):".format('|'.join(REGULAR_FIELDS))
+FIELD_PATTERN = re.compile(REGULAR_FIELDS_PATTERN + TERM_PATTERN,re.U)
+
+NEG_REGULAR_FIELDS = [ '-' + f for f in REGULAR_FIELDS ]
+NEG_REGULAR_FIELDS_PATTERN = r"^({0}):".format('|'.join(NEG_REGULAR_FIELDS))
+NEGATED_FIELD_PATTERN = re.compile(NEG_REGULAR_FIELDS_PATTERN + TERM_PATTERN,re.U)
+
+FIELD_EXACT_PATTERN = re.compile(REGULAR_FIELDS_PATTERN + r"\"(.+)\"\s*",re.U)
+
 #SIMPLE_QUERY_PATTERN = re.compile(r"^(\w+)\s*",re.U)
 SIMPLE_QUERY_PATTERN = re.compile(r"^(\w+)\-*\s*",re.U)
 NEGATED_QUERY_PATTERN = re.compile(r"^(\-\w+)\s*",re.U)

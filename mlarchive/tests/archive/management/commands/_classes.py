@@ -11,5 +11,6 @@ def test_get_base_subject():
             ('Re: [ANCP] RE: draft-ieft-ancp-framework-00.txt','draft-ieft-ancp-framework-00.txt')]
 
     for item in data:
-        result = get_base_subject(item[0])
-        assert result == item[1]
+        normal = normalize(item[0])
+        base = get_base_subject(normal)
+        assert base == item[1]

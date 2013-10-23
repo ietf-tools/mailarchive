@@ -6,11 +6,11 @@ def test_main(client):
     response = client.get(url)
     assert response.status_code == 200
 
-@pytest.mark.django_db
-def test_browse(client):
-    url = reverse('archive_browse')
-    response = client.get(url)
-    assert response.status_code == 200
+#@pytest.mark.django_db
+#def test_browse(client):
+#    url = reverse('archive_browse')
+#    response = client.get(url)
+#    assert response.status_code == 200
 
 def test_advsearch(client):
     url = reverse('archive_advsearch')

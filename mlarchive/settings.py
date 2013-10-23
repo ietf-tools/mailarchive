@@ -160,15 +160,17 @@ HAYSTACK_CONNECTIONS = {
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = '/a/mailarch/data/archive'
 LOG_FILE = '/a/mailarch/data/log/mlarchive.log'
-SERVER_MODE = 'development'
-TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
 MAILMAN_DIR = '/usr/lib/mailman'
+SERVER_MODE = 'development'
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
 USE_EXTERNAL_PROCESSOR = False
 
 LOGIN_REDIRECT_URL = '/archive/'
 AUTHENTICATION_BACKENDS = (
     'htauth.backend.HtauthBackend',
     )
+
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.

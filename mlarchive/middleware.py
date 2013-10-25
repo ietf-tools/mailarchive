@@ -1,4 +1,5 @@
 from mlarchive.archive.forms import AdvancedSearchForm
+from mlarchive.archive.models import EmailList
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
@@ -72,7 +73,7 @@ class QueryMiddleware(object):
             data = request.GET
             form = AdvancedSearchForm(data,load_all=False,request=request)
             results = form.search()
-            
+
             # calculating facet_counts on large results sets is too costly so skip it
             # If you call results.count() before results.facet_counts() the facet_counts
             # are corrupted.  The solution is to clone the query and call counts on that
@@ -80,6 +81,10 @@ class QueryMiddleware(object):
             temp = results._clone()
             if temp.count() < 15000:
                 base_facets = results.facet_counts()
+                # convert email list IDs to names
+                # TODO: cache this table
+                new = [ (EmailList.objects.get(id=x).name,y) for x,y in base_facets['fields']['email_list'] ]
+                base_facets['fields']['email_list'] = new
                 for field in base_facets['fields']:
                     base_facets['fields'][field].sort()  # sort by name
             else:

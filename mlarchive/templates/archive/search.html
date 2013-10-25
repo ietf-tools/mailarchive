@@ -12,8 +12,6 @@
 
 {% block content %}
 
-    <!-- use context "form" to re-display search form -->
-
     <div id="toolbar">
         <div id="browse-header" class="{% if browse_list.private %} private{% endif %}">
             {% if browse_list %}
@@ -24,7 +22,18 @@
               <a id="clear-sort" href="#">Clear Sort</a>
         </div>
         <div id="search-header">
-          {% include "includes/search_box.html" %}
+            <div id="basic-search">
+              <form name="search-form" id="id_search_form" method="get">
+                <button id="group-button" type="button">{% if thread_sorted %}Ungroup{% else %}Group by Thread{% endif %}</button>
+                {{ form.q }}
+                <button id="search-button" type="submit">Search</button>
+                <button id="export-button" type="button">Export</button>
+                <ul id="export-options" class="ui-widget-content" tabindex="-1">
+                    <li><a href="{{ export_mbox }}">Mbox</a></li>
+                    <li><a href="{{ export_maildir }}">Maildir</a></li>
+                </ul>
+              </form>
+            </div> <!-- basic-search -->
         </div> <!-- search-header -->
     </div> <!-- toolbar -->
 
@@ -94,7 +103,7 @@
                     <table id="msg-table" class="no-zebra">
                     {% for result in page.object_list %}
                         <tr>
-                            <td>{{ result.object.date|date:"m/d/Y" }}</td>
+                            <td>{{ result.object.date|date:"Y-m-d" }}</td>
                             {# <td><a href="{% url "archive_detail" id=result.object.hashcode %}">{{ result.object.subject }}</a></td> #}
                             <td class="nowrap">{{ result.object.subject|truncatechars:70 }}</td>
                             <td>{{ result.object.frm_email|truncatechars:35 }}</td>

@@ -1,11 +1,13 @@
 /* search_form.js */
 
+// GLOBALS -----------------------------------
 var fieldOptions = {"Subject and Body": "text",
   "Subject": "subject",
   "From": "from",
   "To":"to",
   "Message-ID":"msgid"
 };
+
 
 $(function() {
     jQuery.substitute = function(str, sub) {
@@ -14,43 +16,47 @@ $(function() {
         });
     };
 
+    function get_pattern(el) {
+        var default_pattern='{keyword}';
+        var default_exact_pattern='"{keyword}"';
+        var pattern
+        if(el.children('select.qualifier').val()=='exact'){
+            pattern=default_exact_pattern;
+        }
+        else {
+            pattern=default_pattern;
+        }
+        if(el.children('select.parameter').val()!=''){
+            pattern='{param}:'+pattern;
+        }
+        if(el.hasClass('not_chunk')){
+            pattern='-'+pattern;
+        }
+        return pattern
+    }
+
     function build_query(ev) {
-        var query_string="";
-        //var part_pattern="{param}:({keyword})";
-        //var not_pattern="-{param}:({keyword})";
-        var part_pattern="{param}:{keyword}";
-        var not_pattern="-{param}:{keyword}";
+        var query_string='';
         var op_value=$('#id_operator').val();
 
         // regular query fields'
         var operands=new Array();
-        $('.query_chunk').each(function() {
-            if($(this).children('input').val()!=''){
+        $('.chunk').each(function() {
+            var value = $(this).children('input').val();
+            if(value!=''){
+                if($(this).children('select.qualifier').val()=='exact'){
+                    value.replace('"','');
+                }
                 var obj={
                     param:$(this).children('select').val(),
-                    keyword:$(this).children('input').val()
+                    keyword:value
                 };
-                operands.push(jQuery.substitute(part_pattern,obj))
+                operands.push(jQuery.substitute(get_pattern($(this)),obj))
             }
         });
         // query_string += operands.join(' '+op_value+' ');
         query_string += operands.join(' ');
 
-        // not feilds
-        var not_operands=new Array();
-        $('.not_chunk').each(function() {
-            if($(this).children('input').val()!=''){
-                obj={
-                    param:$(this).children('select').val(),
-                    keyword:$(this).children('input').val()
-                };
-                not_operands.push(jQuery.substitute(not_pattern,obj))
-            }
-        });
-        if(not_operands.length>0) {
-            if(query_string!='')query_string+=' ';
-            query_string+=not_operands.join(' ');
-        }
         $('#id_q').val(query_string);
     }
 
@@ -68,12 +74,12 @@ $(function() {
                 $(this).val(prefix[0]);
             });
         }
-        else if($(ev.target).val()=='exact') {
-            $("#" + field_id + " option").each(function() {
-                var prefix = $(this).val().split("__");
-                $(this).val(prefix[0] + "__exact");
-            });
-        }
+        //else if($(ev.target).val()=='exact') {
+        //    $("#" + field_id + " option").each(function() {
+        //       var prefix = $(this).val().split("__");
+        //        $(this).val(prefix[0] + "__exact");
+        //   });
+        //}
         build_query(ev);
     }
 

@@ -1,5 +1,6 @@
 import pytest
 from django.core.urlresolvers import reverse
+from mlarchive.archive.models import *
 
 def test_main(client):
     url = reverse('archive')
@@ -22,3 +23,8 @@ def test_admin(client):
     url = reverse('archive_admin')
     response = client.get(url)
     assert response.status_code == 403
+
+@pytest.mark.django_db
+def test_dummy(client):
+    count = Message.objects.all().count()
+    assert count == 0

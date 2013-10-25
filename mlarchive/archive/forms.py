@@ -13,7 +13,7 @@ import operator
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
 
-FIELD_CHOICES = (('text','Subject and Body'),
+FIELD_CHOICES = (('','Subject and Body'),
                  ('subject','Subject'),
                  ('frm','From'),
                  ('to','To'),
@@ -36,8 +36,19 @@ VALID_SORT_OPTIONS = ('frm','-frm','date','-date','email_list','-email_list',
 # --------------------------------------------------------
 # Helper Functions
 # --------------------------------------------------------
-def sort_by_thread(qs, reverse=False):
-    '''Sort the given query by thread'''
+def get_list_ids(names):
+    '''Lookup EmailList IDs given list of names'''
+    ids = []
+    for name in names.split(','):
+        try:
+            obj = EmailList.objects.get(name=name)
+            ids.append(obj.id)
+        except EmailList.DoesNotExist:
+            pass
+    return ids
+
+def group_by_thread(qs, so, sso, reverse=False):
+    '''Group query by thread'''
     new_query = qs._clone()
     # pass one, create thread-latest_date mapping
     map = {}
@@ -55,6 +66,17 @@ def sort_by_thread(qs, reverse=False):
 
     # build sorted list of SearchResult objects
     result = sorted(new_query, key=lambda x: (order[x.object.thread.id],x.date),reverse=reverse)
+
+    # swap in sorted list
+    new_query._result_cache = result
+
+    return new_query
+
+def sort_by_subject(qs, sso, reverse=False):
+    new_query = qs._clone()
+
+    # build sorted list of SearchResult objects
+    result = sorted(new_query, key=lambda x: x.object.base_subject,reverse=reverse)
 
     # swap in sorted list
     new_query._result_cache = result
@@ -98,9 +120,9 @@ class AdvancedSearchForm(FacetedSearchForm):
     #operator = forms.ChoiceField(choices=(('AND','ALL'),('OR','ANY')))
     so = forms.CharField(max_length=25,required=False,widget=forms.HiddenInput)
     sso = forms.CharField(max_length=25,required=False,widget=forms.HiddenInput)
-    # filter fields
-    #qdr = forms.CharField(max_length=25,required=False)
-    qdr = forms.ChoiceField(choices=TIME_CHOICES,required=False)
+    # group and filter fields
+    gbt = forms.BooleanField(required=False)                     # group by thread
+    qdr = forms.ChoiceField(choices=TIME_CHOICES,required=False) # qualified date range
     f_list = forms.CharField(max_length=255,required=False)
     f_from = forms.CharField(max_length=255,required=False)
 
@@ -147,7 +169,7 @@ class AdvancedSearchForm(FacetedSearchForm):
 
         # filters -------------------------------------------------
         if self.cleaned_data['f_list']:
-            f_list = self.cleaned_data['f_list'].split(',')
+            f_list = self.cleaned_data['f_list']
             sqs = sqs.filter(email_list__in=f_list)
         if self.cleaned_data['f_from']:
             f_from = self.cleaned_data['f_from'].split(',')
@@ -174,15 +196,20 @@ class AdvancedSearchForm(FacetedSearchForm):
         # needs to be run before doing any custom sorts, ie. thread
         sqs = sqs.facet('email_list').facet('frm_email')
 
-        # sorting -------------------------------------------------
+        # grouping and sorting  -----------------------------------
         # perform this step last because other operations may cause
         # query to be re-run which loses custom sort order
         so = transform(self.cleaned_data.get('so'))
         sso = transform(self.cleaned_data.get('sso'))
+        gbt = self.cleaned_data.get('gbt')
 
-        if so:
-            if so == 'thread':
-                sqs = sort_by_thread(sqs,reverse=True)
+        if gbt:
+            sqs = group_by_thread(sqs,so,sso,reverse=True)
+        elif so:
+            if so == 'subject':
+                sqs = sort_by_subject(sqs,sso)
+            elif so == '-subject':
+                sqs = sort_by_subject(sqs,sso,reverse=True)
             else:
                 sqs = sqs.order_by(so,sso)
         else:
@@ -190,17 +217,22 @@ class AdvancedSearchForm(FacetedSearchForm):
             if len(kwargs) == 1 and kwargs.get('email_list__in'):
                 sqs = sqs.order_by('-date')
 
-        #if self.load_all:
-        #    assert False, sqs
         return sqs
 
     def clean_email_list(self):
-        # take a comma separated list of email_list names and convert to list of names
-        email_list = self.cleaned_data['email_list']
-        if email_list:
-            return email_list.split(',')
-        else:
+        # take a comma separated list of email_list names and convert to list of ids
+        names = self.cleaned_data['email_list']
+        if not names:
             return None
+        return get_list_ids(names)
+
+    def clean_f_list(self):
+        # take a comma separated list of email_list names and convert to list of ids
+        names = self.cleaned_data['f_list']
+        if not names:
+            return None
+        return get_list_ids(names)
+
 # ---------------------------------------------------------
 
 class BrowseForm(forms.Form):

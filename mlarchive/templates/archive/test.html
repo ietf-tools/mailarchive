@@ -69,11 +69,12 @@ $(function() {
 <li>rtmp</li>
 </ul>
 </div>
-
+{% load archive_extras %}
 <hr>
 <div>
   <h2>Archive</h2>
 
+  {% if {% checked request 'f_list' 'test' %} == "checked" %}TRUE{% endif %}
   <div>
   <div id="radio">
             <input type="radio" id="radio_date" name="sort" /><label for="radio_date">Date</label>

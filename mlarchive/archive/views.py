@@ -49,8 +49,7 @@ class CustomSearchView(FacetedSearchView):
         else:
             browse_list = None
         extra['browse_list'] = browse_list
-        match = re.search(r"so=thread",self.request.META['QUERY_STRING'])
-        if match:
+        if self.request.META['QUERY_STRING'].find('gbt') != -1:
             extra['thread_sorted'] = True
         else:
             extra['thread_sorted'] = False
@@ -162,7 +161,7 @@ def console(request):
         'form': form},
         RequestContext(request, {}),
     )
-    
+
 @check_access
 def detail(request, list_name, id, msg):
     '''

@@ -3,7 +3,9 @@ from django.db.models.signals import pre_delete
 from django.dispatch.dispatcher import receiver
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.core.urlresolvers import reverse
+from django.db import models
 from django.template.loader import render_to_string
 from email.utils import parseaddr
 from mlarchive.archive.generator import Generator
@@ -18,6 +20,20 @@ ATTACHMENT_PATTERN = r'<p><strong>Attachment:((?:.|\n)*?)</p>'
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
+
+
+# --------------------------------------------------
+# Managers
+# --------------------------------------------------
+
+class EmailListManager(models.Manager):
+    def get_by_id(self, id, cache_timeout=86400):
+        cache_key = "elist_by_id_%s" % (id,)
+        elist = cache.get(cache_key)
+        if elist is None:
+            elist = EmailList.objects.get(id=id)
+            cache.set(cache_key, elist, cache_timeout)
+        return elist
 
 # --------------------------------------------------
 # Models

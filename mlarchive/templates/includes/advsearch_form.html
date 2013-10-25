@@ -4,7 +4,7 @@
         <fieldset id="query_parts">
         <span class="label">Include {{ form.operator }}:</span>
         {% for form in query_formset.forms %}
-            <div id="query_chunk_{{ forloop.counter0 }}" class="query_chunk">
+            <div id="query_chunk_{{ forloop.counter0 }}" class="chunk query_chunk">
             {% if form.non_field_errors %}
               {{ form.non_field_errors }}
             {% endif %}
@@ -22,7 +22,7 @@
         <fieldset id="not_parts">
         <span class="label">but do not include: </span>
         {% for form in not_formset.forms %}
-            <div id="not_chunk_{{ forloop.counter0 }}" class="not_chunk">
+            <div id="not_chunk_{{ forloop.counter0 }}" class="chunk not_chunk">
             {% if form.non_field_errors %}
               {{ form.non_field_errors }}
             {% endif %}

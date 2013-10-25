@@ -18,6 +18,12 @@ sortDefault['subject'] = 'subject';
 $(function() {
 
     // HELPER FUNCTIONS =====================================
+    function do_search() {
+        // reload page after changing some query parameters
+        delete urlParams.page
+        location.search = $.param(urlParams);
+    }
+
     function init_search() {
         // search results header widths ---------------------
         set_widths();
@@ -98,7 +104,7 @@ $(function() {
         $('#id_search_form').submit(function(event) {
             event.preventDefault();
             urlParams['q'] = $('#id_q').val();
-            location.search = $.param(urlParams);
+            do_search();
         });
 
         // GET URL PARAMETERS
@@ -139,10 +145,10 @@ $(function() {
     }
 
     function reset_sort(){
-        // set sort options back to defaults
+        // remove sort options (back to default)
         delete urlParams.so;
         delete urlParams.sso;
-        location.search = $.param(urlParams);
+        do_search();
     }
 
     function scrGrid(row){
@@ -192,16 +198,15 @@ $(function() {
                 secondary: "ui-icon-triangle-1-s"
             }
         });
-        $('#radio').buttonset();
-        $('#radio_date').bind("click", function(event) {
-            event.preventDefault();
-            urlParams['so'] = 'date';
-            location.search = $.param(urlParams);
-        });
-        $('#radio_thread').bind("click", function(event) {
-            event.preventDefault();
-            urlParams['so'] = 'thread';
-            location.search = $.param(urlParams);
+        $('#group-button').button();
+        $('#group-button').click(function() {
+            // event.preventDefault();
+            if(urlParams.hasOwnProperty('gbt')) {
+                delete urlParams.gbt;
+            } else {
+                urlParams['gbt'] = '1';
+            }
+            do_search();
         });
         // END TOOLBAR =========================================
 
@@ -234,12 +239,12 @@ $(function() {
         $('#list-filter-clear').bind("click", function(event) {
             event.preventDefault();
             delete urlParams.f_list;
-            location.search = $.param(urlParams);
+            do_search();
         });
         $('#from-filter-clear').bind("click", function(event) {
             event.preventDefault();
             delete urlParams.f_from;
-            location.search = $.param(urlParams);
+            do_search();
         });
         if ($('input.list-facet[type=checkbox]:checked').length == 0) {
             $('#list-filter-clear').hide();
@@ -255,7 +260,7 @@ $(function() {
             });
             var value = values.join(',');
             urlParams[name] = value;
-            location.search = $.param(urlParams);
+            do_search();
         });
         // END FILTERS =========================================
 
@@ -294,7 +299,7 @@ $(function() {
             } else {
                 urlParams['so'] = new_so;
             }
-            location.search = $.param(urlParams);
+            do_search();
         });
         // show appropriate sort arrow icon
         if(so && so!=true){

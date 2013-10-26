@@ -22,18 +22,16 @@
               <a id="clear-sort" href="#">Clear Sort</a>
         </div>
         <div id="search-header">
-            <div id="basic-search">
-              <form name="search-form" id="id_search_form" method="get">
-                <button id="group-button" type="button">{% if thread_sorted %}Ungroup{% else %}Group by Thread{% endif %}</button>
-                {{ form.q }}
-                <button id="search-button" type="submit">Search</button>
-                <button id="export-button" type="button">Export</button>
-                <ul id="export-options" class="ui-widget-content" tabindex="-1">
-                    <li><a href="{{ export_mbox }}">Mbox</a></li>
-                    <li><a href="{{ export_maildir }}">Maildir</a></li>
-                </ul>
-              </form>
-            </div> <!-- basic-search -->
+          <form name="search-form" id="id_search_form" method="get">
+            <button id="group-button" type="button">{% if thread_sorted %}Ungroup{% else %}Group by Thread{% endif %}</button>
+            {{ form.q }}
+            <button id="search-button" type="submit">Search</button>
+            <button id="export-button" type="button">Export</button>
+            <ul id="export-options" class="ui-widget-content" tabindex="-1">
+                <li><a href="{{ export_mbox }}">Mbox</a></li>
+                <li><a href="{{ export_maildir }}">Maildir</a></li>
+            </ul>
+          </form>
         </div> <!-- search-header -->
     </div> <!-- toolbar -->
 

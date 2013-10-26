@@ -159,6 +159,7 @@ HAYSTACK_CONNECTIONS = {
 
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = '/a/mailarch/data/archive'
+FILTER_CUTOFF = 15000
 LOG_FILE = '/a/mailarch/data/log/mlarchive.log'
 MAILMAN_DIR = '/usr/lib/mailman'
 SERVER_MODE = 'development'
@@ -170,6 +171,17 @@ LOGIN_REDIRECT_URL = '/archive/'
 AUTHENTICATION_BACKENDS = (
     'htauth.backend.HtauthBackend',
     )
+
+# Cache settings
+CACHES = {
+    'default': {
+        #'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        #'LOCATION': '127.0.0.1:11211',
+        'TIMEOUT': 300,
+    }
+}
+
 
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific

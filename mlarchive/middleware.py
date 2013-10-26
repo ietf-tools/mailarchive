@@ -1,6 +1,7 @@
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.models import EmailList
 
+from django.conf import settings
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
 
@@ -11,7 +12,29 @@ import urllib
 # Helper Functions
 # --------------------------------------------------
 
-EXTRA_PARAMS = ('f_list','f_from', 'so', 'sso', 'page')
+EXTRA_PARAMS = ('so', 'sso', 'page', 'gbt')
+ALL_PARAMS = ('f_list','f_from', 'so', 'sso', 'page', 'gbt')
+
+def get_base_query(querydict,filters=False,string=False):
+    '''
+    Get the base query by stripping any extra parameters from the query.
+    Expects a QueryDict object, ie. request.GET.  Returns a copy of the querydict
+    with parameters removed, or the query as a string if string=True.  Optional boolean
+    "filters".  If filters=True leave filter parameters intact. For use with calculating
+    base facets.
+    '''
+    if filters:
+        params = EXTRA_PARAMS
+    else:
+        params = ALL_PARAMS
+    copy = querydict.copy()
+    for key in querydict:
+        if key in params:
+            copy.pop(key)
+    if string:
+        return copy.urlencode()
+    else:
+        return copy
 
 def has_extras(request):
     '''
@@ -22,14 +45,6 @@ def has_extras(request):
         if request.GET.get(param):
             return True
     return False
-
-def get_base_query(querydict):
-    '''
-    Takes a QueryDict object, strips any extra parameters and returns
-    the resulting base query string.  For use with calculating base facets.
-    '''
-    d = dict((k,v) for k,v in querydict.iteritems() if k not in EXTRA_PARAMS)
-    return urllib.urlencode(d)
 
 def log_timing(func):
     '''
@@ -63,14 +78,16 @@ class QueryMiddleware(object):
     def process_request(self, request):
         if not request.get_full_path().startswith('/archive/search/'):
             return None
-        logger.info('QueryMiddleware:process_request() %s' % request.META['QUERY_STRING'])
 
+        logger.info('QueryMiddleware:process_request() %s' % request.META['QUERY_STRING'])
         if 'queries' not in request.session:
             request.session['queries'] = {}
 
-        query = get_base_query(request.GET)
+        # leave filter options in facet cache key because counts will be unqiue
+        query = get_base_query(request.GET,filters=True,string=True)
         if query not in request.session['queries']:
-            data = request.GET
+            # strip sorts and filters and run base query
+            data = get_base_query(request.GET,filters=False,string=False)
             form = AdvancedSearchForm(data,load_all=False,request=request)
             results = form.search()
 
@@ -79,8 +96,12 @@ class QueryMiddleware(object):
             # are corrupted.  The solution is to clone the query and call counts on that
             # TODO: this might also be implemented as a timeout
             temp = results._clone()
-            if temp.count() < 15000:
+            count = temp.count()
+            if count == 0:
+                return None
+            if count < settings.FILTER_CUTOFF:
                 base_facets = results.facet_counts()
+
                 # convert email list IDs to names
                 # TODO: cache this table
                 new = [ (EmailList.objects.get(id=x).name,y) for x,y in base_facets['fields']['email_list'] ]

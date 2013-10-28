@@ -267,48 +267,6 @@ def is_aware(dt):
         return True
     return False
 
-def normalize(header_text, default='latin-1'):
-    '''
-    This function takes some header_text as a string.
-    It returns the string decoded and normalized.
-    Checks if the header needs decoding:
-    - if text contains encoded_words, "=?", use decode_rfc2047_header()
-    - default to latin-1, replace
-    - finally, compress whitespace characters to one space
-    '''
-    # TODO: do we need to return UTF8?
-
-    if not header_text:                  # just return if we are passed an empty string
-        return header_text
-
-    # TODO: need this?
-    #if type(header_text) is unicode:    # return if already unicode
-    #    return header_text              # ie. get_filename() for example sometimes returns unicode
-
-    if '=?' in header_text:              # handle RFC2047 encoded-words
-        normal = decode_rfc2047_header(header_text)
-
-    else:
-        try:                             # if it's pure ascii we're done
-            normal = unicode(header_text,'ascii')
-        except (UnicodeDecodeError, UnicodeEncodeError):
-            normal = unicode(header_text,default,errors='replace')
-            self.spam_score = self.spam_score | NON_ASCII_HEADER      # mark as possible spam
-
-
-    # TODO: refactor with get_charsets(), or simply remove
-    #charset = seek_charset(msg)
-    #if charset:
-    #    try:
-    #        return unicode(header_text,charset)
-    #    except (UnicodeDecodeError, LookupError):
-    #        pass
-
-    # encode as UTF8 and compress whitespace
-    normal = normal.encode('utf8')
-    normal = clean_spaces(normal)
-    return normal.rstrip()
-
 def parsedate_to_datetime(data):
     '''
     This function is from email standard library v3.3, converted to 2.x
@@ -482,7 +440,7 @@ class Loader(object):
                 self.load_message(m)
             except GenericWarning as error:
                 logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,error.args,m.get_from()))
-            except Exception as error:
+            except GenericWarning as error:
                 if self.klass == 'BetterMbox':
                     identifier = m.get_from()
                 else:
@@ -582,7 +540,7 @@ class MessageWrapper(object):
         return base64.urlsafe_b64encode(sha.digest())
 
     def get_msgid(self):
-        msgid = normalize(self.email_message.get('Message-ID',''))
+        msgid = self.normalize(self.email_message.get('Message-ID',''))
         if msgid:
             msgid = msgid.strip('<>')
         else:
@@ -612,7 +570,7 @@ class MessageWrapper(object):
         This function gets the message subject.  If the subject looks like spam, long line with
         no spaces, truncate it so as not to cause index errors
         '''
-        subject = normalize(self.email_message.get('Subject',''))
+        subject = self.normalize(self.email_message.get('Subject',''))
         # TODO: spam?
         #if len(subject) > 120 and len(subject.split()) == 1:
         #    subject = subject[:120]
@@ -685,6 +643,46 @@ class MessageWrapper(object):
         # return a new thread
         return Thread.objects.create()
 
+    def normalize(self, header_text, default='latin-1'):
+        '''
+        This function takes some header_text as a string.
+        It returns the string decoded and normalized.
+        Checks if the header needs decoding:
+        - if text contains encoded_words, "=?", use decode_rfc2047_header()
+        - default to latin-1, replace
+        - finally, compress whitespace characters to one space
+        '''
+        if not header_text:                  # just return if we are passed an empty string
+            return header_text
+
+        # TODO: need this?
+        #if type(header_text) is unicode:    # return if already unicode
+        #    return header_text              # ie. get_filename() for example sometimes returns unicode
+
+        if '=?' in header_text:              # handle RFC2047 encoded-words
+            normal = decode_rfc2047_header(header_text)
+
+        else:
+            try:                             # if it's pure ascii we're done
+                normal = unicode(header_text,'ascii')
+            except (UnicodeDecodeError, UnicodeEncodeError):
+                normal = unicode(header_text,default,errors='replace')
+                self.spam_score = self.spam_score | NON_ASCII_HEADER      # mark as possible spam
+
+
+        # TODO: refactor with get_charsets(), or simply remove
+        #charset = seek_charset(msg)
+        #if charset:
+        #    try:
+        #        return unicode(header_text,charset)
+        #    except (UnicodeDecodeError, LookupError):
+        #        pass
+
+        # encode as UTF8 and compress whitespace
+        normal = normal.encode('utf8')
+        normal = clean_spaces(normal)
+        return normal.rstrip()
+
     def process(self):
         '''
         Perform the rest of the parsing and construct the Message object.  Note, we are not
@@ -701,7 +699,7 @@ class MessageWrapper(object):
 
         self._archive_message = Message(date=self.date,
                              email_list=self.email_list,
-                             frm = normalize(self.email_message.get('From','')),
+                             frm = self.normalize(self.email_message.get('From','')),
                              hashcode=self.hashcode,
                              in_reply_to=self.in_reply_to,
                              msgid=self.msgid,
@@ -719,7 +717,7 @@ class MessageWrapper(object):
         '''
         for part in self.email_message.walk():
             # TODO can we have an attachment without a filename (content disposition) ??
-            name = normalize(part.get_filename())
+            name = self.normalize(part.get_filename())
             type = part.get_content_type()
             if name and type in CONTENT_TYPES:     # indicates an attachment
                 extension,description = get_mime_extension(type)

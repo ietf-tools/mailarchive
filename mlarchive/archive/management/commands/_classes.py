@@ -440,7 +440,7 @@ class Loader(object):
                 self.load_message(m)
             except GenericWarning as error:
                 logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,error.args,m.get_from()))
-            except GenericWarning as error:
+            except Exception as error:
                 if self.klass == 'BetterMbox':
                     identifier = m.get_from()
                 else:
@@ -717,7 +717,7 @@ class MessageWrapper(object):
         '''
         for part in self.email_message.walk():
             # TODO can we have an attachment without a filename (content disposition) ??
-            name = self.normalize(part.get_filename())
+            name = part.get_filename()
             type = part.get_content_type()
             if name and type in CONTENT_TYPES:     # indicates an attachment
                 extension,description = get_mime_extension(type)

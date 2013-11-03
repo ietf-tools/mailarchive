@@ -64,16 +64,16 @@ def get_base_query(querydict,filters=False,string=False):
     else:
         return copy
 
-def get_list_ids(names):
-    '''Lookup EmailList IDs given list of names'''
-    ids = []
-    for name in names.split(','):
-        try:
-            obj = EmailList.objects.get(name=name)
-            ids.append(obj.id)
-        except EmailList.DoesNotExist:
-            pass
-    return ids
+def get_list_info(value):
+    '''Map list name to list id or list id to list name.  This is essentially a cached
+    bi-directional dictionary lookup.'''
+    mapping = cache.get('list_info')
+    if mapping is None:
+        mapping = { x.id:x.name for x in EmailList.objects.all() }
+        reversed = { v:k for k,v in mapping.items() }
+        mapping.update(reversed)
+        cache.set('list_info',mapping,86400)
+    return mapping[value]
 
 def group_by_thread(qs, so, sso, reverse=False):
     '''Group query by thread'''
@@ -186,7 +186,8 @@ class AdvancedSearchForm(FacetedSearchForm):
         # if f_list run base and filtered
         elif filters == ['f_list']:
             base = sqs.facet_counts()
-            filtered = sqs.filter(email_list__in=f_list).facet_counts()
+            #assert False, (self.cleaned_data, self.f_list)
+            filtered = sqs.filter(email_list__in=self.f_list).facet_counts()
             # swap out frm_email counts
             base['fields']['frm_email'] = filtered['fields']['frm_email']
             facets = base
@@ -194,19 +195,24 @@ class AdvancedSearchForm(FacetedSearchForm):
         # if f_from run base and filtered
         elif filters == ['f_from']:
             base = sqs.facet_counts()
-            filtered = sqs.filter(frm_email__in=f_from).facet_counts()
+            filtered = sqs.filter(frm_email__in=self.f_from).facet_counts()
             # swap out email_list counts
             base['fields']['email_list'] = filtered['fields']['email_list']
             facets = base
 
-        # if both run each filter independently
+        # if both f_list and f_from run each filter independently
         else:
             copy = sqs._clone()
-            frm_count = sqs.filter(frm_email__in=f_from).facet_counts()
-            list_count = copy.filter(email_list__in=f_list).facet_counts()
+            frm_count = sqs.filter(frm_email__in=self.f_from).facet_counts()
+            list_count = copy.filter(email_list__in=self.f_list).facet_counts()
             facets = {'fields': {},'dates': {},'queries': {}}
             facets['fields']['email_list'] = frm_count['fields']['email_list']
             facets['fields']['frm_email'] = list_count['fields']['frm_email']
+
+        # map email_list id to name for use in template
+        if facets['fields']['email_list']:
+            new = [ (get_list_info(x),y) for x,y in facets['fields']['email_list'] ]
+            facets['fields']['email_list'] = new
 
         # save in cache
         cache.set(query,facets)
@@ -238,10 +244,13 @@ class AdvancedSearchForm(FacetedSearchForm):
         query = backend.parse_query(self.cleaned_data['q'])
         sqs = self.searchqueryset.raw_search(query)
         '''
+        self.f_list = self.cleaned_data['f_list']
+        self.f_from = self.cleaned_data['f_from']
+        self.q = self.cleaned_data.get('q')
 
         # use custom parser-----------------------------------------
-        if self.cleaned_data.get('q'):
-            query = parse(self.cleaned_data['q'])
+        if self.q:
+            query = parse(self.q)
             logger.info('Query:%s' % query)
             sqs = self.searchqueryset.filter(query)
         else:
@@ -264,18 +273,15 @@ class AdvancedSearchForm(FacetedSearchForm):
             private_lists = [ str(x.name) for x in EmailList.objects.filter(private=True) ]
             sqs = sqs.exclude(email_list__in=private_lists)
 
-        self.f_list = self.cleaned_data['f_list']
-        self.f_from = self.cleaned_data['f_from']
-
         # faceting ------------------------------------------------
         # call this before running sorts or applying filters to queryset
         facets = self.get_facets(sqs)
 
         # filters -------------------------------------------------
         if self.f_list:
-            sqs = sqs.filter(email_list__in=f_list)
+            sqs = sqs.filter(email_list__in=self.f_list)
         if self.f_from:
-            sqs = sqs.filter(frm_email__in=f_from)
+            sqs = sqs.filter(frm_email__in=self.f_from)
 
         # Populate all all SearchResult.object with efficient db query
         # when called via urls.py / search_view_factory default load_all=True
@@ -304,7 +310,8 @@ class AdvancedSearchForm(FacetedSearchForm):
                 sqs = sqs.order_by('-date')
 
         # insert facets just before returning query, so they don't get overridden
-        sqs.query._facet_counts = facets
+        # sqs.query.run()                     # force run of query
+        sqs.myfacets = facets
 
         return sqs
 
@@ -313,14 +320,14 @@ class AdvancedSearchForm(FacetedSearchForm):
         names = self.cleaned_data['email_list']
         if not names:
             return None
-        return get_list_ids(names)
+        return map(get_list_info,names.split(','))
 
     def clean_f_list(self):
         # take a comma separated list of email_list names and convert to list of ids
         names = self.cleaned_data['f_list']
         if not names:
             return None
-        return get_list_ids(names)
+        return map(get_list_info,names.split(','))
 
     def clean_f_from(self):
         names = self.cleaned_data['f_from']

@@ -7,11 +7,11 @@ def test_main(client):
     response = client.get(url)
     assert response.status_code == 200
 
-#@pytest.mark.django_db
-#def test_browse(client):
-#    url = reverse('archive_browse')
-#    response = client.get(url)
-#    assert response.status_code == 200
+@pytest.mark.django_db(transaction=True)
+def test_browse(client):
+    url = reverse('archive_browse')
+    response = client.get(url)
+    assert response.status_code == 200
 
 def test_advsearch(client):
     url = reverse('archive_advsearch')
@@ -24,7 +24,3 @@ def test_admin(client):
     response = client.get(url)
     assert response.status_code == 403
 
-@pytest.mark.django_db
-def test_dummy(client):
-    count = Message.objects.all().count()
-    assert count == 0

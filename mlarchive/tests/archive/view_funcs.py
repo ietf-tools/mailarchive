@@ -41,7 +41,7 @@ def test_initialize_formsets():
     assert neg.forms[0].initial['field'] == 'text'
     assert neg.forms[0].initial['value'] == 'negvalue'
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 def test_get_columns():
     user = UserFactory.build()
     x = EmailListFactory.create(name='joe')

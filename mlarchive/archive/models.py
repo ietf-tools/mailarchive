@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models.signals import pre_delete
+from django.db.models.signals import pre_delete, post_delete, post_save
 from django.dispatch.dispatcher import receiver
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -26,14 +26,6 @@ logger = getLogger('mlarchive.custom')
 # Managers
 # --------------------------------------------------
 
-class EmailListManager(models.Manager):
-    def get_by_id(self, id, cache_timeout=86400):
-        cache_key = "elist_by_id_%s" % (id,)
-        elist = cache.get(cache_key)
-        if elist is None:
-            elist = EmailList.objects.get(id=id)
-            cache.set(cache_key, elist, cache_timeout)
-        return elist
 
 # --------------------------------------------------
 # Models
@@ -182,12 +174,13 @@ class Legacy(models.Model):
     def __unicode__(self):
         return '%s:%s' % (self.email_list_id,self.msgid)
 
-# Signal Handlers ----------------------------------------
+# --------------------------------------------------
+# Signal Handlers
+# --------------------------------------------------
 
 @receiver(pre_delete, sender=Message)
 def _message_remove(sender, instance, **kwargs):
-    '''
-    When messages are removed, via the admin page, we need to move the message
+    '''When messages are removed, via the admin page, we need to move the message
     archive file to the "removed" directory
     '''
     path = instance.get_file_path()
@@ -198,3 +191,7 @@ def _message_remove(sender, instance, **kwargs):
         os.mkdir(target)
     shutil.move(path,target)
 
+@receiver([post_save, post_delete], sender=EmailList)
+def _clear_cache(sender,instance, **kwargs):
+    '''If EmailList object is saved or deleted remove the list_info cache entry'''
+    cache.delete('list_info')

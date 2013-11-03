@@ -1,5 +1,7 @@
 from mlarchive.archive.management.commands._classes import *
 
+import email
+
 def test_get_base_subject():
     data = [('[ANCP] =?iso-8859-1?q?R=FCckruf=3A_Welcome_to_the_=22ANCP=22_mail?=\n\t=?iso-8859-1?q?ing_list?=',
              'R\xc3\xbcckruf: Welcome to the "ANCP" mailing list'),
@@ -10,7 +12,9 @@ def test_get_base_subject():
             ('[ANCP] Fw: note the boilerplate change','note the boilerplate change'),
             ('Re: [ANCP] RE: draft-ieft-ancp-framework-00.txt','draft-ieft-ancp-framework-00.txt')]
 
+    message = email.message.Message()
+    mw = MessageWrapper(message, 'test')
     for item in data:
-        normal = normalize(item[0])
+        normal = mw.normalize(item[0])
         base = get_base_subject(normal)
         assert base == item[1]

@@ -51,11 +51,11 @@
                     <div id="list-filter" class="filter" tabindex="-1">
                         <form id="list-filter">
                         <ul class="filter-options" tabindex="-1">
-                        {% if base_facets.fields.email_list %}
-                            {% for list in base_facets.fields.email_list %}
+                        {% if facets.fields.email_list %}
+                            {% for list in facets.fields.email_list %}
                                 <li class="filter-option"><input class="list-facet facetchk" type="checkbox" name="f_list" value="{{ list.0 }}" {% checked request 'f_list' list.0 %}>{{ list.0 }} ({{ list.1 }})</li>
                             {% endfor %}
-                            {% if base_facets.fields.email_list|length > 6 %}
+                            {% if facets.fields.email_list|length > 6 %}
                                 <li class="control"><a class="more-link" href="">more...</a></li>
                             {% endif %}
                             <li class="control"><a id="list-filter-clear" href="">Clear</a></li>
@@ -68,11 +68,11 @@
                 <div id="from-filter" class="filter" tabindex="-1">
                     <form id="from-filter">
                     <ul class="filter-options" tabindex="-1">
-                     {% if base_facets.fields.frm_email %}
-                        {% for email in base_facets.fields.frm_email %}
+                     {% if facets.fields.frm_email %}
+                        {% for email in facets.fields.frm_email %}
                             <li class="filter-option"><input class="from-facet facetchk" type="checkbox" name="f_from" value="{{ email.0 }}" {% checked request 'f_from' email.0 %}>{{ email.0|truncatechars:18 }} ({{ email.1 }})</li>
                         {% endfor %}
-                        {% if base_facets.fields.frm_email|length > 6 %}
+                        {% if facets.fields.frm_email|length > 6 %}
                             <li class="control"><a class="more-link" href="">more...</a></li>
                         {% endif %}
                         <li class="control"><a id="from-filter-clear" href="">Clear</a></li>

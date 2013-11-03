@@ -68,7 +68,7 @@ TEMPLATE_CONTEXT_PROCESSORS = DEFAULT_SETTINGS.TEMPLATE_CONTEXT_PROCESSORS + (
     'django.core.context_processors.request',
     'mlarchive.context_processors.server_mode',
     'mlarchive.context_processors.revision_info',
-    'mlarchive.context_processors.facet_info',
+    #'mlarchive.context_processors.facet_info',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -77,7 +77,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'mlarchive.middleware.QueryMiddleware',
+    #'mlarchive.middleware.QueryMiddleware',
 )
 
 ROOT_URLCONF = 'mlarchive.urls'

@@ -27,13 +27,34 @@ logger = getLogger('mlarchive.custom')
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------
-class CustomSearchView(FacetedSearchView):
+class CustomSearchView(SearchView):
     '''
     A customized SearchView.  Need to add request object to the form init so we can use it
     for authorization
     '''
     def __name__(self):
         return "CustomSearchView"
+
+    def __call__(self, request):
+        """
+        Generates the actual response to the search.
+
+        Relies on internal, overridable methods to construct the response.
+
+        CUSTOM: as soon as queryset is returned from get_results() check for custom attribute
+        myfacets and save to SearchView so we can add to context in extra_context().  This
+        is required because create_response() corrupts regular facet_counts().
+        """
+        self.request = request
+
+        self.form = self.build_form()
+        self.query = self.get_query()
+        self.results = self.get_results()
+        if hasattr(self.results,'myfacets'):
+            self.myfacets = self.results.myfacets
+
+        return self.create_response()
+
 
     def build_form(self, form_kwargs=None):
         return super(self.__class__,self).build_form(form_kwargs={ 'request' : self.request })
@@ -60,6 +81,11 @@ class CustomSearchView(FacetedSearchView):
             extra['modify_search_url'] = self.request.META['REQUEST_URI'].replace('/archive/search/','/archive/')
         else:
             extra['modify_search_url'] = self.request.META['REQUEST_URI'].replace('/archive/search/','/archive/advsearch/')
+
+        # add custom facets
+        if hasattr(self,'myfacets'):
+            extra['facets'] = self.myfacets
+
         return extra
 
     # override this for export

@@ -243,12 +243,12 @@ table#msg-table {
     float: right;
 }
 
-#id_search_form {
-    display: inline;
+#search-header input#id_q {
+    width: 28em;
 }
 
-#basic-search input#id_q {
-    width: 28em;
+#id_search_form {
+    display: inline;
 }
 
 input.search_button {

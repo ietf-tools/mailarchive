@@ -175,44 +175,54 @@ class AdvancedSearchForm(FacetedSearchForm):
         if facets:
             return facets
 
-        clone = sqs._clone()
-        sqs = clone.facet('email_list').facet('frm_email')
-
-        # if query contains no filters compute simple facet counts
-        filters = self.get_filter_params(self.request.GET)
-        if not filters:
-            facets = sqs.facet_counts()
-
-        # if f_list run base and filtered
-        elif filters == ['f_list']:
-            base = sqs.facet_counts()
-            #assert False, (self.cleaned_data, self.f_list)
-            filtered = sqs.filter(email_list__in=self.f_list).facet_counts()
-            # swap out frm_email counts
-            base['fields']['frm_email'] = filtered['fields']['frm_email']
-            facets = base
-
-        # if f_from run base and filtered
-        elif filters == ['f_from']:
-            base = sqs.facet_counts()
-            filtered = sqs.filter(frm_email__in=self.f_from).facet_counts()
-            # swap out email_list counts
-            base['fields']['email_list'] = filtered['fields']['email_list']
-            facets = base
-
-        # if both f_list and f_from run each filter independently
+        # calculating facet_counts on large results sets is too costly so skip it
+        # If you call results.count() before results.facet_counts() the facet_counts
+        # are corrupted.  The solution is to clone the query and call counts on that
+        # TODO: this might also be implemented as a timeout
+        temp = sqs._clone()
+        count = temp.count()
+            
+        if count < settings.FILTER_CUTOFF:
+            clone = sqs._clone()
+            sqs = clone.facet('email_list').facet('frm_email')
+    
+            # if query contains no filters compute simple facet counts
+            filters = self.get_filter_params(self.request.GET)
+            if not filters:
+                facets = sqs.facet_counts()
+    
+            # if f_list run base and filtered
+            elif filters == ['f_list']:
+                base = sqs.facet_counts()
+                #assert False, (self.cleaned_data, self.f_list)
+                filtered = sqs.filter(email_list__in=self.f_list).facet_counts()
+                # swap out frm_email counts
+                base['fields']['frm_email'] = filtered['fields']['frm_email']
+                facets = base
+    
+            # if f_from run base and filtered
+            elif filters == ['f_from']:
+                base = sqs.facet_counts()
+                filtered = sqs.filter(frm_email__in=self.f_from).facet_counts()
+                # swap out email_list counts
+                base['fields']['email_list'] = filtered['fields']['email_list']
+                facets = base
+    
+            # if both f_list and f_from run each filter independently
+            else:
+                copy = sqs._clone()
+                frm_count = sqs.filter(frm_email__in=self.f_from).facet_counts()
+                list_count = copy.filter(email_list__in=self.f_list).facet_counts()
+                facets = {'fields': {},'dates': {},'queries': {}}
+                facets['fields']['email_list'] = frm_count['fields']['email_list']
+                facets['fields']['frm_email'] = list_count['fields']['frm_email']
+    
+            # map email_list id to name for use in template
+            if facets['fields']['email_list']:
+                new = [ (get_list_info(x),y) for x,y in facets['fields']['email_list'] ]
+                facets['fields']['email_list'] = new
         else:
-            copy = sqs._clone()
-            frm_count = sqs.filter(frm_email__in=self.f_from).facet_counts()
-            list_count = copy.filter(email_list__in=self.f_list).facet_counts()
-            facets = {'fields': {},'dates': {},'queries': {}}
-            facets['fields']['email_list'] = frm_count['fields']['email_list']
-            facets['fields']['frm_email'] = list_count['fields']['frm_email']
-
-        # map email_list id to name for use in template
-        if facets['fields']['email_list']:
-            new = [ (get_list_info(x),y) for x,y in facets['fields']['email_list'] ]
-            facets['fields']['email_list'] = new
+            facets = facets = {'fields': {},'dates': {},'queries': {}}
 
         # save in cache
         cache.set(query,facets)

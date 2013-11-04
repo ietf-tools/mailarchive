@@ -270,7 +270,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         else:
             # exclude all private lists
             # TODO cache this query, see Low Level Cache API
-            private_lists = [ str(x.name) for x in EmailList.objects.filter(private=True) ]
+            private_lists = [ str(x.id) for x in EmailList.objects.filter(private=True) ]
             sqs = sqs.exclude(email_list__in=private_lists)
 
         # faceting ------------------------------------------------

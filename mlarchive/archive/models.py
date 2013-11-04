@@ -162,8 +162,8 @@ class Attachment(models.Model):
         return path
 
     def get_file_path():
-        dir = os.path.dirname(self.message.get_file_path())
-        path = os.path.join(dir,'attachments',self.filename)
+        directory = os.path.dirname(self.message.get_file_path())
+        path = os.path.join(directory,'attachments',self.filename)
         return path
 
 class Legacy(models.Model):

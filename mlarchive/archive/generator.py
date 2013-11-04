@@ -132,10 +132,10 @@ class Generator:
             rawsite = part.get_param('site')
             site = collapse_rfc2231_value(rawsite)
             rawdir = part.get_param('directory')
-            dir = collapse_rfc2231_value(rawdir)
+            directory = collapse_rfc2231_value(rawdir)
             rawname = part.get_param('name')
             name = collapse_rfc2231_value(rawname)
-            link = 'ftp://%s/%s/%s' % (site,dir,name)
+            link = 'ftp://%s/%s/%s' % (site,directory,name)
             html = '<div><a rel="nofollow" href="%s">&lt;%s&gt;</a></div>' % (link,link)
             return html
 

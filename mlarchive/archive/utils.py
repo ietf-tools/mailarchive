@@ -25,7 +25,7 @@ def get_noauth(request):
     if noauth:
         return noauth
     else:
-        request.session['noauth'] = [ str(x.name) for x in EmailList.objects.filter(
+        request.session['noauth'] = [ str(x.id) for x in EmailList.objects.filter(
             private=True).exclude(members=request.user) ]
         return request.session['noauth']
 

@@ -97,22 +97,11 @@
                         </thead>
                     </table>
                 </div>
-                <div id="msg-list" tabindex="-1">
+                <div id="msg-list" tabindex="-1" data-queryid="{{ queryid }}">
                     <table id="msg-table" class="no-zebra">
-                    {% for result in page.object_list %}
-                        <tr>
-                            <td>{{ result.object.date|date:"Y-m-d" }}</td>
-                            {# <td><a href="{% url "archive_detail" id=result.object.hashcode %}">{{ result.object.subject }}</a></td> #}
-                            <td class="nowrap">{{ result.object.subject|truncatechars:70 }}</td>
-                            <td>{{ result.object.frm_email|truncatechars:35 }}</td>
-                            <td>{{ result.object.email_list }}</td>
-                            <td class="hidden">{{ result.score }}</td>
-                            <td class="hidden">{{ result.object.get_absolute_url }}</td>
-                            <td class="hidden">{{ result.object.id }}</td>
-                        </tr>
-                    {% empty %}
-                        <tr><td>No results found</td><tr>
-                    {% endfor %}
+                        {% with page.object_list as results %}
+                            {% include "includes/results_rows.html" %}
+                        {% endwith %}
                     </table>
                 </div> <!-- msg-list -->
 

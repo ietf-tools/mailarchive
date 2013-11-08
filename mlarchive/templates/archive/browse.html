@@ -11,6 +11,7 @@
 {% block content %}
 
 <div id="browse_page">
+
 <div id="browse_top">
 <form id="id_browse_form" name="browse-form" action="." method="post">{% csrf_token %}
     <label for="id_list_name">Enter list name:</label> <input id="id_list_name" type="text" name="list_name" maxlength="100" />
@@ -19,33 +20,32 @@
 </form>
 </div>
 
+<div id="private-lists" class="browse_section">
 {% if columns.private %}
-<div class="browse_section">
 <h2>Private Lists</h2>
 {% with columns.private as columns %}
     {% include "includes/browse_columns.html" %}
 {% endwith %}
-</div>
 {% endif %}
+</div>
 
-<div class="browse_section">
+<div id="active-lists" class="browse_section">
 <h2>Active Lists</h2>
 {% with columns.active as columns %}
     {% include "includes/browse_columns.html" %}
 {% endwith %}
 </div>
 
+<div id="inactive-lists" class="browse_section">
 {% if columns.inactive %}
-<div class="browse_section">
 <h2>Inactive Lists</h2>
 {% with columns.inactive as columns %}
     {% include "includes/browse_columns.html" %}
 {% endwith %}
-</div>
 {% endif %}
+</div>
 
 </div> <!-- browse_page -->
-
 
 {% endblock %}
 

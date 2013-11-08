@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q
 from django.http import HttpResponse
@@ -45,8 +46,29 @@ def ajax_get_msg(request, msg):
     '''
     return HttpResponse(msg.get_body_html(request))
 
-@jsonapi
+#@jsonapi
 def ajax_messages(request):
+    '''
+    Ajax function to retrieve next 25 messages from the cached queryset
+    '''
+    queryid = request.GET.get('queryid')
+    lastitem = int(request.GET.get('lastitem'))
+    query = cache.get(queryid)
+    
+    # retrieve next group of messages
+    if query:
+        results = query[lastitem+1:lastitem+26]
+    else:
+        # TODO or fail?
+        results = None
+    
+    return render_to_response('includes/results_rows.html', {
+        'results': results},
+        RequestContext(request, {}),
+    )   
+        
+@jsonapi
+def ajax_messagesX(request):
     '''
     Ajax function for use with ExtJS.  Supports pagination.
     '''

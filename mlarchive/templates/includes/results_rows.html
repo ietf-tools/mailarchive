@@ -1,0 +1,14 @@
+{% for result in results %}
+    <tr>
+        <td>{{ result.object.date|date:"Y-m-d" }}</td>
+        {# <td><a href="{% url "archive_detail" id=result.object.hashcode %}">{{ result.object.subject }}</a></td> #}
+        <td class="nowrap">{{ result.object.subject|truncatechars:70 }}</td>
+        <td>{{ result.object.frm_email|truncatechars:35 }}</td>
+        <td>{{ result.object.email_list }}</td>
+        <td class="hidden">{{ result.score }}</td>
+        <td class="hidden">{{ result.object.get_absolute_url }}</td>
+        <td class="hidden">{{ result.object.id }}</td>
+    </tr>
+{% empty %}
+    <tr><td>No results found</td><tr>
+{% endfor %}

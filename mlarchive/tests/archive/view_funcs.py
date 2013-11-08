@@ -1,30 +1,9 @@
 import datetime
-import factory
 import pytest
+from factories import *
 from mlarchive.archive.view_funcs import *
-from mlarchive.archive.models import *
-from django.contrib.auth.models import User
 
 DUMMY_DAY = datetime.datetime(2013,1,1)
-# --------------------------------------------------
-# Factories
-# --------------------------------------------------
-
-class UserFactory(factory.DjangoModelFactory):
-    FACTORY_FOR = User
-
-    username = 'admin'
-    password = 'pass'
-
-class EmailListFactory(factory.DjangoModelFactory):
-    FACTORY_FOR = EmailList
-
-    name = 'test'
-
-
-# --------------------------------------------------
-# Tests
-# --------------------------------------------------
 
 def test_chunks():
     result = list(chunks([1,2,3,4,5,6,7,8,9],3))
@@ -44,7 +23,7 @@ def test_initialize_formsets():
 @pytest.mark.django_db(transaction=True)
 def test_get_columns():
     user = UserFactory.build()
-    x = EmailListFactory.create(name='joe')
+    x = EmailListFactory.create(name='public')
     columns = get_columns(user)
     assert len(columns) == 3
     assert len(columns['active']) == 1

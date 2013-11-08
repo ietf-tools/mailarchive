@@ -1,6 +1,7 @@
 from optparse import make_option
 from django.core.management.base import BaseCommand, CommandError
 from mlarchive.archive.models import *
+from ._classes import BetterMbox
 
 import _classes
 import datetime
@@ -19,10 +20,10 @@ def guess_list(path):
     '''
     Determine the list we are importing based on header values
     '''
-    mb, format = _classes.get_mb(path)
+    mb = _classes.get_mb(path)
 
     # not enough info in MMDF-style mailbox to guess list
-    if format == 'mmdf':
+    if not isinstance(mb,BetterMbox):
         return None
 
     if len(mb) == 0:
@@ -104,7 +105,7 @@ class Command(BaseCommand):
         if not options['listname']:
             options['listname'] = guess_list(files[0])
         if not options['listname']:
-            raise CommandError("list not specified and not guessable")
+            raise CommandError("list not specified and not guessable [%s]" % files[0])
 
         start_time = time.time()
         for filename in files:

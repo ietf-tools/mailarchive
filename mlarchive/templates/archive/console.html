@@ -1,14 +1,20 @@
 {% extends "base.html" %}
 
 {% block extrahead %}
-{% endblock %} 
+{% endblock %}
 
 {% block title %}Mail Archive{% endblock %}
 
 {% block content %}
 
 <div id="console-container">
-    <p>Last message uploaded:
+    <p>Last message uploaded:</p>
+    <p>
+    {% for key, value in cache_data.items %}
+        {{ key }}: {{ value }}
+    {% endfor %}
+    </p>
+
     {{ revision_time }}
     {{ revision_date }}
     {{ revision_num }}

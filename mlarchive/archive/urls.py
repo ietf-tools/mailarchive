@@ -8,7 +8,7 @@ from haystack.views import search_view_factory
 urlpatterns = patterns('mlarchive.archive.ajax',
     url(r'ajax/list/?$', 'ajax_get_list', name='ajax_get_list'),
     url(r'ajax/msg/?$', 'ajax_get_msg', name='ajax_get_msg'),
-    #url(r'ajax/messages.json/$', 'ajax_messages', name='ajax_messages'),
+    url(r'ajax/messages/?$', 'ajax_messages', name='ajax_messages'),
 )
 
 urlpatterns += patterns('mlarchive.archive.views',

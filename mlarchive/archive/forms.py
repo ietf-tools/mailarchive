@@ -11,6 +11,7 @@ from mlarchive.archive.utils import get_noauth
 #from mlarchive.middleware import get_base_query
 
 import operator
+import random
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
@@ -35,7 +36,7 @@ TIME_CHOICES = (('a','anytime'),
                 ('c','custom...'))
 
 VALID_SORT_OPTIONS = ('frm','-frm','date','-date','email_list','-email_list',
-                      'subject','-subject','thread')
+                      'subject','-subject')
 
 EXTRA_PARAMS = ('so', 'sso', 'page', 'gbt')
 ALL_PARAMS = ('f_list','f_from', 'so', 'sso', 'page', 'gbt')
@@ -73,7 +74,7 @@ def get_list_info(value):
         reversed = { v:k for k,v in mapping.items() }
         mapping.update(reversed)
         cache.set('list_info',mapping,86400)
-    return mapping[value]
+    return mapping.get(value)
 
 def group_by_thread(qs, so, sso, reverse=False):
     '''Group query by thread'''
@@ -162,8 +163,8 @@ class AdvancedSearchForm(FacetedSearchForm):
         '''Get facets for the SearchQuerySet
 
         Because we have two optional filters: f_list, f_from, we need to take into
-        consideration if a filter has been applied.  If so, each filter set is limited
-        by the other filter's results.
+        consideration if a filter has been applied.  The filters need to interact.
+        Therefore each filter set is limited by the other filter's results.
 
         NOTE: this function expects to receive the query that has not yet applied
         filters.
@@ -181,25 +182,24 @@ class AdvancedSearchForm(FacetedSearchForm):
         # TODO: this might also be implemented as a timeout
         temp = sqs._clone()
         count = temp.count()
-            
-        if count < settings.FILTER_CUTOFF:
+
+        if 0 < count < settings.FILTER_CUTOFF:
             clone = sqs._clone()
             sqs = clone.facet('email_list').facet('frm_email')
-    
+
             # if query contains no filters compute simple facet counts
             filters = self.get_filter_params(self.request.GET)
             if not filters:
                 facets = sqs.facet_counts()
-    
+
             # if f_list run base and filtered
             elif filters == ['f_list']:
                 base = sqs.facet_counts()
-                #assert False, (self.cleaned_data, self.f_list)
                 filtered = sqs.filter(email_list__in=self.f_list).facet_counts()
                 # swap out frm_email counts
                 base['fields']['frm_email'] = filtered['fields']['frm_email']
                 facets = base
-    
+
             # if f_from run base and filtered
             elif filters == ['f_from']:
                 base = sqs.facet_counts()
@@ -207,7 +207,7 @@ class AdvancedSearchForm(FacetedSearchForm):
                 # swap out email_list counts
                 base['fields']['email_list'] = filtered['fields']['email_list']
                 facets = base
-    
+
             # if both f_list and f_from run each filter independently
             else:
                 copy = sqs._clone()
@@ -216,7 +216,7 @@ class AdvancedSearchForm(FacetedSearchForm):
                 facets = {'fields': {},'dates': {},'queries': {}}
                 facets['fields']['email_list'] = frm_count['fields']['email_list']
                 facets['fields']['frm_email'] = list_count['fields']['frm_email']
-    
+
             # map email_list id to name for use in template
             if facets['fields']['email_list']:
                 new = [ (get_list_info(x),y) for x,y in facets['fields']['email_list'] ]
@@ -224,6 +224,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         else:
             facets = facets = {'fields': {},'dates': {},'queries': {}}
 
+        #assert False, facets
         # save in cache
         cache.set(query,facets)
         return facets
@@ -322,6 +323,11 @@ class AdvancedSearchForm(FacetedSearchForm):
         # insert facets just before returning query, so they don't get overridden
         # sqs.query.run()                     # force run of query
         sqs.myfacets = facets
+
+        # save query in cache with random id for security
+        queryid = '%032x' % random.getrandbits(128)
+        cache.set(queryid,sqs)
+        sqs.queryid = queryid
 
         return sqs
 

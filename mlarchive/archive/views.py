@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import user_passes_test
+from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.forms.formsets import formset_factory
@@ -52,6 +53,8 @@ class CustomSearchView(SearchView):
         self.results = self.get_results()
         if hasattr(self.results,'myfacets'):
             self.myfacets = self.results.myfacets
+        if hasattr(self.results,'queryid'):
+            self.queryid = self.results.queryid
 
         return self.create_response()
 
@@ -60,8 +63,12 @@ class CustomSearchView(SearchView):
         return super(self.__class__,self).build_form(form_kwargs={ 'request' : self.request })
 
     def extra_context(self):
+        '''Add variables to template context'''
         extra = super(CustomSearchView, self).extra_context()
-        match = re.search(r"^email_list=([a-zA-Z0-9\_\-]+)",self.request.META['QUERY_STRING'])
+        query_string = self.request.META['QUERY_STRING']
+
+        # browse list
+        match = re.search(r"^email_list=([a-zA-Z0-9\_\-]+)",query_string)
         if match:
             try:
                 browse_list = EmailList.objects.get(name=match.group(1))
@@ -70,21 +77,29 @@ class CustomSearchView(SearchView):
         else:
             browse_list = None
         extra['browse_list'] = browse_list
-        if self.request.META['QUERY_STRING'].find('gbt') != -1:
+
+        # thread sort
+        if 'gbt' in self.request.GET:
             extra['thread_sorted'] = True
         else:
             extra['thread_sorted'] = False
 
-        extra['export_mbox'] = self.request.META['REQUEST_URI'].replace('/archive/search/','/archive/export/mbox/')
-        extra['export_maildir'] = self.request.META['REQUEST_URI'].replace('/archive/search/','/archive/export/maildir/')
+        # export links
+        extra['export_mbox'] = reverse('archive_export',kwargs={'type':'mbox'}) + query_string
+        extra['export_maildir'] = reverse('archive_export',kwargs={'type':'maildir'})+ query_string
+
+        # modify search link
         if 'as' not in self.request.GET:
-            extra['modify_search_url'] = self.request.META['REQUEST_URI'].replace('/archive/search/','/archive/')
+            extra['modify_search_url'] = reverse('archive_search') + query_string
         else:
-            extra['modify_search_url'] = self.request.META['REQUEST_URI'].replace('/archive/search/','/archive/advsearch/')
+            extra['modify_search_url'] = reverse('archive_advsearch') + query_string
 
         # add custom facets
         if hasattr(self,'myfacets'):
             extra['facets'] = self.myfacets
+
+        if hasattr(self,'queryid'):
+            extra['queryid'] = self.queryid
 
         return extra
 
@@ -182,9 +197,10 @@ def browse_list(request, list_name):
 
 def console(request):
     form = None
-    assert False
+    cache_data = {'list_info': cache.get('list_info')}
     return render_to_response('archive/console.html', {
-        'form': form},
+        'form': form,
+        'cache_data': cache_data},
         RequestContext(request, {}),
     )
 

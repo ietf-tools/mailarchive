@@ -132,6 +132,10 @@ a:hover {
     border: 1px solid #FF8080;
 }
 
+pre {
+    font-family: Courier,"Courier New",monospace;
+}
+
 /* Django Messages
    ========================================================================== */
 
@@ -452,7 +456,7 @@ ul#navigation li:last-child {
 
 /* Source: http://snipplr.com/view/10979/css-cross-browser-word-wrap */
 .wordwrap {
-   white-space: pre-line;      /* CSS3 */
+   white-space: pre-wrap;      /* CSS3 */
    white-space: -moz-pre-wrap; /* Firefox */
    white-space: -pre-wrap;     /* Opera <7 */
    white-space: -o-pre-wrap;   /* Opera 7 */
@@ -869,11 +873,6 @@ div.browse_section h2 {
     width: 645px;
 }
 
-#msg-detail #msg-payload {
-    font-family: "DejaVu Sans Mono",Monaco,"Courier New",Courier;
-    /* font-size: 0.85em; */
-}
-
 #msg-detail h1 {
     font-size: 18px;
 }
@@ -883,7 +882,6 @@ div.browse_section h2 {
 }
 
 #msg-detail pre {
-    font-family: monospace;
     font-size: 13px;
     margin-top: 1em;
 }

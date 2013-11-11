@@ -3,6 +3,7 @@ from django.conf import settings
 from django.template.loader import render_to_string
 from email.utils import collapse_rfc2231_value
 from HTMLParser import HTMLParser, HTMLParseError
+from tasks import add_mark
 
 import mailbox
 
@@ -13,6 +14,12 @@ US_CHARSETS = ('us-ascii','ascii')
 DEFAULT_CHARSET = 'us-ascii'
 UNSUPPORTED_CHARSETS = ('unknown','x-unknown')
 UNDERSCORE = '_'
+
+# spam_score bits
+MARK_BITS = { 'NON_ASCII_HEADER':0b0001,
+              'NO_RECVD_DATE':0b0010,
+              'NO_MSGID':0b0100,
+              'HAS_HTML_PART':0b1000 }
 
 # --------------------------------------------------
 # Helper Functions
@@ -175,6 +182,9 @@ class Generator:
         '''
         if settings.DEBUG:
             logger.debug('called: _handle_text_html [{0}, {1}]'.format(self.msg.email_list,self.msg.msgid))
+            logger.debug('calling _handle_text_html with bits: {0}'.format(MARK_BITS['HAS_HTML_PART']))
+            add_mark.delay(self.msg,MARK_BITS['HAS_HTML_PART'])
+
         if not self.text_only:
             payload = part.get_payload(decode=True)
             charset = part.get_content_charset()

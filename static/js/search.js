@@ -7,6 +7,7 @@ https://github.com/blairmitchelmore/jquery.plugins/blob/master/jquery.query.js
 */
 
 // GLOBAL VARIABLES
+var lastItem = $('#msg-table tr').length;
 var urlParams;
 var sortDefault = new Array();
 sortDefault['date'] = '-date';
@@ -18,10 +19,17 @@ sortDefault['subject'] = 'subject';
 $(function() {
 
     // HELPER FUNCTIONS =====================================
+
     function do_search() {
         // reload page after changing some query parameters
         delete urlParams.page
         location.search = $.param(urlParams);
+    }
+
+    function add_messages(data,textStatus,jqXHR) {
+        // append new messages to end of results list table
+        $('#msg-table tbody').append(data);
+        lastItem = $('#msg-table tr').length;
     }
 
     function init_search() {
@@ -87,15 +95,15 @@ $(function() {
         // set focus on msg-list pane
         $('#msg-list').focus();
 
-        // handle message select from list
-        $('table#msg-table tr').click(function () {
+        // handle message select from list (use handler delegation)
+        $('#msg-table').on('click','tr',function () {
             $('table#msg-table tr').removeClass('row-selected');
             $(this).addClass('row-selected');
             load_msg($(this));
         });
 
         // SETUP DOUBLE CLICK MESSAGE
-        $('#msg-table tr').dblclick(function() {
+        $('#msg-table').on('dblclick','tr',function() {
             var url = $(this).find("td:nth-child(6)").html();
             window.open(url);
         });
@@ -125,6 +133,32 @@ $(function() {
                     delete urlParams[key];
             }
         }
+
+        // INFINTE SCROLL
+        $("#msg-list").on( "scroll", function() {
+            if($(this).scrollTop() + $(this).innerHeight() == $(this)[0].scrollHeight) {
+                var queryid = $('#msg-list').attr('data-queryid');
+                var request = $.ajax({
+                    "type": "GET",
+                    "url": "/archive/ajax/messages/",
+                    "data": { "queryid": queryid, "lastitem": lastItem }
+                });
+                request.done(function(data, testStatus, xhr) {
+                    if(xhr.status == 200){
+                        $('#msg-table tbody').append(data);
+                        lastItem = $('#msg-table tr').length;
+                    } else if(xhr.status == 204)  {
+                        $("#msg-list").off( "scroll" );
+                    }
+                });
+                request.fail(function(xhr, textStatus, errorThrown) {
+                    if(xhr.status == 404){
+                        // server returns a 404 when query has expired from cache
+                        window.location.reload();
+                    }
+                });
+            }
+        });
 
     }
 

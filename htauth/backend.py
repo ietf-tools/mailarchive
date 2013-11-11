@@ -22,8 +22,8 @@ class HtauthBackend(object):
             # to anything, because it won't be checked; the password
             # from settings.py will.
             user = User(username=username, password=UNUSABLE_PASSWORD)
-            user.is_staff = True
-            user.is_superuser = True
+            #user.is_staff = True
+            #user.is_superuser = True
             user.save()
         return user
 

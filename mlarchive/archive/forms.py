@@ -149,6 +149,7 @@ class AdvancedSearchForm(FacetedSearchForm):
     #operator = forms.ChoiceField(choices=(('AND','ALL'),('OR','ANY')))
     so = forms.CharField(max_length=25,required=False,widget=forms.HiddenInput)
     sso = forms.CharField(max_length=25,required=False,widget=forms.HiddenInput)
+    spam_score = forms.CharField(max_length=3,required=False)
     # group and filter fields
     gbt = forms.BooleanField(required=False)                     # group by thread
     qdr = forms.ChoiceField(choices=TIME_CHOICES,required=False) # qualified date range

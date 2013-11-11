@@ -33,12 +33,6 @@ logger = getLogger('mlarchive.custom')
 # Globals
 # --------------------------------------------------
 
-# spam_score bits
-MARK_BITS = { NON_ASCII_HEADER:0b0001,
-              NO_RECVD_DATE:0b0010,
-              NO_MSGID:0b0100,
-              HAS_HTML_PART:0b1000 }
-
 SEPARATOR_PATTERNS = [ re.compile(r'^Return-[Pp]ath:'),
                        re.compile(r'^Envelope-to:'),
                        re.compile(r'^Received:'),

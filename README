@@ -1,20 +1,99 @@
 DEPENDENCIES:
 Python 2.7.3
+MySQL 5.5
 xapian-core
 python-xapian
+python-memcached
+memcached 1.4.15
+RabbitMQ Server 2.8.7
+Celery v
 
+
+Python Packages
 pip install python-dateutil
 pip install pytest-dajngo
 pip install factory-boy
 
-TESTING:
-$ py.test tests
+Haystack 2.0 (included)
 
+Prerequisites:
+1) Install and configure memcached 
+zypper install memcached
+chkconfig memcached on
+
+2) Install and configure RabbitMQ
+zypper install rabbitmq-server
+chkconfig rabbitmq-server on
+see: http://www.rabbitmq.com/man/rabbitmqctl.1.man.html
+
+3) Install and configure celery
+pip install celery
+cp INSTALL_DIR/celery/celeryd /etc/init.d
+cp INSTALL_DIR/celery/celeryd.conf /etc/default/celeryd
+add unpriviledged user celery, GROUP=celery
+chkconfig celeryd on
 
 SETUP:
-configure mailman, mm_cfg.py
+The following steps will refer to INSTALL_DIR (ie. /a/mailarch )
+
+1) Download software via SVN checkout
+svn checkout http://svn.tools.ietf.org/svn/tools/mailarch/trunk
+
+2) Create a symlink to the release directory, INSTALL_DIR/current -> INSTALL_DIR/trunk
+
+3) Create (or copy) INSTALL_DIR/current/mlarchive/settings_local.py which contains production
+settings.  At a minimum this musts contain the DATABASE credentials.
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql', 
+        'NAME': 'DATABASE NAME',               
+        'TEST_NAME': 'TEST DATABASE NAME',
+        'USER': 'USER',              
+        'PASSWORD': 'PASSWORD',
+        'HOST': '',           
+        'PORT': '',          
+    }
+}
+
+
+4) Apache Configuration
+
+        Alias /static/ /a/mailarch/current/static/
+        Alias /pylot/ /a/mailarch/pylot/
+
+        # WSGI Section --------------------------------
+        <Directory /a/mailarch>
+                Order allow,deny
+                Allow from all
+                Options Indexes FollowSymLinks
+        </Directory>
+
+        <Directory /a/mailarch/current>
+            Options FollowSymLinks
+        </Directory>
+
+        <Directory /a/mailarch/current/static>
+            Order allow,deny
+            Allow from all
+        </Directory>
+
+        <Directory /a/mailarch/current/pylot>
+            Options Indexes FollowSymLinks
+        </Directory>
+
+
+x) Configure mailmain
+edit mm_cfg:
 PUBLIC_EXTERNAL_ARCHIVER = '/a/mailarch/current/mlarchive/bin/call-archives.py %(listname)s -public'
 PRIVATE_EXTERNAL_ARCHIVER = '/a/mailarch/current/mlarchive/bin/call-archives.py %(listname)s -private'
 
-install cronscript
+x) Install Cronscripts
 
+
+TESTING:
+Testing requires an instance of the message Xapian message index.  It must contain an
+import of the following lists:
+
+To run the tests
+$ py.test tests

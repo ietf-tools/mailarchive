@@ -174,7 +174,7 @@ class Generator:
         Handler for text/HTML MIME parts.  Takes a message.message part
         '''
         if settings.DEBUG:
-            logger.debug('called: _handle_text_html [{0}]'.format(self.msg.msgid))
+            logger.debug('called: _handle_text_html [{0}, {1}]'.format(self.msg.email_list,self.msg.msgid))
         if not self.text_only:
             payload = part.get_payload(decode=True)
             charset = part.get_content_charset()

@@ -27,8 +27,10 @@ def main():
     query = Message.objects.filter(pk__lte=10000)
     total = query.count()
     for msg in query:
-        #print msg.pk
-        x = msg.get_body_html()
+        try:
+            x = msg.get_body_html()
+        except UnicodeDecodeError as e:
+            print '{0} [{1}]'.format(e, msg.pk)
         if msg.pk % 1000 == 0:
             print 'processed {0} of {1}'.format(msg.pk,total)
 

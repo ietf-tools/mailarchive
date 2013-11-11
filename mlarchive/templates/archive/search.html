@@ -99,9 +99,11 @@
                 </div>
                 <div id="msg-list" tabindex="-1" data-queryid="{{ queryid }}">
                     <table id="msg-table" class="no-zebra">
+                        <tbody>
                         {% with page.object_list as results %}
                             {% include "includes/results_rows.html" %}
                         {% endwith %}
+                        </tbody>
                     </table>
                 </div> <!-- msg-list -->
 

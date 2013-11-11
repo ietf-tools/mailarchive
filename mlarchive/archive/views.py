@@ -195,6 +195,7 @@ def browse_list(request, list_name):
         RequestContext(request, {}),
     )
 
+@superuser_only
 def console(request):
     form = None
     cache_data = {'list_info': cache.get('list_info')}

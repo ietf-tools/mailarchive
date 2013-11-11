@@ -46,7 +46,6 @@ def ajax_get_msg(request, msg):
     '''
     return HttpResponse(msg.get_body_html(request))
 
-#@jsonapi
 def ajax_messages(request):
     '''
     Ajax function to retrieve next 25 messages from the cached queryset
@@ -54,19 +53,23 @@ def ajax_messages(request):
     queryid = request.GET.get('queryid')
     lastitem = int(request.GET.get('lastitem'))
     query = cache.get(queryid)
-    
+
     # retrieve next group of messages
     if query:
         results = query[lastitem+1:lastitem+26]
     else:
-        # TODO or fail?
-        results = None
-    
+        # TODO or fail?, signal to reload query
+        # results = None
+        return HttpResponse(status=404)     # Request Timeout (query gone from cache)
+
+    if not results:
+        return HttpResponse(status=204)     # No Content
+
     return render_to_response('includes/results_rows.html', {
         'results': results},
         RequestContext(request, {}),
-    )   
-        
+    )
+
 @jsonapi
 def ajax_messagesX(request):
     '''

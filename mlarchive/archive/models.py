@@ -147,6 +147,13 @@ class Message(models.Model):
         '''
         return parseaddr(self.frm)[1].lower()
 
+    def mark(self,bit):
+        '''
+        Mark this message using the bit provided, using field spam_score
+        '''
+        self.spam_score = self.spam_score | bit
+        self.save()
+
 class Attachment(models.Model):
     error = models.CharField(max_length=255,blank=True) # message if problem with attachment
     description = models.CharField(max_length=255)      # description of file contents

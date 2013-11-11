@@ -81,6 +81,7 @@ def get_kwargs(data):
     so we use the get() method.
     '''
     kwargs = {}
+    spam_score = data.get('spam_score')
     for key in ('msgid',):
         if data.get(key):
             kwargs[key] = data[key]
@@ -96,11 +97,14 @@ def get_kwargs(data):
         else:
             kwargs['frm__icontains'] = data['frm']
     if data.get('qdr') and data['qdr'] not in ('a','c'):
-            kwargs['date__gte'] = get_qdr_time(data['qdr'])
+        kwargs['date__gte'] = get_qdr_time(data['qdr'])
     if data.get('subject'):
-            kwargs['subject__icontains'] = data['subject']
+        kwargs['subject__icontains'] = data['subject']
     if data.get('spam'):
-            kwargs['spam_score__gt'] = 0
+        kwargs['spam_score__gt'] = 0
+    if spam_score and spam_score.isdigit():
+        bits = [ x for x in range(255) if x & int(spam_score)]
+        kwargs['spam_score__in'] = bits
     return kwargs
 
 # --------------------------------------------------

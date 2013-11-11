@@ -143,6 +143,11 @@ class Generator:
 
     @skip_attachment
     def _handle_text_plain(self,part):
+        '''
+        Handler for text/plain MIME parts.  Takes a message.message part
+        '''
+        #if settings.DEBUG:
+        #   logger.debug('called: _handle_text_plain [{0}]'.format(self.msg.msgid))
         charset = get_charset(part)
         payload = part.get_payload(decode=True)
         if charset not in US_CHARSETS and charset not in UNSUPPORTED_CHARSETS:
@@ -173,7 +178,10 @@ class Generator:
         if not self.text_only:
             payload = part.get_payload(decode=True)
             charset = part.get_content_charset()
-            uni = unicode(payload,charset or DEFAULT_CHARSET,errors='replace')
+            try:
+                uni = unicode(payload,charset or DEFAULT_CHARSET,errors='replace')
+            except LookupError as error:
+                uni = unicode(payload,DEFAULT_CHARSET,errors='replace')
             return render_to_string('archive/message_html.html', {'payload': uni})
         else:
             payload = part.get_payload(decode=True)

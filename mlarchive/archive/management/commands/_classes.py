@@ -34,9 +34,10 @@ logger = getLogger('mlarchive.custom')
 # --------------------------------------------------
 
 # spam_score bits
-NON_ASCII_HEADER = 0b0001
-NO_RECVD_DATE = 0b0010
-NO_MSGID = 0b0100
+MARK_BITS = { NON_ASCII_HEADER:0b0001,
+              NO_RECVD_DATE:0b0010,
+              NO_MSGID:0b0100,
+              HAS_HTML_PART:0b1000 }
 
 SEPARATOR_PATTERNS = [ re.compile(r'^Return-[Pp]ath:'),
                        re.compile(r'^Envelope-to:'),
@@ -520,7 +521,7 @@ class MessageWrapper(object):
                     fallback = date
             # if get_received_date fails could be spam or corrupt message, flag it
             elif func.__name__ == 'get_received_date':
-                self.spam_score = self.spam_score| NO_RECVD_DATE
+                self.mark(MARK_BITS['NO_RECVD_DATE'])
 
         #logger.warn("Import Warn [{0}, {1}, {2}]".format(self.msgid,'Used None or naive date',
         #                                                 self.email_message.get_from()))
@@ -551,7 +552,7 @@ class MessageWrapper(object):
         if not msgid:
             msgid = make_msgid('ARCHIVE')
             self.created_id = True
-            self.spam_score = self.spam_score| NO_MSGID
+            self.mark(MARK_BITS['NO_MSGID'])
             #raise GenericWarning('No MessageID (%s)' % self.email_message.get_from())
         return msgid
 
@@ -667,7 +668,7 @@ class MessageWrapper(object):
                 normal = unicode(header_text,'ascii')
             except (UnicodeDecodeError, UnicodeEncodeError):
                 normal = unicode(header_text,default,errors='replace')
-                self.spam_score = self.spam_score | NON_ASCII_HEADER      # mark as possible spam
+                self.mark(MARK_BITS['NON_ASCII_HEADER'])      # mark as possible spam
 
 
         # TODO: refactor with get_charsets(), or simply remove

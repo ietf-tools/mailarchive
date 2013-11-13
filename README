@@ -6,7 +6,7 @@ python-xapian
 python-memcached
 memcached 1.4.15
 RabbitMQ Server 2.8.7
-Celery v
+Celery v3.1.1
 
 
 Python Packages

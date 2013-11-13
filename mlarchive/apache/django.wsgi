@@ -7,6 +7,8 @@ path = os.path.abspath(base_dir + '/../..')
 if not path in sys.path:
     sys.path.insert(0, path)
 
+sys.path.append('/a/www/ietf-datatracker/web')
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mlarchive.settings")
 
 from django.core.wsgi import get_wsgi_application

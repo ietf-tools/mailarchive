@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from mlarchive.celery import app
+from mlarchive.celeryapp import app
 
 @app.task
 def add(x, y):

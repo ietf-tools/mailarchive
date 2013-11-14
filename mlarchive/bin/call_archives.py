@@ -11,17 +11,15 @@ archive systems.  It first calls the mhonarc system.  If that fails we return ex
 mhonarc script, allowing for retries from mailman.  If it succeeds we proceed to the mail archive,
 logging errors to syslog.
 '''
-# standalone script ---------------------------------------
-#import os
-#import sys
-
-#BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-#sys.path.append(os.path.abspath(BASE_DIR + "/../.."))
-
-from django.core.management import setup_environ
-from mlarchive import settings
-setup_environ(settings)
-# ---------------------------------------------------------
+# Set PYTHONPATH and load environment variables for standalone script -----------------
+# for file living in project/bin/
+import os
+import sys
+path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if not path in sys.path:
+    sys.path.insert(0, path)
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings'
+# -------------------------------------------------------------------------------------
 
 import subprocess
 import sys

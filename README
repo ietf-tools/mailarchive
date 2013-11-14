@@ -1,8 +1,8 @@
 DEPENDENCIES:
 Python 2.7.3
 MySQL 5.5
-xapian-core
-python-xapian
+xapian-core 1.2.12
+python-xapian 1.2.12
 python-memcached
 memcached 1.4.15
 RabbitMQ Server 2.8.7

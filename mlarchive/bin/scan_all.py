@@ -3,22 +3,21 @@
 Call get_body on each message object.  Use logging in generator
 _handler methods to gather stats.
 
-to run first do
-export DJANGO_SETTINGS_MODULE=mlarchive.settings
 '''
-
+# Set PYTHONPATH and load environment variables for standalone script -----------------
+# for file living in project/bin/
 import os
 import sys
-#sys.path.insert(0, '/a/home/rcross/src/amsl/mailarch/trunk')
-
+path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if not path in sys.path:
+    sys.path.insert(0, path)
 os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings'
+# -------------------------------------------------------------------------------------
 
 from mlarchive.archive.models import *
 import glob
 import mailbox
 import re
-
-#from scan_utils import *
 
 def main():
     query = Message.objects.filter(pk__lte=10000)

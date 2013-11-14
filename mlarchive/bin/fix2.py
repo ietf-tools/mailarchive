@@ -4,21 +4,16 @@ Fix unindented Received lines.
 
 Based on a short survey we are assuming Received lines immediately follow
 envelope.  We use the "From:" header to signify done reading Received lines.
-
-
-to run first do
-export DJANGO_SETTINGS_MODULE=mlarchive.settings
 '''
-
+# Set PYTHONPATH and load environment variables for standalone script -----------------
+# for file living in project/bin/
+import os
 import sys
-sys.path.insert(0, '/a/home/rcross/src/amsl/mailarch/trunk')
-#sys.path.insert(0, '/a/home/rcross/src/amsl/mlabast/mlarchive')
-
-from django.core.management import setup_environ
-from django.db.utils import IntegrityError
-from mlarchive import settings
-
-setup_environ(settings)
+path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if not path in sys.path:
+    sys.path.insert(0, path)
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings'
+# -------------------------------------------------------------------------------------
 
 from mlarchive.archive.models import *
 from email.utils import parseaddr
@@ -32,7 +27,7 @@ def main():
     ENV_HEADER = re.compile(r'From .*@.* .{24}')
     with open('/a/home/rcross/tmp/fix2.txt') as f:
         files = f.read().splitlines()
-        
+
     #files = ('/a/www/ietf-mail-archive/text/policy/1999-04.mail',)
     for file in files:
         with open(file) as f:
@@ -48,7 +43,7 @@ def main():
                     curblank = True
                 else:
                     curblank = False
-                    
+
                 if ENV_HEADER.match(line) and lastblank:
                     inheader = True
                     continue

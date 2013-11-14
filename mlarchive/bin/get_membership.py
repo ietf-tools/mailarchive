@@ -4,16 +4,15 @@ This script checks all active private lists memberships, if membership has chang
 last time it was run, the list membership db table is updated.  This script can be run
 periodically by cron.
 '''
-# standalone script ---------------------------------------
+# Set PYTHONPATH and load environment variables for standalone script -----------------
+# for file living in project/bin/
 import os
 import sys
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.abspath(BASE_DIR + "/../.."))
-
-from django.core.management import setup_environ
-from mlarchive import settings
-setup_environ(settings)
-# ---------------------------------------------------------
+path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if not path in sys.path:
+    sys.path.insert(0, path)
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings'
+# -------------------------------------------------------------------------------------
 
 from django.contrib.auth.models import User
 from ietf.person.models import Email

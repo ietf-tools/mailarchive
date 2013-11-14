@@ -7,22 +7,17 @@ subset of lists defined in SUBSET below.
 NOTE: this was built for running the initial import of the archive.
 Therefore it calls load with firstrun=True.  Never do this after
 the initial import, becase message that aren't in the legacy archive
-will be considered spam.
-
-to run first do
-export DJANGO_SETTINGS_MODULE=mlarchive.settings
+will be considered spam.x
 '''
+# Set PYTHONPATH and load environment variables for standalone script -----------------
+# for file living in project/bin/
+import os
 import sys
-#sys.path.insert(0, '/a/home/rcross/src/amsl/mlabast')
-#sys.path.insert(0, '/a/home/rcross/src/amsl/mlabast/mlarchive')
-
-#from django.core.management import setup_environ
-from django.core.management.base import CommandError
-from django.db.utils import IntegrityError
-#from mlarchive import settings
-from django.conf import settings
-
-#setup_environ(settings)
+path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if not path in sys.path:
+    sys.path.insert(0, path)
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings'
+# -------------------------------------------------------------------------------------
 
 from django.core.management import call_command
 from optparse import OptionParser

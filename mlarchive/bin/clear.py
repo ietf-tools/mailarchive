@@ -1,12 +1,16 @@
 #!/usr/bin/python
 
-# Standalone script to reset database
+# Set PYTHONPATH and load environment variables for standalone script -----------------
+# for file living in project/bin/
+import os
+import sys
+path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if not path in sys.path:
+    sys.path.insert(0, path)
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings'
+# -------------------------------------------------------------------------------------
 
-from django.core.management import setup_environ, call_command
-from mlarchive import settings
-
-setup_environ(settings)
-
+from django.core.management import call_command
 import subprocess
 
 name = settings.DATABASES['default']['NAME']
@@ -15,7 +19,7 @@ passwd = settings.DATABASES['default']['PASSWORD']
 
 # drop and create database
 print "Dropping and creating database: %s" % name
-mysql_cmd = "'drop database %s; create database %s character set utf8;'" % name 
+mysql_cmd = "'drop database %s; create database %s character set utf8;'" % name
 cmd = [ 'mysql', '--user={0}'.format(user), '--password={0}'.format(passwd), '-e', mysql_cmd ]
 subprocess.call(cmd)
 

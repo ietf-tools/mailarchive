@@ -1,21 +1,17 @@
 #!/usr/bin/python
 '''
 >From quote, "From" lines that occur in the middle of a message
-
-
-to run first do
-export DJANGO_SETTINGS_MODULE=mlarchive.settings
 '''
 
+# Set PYTHONPATH and load environment variables for standalone script -----------------
+# for file living in project/bin/
+import os
 import sys
-sys.path.insert(0, '/a/home/rcross/src/amsl/mailarch/trunk')
-#sys.path.insert(0, '/a/home/rcross/src/amsl/mlabast/mlarchive')
-
-from django.core.management import setup_environ
-from django.db.utils import IntegrityError
-from mlarchive import settings
-
-setup_environ(settings)
+path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if not path in sys.path:
+    sys.path.insert(0, path)
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings'
+# -------------------------------------------------------------------------------------
 
 from mlarchive.archive.models import *
 from email.utils import parseaddr
@@ -27,7 +23,7 @@ def main():
     PATTERN = re.compile(r'From .*@.* .{24}')
     with open('/a/home/rcross/tmp/fix1.txt') as f:
         files = f.read().splitlines()
-        
+
     #files = ('/a/www/ietf-mail-archive/text/policy/1999-04.mail',)
     for file in files:
         with open(file) as f:
@@ -40,11 +36,11 @@ def main():
                     curblank = True
                 else:
                     curblank = False
-                
+
                 if line.startswith('From '):
                     if not PATTERN.match(line) and lastblank:
                         print '%s:%d %s' % (file,count,line)
-    
+
 
 if __name__ == "__main__":
     main()

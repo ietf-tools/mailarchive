@@ -5,20 +5,16 @@ This script scans the MHonArc web archive, and creates a record in Legacy for ea
 to filter out messages that aren't in the web archives, as a way to leverage all the manual
 work that was done purging spam from the web archives.  The Leagcy table will also be used
 for redirecting requests to the old archive to the new one.
-
-
-to run first do
-export DJANGO_SETTINGS_MODULE=mlarchive.settings
 '''
-
+# Set PYTHONPATH and load environment variables for standalone script -----------------
+# for file living in project/bin/
+import os
 import sys
-sys.path.insert(0, '/a/home/rcross/src/amsl/mailarch/trunk')
-
-from django.core.management import setup_environ
-from django.db.utils import IntegrityError
-from mlarchive import settings
-
-setup_environ(settings)
+path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if not path in sys.path:
+    sys.path.insert(0, path)
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings'
+# -------------------------------------------------------------------------------------
 
 from mlarchive.archive.models import *
 from email.utils import parseaddr

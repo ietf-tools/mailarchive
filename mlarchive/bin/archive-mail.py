@@ -5,17 +5,15 @@ on standard input and saves the message in the archive.  The message listname is
 first argument.  Use --public to specifiy a public list or --private to specify a private list.
 The default is public.
 '''
-# standalone script ---------------------------------------
+# Set PYTHONPATH and load environment variables for standalone script -----------------
+# for file living in project/bin/
 import os
 import sys
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0,os.path.abspath(BASE_DIR + "/../.."))
-
-from django.core.management import setup_environ
-from mlarchive import settings
-setup_environ(settings)
-# ---------------------------------------------------------
+path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if not path in sys.path:
+    sys.path.insert(0, path)
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings'
+# -------------------------------------------------------------------------------------
 
 from optparse import OptionParser
 from mlarchive.archive.tasks import call_archive_message

@@ -167,6 +167,13 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
 USE_EXTERNAL_PROCESSOR = False
 
+# spam_score bits
+MARK_BITS = { 'NON_ASCII_HEADER':0b0001,
+              'NO_RECVD_DATE':0b0010,
+              'NO_MSGID':0b0100,
+              'HAS_HTML_PART':0b1000 }
+
+# AUTH
 LOGIN_REDIRECT_URL = '/archive/'
 AUTHENTICATION_BACKENDS = (
     'htauth.backend.HtauthBackend',
@@ -187,7 +194,6 @@ BROKER_URL = 'amqp://'
 CELERY_RESULT_BACKEND = 'amqp://'
 CELERY_TIMEZONE = 'America/Los_Angeles'
 CELERY_ENABLE_UTC = True
-
 
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific

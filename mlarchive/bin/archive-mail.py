@@ -10,18 +10,17 @@ import os
 import sys
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.abspath(BASE_DIR + "/../.."))
+sys.path.insert(0,os.path.abspath(BASE_DIR + "/../.."))
 
 from django.core.management import setup_environ
 from mlarchive import settings
 setup_environ(settings)
 # ---------------------------------------------------------
 
-import email
-import uuid
-
 from optparse import OptionParser
-import mlarchive.archive.management.commands._classes as _classes
+from mlarchive.archive.tasks import call_archive_message
+
+#import mlarchive.archive.management.commands._classes as _classes
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
@@ -46,14 +45,13 @@ def main():
         sys.exit("%s: invalid arguments\nTry `%s --help for more information" %
                  (sys.argv[0],sys.argv[0]))
 
-    try:
-        msg = email.message_from_string(sys.stdin.read())
-        _classes.archive_message(msg,listname,private=options.private)
-    except Exception as e:
-        filename = str(uuid.uuid4())
-        log_msg = "Import Error [{0}, {1}, {2}]".format(listname,filename,(e.__class__,e.args))
-        logger.error(log_msg)
-        #self.save_failed_msg(m)
+    data = sys.stdin.read()
+    #status = _classes.archive_message(data,listname,private=options.private)
+    result = call_archive_message.delay(data,listname,private=options.private)
+    #status = result.get(timeout=16)
+
+    #sys.exit(status)
+    sys.exit(0)
 
 if __name__ == "__main__":
     main()

@@ -7,14 +7,11 @@ to run first do
 export DJANGO_SETTINGS_MODULE=mlarchive.settings
 '''
 
+import os
 import sys
 #sys.path.insert(0, '/a/home/rcross/src/amsl/mailarch/trunk')
 
-from django.core.management import setup_environ
-from django.db.utils import IntegrityError
-from mlarchive import settings
-
-setup_environ(settings)
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings'
 
 from mlarchive.archive.models import *
 import glob

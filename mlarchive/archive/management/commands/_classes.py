@@ -12,6 +12,8 @@ from collections import deque
 
 import base64
 import datetime
+import email
+import glob
 import hashlib
 import mailbox
 import os
@@ -75,9 +77,25 @@ class UnknownFormat(Exception):
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
-def archive_message(msg,listname,private=False):
-    mw = MessageWrapper(msg,listname,private=private)
-    mw.save()
+def archive_message(data,listname,private=False):
+    '''
+    This function is the internals of the interface to Mailman.  It is called by the
+    standalone script archive-mail.py.  Inputs are:
+    data: the message as a string (comes from sys.stdin.read())
+    listname: a string, provided as command line argument to archive-mail
+    private: boolean, True if the list is private.  Only used if this happens to be a new list
+    '''
+    try:
+        msg = email.message_from_string(data)
+        mw = MessageWrapper(msg,listname,private=private)
+        mw.save()
+    except Exception as error:
+        if msg:
+            save_failed_msg(msg,listname,error)
+        else:
+            save_failed_msg(data,listname,error)
+        return 1    # TODO: other error?
+    return 0
 
 def clean_spaces(s):
     "Reduce all whitespaces to one space"
@@ -277,6 +295,44 @@ def parsedate_to_datetime(data):
     except ValueError:
         return None
 
+def save_failed_msg(data,listname,error):
+    '''
+    Called when an attempt to import a message fails.  "data" will typically be an instance of
+    email.message.Message.  In some odd case where message parsing fails "data" will be a string
+    (this should never happen because the email.parser excepts even empty strings).
+    Log error entry should contain useful information about the error, the message identity and
+    the filename it is being saved under
+    '''
+    # get filename
+    path = os.path.join(settings.ARCHIVE_DIR,'_failed',listname)
+    basename = datetime.datetime.today().strftime('%Y-%m-%d')
+    files = glob.glob(os.path.join(path,basename + '.*'))
+    if files:
+        files.sort()
+        sequence = str(int(files[-1][-4:]) + 1)
+    else:
+        sequence = '0'
+    filename = basename + '.' + sequence.zfill(4)
+
+    # log entry
+    if isinstance(data,email.message.Message):
+        output = data.as_string()
+        if isinstance(data,BetterMbox):
+            identifier = m.get_from()
+        else:
+            identifier = m.get('Message-ID','')
+    else:
+        output = data
+        identifier = ''
+    log_msg = "Import Error [{0}, {1}, {2}]".format(os.path.join(path,filename),(error.__class__,error.args),identifier)
+    logger.error(log_msg)
+
+    # write file
+    if not os.path.exists(path):
+        os.makedirs(path)
+    with open(os.path.join(path,filename),'w') as f:
+        f.write(output)
+
 def seek_charset(msg):
     '''
     Try and derive non-ascii charset from message payload(s).
@@ -405,9 +461,6 @@ class Loader(object):
         '''
         self.stats['count'] += 1
 
-        if not msg.items():         # no headers, something is wrong
-            raise NoHeaders
-
         mw = MessageWrapper(msg, self.listname, private=self.private)
 
         # filter using Legacy archive
@@ -436,23 +489,13 @@ class Loader(object):
             except GenericWarning as error:
                 logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,error.args,m.get_from()))
             except Exception as error:
-                if self.klass == 'BetterMbox':
-                    identifier = m.get_from()
-                else:
-                    identifier = m.get('Message-ID','')
-                log_msg = "Import Error [{0}, {1}, {2}]".format(self.filename,(error.__class__,error.args),identifier)
-                logger.error(log_msg)
-                self.save_failed_msg(m)
+                save_failed_msg(m,self.listname,error)
                 self.stats['errors'] += 1
                 if self.options.get('break'):
                     print log_msg
                     raise
 
         self.cleanup()
-
-    def save_failed_msg(self,msg):
-        mw = MessageWrapper(msg, self.listname, private=self.private)
-        mw.write_msg(subdir='failed')
 
 class MessageWrapper(object):
     '''
@@ -473,6 +516,10 @@ class MessageWrapper(object):
         self.private = private
         self.spam_score = 0
         self.bytes = len(email_message.as_string(unixfrom=True))
+
+        # fail right away if no headers
+        if not self.email_message.items():         # no headers, something is wrong
+            raise NoHeaders
 
         self.msgid = self.get_msgid()
 
@@ -515,7 +562,7 @@ class MessageWrapper(object):
                     fallback = date
             # if get_received_date fails could be spam or corrupt message, flag it
             elif func.__name__ == 'get_received_date':
-                self.mark(MARK_BITS['NO_RECVD_DATE'])
+                self.spam_score = self.spam_score | settings.MARK_BITS['NO_RECVD_DATE']
 
         #logger.warn("Import Warn [{0}, {1}, {2}]".format(self.msgid,'Used None or naive date',
         #                                                 self.email_message.get_from()))
@@ -524,7 +571,7 @@ class MessageWrapper(object):
             return fallback
         else:
             # can't really proceed without a date, this likely indicates bigger parsing error
-            raise DateError("%s, %s" % (self.msgid,self.email_message.get_from()))
+            raise DateError("%s, %s" % (self.msgid,self.email_message.get_unixfrom()))
 
     def get_hash(self):
         '''
@@ -546,7 +593,7 @@ class MessageWrapper(object):
         if not msgid:
             msgid = make_msgid('ARCHIVE')
             self.created_id = True
-            self.mark(MARK_BITS['NO_MSGID'])
+            self.spam_score = self.spam_score | settings.MARK_BITS['NO_MSGID']
             #raise GenericWarning('No MessageID (%s)' % self.email_message.get_from())
         return msgid
 
@@ -662,7 +709,7 @@ class MessageWrapper(object):
                 normal = unicode(header_text,'ascii')
             except (UnicodeDecodeError, UnicodeEncodeError):
                 normal = unicode(header_text,default,errors='replace')
-                self.mark(MARK_BITS['NON_ASCII_HEADER'])      # mark as possible spam
+                self.spam_score = self.spam_score | settings.MARK_BITS['NON_ASCII_HEADER'] # mark as possible spam
 
 
         # TODO: refactor with get_charsets(), or simply remove
@@ -784,4 +831,4 @@ class MessageWrapper(object):
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
         with open(path,'w') as f:
-            f.write(self.email_message.as_string(unixfrom=True))
+            f.write(self.email_message.as_string())

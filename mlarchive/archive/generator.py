@@ -68,20 +68,26 @@ class Generator:
     def __init__(self, msg):
         self.msg = msg
         self.text_only = False
+        self.error = None
         try:
             with open(msg.get_file_path()) as f:
                 self.mdmsg = mailbox.MaildirMessage(f)
         except IOError:
-            return 'Error reading message'
-
+            self.error = 'Error reading message file'
 
     def as_html(self, request):
         self.text_only = False
-        return self.parse_body(request=request)
+        if self.error:
+            return 'Error reading message file'
+        else:
+            return self.parse_body(request=request)
 
     def as_text(self):
         self.text_only = True
-        return self.parse_body()
+        if self.error:
+            return 'Error reading message file'
+        else:
+            return self.parse_body()
 
     def _dispatch(self,part):
         # Get the Content-Type: for the message, then try to dispatch to

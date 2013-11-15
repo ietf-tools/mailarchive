@@ -15,11 +15,14 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings'
 # -------------------------------------------------------------------------------------
 
 from mlarchive.archive.models import *
+import argparse
 import glob
 import mailbox
 import re
+import sys
 
-def main():
+def bodies():
+    'Call get_body_html() for every message in db'
     query = Message.objects.filter(pk__lte=10000)
     total = query.count()
     for msg in query:
@@ -29,6 +32,13 @@ def main():
             print '{0} [{1}]'.format(e, msg.pk)
         if msg.pk % 1000 == 0:
             print 'processed {0} of {1}'.format(msg.pk,total)
+
+def main():
+    parser = argparse.ArgumentParser(description='Run an archive scan.')
+    parser.add_argument('function')
+    args = parser.parse_args()
+    func = getattr(sys.modules[__name__], args['function'])
+    print func
 
 if __name__ == "__main__":
     main()

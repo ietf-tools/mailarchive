@@ -49,6 +49,7 @@ def main():
     #status = result.get(timeout=16)
 
     #sys.exit(status)
+    # NOTE: unless it is determined that mailman retries work correctly return 0
     sys.exit(0)
 
 if __name__ == "__main__":

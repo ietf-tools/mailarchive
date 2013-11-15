@@ -11,22 +11,8 @@ archive systems.  It first calls the mhonarc system.  If that fails we return ex
 mhonarc script, allowing for retries from mailman.  If it succeeds we proceed to the mail archive,
 logging errors to syslog.
 '''
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings'
-# -------------------------------------------------------------------------------------
-
 import subprocess
 import sys
-import syslog
-
-from django.utils.log import getLogger
-logger = getLogger('mlarchive.custom')
 
 MHONARC = '/a/ietf/scripts/archive-mail.pl'
 MAILARCH= '/a/mailarch/current/mlarchive/bin/archive-mail.py'
@@ -36,13 +22,10 @@ data = sys.stdin.read()
 
 p = subprocess.Popen([MHONARC, args[0], args[1][1:]], stdin=subprocess.PIPE)    # strip dash
 p.communicate(input=data)
-logger.info("Import Info [{0}, returncode {1}]".format([MHONARC] + args,p.returncode))
 if p.returncode != 0:
     sys.exit(p.returncode)
 
 p = subprocess.Popen([MAILARCH] + args, stdin=subprocess.PIPE)
 p.communicate(input=data)
-if p.returncode != 0:
-    syslog.syslog(syslog.LOG_MAIL | syslog.LOG_ERR,
-        'archive message failed ({0}) ({1})'.format(p.returncode,data.splitlines()[0]))
+sys.exit(p.returncode)
 

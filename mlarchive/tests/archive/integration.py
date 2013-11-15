@@ -19,10 +19,10 @@ def test_not_logged_browse(client):
     assert response.status_code == 200
     q = PyQuery(response.content)
     assert len(q('#private-lists li')) == 0
-    
+
 @pytest.mark.django_db(transaction=True)
 def test_unauth_browse(client):
-    '''Test that a logged in user does not see private lists they aren't 
+    '''Test that a logged in user does not see private lists they aren't
     a member of.
     '''
     elist = EmailListFactory.create(name='private',private=True)
@@ -47,20 +47,25 @@ def test_auth_browse(client):
     assert response.status_code == 200
     q = PyQuery(response.content)
     assert len(q('#private-lists li')) == 1
-    
+
 def test_not_logged_search(client):
     'Test that a not logged in user does not see private lists in search results'
     # check results and filters
     pass
-    
+
 def test_unauthorized_ajax_request(client):
     'Test that'
     pass
-    
+
 def test_admin_access(client):
     'Test that only superusers see admin link and have access to admin pages'
     pass
-    
+
+def test_console_access(client):
+    'Test that only superusers have access to console page'
+    url = reverse('archive_browse')
+    pass
+
 # --------------------------------------------------
 # Queries
 # --------------------------------------------------
@@ -72,6 +77,6 @@ def test_odd_queries(client):
     print url
     response = client.get(url)
     assert response.status_code == 200
-    
-    
+
+
 

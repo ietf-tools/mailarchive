@@ -318,9 +318,9 @@ def save_failed_msg(data,listname,error):
     if isinstance(data,email.message.Message):
         output = data.as_string()
         if isinstance(data,BetterMbox):
-            identifier = m.get_from()
+            identifier = data.get_from()
         else:
-            identifier = m.get('Message-ID','')
+            identifier = data.get('Message-ID','')
     else:
         output = data
         identifier = ''

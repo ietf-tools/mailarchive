@@ -9,7 +9,7 @@ if [ ! -f /a/mailarch/lockfile ]; then
     touch /a/mailarch/lockfile
     #./bin/pre-import.py
     #./bin/clear
-    mysql --user=rcross --password=sounders43 rc_archiveb < /a/mailarch/data/legacy.sql
+    #mysql --user=rcross --password=sounders43 rc_archiveb < /a/mailarch/data/legacy.sql
     #./bin/loader.py -t -f
     ./bin/loader.py -f
     #rm /a/mailarch/lockfile

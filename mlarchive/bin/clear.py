@@ -10,6 +10,7 @@ if not path in sys.path:
 os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings'
 # -------------------------------------------------------------------------------------
 
+from django.conf import settings
 from django.core.management import call_command
 import subprocess
 
@@ -19,9 +20,9 @@ passwd = settings.DATABASES['default']['PASSWORD']
 
 # drop and create database
 print "Dropping and creating database: %s" % name
-mysql_cmd = "'drop database %s; create database %s character set utf8;'" % name
+mysql_cmd = "drop database {0}; create database {0} character set utf8;".format(name) 
 cmd = [ 'mysql', '--user={0}'.format(user), '--password={0}'.format(passwd), '-e', mysql_cmd ]
 subprocess.call(cmd)
 
 # sync
-call_command('syndb',noinput=True)
+call_command('syncdb',interactive=False)

@@ -234,6 +234,27 @@ class AdvancedSearchForm(FacetedSearchForm):
         '''Get filter parameters that appear in the QueryDict'''
         return list(FILTER_SET & set(query.keys()))
 
+    # use custom parser-----------------------------------------
+    '''
+    def process_query(self):
+        if self.q:
+            query = parse(self.q)
+            logger.info('Query:%s' % query)
+            sqs = self.searchqueryset.filter(query)
+        else:
+            sqs = self.searchqueryset
+        return sqs
+    '''
+    def process_query(self):
+        'Use Xapians builtin query parser'
+        if self.q:
+            p = xapian.QueryParser()
+            query = p.parse_query(self.q)
+            sqs = self.searchqueryset.query.raw_search(query)
+        else:
+            sqs = self.searchqueryset
+        return sqs
+
     def search(self):
         '''
         Custom search function.  This completely overrides the parent
@@ -260,13 +281,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         self.f_from = self.cleaned_data['f_from']
         self.q = self.cleaned_data.get('q')
 
-        # use custom parser-----------------------------------------
-        if self.q:
-            query = parse(self.q)
-            logger.info('Query:%s' % query)
-            sqs = self.searchqueryset.filter(query)
-        else:
-            sqs = self.searchqueryset
+        sqs = self.process_query()
 
         # handle URL parameters ------------------------------------
         kwargs = get_kwargs(self.cleaned_data)

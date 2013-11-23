@@ -11,7 +11,7 @@ def test_chunks():
     assert result[0] == [1,2,3]
 
 def test_initialize_formsets():
-    query = 'text:value -text:negvalue'
+    query = 'text:(value) -text:(negvalue)'
     reg, neg = initialize_formsets(query)
     assert len(reg.forms) == 1
     assert len(neg.forms) == 1

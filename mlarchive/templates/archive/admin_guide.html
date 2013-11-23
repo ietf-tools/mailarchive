@@ -1,0 +1,32 @@
+{% extends "base_960.html" %}
+
+
+{% block title %}Mail Archive - Admin Guide{% endblock %}
+
+{% block header %}{{ block.super }} - Admin Guide{% endblock %}
+
+{% block content %}
+
+<h1>Auxiliary Services</h1>
+<h2>Memcached</h2>
+<p>Memcached is the cache backend for the Email Archive.  Useful commands:
+<ul>
+  <li>Start memcached server:<pre></pre> </li>
+  <li>Stop memcached server:<pre></pre> </li>
+  <li>Status:<pre>$ telnet localhost 11211
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+get foo
+VALUE foo 0 2
+hi
+END
+stats
+STAT pid 8861
+(etc)
+
+stats items (doesn't work?)
+</pre> </li>
+</ul>
+<a href="http://memcached.org">Memcache Homepage</a>
+{% endblock %}

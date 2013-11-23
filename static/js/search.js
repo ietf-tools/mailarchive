@@ -7,7 +7,7 @@ https://github.com/blairmitchelmore/jquery.plugins/blob/master/jquery.query.js
 */
 
 // GLOBAL VARIABLES
-var lastItem = $('#msg-table tr').length;
+var lastItem;
 var urlParams;
 var sortDefault = new Array();
 sortDefault['date'] = '-date';
@@ -33,6 +33,9 @@ $(function() {
     }
 
     function init_search() {
+        // set lastItem
+        lastItem = $('#msg-table tr').length;
+
         // search results header widths ---------------------
         set_widths();
         $(window).resize(function(){

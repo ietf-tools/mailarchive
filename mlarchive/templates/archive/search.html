@@ -111,6 +111,7 @@
                     {# Showing {{ page.object_list|length }} of {{ page.paginator.count }} #}
                     {{ page.paginator.count }} Messages
 
+                    <!--
                     {% if page.has_previous or page.has_next %}
                         <span class="right">
                             {{ page|cut:"<"|cut:">" }}&nbsp;
@@ -119,6 +120,7 @@
                             {% if page.has_next %}<a class="msg-link" href="{% append_to_get page=page.next_page_number %}">{% endif %}Next &raquo;{% if page.has_next %}</a>{% endif %}
                         </span>
                     {% endif %}
+                    -->
                 </div> <!-- msg-list-controls -->
             </div> <!-- list-pane -->
             <div id="splitter-pane" class="draggable"></div>

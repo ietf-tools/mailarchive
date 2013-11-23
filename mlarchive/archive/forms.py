@@ -12,11 +12,12 @@ from mlarchive.archive.utils import get_noauth
 
 import operator
 import random
+import xapian
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
 
-FIELD_CHOICES = (('','Subject and Body'),
+FIELD_CHOICES = (('text','Subject and Body'),
                  ('subject','Subject'),
                  ('frm','From'),
                  ('to','To'),
@@ -225,7 +226,6 @@ class AdvancedSearchForm(FacetedSearchForm):
         else:
             facets = facets = {'fields': {},'dates': {},'queries': {}}
 
-        #assert False, facets
         # save in cache
         cache.set(query,facets)
         return facets
@@ -248,12 +248,12 @@ class AdvancedSearchForm(FacetedSearchForm):
     def process_query(self):
         'Use Xapians builtin query parser'
         if self.q:
-            p = xapian.QueryParser()
-            query = p.parse_query(self.q)
-            sqs = self.searchqueryset.query.raw_search(query)
-        else:
-            sqs = self.searchqueryset
-        return sqs
+            #qp = xapian.QueryParser()
+            #qp.set_default_op(xapian.Query.OP_AND)
+            #qp.add_prefix('from','XFRM')
+            #query = qp.parse_query(self.q)
+            self.searchqueryset.query.raw_search(self.q)
+        return self.searchqueryset
 
     def search(self):
         '''

@@ -1,5 +1,10 @@
 /* search_form.js */
 
+/*
+This script controls the Adavanced Search Form.  It dynamically constructs the search query
+string based on the contents of the various advanced search form widgets.
+*/
+
 // GLOBALS -----------------------------------
 var fieldOptions = {"Subject and Body": "text",
   "Subject": "subject",
@@ -17,7 +22,7 @@ $(function() {
     };
 
     function get_pattern(el) {
-        var default_pattern='{keyword}';
+        var default_pattern='({keyword})';
         var default_exact_pattern='"{keyword}"';
         var pattern
         if(el.children('select.qualifier').val()=='exact'){

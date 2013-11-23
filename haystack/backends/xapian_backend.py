@@ -1223,6 +1223,61 @@ class XapianSearchQuery(BaseSearchQuery):
         else:
             return xapian.Query(xapian.Query.OP_PHRASE, term_list)
 
+    # --------------------------------------------------------------------------
+    # AMS Customized Methods
+    # --------------------------------------------------------------------------
+    def get_facet_counts(self):
+        """
+        Returns the facet counts received from the backend.
+
+        If the query has not been run, this will execute the query and store
+        the results.
+
+        Customized version.  Like base class get_results() and get_count() check for
+        self._raw_query and use run_raw() if not None
+        """
+        if self._facet_counts is None:
+            if self._raw_query:
+                # Special case for raw queries.
+                self.run_raw()
+            else:
+                self.run()
+
+        return self._facet_counts
+
+    def run_raw(self, **kwargs):
+        """Executes a raw query. Returns a list of search results.
+
+        Customized version.  The raw query is built and then combined with the regular
+        query filter.  This allows use of chaining a raw query to apply filters, excludes,
+        etc.  The standard Haystack codebase does not support this so we need to prep the
+        query the following way:
+
+        sqs = SearchQuerySet()
+        sqs.query.raw_search(query_string,params)
+
+        """
+        # build raw Query
+        query = self.backend.parse_query(self._raw_query)
+
+        # get additional query
+        query_filter = self.build_query()
+
+        # combine
+        combined = xapian.Query(xapian.Query.OP_AND,query,query_filter)
+
+        search_kwargs = self.build_params()
+        search_kwargs.update(self._raw_query_params)
+
+        if kwargs:
+            search_kwargs.update(kwargs)
+
+        results = self.backend.search(combined, **search_kwargs)
+        self._results = results.get('results', [])
+        self._hit_count = results.get('hits', 0)
+        #self._facet_counts = results.get('facets', {})
+        self._facet_counts = self.post_process_facets(results)
+        self._spelling_suggestion = results.get('spelling_suggestion', None)
 
 def _marshal_value(value):
     """

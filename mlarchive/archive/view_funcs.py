@@ -11,9 +11,13 @@ import datetime
 import math
 import os
 import random
+import re
 import string
 import tarfile
 import tempfile
+
+contain_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\((?P<value>[^\)]+)\)')
+exact_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\"(?P<value>[^\"]+)\"')
 
 # --------------------------------------------------
 # Helper Functions
@@ -43,21 +47,31 @@ def initialize_formsets(query):
 
     qinitial = []
     ninitial = []
-    params = query.split()
-    for param in params:
-        d = {}
-        parts = param.split(':')
-        key, val = parts[0], param[len(parts[0])+1:]
-        d['field'] = key.lstrip('-')
-        d['value'] = val.strip('"')
-        if '"' in val:
-            d['qualifier'] = 'exact'
+
+    while query:
+        query = query.lstrip()
+        if re.search(contain_pattern,query):
+            mat = re.search(contain_pattern,query)
+            d = {'field':mat.groupdict()['field'],
+                 'value':mat.groupdict()['value'],
+                 'qualifier':'contains'}
+            if mat.groupdict()['neg']:
+                ninitial.append(d)
+            else:
+                qinitial.append(d)
+            query, n = re.subn(contain_pattern,'',query,1)
+        elif re.search(exact_pattern,query):
+            mat = re.search(exact_pattern,query)
+            d = {'field':mat.groupdict()['field'],
+                 'value':mat.groupdict()['value'],
+                 'qualifier':'exact'}
+            if mat.groupdict()['neg']:
+                ninitial.append(d)
+            else:
+                qinitial.append(d)
+            query, n = re.subn(exact_pattern,'',query,1)
         else:
-            d['qualifier'] = 'contains'
-        if key.startswith('-'):
-            ninitial.append(d)
-        else:
-            qinitial.append(d)
+            query = query[1:]
 
     if qinitial:
         query_formset = RulesFormset0(prefix='query',initial=qinitial)

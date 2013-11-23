@@ -65,7 +65,7 @@ class CustomSearchView(SearchView):
     def extra_context(self):
         '''Add variables to template context'''
         extra = super(CustomSearchView, self).extra_context()
-        query_string = self.request.META['QUERY_STRING']
+        query_string = '?' + self.request.META['QUERY_STRING']
 
         # browse list
         match = re.search(r"^email_list=([a-zA-Z0-9\_\-]+)",query_string)
@@ -90,7 +90,7 @@ class CustomSearchView(SearchView):
 
         # modify search link
         if 'as' not in self.request.GET:
-            extra['modify_search_url'] = reverse('archive_search') + query_string
+            extra['modify_search_url'] = reverse('archive') + query_string
         else:
             extra['modify_search_url'] = reverse('archive_advsearch') + query_string
 

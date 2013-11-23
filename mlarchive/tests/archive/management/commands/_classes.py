@@ -51,3 +51,5 @@ This is a test email.  With no headers
     assert Message.objects.all().count() == 0
     filename = datetime.datetime.today().strftime('%Y-%m-%d') + '.0000'
     assert os.path.exists(os.path.join('/tmp/archive/_failed/test/',filename))
+
+#def test_save_failed_msg

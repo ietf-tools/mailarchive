@@ -2,6 +2,7 @@ DEPENDENCIES:
 Python 2.7.3
 MySQL 5.5
 xapian-core 1.2.12
+pyparsing 2.0.1
 python-xapian 1.2.12
 python-memcached
 memcached 1.4.15

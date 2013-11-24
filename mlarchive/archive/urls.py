@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from django.conf.urls import patterns, include, url
 from django.views.generic import TemplateView
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.views import CustomSearchView

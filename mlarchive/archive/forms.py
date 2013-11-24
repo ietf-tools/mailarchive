@@ -52,6 +52,9 @@ def get_base_query(querydict,filters=False,string=False):
     with parameters removed, or the query as a string if string=True.  Optional boolean
     "filters".  If filters=True leave filter parameters intact. For use with calculating
     base facets.
+
+    NOTE: the base query string we are using as a key is urlencoded.  Another option is to save
+    the query unquoted using urlib.unquote_plus()
     '''
     if filters:
         params = EXTRA_PARAMS
@@ -298,6 +301,7 @@ class AdvancedSearchForm(FacetedSearchForm):
             # exclude all private lists
             # TODO cache this query, see Low Level Cache API
             private_lists = [ str(x.id) for x in EmailList.objects.filter(private=True) ]
+            #assert False, (private_lists, sqs.count())
             sqs = sqs.exclude(email_list__in=private_lists)
 
         # faceting ------------------------------------------------

@@ -11,6 +11,9 @@ from mlarchive.archive.models import EmailList
 
 import mailbox
 
+from django.utils.log import getLogger
+logger = getLogger('mlarchive.custom')
+
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
@@ -35,6 +38,19 @@ def jsonapi(fn):
         return HttpResponse(json.dumps(context_data),
                 mimetype='application/json')
     return to_json
+
+def log_timing(func):
+    '''
+    This is a decorator that logs the time it took to complete the decorated function.
+    Handy for performance testing
+    '''
+    def wrapper(*arg):
+        t1 = time.time()
+        res = func(*arg)
+        t2 = time.time()
+        logger.info('%s took %0.3f ms' % (func.func_name, (t2-t1)*1000.0))
+        return res
+    return wrapper
 
 def render(template, data, request):
     return render_to_response(template,

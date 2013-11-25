@@ -226,6 +226,11 @@ class AdvancedSearchForm(FacetedSearchForm):
             if facets['fields']['email_list']:
                 new = [ (get_list_info(x),y) for x,y in facets['fields']['email_list'] ]
                 facets['fields']['email_list'] = new
+
+            # sort facets by name
+            for field in facets['fields']:
+                facets['fields'][field].sort()  # sort by name
+
         else:
             facets = facets = {'fields': {},'dates': {},'queries': {}}
 

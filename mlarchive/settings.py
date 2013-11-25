@@ -175,9 +175,9 @@ AUTHENTICATION_BACKENDS = (
 # Cache settings
 CACHES = {
     'default': {
-        #'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        #'LOCATION': '127.0.0.1:11211',
+        'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+        #'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': '127.0.0.1:11211',
         'TIMEOUT': 300,
     }
 }

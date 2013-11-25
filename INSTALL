@@ -8,14 +8,14 @@ python-memcached
 memcached 1.4.15
 RabbitMQ Server 2.8.7
 Celery v3.1.1
+Django 1.6 (Included)
+Haystack 2.1.1 (Included)
 
 
 Python Packages
 pip install python-dateutil
 pip install pytest-dajngo
 pip install factory-boy
-
-Haystack 2.0 (included)
 
 Prerequisites:
 1) Install and configure memcached 

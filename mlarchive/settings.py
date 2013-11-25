@@ -5,7 +5,6 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-
 DEBUG = False
 TEMPLATE_DEBUG = False
 
@@ -68,7 +67,6 @@ TEMPLATE_CONTEXT_PROCESSORS = DEFAULT_SETTINGS.TEMPLATE_CONTEXT_PROCESSORS + (
     'django.core.context_processors.request',
     'mlarchive.context_processors.server_mode',
     'mlarchive.context_processors.revision_info',
-    #'mlarchive.context_processors.facet_info',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -141,9 +139,6 @@ LOGGING = {
 }
 
 # HAYSTACK SETTINGS
-# from haystack 1.x
-#HAYSTACK_SITECONF = 'mlarchive.search_sites'
-#HAYSTACK_SEARCH_ENGINE = 'xapian'
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 HAYSTACK_USE_REALTIME_SEARCH = True
 

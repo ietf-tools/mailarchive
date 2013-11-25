@@ -1,6 +1,5 @@
 from django.conf import settings
 from mlarchive import __date__, __rev__, __version__, __id__
-from mlarchive.middleware import get_base_query
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')

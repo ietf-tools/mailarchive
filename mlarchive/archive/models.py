@@ -131,6 +131,9 @@ class Message(models.Model):
     def get_file_path(self):
         return os.path.join(settings.ARCHIVE_DIR,self.email_list.name,self.hashcode)
 
+    def get_removed_dir(self):
+        return os.path.join(settings.ARCHIVE_DIR,self.email_list.name,'_removed')
+
     def export(self):
         '''export this message'''
         pass
@@ -188,12 +191,12 @@ class Legacy(models.Model):
 @receiver(pre_delete, sender=Message)
 def _message_remove(sender, instance, **kwargs):
     '''When messages are removed, via the admin page, we need to move the message
-    archive file to the "removed" directory
+    archive file to the "_removed" directory
     '''
     path = instance.get_file_path()
     if not os.path.exists(path):
         return
-    target = os.path.join(os.path.dirname(path),'removed')
+    target = instance.get_removed_dir()
     if not os.path.exists(target):
         os.mkdir(target)
     shutil.move(path,target)

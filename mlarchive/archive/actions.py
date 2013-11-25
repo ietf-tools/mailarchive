@@ -18,7 +18,10 @@ def remove_selected(request, queryset):
     '''
     count = queryset.count()
     queryset.delete()
-    messages.success(request, '%d Messages Deleted' % count)
+    if count == 1:
+        messages.success(request, '%d Message Removed' % count)
+    else:
+        messages.success(request, '%d Messages Removed' % count)
     url = reverse('archive_admin')
     return HttpResponseRedirect(url)
 

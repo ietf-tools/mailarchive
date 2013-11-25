@@ -6,15 +6,9 @@ from mlarchive.archive.models import Message
 
 import datetime
 
-def superuser_only(function):
-    '''
-    Limit view to superusers only.
-    '''
-    def _inner(request, *args, **kwargs):
-        if not request.user.is_superuser:
-            raise PermissionDenied
-        return function(request, *args, **kwargs)
-    return _inner
+from django.utils.log import getLogger
+logger = getLogger('mlarchive.custom')
+
 
 def check_access(func):
     """
@@ -58,3 +52,26 @@ def check_datetime(func):
                 dt = datetime.datetime(dt.year + 2000,dt.month,dt.day,dt.hour,dt.minute)
         return dt
     return wraps(func)(wrapper)
+
+def log_timing(func):
+    '''
+    This is a decorator that logs the time it took to complete the decorated function.
+    Handy for performance testing
+    '''
+    def wrapper(*arg):
+        t1 = time.time()
+        res = func(*arg)
+        t2 = time.time()
+        logger.info('%s took %0.3f ms' % (func.func_name, (t2-t1)*1000.0))
+        return res
+    return wrapper
+
+def superuser_only(function):
+    '''
+    Limit view to superusers only.
+    '''
+    def _inner(request, *args, **kwargs):
+        if not request.user.is_superuser:
+            raise PermissionDenied
+        return function(request, *args, **kwargs)
+    return _inner

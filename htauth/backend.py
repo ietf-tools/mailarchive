@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.contrib.auth.models import User, UNUSABLE_PASSWORD
+from django.contrib.auth.models import User
 
 from htauth.htpasswd import check_password, NoSuchUser
 
@@ -21,10 +21,11 @@ class HtauthBackend(object):
             # Create a new user. Note that we can set password
             # to anything, because it won't be checked; the password
             # from settings.py will.
-            user = User(username=username, password=UNUSABLE_PASSWORD)
+            #user = User(username=username, password=UNUSABLE_PASSWORD)
             #user.is_staff = True
             #user.is_superuser = True
-            user.save()
+            #user.save()
+            user = User.objects.create_user(username)
         return user
 
     def get_user(self, user_id):

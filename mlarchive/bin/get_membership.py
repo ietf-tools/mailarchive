@@ -13,7 +13,7 @@ if not path in sys.path:
     sys.path.insert(0, path)
 os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings'
 # -------------------------------------------------------------------------------------
-
+from django.conf import settings
 from django.contrib.auth.models import User
 from ietf.person.models import Email
 from optparse import OptionParser

@@ -31,10 +31,9 @@ def check_access(func):
         if msg.email_list.private and not request.user.is_superuser:
             if not request.user.is_authenticated() or not msg.email_list.members.filter(id=request.user.id):
                 raise PermissionDenied
-        else:
-            # add the message object to returning arguments
-            kwargs['msg'] = msg
-            return func(request, *args, **kwargs)
+
+        kwargs['msg'] = msg
+        return func(request, *args, **kwargs)
 
     return wraps(func)(wrapper)
 

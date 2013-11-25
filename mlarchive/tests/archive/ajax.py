@@ -1,7 +1,9 @@
 import pytest
 from django.conf import settings
+from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from factories import *
+from pyquery import PyQuery
 
 import os
 import shutil
@@ -28,17 +30,65 @@ def test_ajax_get_list(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_get_msg(client):
-    elist = EmailListFactory.create(name='public')
+    publist = EmailListFactory.create(name='public')
+    prilist = EmailListFactory.create(name='private',private=True)
+    user = UserFactory.create(username='test-chair')
+    prilist.members.add(user)
     thread = ThreadFactory.create()
-    msg = MessageFactory.create(email_list=elist,thread=thread)
+    msg = MessageFactory.create(email_list=publist,thread=thread,hashcode='00001')
+    primsg = MessageFactory.create(email_list=prilist,thread=thread,hashcode='00002')
     path = os.path.join(settings.BASE_DIR,'tests','data','mail.1')
-    shutil.copyfile(path, msg.get_file_path())
+    for m in (msg,primsg):
+        if not os.path.exists(os.path.dirname(m.get_file_path())):
+            os.makedirs(os.path.dirname(m.get_file_path()))
+        shutil.copyfile(path, m.get_file_path())
 
-    url = '%s/?id=1' % reverse('ajax_get_msg')
+    url = '%s/?id=%s' % (reverse('ajax_get_msg'), msg.pk)
     response = client.get(url)
-    print response.content
-    assert False
+    assert response.status_code == 200
+    assert response.content.find('This is a test') != -1
+
+    # test unauthorized access to restricted Message
+    url = '%s/?id=%s' % (reverse('ajax_get_msg'), primsg.pk)
+    response = client.get(url)
+    assert response.status_code == 403
+
+    # test authorized access to restricted Message
+    assert client.login(username='test-chair',password='ietf-test')
+    url = '%s/?id=%s' % (reverse('ajax_get_msg'), primsg.pk)
+    response = client.get(url)
+    print response
+    assert response.status_code == 200
 
 @pytest.mark.django_db(transaction=True)
 def test_get_messages(client):
-    pass
+    '''
+    This test expects data in the xapian index.  However, since the database is empty search
+    result sets will contain empty items
+    '''
+    url = '%s/?q=database' % reverse('archive_search')
+    response = client.get(url)
+    count = response.context['page'].paginator.count
+    assert count > 20
+    q = PyQuery(response.content)
+    id = q('#msg-list').attr('data-queryid')
+
+    url = '%s/?queryid=%s&lastitem=20' % (reverse('ajax_messages'), id)
+    response = client.get(url)
+    assert response.status_code == 200
+    '''
+    this may require testing against a live system
+
+    # expire item and try again
+    cache.delete(id)
+    response = client.get(url)
+    assert response.status_code == 404
+
+    # test end of items
+    url = '%s/?queryid=%s&lastitem=%s' % (reverse('ajax_messages'), id, count + 1)
+    response = client.get(url)
+    print response.content
+    print response.status_code
+    print url
+    assert response.status_code == 204
+    '''

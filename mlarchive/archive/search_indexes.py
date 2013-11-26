@@ -1,12 +1,10 @@
 from django.conf import settings
-#from haystack.indexes import *
-#from haystack import site
 from haystack import indexes
 from mlarchive.archive.models import Message
 
-BaseSearch = indexes.RealTimeSearchIndex if settings.HAYSTACK_USE_REALTIME_SEARCH else indexes.SearchIndex
+#BaseSearch = indexes.RealTimeSearchIndex if settings.HAYSTACK_USE_REALTIME_SEARCH else indexes.SearchIndex
 
-class MessageIndex(BaseSearch, indexes.Indexable):
+class MessageIndex(indexes.SearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
 
     date = indexes.DateTimeField(model_attr='date')

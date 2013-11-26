@@ -1,12 +1,41 @@
 import pytest
 from django.core.urlresolvers import reverse
-from django.http import HttpRequest
+from django.http import HttpRequest, QueryDict
 from factories import *
 from haystack.query import SearchQuerySet
 from mlarchive.archive.forms import *
 
+
+def test_get_base_query(client):
+    qd = QueryDict('?q=database&f_list=saag&so=date')
+    result = get_base_query(qd)
+    assert isinstance(result, QueryDict)
+    assert result.items() == [(u'?q', u'database')]
+    result = get_base_query(qd,filters=True)
+    assert isinstance(result, QueryDict)
+    assert result.items() == [(u'f_list', u'saag'), (u'?q', u'database')]
+    result = get_base_query(qd,string=True)
+    assert isinstance(result, unicode)
+    assert result == u'%3Fq=database'
+
 @pytest.mark.django_db(transaction=True)
-def test_get_facets(client):
+def test_get_list_info(client):
+    EmailListFactory.create(name='ancp')
+    EmailListFactory.create(name='alto')
+    assert get_list_info(1) == 'ancp'
+    assert get_list_info('ancp') == 1
+
+#def test_group_by_thread(client):
+    #SearchQuerySet().none()
+
+#def test_sort_by_subject(client):
+
+#def test_transform(client):
+
+# test that facets are sorted
+
+@pytest.mark.django_db(transaction=True)
+def test_asf_get_facets(client):
     '''Ensure that calculating facet counts works and facets interact
     - this test requires the index
     '''
@@ -38,3 +67,5 @@ def test_get_facets(client):
     selected_counts = dict(facets['fields']['email_list'])
     frm_email_total = sum([ c for x,c in facets['fields']['frm_email'] ])
     assert selected_counts['ancp'] == frm_email_total
+
+#def test_asf_search(client):

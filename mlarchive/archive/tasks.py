@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+from haystack.exceptions import NotHandled
 from mlarchive.celeryapp import app
 
 @app.task

@@ -7,7 +7,7 @@ python-xapian 1.2.12
 python-memcached
 memcached 1.4.15
 RabbitMQ Server 2.8.7
-Celery v3.1.1
+Celery v3.1.6
 Django 1.6 (Included)
 Haystack 2.1.1 (Included)
 

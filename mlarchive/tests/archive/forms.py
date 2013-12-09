@@ -25,6 +25,11 @@ def test_get_list_info(client):
     assert get_list_info(1) == 'ancp'
     assert get_list_info('ancp') == 1
 
+@pytest.mark.django_db(transaction=True)
+def test_fixture(messages):
+    assert EmailList.objects.count() == 2
+    assert Message.objects.count() == 2
+
 #def test_group_by_thread(client):
     #SearchQuerySet().none()
 

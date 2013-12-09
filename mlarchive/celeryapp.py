@@ -9,7 +9,8 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mlarchive.settings')
 
 app = Celery('mlarchive')
 app.config_from_object('django.conf:settings')
-app.autodiscover_tasks(settings.INSTALLED_APPS, related_name='tasks')
+
+app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 @app.task(bind=True)
 def debug_task(self):

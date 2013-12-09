@@ -1,10 +1,11 @@
+from celery_haystack.indexes import CelerySearchIndex
 from django.conf import settings
 from haystack import indexes
 from mlarchive.archive.models import Message
 
 #BaseSearch = indexes.RealTimeSearchIndex if settings.HAYSTACK_USE_REALTIME_SEARCH else indexes.SearchIndex
 
-class MessageIndex(indexes.SearchIndex, indexes.Indexable):
+class MessageIndex(CelerySearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
 
     date = indexes.DateTimeField(model_attr='date')

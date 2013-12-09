@@ -99,6 +99,7 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
     'haystack',
+    'celery_haystack',
     'mlarchive.archive',
     'htauth',
 )
@@ -139,8 +140,9 @@ LOGGING = {
 }
 
 # HAYSTACK SETTINGS
-HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
-HAYSTACK_USE_REALTIME_SEARCH = True
+#HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+HAYSTACK_SIGNAL_PROCESSOR = 'celery_haystack.signals.CelerySignalProcessor'
+#HAYSTACK_USE_REALTIME_SEARCH = True
 
 HAYSTACK_XAPIAN_PATH = '/a/mailarch/data/archive_index'
 HAYSTACK_CONNECTIONS = {
@@ -187,7 +189,10 @@ BROKER_URL = 'amqp://'
 CELERY_RESULT_BACKEND = 'amqp://'
 CELERY_TIMEZONE = 'America/Los_Angeles'
 CELERY_ENABLE_UTC = True
-
+CELERY_HAYSTACK_DEFAULT_ALIAS = 'default'
+CELERY_HAYSTACK_MAX_RETRIES = 1
+CELERY_HAYSTACK_RETRY_DELAY = 300
+CELERY_HAYSTACK_TRANSACTION_SAFE = False
 
 # Put SECRET_KEY in here, or any other sensitive or site-specific
 # changes.  DO NOT commit settings_local.py to svn.

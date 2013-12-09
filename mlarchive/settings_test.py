@@ -6,4 +6,17 @@ DJANGO_SETTINGS_MODULE = mlarchive.settings_test
 '''
 from mlarchive.settings import *
 
-ARCHIVE_DIR = '/tmp/archive/'
+ARCHIVE_DIR = '/tmp/mailarch/data/archive/'
+
+# HAYSTACK SETTINGS
+HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+#HAYSTACK_USE_REALTIME_SEARCH = True
+
+HAYSTACK_XAPIAN_PATH = '/tmp/mailarch/data/archive_index'
+HAYSTACK_CONNECTIONS = {
+    'default': {
+        'ENGINE': 'haystack.backends.xapian_backend.XapianEngine',
+        'PATH': '/tmp/mailarch/data/archive_index',
+    },
+}
+

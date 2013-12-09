@@ -7,6 +7,14 @@
 
 {% block content %}
 
+<h1>Index</h1>
+<h2>Utilities</h2>
+<pre>
+xapian-check ./archive_index : check database integrity
+delve [-r RECORDNO] ./archive_index : lookup a record
+quest
+</pre>
+
 <h1>Auxiliary Services</h1>
 <h2>Memcached</h2>
 <p>Memcached is the cache backend for the Email Archive.  Useful commands:
@@ -31,5 +39,39 @@ stats items (doesn't work?)
 
 <a href="http://memcached.org">Memcache Homepage</a>
 <a href="http://www.pal-blog.de/entwicklung/perl/memcached-statistics-stats-command.html">Memcached Statistics</a>
+
+<h2>Celery</h2>
+<ul>
+  <li>Restart: # /etc/init.d/celeryd restart</li>
+  <li>sh -x /etc/init.d/celeryd start</li>
+  <li>C_FAKEFORK=1 sh -x /etc/init.d/celeryd start</li>
+</ul>
+
+<p>Troubleshooting: ensure perms correct on /a/mailarch/data/log/mlarchive.log
+
+> Starting nodes...
+> worker1@ietfa.amsl.com: * Child terminated with errorcode 255
+FAILED
+
+# su - nobody
+$ /etc/init.d/celery start
+$ cd /a/mailarch/current
+$ export PYTHONPATH=$PWD
+$ celery worker -A mlarchive.celeryapp:app
+</p>
+
+Log File Errors:
+DatabaseLockError: check perms on flintlock
+DatabaseOpeningError: check perms on database files
+DatabaseError:
+
+<h2>RabbitMQ</h2>
+<ul>
+  <li># service rabbitmq-server start|stop</li>
+  <li># rabbitmqctl status</li>
+  <li># rabbitmqctl list_queues</li>
+</ul>
+
+<a href="https://www.rabbitmq.com/man/rabbitmqctl.1.man.html">rabbitmqctl man page</a>
 
 {% endblock %}

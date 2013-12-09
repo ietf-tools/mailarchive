@@ -4,7 +4,7 @@ from django.template.loader import render_to_string
 from django.conf import settings
 from email.utils import collapse_rfc2231_value
 from HTMLParser import HTMLParser, HTMLParseError
-from tasks import add_mark
+#from tasks import add_mark
 
 import mailbox
 
@@ -184,7 +184,7 @@ class Generator:
         if settings.DEBUG:
             logger.debug('called: _handle_text_html [{0}, {1}]'.format(self.msg.email_list,self.msg.msgid))
             logger.debug('calling _handle_text_html with bits: {0}'.format(settings.MARK_BITS['HAS_HTML_PART']))
-            add_mark.delay(self.msg,settings.MARK_BITS['HAS_HTML_PART'])
+            #add_mark.delay(self.msg,settings.MARK_BITS['HAS_HTML_PART'])
 
         if not self.text_only:
             payload = part.get_payload(decode=True)

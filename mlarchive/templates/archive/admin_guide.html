@@ -58,6 +58,8 @@ $ /etc/init.d/celery start
 $ cd /a/mailarch/current
 $ export PYTHONPATH=$PWD
 $ celery worker -A mlarchive.celeryapp:app
+
+<a href="http://docs.celeryproject.org/en/latest/userguide/monitoring.html">Celery admin & monitoring</a>
 </p>
 
 Log File Errors:
@@ -69,7 +71,13 @@ DatabaseError:
 <ul>
   <li># service rabbitmq-server start|stop</li>
   <li># rabbitmqctl status</li>
+
   <li># rabbitmqctl list_queues</li>
+  <li># rabbitmqctl list_queues name messages messages_ready messages_unacknowledged</li>
+
+  <li># rabbitmqctl stop_app</li>
+  <li># rabbitmqctl reset</li>
+  <li># rabbitmqctl start_app</li>
 </ul>
 
 <a href="https://www.rabbitmq.com/man/rabbitmqctl.1.man.html">rabbitmqctl man page</a>

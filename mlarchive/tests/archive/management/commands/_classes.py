@@ -53,3 +53,12 @@ This is a test email.  With no headers
     assert os.path.exists(os.path.join('/tmp/archive/_failed/test/',filename))
 
 #def test_save_failed_msg
+
+#def test_get_envelope_date():
+    # from most common to least
+    # From iesg-bounces@ietf.org Fri Dec 01 02:58:22 2006
+    # From denis.pinkas at bull.net  Fri Feb  1 03:12:37 2008
+    # From fluffy@cisco.com Thu, 15 Jul 2004 17:15:16 -0700 (PDT)
+    # From Kim.Fullbrook@O2.COM Tue, 01 Feb 2005 06:01:13 -0500
+    # From eburger@brooktrout.com Thu, 3 Feb 2005 19:55:03 GMT
+    # From scott.mcglashan@hp.com Wed, 6 Jul 2005 12:24:15 +0100 (BST)

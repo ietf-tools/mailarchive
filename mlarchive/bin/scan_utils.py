@@ -32,9 +32,12 @@ def process(names):
             mb.close()
 
 def all_mboxs():
+    'Generator that returns the full path of all non-empty mbox files in the archive.'
     dirs = sorted(glob.glob('/a/www/ietf-mail-archive/text*/*'))
     for dir in dirs:
         all = [ os.path.join(dir,f) for f in os.listdir(dir) ]
         files = filter(is_mbox, all)
         for file in files:
-            yield file
+            size = os.stat(file).st_size
+            if size != 0:
+                yield file

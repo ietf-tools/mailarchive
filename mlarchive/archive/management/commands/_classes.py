@@ -6,6 +6,7 @@ from email.utils import parsedate, parsedate_tz, mktime_tz, getaddresses, make_m
 from mlarchive.archive.models import *
 from mlarchive.archive.management.commands._mimetypes import *
 from mlarchive.utils.decorators import check_datetime
+from pytz import timezone
 from tzparse import tzparse
 
 from collections import deque
@@ -34,6 +35,9 @@ logger = getLogger('mlarchive.custom')
 # --------------------------------------------------
 # Globals
 # --------------------------------------------------
+date_formats = ["%a %b %d %H:%M:%S %Y",
+                "%a, %d %b %Y %H:%M:%S %Z",
+                "%a %b %d %H:%M:%S %Y %Z"]
 
 SEPARATOR_PATTERNS = [ re.compile(r'^Return-[Pp]ath:'),
                        re.compile(r'^Envelope-to:'),
@@ -47,6 +51,8 @@ SEPARATOR_PATTERNS = [ re.compile(r'^Return-[Pp]ath:'),
 HEADER_PATTERN = re.compile(r'^[\041-\071\073-\176]{1,}:')
 SENT_PATTERN = re.compile(r'^(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(\d{1,2})/(\d{1,2})/(\d{4,4})\s+(\d{1,2}):(\d{2,2})\s+(AM|PM)')
 MSGID_PATTERN = re.compile(r'<([^>]+)>')                    # [^>] means any character except ">"
+ENVELOPE_DATE_PATTERN = re.compile(r'(Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+')
+ENVELOPE_DUPETZ_PATTERN = re.compile(r'[\-\+]\d{4} \([A-Z]+\)$')
 
 subj_blob_pattern = r'(\[[\040-\132\134\136-\176]{1,}\]\s*)'
 subj_refwd_pattern = r'([Rr][eE]|F[Ww][d]?)\s*' + subj_blob_pattern + r'?:\s'
@@ -102,6 +108,20 @@ def clean_spaces(s):
     s = re.sub(r'\s+',' ',s)
     return s
 
+def convert_date(date):
+    'Try different patterns to convert string to naive UTC datetime object'
+    for format in date_formats:
+        try:
+            result = tzparse(date,format)
+            if result:
+                # convert to UTC and make naive
+                utc_tz = timezone('utc')
+                time = utc_tz.normalize(result.astimezone(utc_tz))
+                time = time.replace(tzinfo=None)                # make naive
+                return time
+        except ValueError:
+            pass
+
 def decode_rfc2047_header(h):
     return ' '.join(decode_safely(s, charset) for s, charset in decode_header(h))
 
@@ -153,19 +173,44 @@ def get_base_subject(str):
 
     return str
 
+def get_date_part(str):
+    '''Get the date portion of the envelope header.  Based on the observation
+    that all date parts start with abbreviated weekday'''
+    match = ENVELOPE_DATE_PATTERN.search(str)
+    if match:
+        date = match.group()
+
+        # a very few dates have redundant timezone designations on the end
+        # which tzparse can't handle.  If this is the case strip it off
+        # ie. Wed, 6 Jul 2005 12:24:15 +0100 (BST)
+        if ENVELOPE_DUPETZ_PATTERN.search(date):
+            date = re.sub(r'\s\([A-Z]+\)$','',date)
+        return date
+    else:
+        return None
+
 def get_envelope_date(msg):
     '''
     This function takes a email.message.Message object and returns a datetime object
-    derived from the envelope header
+    derived from the message envelope
+
+    Some files have mangled email addresses in "From" line:
+    iesg/2008-01.mail: From dromasca at avaya.com  Tue Jan  1 04:49:41 2008
     '''
     line = msg.get_from()
     if not line:
         return None
 
-    if '@' in line:
-        return parsedate_to_datetime(' '.join(line.split()[1:]))
-    elif parsedate_to_datetime(line):    # sometimes Date: is first line of MMDF message
-        return parsedate_to_datetime(line)
+    date = get_date_part(line.rstrip())
+    if date:
+        converted = convert_date(date)
+        if converted:
+            return converted
+
+    #if '@' in line:
+    #    return parsedate_to_datetime(' '.join(line.split()[1:]))
+    #elif parsedate_to_datetime(line):    # sometimes Date: is first line of MMDF message
+    #    return parsedate_to_datetime(line)
 
 def get_header_date(msg):
     '''
@@ -550,7 +595,7 @@ class MessageWrapper(object):
         have an asctime date (no timezone info).
         '''
         fallback = None
-        for func in (get_header_date,get_received_date,get_envelope_date):
+        for func in (get_envelope_date,get_header_date,get_received_date):
             date = func(self.email_message)
             if date:
                 if is_aware(date):
@@ -559,7 +604,7 @@ class MessageWrapper(object):
                     except ValueError:
                         pass
                 else:
-                    fallback = date
+                    return date
             # if get_received_date fails could be spam or corrupt message, flag it
             elif func.__name__ == 'get_received_date':
                 self.spam_score = self.spam_score | settings.MARK_BITS['NO_RECVD_DATE']
@@ -567,8 +612,6 @@ class MessageWrapper(object):
         #logger.warn("Import Warn [{0}, {1}, {2}]".format(self.msgid,'Used None or naive date',
         #                                                 self.email_message.get_from()))
 
-        if fallback:
-            return fallback
         else:
             # can't really proceed without a date, this likely indicates bigger parsing error
             raise DateError("%s, %s" % (self.msgid,self.email_message.get_unixfrom()))

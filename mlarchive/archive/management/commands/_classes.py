@@ -194,10 +194,10 @@ def get_envelope_date(msg):
     This function takes a email.message.Message object and returns a datetime object
     derived from the message envelope
 
-    Some files have mangled email addresses in "From" line:
+    NOTE: Some files have mangled email addresses in "From" line:
     iesg/2008-01.mail: From dromasca at avaya.com  Tue Jan  1 04:49:41 2008
     '''
-    line = msg.get_from()
+    line = get_from(msg)
     if not line:
         return None
 
@@ -211,6 +211,21 @@ def get_envelope_date(msg):
     #    return parsedate_to_datetime(' '.join(line.split()[1:]))
     #elif parsedate_to_datetime(line):    # sometimes Date: is first line of MMDF message
     #    return parsedate_to_datetime(line)
+
+def get_from(msg):
+    '''
+    This function is required because of the disparity between different message objects.
+    email.message.Message has a get_unixfrom() method while mailbox.mboxMessage has the
+    get_from() method
+    '''
+    if hasattr(msg, 'get_unixfrom'):
+        frm = msg.get_unixfrom()
+        if frm:
+            return frm
+    if hasattr(msg, 'get_from'):
+        frm = msg.get_from()
+        if frm:
+            return frm
 
 def get_header_date(msg):
     '''
@@ -363,7 +378,7 @@ def save_failed_msg(data,listname,error):
     if isinstance(data,email.message.Message):
         output = data.as_string()
         if isinstance(data,BetterMbox):
-            identifier = data.get_from()
+            identifier = get_from(data)
         else:
             identifier = data.get('Message-ID','')
     else:
@@ -532,7 +547,7 @@ class Loader(object):
             try:
                 self.load_message(m)
             except GenericWarning as error:
-                logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,error.args,m.get_from()))
+                logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,error.args,get_from(m)))
             except Exception as error:
                 save_failed_msg(m,self.listname,error)
                 self.stats['errors'] += 1

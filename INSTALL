@@ -1,4 +1,9 @@
-DEPENDENCIES:
+=======================================
+Email Archive Installation Instructions
+=======================================
+
+DEPENDENCIES
+============
 Python 2.7.3
 MySQL 5.5
 xapian-core 1.2.12
@@ -13,21 +18,23 @@ Haystack 2.1.1 (Included)
 
 
 Python Packages
+---------------
 pip install python-dateutil
 pip install pytest-dajngo
 pip install factory-boy
 
-Prerequisites:
-1) Install and configure memcached 
+Prerequisites
+-------------
+1. Install and configure memcached 
 zypper install memcached
 chkconfig memcached on
 
-2) Install and configure RabbitMQ
+2. Install and configure RabbitMQ
 zypper install rabbitmq-server
 chkconfig rabbitmq-server on
 see: http://www.rabbitmq.com/man/rabbitmqctl.1.man.html
 
-3) Install and configure celery
+3. Install and configure celery
 pip install celery
 cp INSTALL_DIR/celery/celeryd /etc/init.d
 cp INSTALL_DIR/celery/celeryd.conf /etc/default/celeryd
@@ -37,12 +44,12 @@ chkconfig celeryd on
 SETUP:
 The following steps will refer to INSTALL_DIR (ie. /a/mailarch )
 
-1) Download software via SVN checkout
+1. Download software via SVN checkout
 svn checkout http://svn.tools.ietf.org/svn/tools/mailarch/trunk
 
-2) Create a symlink to the release directory, INSTALL_DIR/current -> INSTALL_DIR/trunk
+2. Create a symlink to the release directory, INSTALL_DIR/current -> INSTALL_DIR/trunk
 
-3) Create (or copy) INSTALL_DIR/current/mlarchive/settings_local.py which contains production
+3. Create (or copy) INSTALL_DIR/current/mlarchive/settings_local.py which contains production
 settings.  At a minimum this musts contain the DATABASE credentials.
 
 DATABASES = {
@@ -58,19 +65,18 @@ DATABASES = {
 }
 
 
-4) Apache Configuration
+4. Sample Apache Configuration
 
+        RemoveHandler cgi-script .py
         Alias /static/ /a/mailarch/current/static/
-        Alias /pylot/ /a/mailarch/pylot/
 
-        # WSGI Section --------------------------------
+        WSGIScriptAlias / /a/mailarch/current/mlarchive/wsgi.py
+        WSGIApplicationGroup %{GLOBAL}
+        WSGIProcessGroup mailarchive.ietf.org
+
         <Directory /a/mailarch>
-                Order allow,deny
-                Allow from all
-                Options Indexes FollowSymLinks
-        </Directory>
-
-        <Directory /a/mailarch/current>
+            #Order allow,deny
+            #Allow from all
             Options FollowSymLinks
         </Directory>
 
@@ -79,16 +85,28 @@ DATABASES = {
             Allow from all
         </Directory>
 
-        <Directory /a/mailarch/current/pylot>
-            Options Indexes FollowSymLinks
+        <Directory /a/mailarch/current/mlarchive>
+        <Files wsgi.py>
+            Order deny,allow
+            Allow from all
+        </Files>
         </Directory>
 
 
-x) Configure mailmain
-edit mm_cfg:
-PUBLIC_EXTERNAL_ARCHIVER = '/a/mailarch/current/mlarchive/bin/call-archives.py %(listname)s -public'
-PRIVATE_EXTERNAL_ARCHIVER = '/a/mailarch/current/mlarchive/bin/call-archives.py %(listname)s -private'
+5. Configure mailmain
 
+copy INSTALL_DIR/trunk/mlarchive/bin/call-archives.py /a/ietf/scripts
+/a/mailman/Mailman/mm_cfg:
+PUBLIC_EXTERNAL_ARCHIVER = '/a/ietf/scripts/call-archives.py %(listname)s --public'
+PRIVATE_EXTERNAL_ARCHIVER = '/a/ietf/scripts/call-archives.py %(listname)s --private'
+
+Modify ARCHIVE ALIASES in /a/postfix/aliases
+
+ietfarch-atompub-archive:               "|/a/ietf/scripts/archive-mail atompub"
+
+-> 
+
+ietfarch-atompub-archive:               "|/a/ietf/scripts/call-archives atompub"
 x) Install Cronscripts
 
 

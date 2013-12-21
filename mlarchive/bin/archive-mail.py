@@ -16,14 +16,14 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings'
 # -------------------------------------------------------------------------------------
 
 from optparse import OptionParser
-#from mlarchive.archive.tasks import call_archive_message
 
 import mlarchive.archive.management.commands._classes as _classes
 
 from django.utils.log import getLogger
-logger = getLogger('mlarchive.custom')
+logger = getLogger('archive-mail')
 
 def main():
+    logger.info('called with arguments: %s' % sys.argv)
     usage = "usage: %prog LISTNAME [options]"
     parser = OptionParser(usage=usage)
     parser.add_option("--public", help="archive message to public archive (default)",
@@ -44,12 +44,12 @@ def main():
                  (sys.argv[0],sys.argv[0]))
 
     data = sys.stdin.read()
+    logger.info('envelope: %s' % data.split('\n', 1)[0])
     status = _classes.archive_message(data,listname,private=options.private)
-    #result = call_archive_message.delay(data,listname,private=options.private)
-    #status = result.get(timeout=16)
 
     #sys.exit(status)
     # NOTE: unless it is determined that mailman retries work correctly return 0
+    logger.info('archive_message exit status: %s' % status)
     sys.exit(0)
 
 if __name__ == "__main__":

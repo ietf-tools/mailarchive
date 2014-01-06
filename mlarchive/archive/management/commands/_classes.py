@@ -83,19 +83,22 @@ class UnknownFormat(Exception):
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
-def archive_message(data,listname,private=False):
+def archive_message(data,listname,private=False,save_failed=True):
     '''
     This function is the internals of the interface to Mailman.  It is called by the
     standalone script archive-mail.py.  Inputs are:
     data: the message as a string (comes from sys.stdin.read())
     listname: a string, provided as command line argument to archive-mail
     private: boolean, True if the list is private.  Only used if this happens to be a new list
+    save_failed: default is True, set to false when calling from compare utility script
     '''
     try:
         msg = email.message_from_string(data)
         mw = MessageWrapper(msg,listname,private=private)
         mw.save()
     except Exception as error:
+        if not save_failed:
+            return 1
         if msg:
             save_failed_msg(msg,listname,error)
         else:
@@ -390,8 +393,10 @@ def save_failed_msg(data,listname,error):
     # write file
     if not os.path.exists(path):
         os.makedirs(path)
+        os.chmod(os.path.dirname(path),02777)
     with open(os.path.join(path,filename),'w') as f:
         f.write(output)
+    os.chmod(path,0660)
 
 def seek_charset(msg):
     '''
@@ -888,5 +893,7 @@ class MessageWrapper(object):
             path = os.path.join(settings.ARCHIVE_DIR,self.listname,filename)
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
+            os.chmod(os.path.dirname(path),02777)
         with open(path,'w') as f:
             f.write(self.email_message.as_string())
+        os.chmod(path,0660)

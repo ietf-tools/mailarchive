@@ -17,10 +17,13 @@ from mailman.  If it succeeds we proceed to the mail archive.
 When the time comes to end parallel archiving this script should be replaced by one that
 stashes the message, queues the import, and notifies on any failures
 '''
+import logging
+import logging.handlers
 import os
 import subprocess
 import sys
-
+import traceback
+    
 MHONARC = '/a/ietf/scripts/archive-mail.pl'
 MAILARCH= '/a/mailarch/current/mlarchive/bin/archive-mail.py'
 
@@ -40,8 +43,16 @@ p.communicate(input=data)
 if p.returncode != 0:
     sys.exit(p.returncode)
 
-if os.path.exists('/a/mailarch/data/mailman.enable'):
+try:
     p = subprocess.Popen([MAILARCH] + new_args, stdin=subprocess.PIPE)
     p.communicate(input=data)
-
+except Exception as error:
+    # send error in email (pure python, no django depency)
+    logger = logging.getLogger()
+    handler = logging.handlers.SMTPHandler(mailhost=("ietfa.amsl.com",25),
+                                           fromaddr="rcross@ietfa.amsl.com",
+                                           toaddrs=["rcross@amsl.com"],
+                                           subject="ERROR (%s)" % new_args)
+    logger.addHandler(handler)
+    logger.error(traceback.format_exc())
 sys.exit(0)

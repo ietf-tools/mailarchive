@@ -111,13 +111,15 @@ STATIC_URL = '/static/'
 # LOGGING #
 ###########
 
-# taken from conf/global_settings.py.
-# in Django 1.5 we can choose to add to (not override) global logging settings
-
 MY_LOG_FILENAME = '/a/mailarch/data/log/mlarchive.log'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {
+            'format': "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        }
+    },
     'handlers': {
         'rotating_file':
         {
@@ -128,6 +130,26 @@ LOGGING = {
             'when' : 'midnight',
             'interval' : 1,
             'backupCount' : 7,
+        },
+        'archive-mail_file_handler':
+        {
+            'level' : 'DEBUG',
+            'formatter' : 'simple',
+            'class' : 'logging.handlers.TimedRotatingFileHandler',
+            'filename' :   '/a/mailarch/data/log/archive-mail.log',
+            'when' : 'midnight',
+            'interval' : 1,
+            'backupCount' : 7,
+        },
+        'email':
+        {
+            'level' : 'DEBUG',
+            'formatter' : 'simple',
+            'class' : 'logging.handlers.SMTPHandler',
+            'mailhost' : ('ietfa.amsl.com',25),
+            'fromaddr': 'rcross@ietfa.amsl.com',
+            'toaddrs': ['rcross@amsl.com'],
+            'subject': 'logging message',
         }
     },
     'loggers': {
@@ -135,9 +157,21 @@ LOGGING = {
             'handlers': ['rotating_file'],
             'level': 'DEBUG',
             'propagate': True,
+        },
+        'archive-mail': {
+            'handlers': ['archive-mail_file_handler'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'mlarchive.email': {
+            'handlers': ['email'],
+            #'handlers': ['mail_admins'],
+            'level': 'DEBUG',
+            'propagate': True,
         }
     }
 }
+
 
 # HAYSTACK SETTINGS
 #HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
@@ -157,7 +191,7 @@ ARCHIVE_DIR = '/a/mailarch/data/archive'
 FILTER_CUTOFF = 15000
 LOG_FILE = '/a/mailarch/data/log/mlarchive.log'
 MAILMAN_DIR = '/usr/lib/mailman'
-SERVER_MODE = 'development'
+SERVER_MODE = 'production'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
 USE_EXTERNAL_PROCESSOR = False

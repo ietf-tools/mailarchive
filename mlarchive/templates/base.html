@@ -28,7 +28,7 @@
 <!-- Container -->
 <div id="container">
 
-    <div id="header">
+    <div id="header"{% if server_mode != "production" %} class="test"{% endif %}>
         <div id="header-text">{% block header %}<a href="/">Mail Archive</a>{% endblock %}</div>
         {% if user %}
             <div id="login" class="noprint">

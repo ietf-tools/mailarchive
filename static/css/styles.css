@@ -45,6 +45,10 @@ tr.hidden {
     overflow: hidden;
 }
 
+#header.test {
+    background: #c00000;
+}
+
 #header-text {
     font-size: 1.5em;
     padding-left: 1em;

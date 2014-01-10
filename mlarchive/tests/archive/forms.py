@@ -4,6 +4,7 @@ from django.http import HttpRequest, QueryDict
 from factories import *
 from haystack.query import SearchQuerySet
 from mlarchive.archive.forms import *
+from pprint import pprint
 
 
 def test_get_base_query(client):
@@ -56,6 +57,7 @@ def test_asf_get_facets(client):
     url = reverse('archive_search') + '?q=database'
     response = client.get(url)
     facets = response.context['facets']
+    # pprint(response.context)
 
     # ensure expected fields exist
     assert 'email_list' in facets['fields']

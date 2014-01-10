@@ -1,4 +1,6 @@
 from mlarchive.archive.management.commands._classes import *
+from factories import *
+from pprint import pprint
 
 import datetime
 import email
@@ -22,7 +24,7 @@ def test_get_base_subject():
         assert base == item[1]
 
 @pytest.mark.django_db(transaction=True)
-def test_archive_message():
+def test_archive_message(client):
     data = '''From: Ryan Cross <rcross@amsl.com>
 To: Ryan Cross <rcross@amsl.com>
 Date: Thu, 7 Nov 2013 17:54:55 +0000
@@ -32,11 +34,18 @@ Subject: This is a test
 
 Hello,
 
-This is a test email.
+This is a test email.  database
 '''
     status = archive_message(data,'test',private=False)
     assert status == 0
     assert Message.objects.all().count() == 1
+    
+    url = '%s/?q=database' % reverse('archive_search')
+    response = client.get(url)
+    count = response.context['page'].paginator.count
+    pprint(response.context['page'].object_list)
+    assert count > 20
+
 
 @pytest.mark.django_db(transaction=True)
 def test_archive_message_fail(client):
@@ -44,13 +53,14 @@ def test_archive_message_fail(client):
 
 This is a test email.  With no headers
 '''
-    from django.conf import settings
-    print settings.ARCHIVE_DIR
-    status = archive_message(data,'test',private=False)
+    publist = EmailListFactory.create(name='public')
+    status = archive_message(data,'public',private=False)
     assert status == 1
     assert Message.objects.all().count() == 0
     filename = datetime.datetime.today().strftime('%Y-%m-%d') + '.0000'
-    assert os.path.exists(os.path.join('/tmp/archive/_failed/test/',filename))
+    print publist.get_failed_dir()
+    print filename
+    assert os.path.exists(os.path.join(publist.get_failed_dir(),filename))
 
 #def test_save_failed_msg
 
@@ -62,3 +72,10 @@ This is a test email.  With no headers
     # From Kim.Fullbrook@O2.COM Tue, 01 Feb 2005 06:01:13 -0500
     # From eburger@brooktrout.com Thu, 3 Feb 2005 19:55:03 GMT
     # From scott.mcglashan@hp.com Wed, 6 Jul 2005 12:24:15 +0100 (BST)
+    
+def test_get_mime_extension():
+    data = [('image/jpeg','jpg'),('text/html','html'),('hologram/3d','bin')]
+    for item in data:
+        ext, desc = get_mime_extension(item[0])
+        assert ext == item[1]
+        

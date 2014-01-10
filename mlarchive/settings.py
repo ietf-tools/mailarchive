@@ -121,25 +121,19 @@ LOGGING = {
         }
     },
     'handlers': {
-        'rotating_file':
+        'watched_file':
         {
             'level' : 'DEBUG',
             #'formatter' : 'verbose', # from the django doc example
-            'class' : 'logging.handlers.TimedRotatingFileHandler',
+            'class' : 'logging.handlers.WatchedFileHandler',
             'filename' :   MY_LOG_FILENAME, # full path works
-            'when' : 'midnight',
-            'interval' : 1,
-            'backupCount' : 7,
         },
         'archive-mail_file_handler':
         {
             'level' : 'DEBUG',
             'formatter' : 'simple',
-            'class' : 'logging.handlers.TimedRotatingFileHandler',
+            'class' : 'logging.handlers.WatchedFileHandler',
             'filename' :   '/a/mailarch/data/log/archive-mail.log',
-            'when' : 'midnight',
-            'interval' : 1,
-            'backupCount' : 7,
         },
         'email':
         {
@@ -154,7 +148,7 @@ LOGGING = {
     },
     'loggers': {
         'mlarchive.custom': {
-            'handlers': ['rotating_file'],
+            'handlers': ['watched_file'],
             'level': 'DEBUG',
             'propagate': True,
         },

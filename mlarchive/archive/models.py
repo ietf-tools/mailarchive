@@ -49,6 +49,12 @@ class EmailList(models.Model):
     def __unicode__(self):
         return self.name
 
+    def get_failed_dir(self):
+        return os.path.join(settings.ARCHIVE_DIR,'_failed',self.name)
+    
+    def get_removed_dir(self):
+        return os.path.join(settings.ARCHIVE_DIR,self.name,'_removed')
+        
 class Message(models.Model):
     base_subject = models.CharField(max_length=512,blank=True)
     cc = models.TextField(blank=True,default='')
@@ -101,6 +107,7 @@ class Message(models.Model):
         path = os.path.join(settings.ARCHIVE_DIR,self.email_list.name,'attachments')
         if not os.path.exists(path):
             os.makedirs(path)
+            os.chmod(path,02777)
         return path
 
     def get_body(self):
@@ -168,10 +175,10 @@ class Attachment(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        path = os.path.join('/',self.message.email_list.name,'attachments',self.filename)
+        path = os.path.join('/archive/attach/',self.message.email_list.name,self.filename)
         return path
 
-    def get_file_path():
+    def get_file_path(self):
         directory = os.path.dirname(self.message.get_file_path())
         path = os.path.join(directory,'attachments',self.filename)
         return path

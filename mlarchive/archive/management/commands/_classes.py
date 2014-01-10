@@ -310,7 +310,9 @@ def get_mime_extension(type):
     returns a tuple of extension, description
     '''
     if type in CONTENT_TYPES:
-        return CONTENT_TYPES[type]
+        ext,desc = CONTENT_TYPES[type]
+        # return only the first of multiple extensions
+        return (ext.split(',')[0], desc)
     # TODO: type without x
     elif type.startswith('text/'):
         return ('txt','Text Data')
@@ -394,9 +396,10 @@ def save_failed_msg(data,listname,error):
     if not os.path.exists(path):
         os.makedirs(path)
         os.chmod(os.path.dirname(path),02777)
-    with open(os.path.join(path,filename),'w') as f:
+    filepath = os.path.join(path,filename)
+    with open(filepath,'w') as f:
         f.write(output)
-    os.chmod(path,0660)
+    os.chmod(filepath,0660)
 
 def seek_charset(msg):
     '''
@@ -849,6 +852,7 @@ class MessageWrapper(object):
                                 f.write(payload)
                                 attach.filename = filename
                                 attach.save()
+                            os.chmod(path,0660)
                             break
                         else:
                             logger.error("ERROR: couldn't pick unique attachment name in ten tries (list:%s)" % (self.listname))

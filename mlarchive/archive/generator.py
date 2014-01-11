@@ -4,6 +4,7 @@ from django.template.loader import render_to_string
 from django.conf import settings
 from email.utils import collapse_rfc2231_value
 from HTMLParser import HTMLParser, HTMLParseError
+from lxml.html.clean import clean_html
 #from tasks import add_mark
 
 import mailbox
@@ -181,9 +182,13 @@ class Generator:
         '''
         Handler for text/HTML MIME parts.  Takes a message.message part
         '''
+        if hasattr(settings,'MARK_HTML') and settings.MARK_HTML != 0 and self.msg.spam_score == 0:
+            self.msg.spam_score = settings.MARK_HTML
+            self.msg.save()
+            
         if settings.DEBUG:
             logger.debug('called: _handle_text_html [{0}, {1}]'.format(self.msg.email_list,self.msg.msgid))
-            logger.debug('calling _handle_text_html with bits: {0}'.format(settings.MARK_BITS['HAS_HTML_PART']))
+            #logger.debug('calling _handle_text_html with bits: {0}'.format(settings.MARK_BITS['HAS_HTML_PART']))
             #add_mark.delay(self.msg,settings.MARK_BITS['HAS_HTML_PART'])
 
         if not self.text_only:
@@ -193,7 +198,10 @@ class Generator:
                 uni = unicode(payload,charset or DEFAULT_CHARSET,errors='replace')
             except LookupError as error:
                 uni = unicode(payload,DEFAULT_CHARSET,errors='replace')
-            return render_to_string('archive/message_html.html', {'payload': uni})
+            # clean html document of unwanted elements (html,script,link,etc)
+            clean = clean_html(uni)
+            #return render_to_string('archive/message_html.html', {'payload': clean})
+            return clean
         else:
             payload = part.get_payload(decode=True)
             uni = unicode(payload,errors='ignore')
@@ -201,7 +209,7 @@ class Generator:
             # text = strip_tags(part.get_payload(decode=True)) # problems with bad html
             # soup = BeautifulSoup(part.get_payload(decode=True)) # errors with lxml
             # text = html2text(uni) # errors with malformed tags
-            soup = BeautifulSoup(part.get_payload(decode=True),'html5') # included "html" and css
+            soup = BeautifulSoup(payload,'html5') # included "html" and css
             text = soup.get_text()
 
             return text

@@ -196,6 +196,9 @@ MARK_BITS = { 'NON_ASCII_HEADER':0b0001,
               'NO_MSGID':0b0100,
               'HAS_HTML_PART':0b1000 }
 
+# MARK Flags.  0 = disabled.  Otherwise use unique integer
+MARK_HTML = 10
+
 # AUTH
 LOGIN_REDIRECT_URL = '/archive/'
 AUTHENTICATION_BACKENDS = (

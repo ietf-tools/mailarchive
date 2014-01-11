@@ -90,8 +90,8 @@ def bodies():
 
 def envelope_date():
     'Quickly test envelope date parsing on every standard mbox file in archive'
-    for path in all_mboxs():
     #for path in ['/a/www/ietf-mail-archive/text/lemonade/2002-09.mail']:
+    for path in all_mboxs():
         with open(path) as f:
             line = f.readline()
             while not line or line == '\n':
@@ -103,6 +103,22 @@ def envelope_date():
                 if not convert_date(date.rstrip()):
                     print path,date
 
+def html_only():
+    '''Scan all mboxs and report messages that have only one MIME part that is text/html'''
+    elist = ''
+    for path in all_mboxs():
+        name = os.path.basename(os.path.dirname(path))
+        if elist != name:
+            elist = name
+            print "Scanning %s" % name
+        if name in ('django-project','iab','ietf'):
+            continue
+        mb = _classes.get_mb(path)
+        for msg in mb:
+            if msg.is_multipart() == False:
+                if msg.get_content_type() == 'text/html':
+                    print msg['message-id']
+                    
 def main():
     parser = argparse.ArgumentParser(description='Run an archive scan.')
     parser.add_argument('function')

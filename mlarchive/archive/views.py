@@ -254,7 +254,7 @@ def logout_view(request):
     Logout the user
     '''
     logout(request)
-    return HttpResponseRedirect('/archive/')
+    return HttpResponseRedirect(reverse('archive'))
 
 def main(request):
     '''

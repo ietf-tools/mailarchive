@@ -101,7 +101,7 @@ class Message(models.Model):
         return body
 
     def get_absolute_url(self):
-        return '/archive/detail/%s/%s' % (self.email_list.name,self.hashcode)
+        return reverse('archive_detail',kwargs={'list_name':self.email_list.name,'id':self.hashcode})
 
     def get_attachment_path(self):
         path = os.path.join(settings.ARCHIVE_DIR,self.email_list.name,'attachments')
@@ -175,7 +175,7 @@ class Attachment(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        path = os.path.join('/archive/attach/',self.message.email_list.name,self.filename)
+        path = os.path.join(reverse('archive'),'attach',self.message.email_list.name,self.filename)
         return path
 
     def get_file_path(self):

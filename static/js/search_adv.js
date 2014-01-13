@@ -107,6 +107,6 @@ $(function() {
         }
     });
 
-    setup_ajax($("#id_email_list"), $("#email_list_list"), $("#email_list_search"), "archive/ajax/list/");
+    setup_ajax($("#id_email_list"), $("#email_list_list"), $("#email_list_search"), "arch/ajax/list/");
     init_forms();
 });

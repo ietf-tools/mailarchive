@@ -4,7 +4,7 @@ from django.template.loader import render_to_string
 from django.conf import settings
 from email.utils import collapse_rfc2231_value
 from HTMLParser import HTMLParser, HTMLParseError
-from lxml.html.clean import clean_html
+from lxml.html.clean import Cleaner
 #from tasks import add_mark
 
 import mailbox
@@ -198,8 +198,9 @@ class Generator:
                 uni = unicode(payload,charset or DEFAULT_CHARSET,errors='replace')
             except LookupError as error:
                 uni = unicode(payload,DEFAULT_CHARSET,errors='replace')
-            # clean html document of unwanted elements (html,script,link,etc)
-            clean = clean_html(uni)
+            # clean html document of unwanted elements (html,script,style,etc)
+            cleaner = Cleaner(style=True)
+            clean = cleaner.clean_html(uni)
             #return render_to_string('archive/message_html.html', {'payload': clean})
             return clean
         else:

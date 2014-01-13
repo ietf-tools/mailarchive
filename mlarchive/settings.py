@@ -200,7 +200,7 @@ MARK_BITS = { 'NON_ASCII_HEADER':0b0001,
 MARK_HTML = 10
 
 # AUTH
-LOGIN_REDIRECT_URL = '/archive/'
+LOGIN_REDIRECT_URL = '/arch/'
 AUTHENTICATION_BACKENDS = (
     'htauth.backend.HtauthBackend',
     )

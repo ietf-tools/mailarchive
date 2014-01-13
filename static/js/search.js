@@ -143,7 +143,7 @@ $(function() {
                 var queryid = $('#msg-list').attr('data-queryid');
                 var request = $.ajax({
                     "type": "GET",
-                    "url": "/archive/ajax/messages/",
+                    "url": "/arch/ajax/messages/",
                     "data": { "queryid": queryid, "lastitem": lastItem }
                 });
                 request.done(function(data, testStatus, xhr) {
@@ -169,7 +169,7 @@ $(function() {
     function load_msg(row) {
         var msgId = row.find("td:last").html();
         if(/^\d+$/.test(msgId)){
-            $('#view-pane').load('/archive/ajax/msg/?id=' + msgId, function() {
+            $('#view-pane').load('/arch/ajax/msg/?id=' + msgId, function() {
                 $('#msg-header').hide()
                 $('#msg-date').after('<a id="toggle" href="#">Show header</a>');
                 $('#toggle').click(function(ev) {

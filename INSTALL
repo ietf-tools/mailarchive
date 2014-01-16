@@ -7,7 +7,7 @@ DEPENDENCIES
 Python 2.7.3
 MySQL 5.5
 xapian-core 1.2.12
-pyparsing 2.0.1
+# pyparsing 2.0.1
 python-xapian 1.2.12
 python-memcached
 memcached 1.4.15
@@ -31,7 +31,10 @@ chkconfig memcached on
 
 2. Install and configure RabbitMQ
 zypper install rabbitmq-server
+zypper install rabbitmq-server-plugins
+rabbitmq-plugins enable rabbitmq_management
 chkconfig rabbitmq-server on
+
 see: http://www.rabbitmq.com/man/rabbitmqctl.1.man.html
 
 3. Install and configure celery

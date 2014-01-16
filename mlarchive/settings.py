@@ -182,6 +182,7 @@ HAYSTACK_CONNECTIONS = {
 
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = '/a/mailarch/data/archive'
+CONSOLE_STATS_FILE = '/a/mailarch/data/log/console.json'
 FILTER_CUTOFF = 15000
 LOG_FILE = '/a/mailarch/data/log/mlarchive.log'
 MAILMAN_DIR = '/usr/lib/mailman'

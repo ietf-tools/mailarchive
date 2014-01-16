@@ -140,6 +140,22 @@ def admin(request):
         RequestContext(request, {}),
     )
 
+@superuser_only
+def admin_console(request):
+    form = None
+    
+    #cache_data = {'list_info': cache.get('list_info')}
+    return render_to_response('archive/admin_console.html', {
+        'form': form},
+        RequestContext(request, {}),
+    )
+    
+@superuser_only
+def admin_guide(request):
+    return render_to_response('archive/admin_guide.html', {},
+        RequestContext(request, {}),
+    )
+    
 def advsearch(request):
     '''
     The Advanced Search View
@@ -192,16 +208,6 @@ def browse_list(request, list_name):
     return render_to_response('archive/browse_list.html', {
         'list_obj': list_obj,
         'msgs': msgs},
-        RequestContext(request, {}),
-    )
-
-@superuser_only
-def console(request):
-    form = None
-    cache_data = {'list_info': cache.get('list_info')}
-    return render_to_response('archive/console.html', {
-        'form': form,
-        'cache_data': cache_data},
         RequestContext(request, {}),
     )
 

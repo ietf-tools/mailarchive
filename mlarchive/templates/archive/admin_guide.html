@@ -7,49 +7,86 @@
 
 {% block content %}
 
-<h1>Index</h1>
-<h2>Utilities</h2>
-<pre>
-xapian-check ./archive_index : check database integrity
-delve [-r RECORDNO] ./archive_index : lookup a record
-quest
-</pre>
-
-<h1>Auxiliary Services</h1>
-<h2>Memcached</h2>
-<p>Memcached is the cache backend for the Email Archive.  Useful commands:
-<ul>
-  <li>Start memcached server:<pre></pre> </li>
-  <li>Stop memcached server:<pre></pre> </li>
-  <li>Status:<pre>$ telnet localhost 11211
+<div id="admin_page">
+    <h1>Index</h1>
+    <h2>Xapian Utilities</h2>
+    <p>The email archive uses the Xapian search engine library.<br><br>
+    To run a database integrity check:
+    <pre class="example">cd /a/mailarch/data
+xapian-check ./archive_index</pre>
+    Show index stats
+    <pre class="example">delve ./archive_index/
+UUID = 2995f642-6fd8-469a-93bb-ac69aea27325
+number of documents = 1473880
+average document length = 2439.13
+document length lower bound = 36
+document length upper bound = 3258372
+highest document id ever used = 1473883
+has positional information = true</pre>
+    Lookup a record in the search index by database primary key
+    <pre class="example">delve [-r RECORDNO] ./archive_index</pre>
+    Command line search tool
+    <pre class="example">quest -d ./archive_index/ database</pre>
+    </p>
+    <br>
+    
+    <h1>Auxiliary Services</h1>
+    <h2>Memcached</h2>
+    <p>Memcached is the cache backend for the Email Archive.<br><br>
+    Start / Stop memcached
+    <pre class="example">service memcached start|stop|restart</pre>
+    Status from the command line
+    <pre class="example">$ telnet localhost 11211
 Trying 127.0.0.1...
 Connected to localhost.
 Escape character is '^]'.
-get foo
-VALUE foo 0 2
-hi
-END
 stats
-STAT pid 8861
-(etc)
+stats items
+quit</pre>
 
-stats items (doesn't work?)
-</pre> </li>
-</ul>
+    References:<br>
+    <a href="http://memcached.org">Memcache Homepage</a><br>
+    <a href="http://www.pal-blog.de/entwicklung/perl/memcached-statistics-stats-command.html">Memcached Statistics</a><br>
+    <br>
+    
+    <h2>RabbitMQ</h2>
+    Rabbitmq is the messaging backend for the Email Archive.  It is used to queue index update requests because the Xapian index only support one writer process.  Celery is the corresponding piece that consumes the index update messages.<br><br>
 
-<a href="http://memcached.org">Memcache Homepage</a>
-<a href="http://www.pal-blog.de/entwicklung/perl/memcached-statistics-stats-command.html">Memcached Statistics</a>
-
-<h2>Celery</h2>
-<ul>
-  <li>Restart: # /etc/init.d/celeryd restart</li>
-  <li>sh -x /etc/init.d/celeryd start</li>
-  <li>C_FAKEFORK=1 sh -x /etc/init.d/celeryd start</li>
-</ul>
-
-<p>Troubleshooting: ensure perms correct on /a/mailarch/data/log/mlarchive.log
-
-> Starting nodes...
+    Start / Stop Rabbitmq server
+    <pre class="example">service rabbitmq-server start|stop|restart
+** NOTE ** stop celery first, or restart after a rabbitmq restart</pre>
+    
+    Check status of server
+    <pre class="example">rabbitmqctl status</pre>
+    
+    List info for the message queue
+    <pre class="example">rabbitmqctl list_queues
+rabbitmqctl list_queues name messages messages_ready messages_unacknowledged</pre>
+    
+    Reset message queue (removes all messages!)
+    <pre class="example">rabbitmqctl stop_app
+rabbitmqctl reset
+rabbitmqctl start_app</pre>
+    List plugins
+    <pre class="example">rabbitmq-plugins list</pre>
+    <br>
+    References:<br>
+    <a href="https://www.rabbitmq.com/man/rabbitmqctl.1.man.html">rabbitmqctl man page</a><br>
+    <br>
+    <h2>Celery</h2>
+    Celery is the asynchronous task queue used to queue index updates.  It uses RabbitMQ as it's backend<br>
+    <br>
+    Restart
+    <pre class="example">/etc/init.d/celeryd restart</pre>
+    
+    Troubleshooting: start celery process with -x
+    <pre class="example">sh -x /etc/init.d/celeryd start
+-- or --
+C_FAKEFORK=1 sh -x /etc/init.d/celeryd start</pre>
+    
+    Troubleshooting: ensure perms correct on /a/mailarch/data/log/mlarchive.log<br>
+    Troubleshooting: run worker manually to check for errors
+    <pre class="example">> Starting nodes...
 > worker1@ietfa.amsl.com: * Child terminated with errorcode 255
 FAILED
 
@@ -57,29 +94,15 @@ FAILED
 $ /etc/init.d/celery start
 $ cd /a/mailarch/current
 $ export PYTHONPATH=$PWD
-$ celery worker -A mlarchive.celeryapp:app
+$ celery worker -A mlarchive.celeryapp:app</pre>
+    <br>
+    Solutions for Log File Errors:<br>
+    DatabaseLockError: check perms on flintlock<br>
+    DatabaseOpeningError: check perms on database files<br>
+    DatabaseError:<br>
+    <br>
+    References:<br>
+    <a href="http://docs.celeryproject.org/en/latest/userguide/monitoring.html">Celery admin & monitoring</a><br>
 
-<a href="http://docs.celeryproject.org/en/latest/userguide/monitoring.html">Celery admin & monitoring</a>
-</p>
-
-Log File Errors:
-DatabaseLockError: check perms on flintlock
-DatabaseOpeningError: check perms on database files
-DatabaseError:
-
-<h2>RabbitMQ</h2>
-<ul>
-  <li># service rabbitmq-server start|stop</li>
-  <li># rabbitmqctl status</li>
-
-  <li># rabbitmqctl list_queues</li>
-  <li># rabbitmqctl list_queues name messages messages_ready messages_unacknowledged</li>
-
-  <li># rabbitmqctl stop_app</li>
-  <li># rabbitmqctl reset</li>
-  <li># rabbitmqctl start_app</li>
-</ul>
-
-<a href="https://www.rabbitmq.com/man/rabbitmqctl.1.man.html">rabbitmqctl man page</a>
-
+</div> <!-- admin_page -->
 {% endblock %}

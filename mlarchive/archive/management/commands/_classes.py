@@ -283,8 +283,8 @@ def get_header_date(msg):
 
 def get_mb(path):
     '''
-    This function takes the path to a file and returns a mailbox object
-    and format.  Currently supported types are:
+    This function takes the path to a file and returns a mailbox object.
+    Currently supported types are:
     - mailbox.mmdf
     - BetterMbox (derived from mailbox.mbox)
     - CustomMbox (like mbox but no from line)

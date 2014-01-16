@@ -1,4 +1,10 @@
 #!/usr/bin/python
+'''
+Script to output some stats about the archive.  Run from cron and email to someone:
+
+MAILTO="rcross@amsl.com"
+10 00 * * * /a/mailarch/current/mlarchive/bin/stats.py
+'''
 
 # Set PYTHONPATH and load environment variables for standalone script -----------------
 # for file living in project/bin/

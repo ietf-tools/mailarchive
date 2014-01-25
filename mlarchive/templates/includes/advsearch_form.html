@@ -11,7 +11,7 @@
             {{ form.field }}
             {{ form.qualifier }}
             {{ form.value }}
-            <a id="remove_{{ forloop.counter0 }}" class="remove_btn" onclick="false" href="#">
+            <a id="remove_{{ forloop.counter0 }}" class="remove_btn" onclick="false" name="remove_{{ forloop.counter0 }}" href="#">
                 <img title="Remove" src="{{ STATIC_URL }}admin/img/icon_deletelink.gif" alt="Remove">
             </a>
             </div>

@@ -117,7 +117,7 @@ class Command(BaseCommand):
             except _classes.UnknownFormat as error:
                 # save failed message
                 if not (options['dryrun'] or options['test']):
-                    target = os.path.join(settings.ARCHIVE_DIR,'failed',options['listname'])
+                    target = os.path.join(settings.ARCHIVE_DIR,'_failed',options['listname'])
                     if not os.path.exists(target):
                         os.makedirs(target)
                     shutil.copy(filename,target)

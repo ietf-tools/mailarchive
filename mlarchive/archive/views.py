@@ -240,14 +240,15 @@ def export(request, type):
     # don't allow export of huge querysets and skip empty querysets
     count = queryset.count()
     if count > settings.EXPORT_LIMIT:
-        # message user
-        # return to original query
         messages.error(request,'Too many messages to export.')
-        raise Exception
+        query_string = '?' + self.request.META['QUERY_STRING']
+        url = reverse('archive_search') + query_string
+        return HttpResponseRedirect(url)
     elif count == 0:
-        # message user
-        # return to original query
-        pass
+        messages.error(request,'No messages to export.')
+        query_string = '?' + self.request.META['QUERY_STRING']
+        url = reverse('archive_search') + query_string
+        return HttpResponseRedirect(url)
 
     tardata, filename = get_export(queryset, type)
 

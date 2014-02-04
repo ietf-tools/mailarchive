@@ -183,7 +183,8 @@ HAYSTACK_CONNECTIONS = {
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = '/a/mailarch/data/archive'
 CONSOLE_STATS_FILE = '/a/mailarch/data/log/console.json'
-FILTER_CUTOFF = 15000
+EXPORT_LIMIT = 50000        # maximum number of messages we will export
+FILTER_CUTOFF = 15000       # maximum results for which we'll provide filter options
 LOG_FILE = '/a/mailarch/data/log/mlarchive.log'
 MAILMAN_DIR = '/usr/lib/mailman'
 SERVER_MODE = 'production'

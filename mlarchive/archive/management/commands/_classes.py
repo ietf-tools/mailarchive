@@ -6,6 +6,7 @@ from email.utils import parsedate, parsedate_tz, mktime_tz, getaddresses, make_m
 from mlarchive.archive.models import *
 from mlarchive.archive.management.commands._mimetypes import *
 from mlarchive.utils.decorators import check_datetime
+from mlarchive.utils.encoding import decode_safely
 from pytz import timezone
 from tzparse import tzparse
 
@@ -127,15 +128,6 @@ def convert_date(date):
 
 def decode_rfc2047_header(h):
     return ' '.join(decode_safely(s, charset) for s, charset in decode_header(h))
-
-def decode_safely(s, charset='latin-1'):
-    "Return s decoded according to charset, but do so safely."
-    try:
-        # return s.decode(charset or 'ascii', 'ignore')
-        return unicode(s,charset or 'latin-1')
-    except LookupError: # bogus charset
-        # return s.decode('ascii','ignore')
-        return unicode(s,'latin-1','replace')
 
 def get_base_subject(str):
     '''
@@ -751,13 +743,13 @@ class MessageWrapper(object):
         # return a new thread
         return Thread.objects.create()
 
-    def normalize(self, header_text, default='latin-1'):
+    def normalize(self, header_text):
         '''
         This function takes some header_text as a string.
         It returns the string decoded and normalized.
         Checks if the header needs decoding:
         - if text contains encoded_words, "=?", use decode_rfc2047_header()
-        - default to latin-1, replace
+        - or call decode_safely
         - finally, compress whitespace characters to one space
         '''
         if not header_text:                  # just return if we are passed an empty string
@@ -769,22 +761,8 @@ class MessageWrapper(object):
 
         if '=?' in header_text:              # handle RFC2047 encoded-words
             normal = decode_rfc2047_header(header_text)
-
         else:
-            try:                             # if it's pure ascii we're done
-                normal = unicode(header_text,'ascii')
-            except (UnicodeDecodeError, UnicodeEncodeError):
-                normal = unicode(header_text,default,errors='replace')
-                self.spam_score = self.spam_score | settings.MARK_BITS['NON_ASCII_HEADER'] # mark as possible spam
-
-
-        # TODO: refactor with get_charsets(), or simply remove
-        #charset = seek_charset(msg)
-        #if charset:
-        #    try:
-        #        return unicode(header_text,charset)
-        #    except (UnicodeDecodeError, LookupError):
-        #        pass
+            normal = decode_safely(header_text)
 
         # encode as UTF8 and compress whitespace
         normal = normal.encode('utf8')

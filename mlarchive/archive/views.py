@@ -144,19 +144,19 @@ def admin(request):
 @superuser_only
 def admin_console(request):
     form = None
-    
+
     #cache_data = {'list_info': cache.get('list_info')}
     return render_to_response('archive/admin_console.html', {
         'form': form},
         RequestContext(request, {}),
     )
-    
+
 @superuser_only
 def admin_guide(request):
     return render_to_response('archive/admin_guide.html', {},
         RequestContext(request, {}),
     )
-    
+
 def advsearch(request):
     '''
     The Advanced Search View
@@ -239,9 +239,10 @@ def export(request, type):
 
     # don't allow export of huge querysets and skip empty querysets
     count = queryset.count()
-    if count > 50000:
+    if count > settings.EXPORT_LIMIT:
         # message user
         # return to original query
+        messages.error(request,'Too many messages to export.')
         raise Exception
     elif count == 0:
         # message user

@@ -71,19 +71,20 @@ def convert_date(date):
         except ValueError:
             pass
 # ---------------------------------------------------------
-# Helper Functions
+# Scan Functions
 # ---------------------------------------------------------
 
 def bodies():
-    '''Call get_body_html() for every message in db. Use logging in generator
-    _handler methods to gather stats.
+    '''Call get_body_html() and get_body() for every message in db. Use logging in
+    generator_handler methods to gather stats.
     '''
-    query = Message.objects.filter(pk__lte=10000)
+    query = Message.objects.filter(pk__gte=457000)
     total = query.count()
     for msg in query:
         try:
             x = msg.get_body_html()
-        except UnicodeDecodeError as e:
+            y = msg.get_body()
+        except (UnicodeDecodeError, LookupError, TypeError) as e:
             print '{0} [{1}]'.format(e, msg.pk)
         if msg.pk % 1000 == 0:
             print 'processed {0} of {1}'.format(msg.pk,total)
@@ -118,7 +119,7 @@ def html_only():
             if msg.is_multipart() == False:
                 if msg.get_content_type() == 'text/html':
                     print msg['message-id']
-                    
+
 def main():
     parser = argparse.ArgumentParser(description='Run an archive scan.')
     parser.add_argument('function')

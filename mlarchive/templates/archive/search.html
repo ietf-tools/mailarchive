@@ -110,7 +110,13 @@
                 <div id="msg-list-controls">
                     {# Showing {{ page.object_list|length }} of {{ page.paginator.count }} #}
                     {{ page.paginator.count }} Messages
-
+                    {% if messages %}
+                    <ul class="messages">
+                        {% for message in messages %}
+                            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
                     <!--
                     {% if page.has_previous or page.has_next %}
                         <span class="right">

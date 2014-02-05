@@ -152,7 +152,7 @@ def get_export(queryset, type):
                 if not input.readline().startswith('From '):
                     mbox_file.write('From {0} {1}\n'.format(
                         result.object.frm_email,
-                        result.object.date.strftime('%a %b %d %H:%M:%S %Y'))
+                        result.object.date.strftime('%a %b %d %H:%M:%S %Y')))
                 input.seek(0)
                 mbox_file.write(input.read())
                 mbox_file.write('\n')

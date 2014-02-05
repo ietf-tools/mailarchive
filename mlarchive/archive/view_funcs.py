@@ -124,9 +124,16 @@ def get_export(queryset, type):
     tardata = StringIO()
     tar = tarfile.open(fileobj=tardata, mode='w:gz')
 
+    # make filename
+    chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + '_'
+    rand = ''.join(random.choice(chars) for x in range(5))
+    now = datetime.datetime.now()
+    basename = '%s%s_%s' % (type,now.strftime('%m%d'),rand)
+    filename = basename + '.tar.gz'
+
     if type == 'maildir':
         for result in queryset:
-            arcname = os.path.join(result.object.email_list.name,result.object.hashcode)
+            arcname = os.path.join(basename,result.object.email_list.name,result.object.hashcode)
             tar.add(result.object.get_file_path(),arcname=arcname)
     elif type == 'mbox':
         # there are various problems adding non-file objects (ie. StringIO) to tar files
@@ -140,7 +147,9 @@ def get_export(queryset, type):
             mlist = result.object.email_list.name
             if date != mbox_date or mlist != mbox_list:
                 mbox_file.close()
-                tar.add(temp_path,arcname=mbox_list + '/' + mbox_date + '.mail')
+                tar.add(temp_path,arcname=os.path.join(basename,
+                                                       mbox_list,
+                                                       mbox_date + '.mbox'))
                 os.remove(temp_path)
                 fd, temp_path = tempfile.mkstemp()
                 mbox_file = os.fdopen(fd,'w')
@@ -158,16 +167,12 @@ def get_export(queryset, type):
                 mbox_file.write('\n')
 
         mbox_file.close()
-        tar.add(temp_path,arcname=mbox_list + '/' + mbox_date + '.mail')
+        tar.add(temp_path,arcname=os.path.join(basename,
+                                               mbox_list,
+                                               mbox_date + '.mbox'))
         os.remove(temp_path)
 
     tar.close()
     tardata.seek(0)
-
-    # make filename
-    chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + '_'
-    rand = ''.join(random.choice(chars) for x in range(5))
-    now = datetime.datetime.now()
-    filename = '%s%s_%s.tar.gz' % (type,now.strftime('%m%d'),rand)
 
     return tardata,filename

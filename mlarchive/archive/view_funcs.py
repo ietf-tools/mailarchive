@@ -148,7 +148,12 @@ def get_export(queryset, type):
                 mbox_list = mlist
 
             with open(result.object.get_file_path()) as input:
-                # TODO: if no envelope add one
+                # if there's no envelope add one
+                if not input.readline().startswith('From '):
+                    mbox_file.write('From {0} {1}\n'.format(
+                        result.object.frm_email,
+                        result.object.date.strftime('%a %b %d %H:%M:%S %Y'))
+                input.seek(0)
                 mbox_file.write(input.read())
                 mbox_file.write('\n')
 
@@ -163,6 +168,6 @@ def get_export(queryset, type):
     chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + '_'
     rand = ''.join(random.choice(chars) for x in range(5))
     now = datetime.datetime.now()
-    filename = '%s%s_%s.tgz' % (type,now.strftime('%m%d'),rand)
+    filename = '%s%s_%s.tar.gz' % (type,now.strftime('%m%d'),rand)
 
     return tardata,filename

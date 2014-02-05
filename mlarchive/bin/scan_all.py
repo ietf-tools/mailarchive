@@ -79,7 +79,7 @@ def bodies():
     generator_handler methods to gather stats.
     '''
     query = Message.objects.filter(pk__gte=457000)
-    total = query.count()
+    total = Message.objects.count()
     for msg in query:
         try:
             x = msg.get_body_html()

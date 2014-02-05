@@ -241,12 +241,12 @@ def export(request, type):
     count = queryset.count()
     if count > settings.EXPORT_LIMIT:
         messages.error(request,'Too many messages to export.')
-        query_string = '?' + self.request.META['QUERY_STRING']
+        query_string = '?' + request.META['QUERY_STRING']
         url = reverse('archive_search') + query_string
         return HttpResponseRedirect(url)
     elif count == 0:
         messages.error(request,'No messages to export.')
-        query_string = '?' + self.request.META['QUERY_STRING']
+        query_string = '?' + request.META['QUERY_STRING']
         url = reverse('archive_search') + query_string
         return HttpResponseRedirect(url)
 
@@ -254,7 +254,8 @@ def export(request, type):
 
     response = HttpResponse(tardata.read())
     response['Content-Disposition'] = 'attachment; filename=%s' % filename
-    response['Content-Type'] = 'application/x-gzip'
+    #response['Content-Type'] = 'application/x-gzip'
+    response['Content-Type'] = 'application/x-tar-gz'
     tardata.close()
     return response
 

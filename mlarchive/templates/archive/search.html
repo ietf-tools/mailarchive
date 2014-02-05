@@ -110,6 +110,8 @@
                 <div id="msg-list-controls">
                     {# Showing {{ page.object_list|length }} of {{ page.paginator.count }} #}
                     {{ page.paginator.count }} Messages
+
+                    {% comment %}
                     {% if messages %}
                     <ul class="messages">
                         {% for message in messages %}
@@ -117,7 +119,6 @@
                         {% endfor %}
                     </ul>
                     {% endif %}
-                    <!--
                     {% if page.has_previous or page.has_next %}
                         <span class="right">
                             {{ page|cut:"<"|cut:">" }}&nbsp;
@@ -126,7 +127,8 @@
                             {% if page.has_next %}<a class="msg-link" href="{% append_to_get page=page.next_page_number %}">{% endif %}Next &raquo;{% if page.has_next %}</a>{% endif %}
                         </span>
                     {% endif %}
-                    -->
+                    {% endcomment %}
+
                 </div> <!-- msg-list-controls -->
             </div> <!-- list-pane -->
             <div id="splitter-pane" class="draggable"></div>

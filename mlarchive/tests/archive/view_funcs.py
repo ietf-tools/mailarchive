@@ -1,9 +1,9 @@
 import datetime
 import pytest
+from django.test.client import RequestFactory
 from factories import *
 from mlarchive.archive.view_funcs import *
-
-DUMMY_DAY = datetime.datetime(2013,1,1)
+from haystack.query import SearchQuerySet
 
 def test_chunks():
     result = list(chunks([1,2,3,4,5,6,7,8,9],3))
@@ -28,4 +28,23 @@ def test_get_columns():
     assert len(columns) == 3
     assert len(columns['active']) == 1
 
-#def test_get_export()
+def test_get_export_empty(client):
+    get_url = '%s?%s' % (reverse('archive_export',kwargs={'type':'mbox'}), 'q=database')
+    redirect_url = '%s?%s' % (reverse('archive_search'), 'q=database')
+    factory = RequestFactory()
+    request = factory.get(get_url)
+    response = get_export(SearchQuerySet().none(),'mbox',request)
+    #response = client.get(url, follow=True)
+    assert response.status_code == 302
+    #q = PyQuery(response.content)
+    #assert len(q('li.error')) == 1
+    #assert q('li.error').text() == "No messages to export."
+
+#def test_get_export_limit(client,settings):
+    # settings.EXPORT_LIMIT = 1
+    # load two mesages
+    # build dummy sqs
+
+#def test_get_export_mbox(client):
+
+#def test_get_export_maildir(client):

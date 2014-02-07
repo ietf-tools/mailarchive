@@ -151,7 +151,8 @@ ul.messages {
 ul.messages li {
     font-size: 12px;
     display: block;
-    padding: 4px 5px 4px 25px;
+    /* padding: 4px 5px 4px 25px; */
+    padding: 9px 5px 10px 25px;
     margin: 0 0 3px 0;
     border-bottom: 1px solid #ddd;
     color: #666;

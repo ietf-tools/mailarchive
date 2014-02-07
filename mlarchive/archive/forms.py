@@ -8,7 +8,6 @@ from haystack.query import SearchQuerySet
 from mlarchive.archive.query_utils import parse, get_kwargs
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
-#from mlarchive.middleware import get_base_query
 
 import operator
 import random
@@ -46,8 +45,7 @@ ALL_PARAMS = ('f_list','f_from', 'so', 'sso', 'page', 'gbt')
 # Helper Functions
 # --------------------------------------------------------
 def get_base_query(querydict,filters=False,string=False):
-    '''
-    Get the base query by stripping any extra parameters from the query.
+    """Get the base query by stripping any extra parameters from the query.
     Expects a QueryDict object, ie. request.GET.  Returns a copy of the querydict
     with parameters removed, or the query as a string if string=True.  Optional boolean
     "filters".  If filters=True leave filter parameters intact. For use with calculating
@@ -55,7 +53,7 @@ def get_base_query(querydict,filters=False,string=False):
 
     NOTE: the base query string we are using as a key is urlencoded.  Another option is to save
     the query unquoted using urlib.unquote_plus()
-    '''
+    """
     if filters:
         params = EXTRA_PARAMS
     else:
@@ -70,8 +68,8 @@ def get_base_query(querydict,filters=False,string=False):
         return copy
 
 def get_list_info(value):
-    '''Map list name to list id or list id to list name.  This is essentially a cached
-    bi-directional dictionary lookup.'''
+    """Map list name to list id or list id to list name.  This is essentially a cached
+    bi-directional dictionary lookup."""
     mapping = cache.get('list_info')
     if mapping is None:
         mapping = { x.id:x.name for x in EmailList.objects.all() }
@@ -81,11 +79,13 @@ def get_list_info(value):
     return mapping.get(value)
 
 def group_by_thread(qs, so, sso, reverse=False):
-    '''Group query by thread'''
+    """Group query by thread.  Takes a SearchQuerySet, search order (string),
+    secondary search order (string), reverse (boolean) and returns a SearchQuerySet
+    grouped by message thread"""
     new_query = qs._clone()
     # pass one, create thread-latest_date mapping
     map = {}
-    for item in new_query:                          # this causes causes cache to be filled
+    for item in new_query:                      # this causes causes cache to be filled
         val = map.get(item.object.thread.id,None)
         if not val:
             map[item.object.thread.id] = item.date
@@ -117,10 +117,9 @@ def sort_by_subject(qs, sso, reverse=False):
     return new_query
 
 def transform(val):
-    '''
-    This function takes a sort parameter and validates and transforms it for use
+    """This function takes a sort parameter and validates and transforms it for use
     in an order_by clause.
-    '''
+    """
     if val not in VALID_SORT_OPTIONS:
         return ''
     if val in ('frm','-frm'):
@@ -165,7 +164,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         super(self.__class__, self).__init__(*args, **kwargs)
 
     def get_facets(self, sqs):
-        '''Get facets for the SearchQuerySet
+        """Get facets for the SearchQuerySet
 
         Because we have two optional filters: f_list, f_from, we need to take into
         consideration if a filter has been applied.  The filters need to interact.
@@ -173,7 +172,7 @@ class AdvancedSearchForm(FacetedSearchForm):
 
         NOTE: this function expects to receive the query that has not yet applied
         filters.
-        '''
+        """
         # first check the cache
         # leave filter options in facet cache key because counts will be unqiue
         query = get_base_query(self.request.GET,filters=True,string=True)
@@ -260,14 +259,14 @@ class AdvancedSearchForm(FacetedSearchForm):
             #qp.set_default_op(xapian.Query.OP_AND)
             #qp.add_prefix('from','XFRM')
             #query = qp.parse_query(self.q)
+            logger.info('Query:%s' % self.q)
             self.searchqueryset.query.raw_search(self.q)
         return self.searchqueryset
 
     def search(self):
-        '''
-        Custom search function.  This completely overrides the parent
+        """Custom search function.  This completely overrides the parent
         search().  Should return a SearchQuerySet object.
-        '''
+        """
         # for now if search form doesn't validate return empty results
         if not self.is_valid():
             #assert False, self.errors
@@ -293,7 +292,6 @@ class AdvancedSearchForm(FacetedSearchForm):
 
         # handle URL parameters ------------------------------------
         kwargs = get_kwargs(self.cleaned_data)
-
         if kwargs:
             sqs = sqs.filter(**kwargs)
 

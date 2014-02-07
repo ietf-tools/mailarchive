@@ -144,19 +144,19 @@ def admin(request):
 @superuser_only
 def admin_console(request):
     form = None
-    
+
     #cache_data = {'list_info': cache.get('list_info')}
     return render_to_response('archive/admin_console.html', {
         'form': form},
         RequestContext(request, {}),
     )
-    
+
 @superuser_only
 def admin_guide(request):
     return render_to_response('archive/admin_guide.html', {},
         RequestContext(request, {}),
     )
-    
+
 def advsearch(request):
     '''
     The Advanced Search View
@@ -235,26 +235,9 @@ def export(request, type):
     data['so'] = 'email_list'
     data['sso'] = 'date'
     form = AdvancedSearchForm(data,load_all=False,request=request)
-    queryset = form.search()
+    sqs = form.search()
 
-    # don't allow export of huge querysets and skip empty querysets
-    count = queryset.count()
-    if count > 50000:
-        # message user
-        # return to original query
-        raise Exception
-    elif count == 0:
-        # message user
-        # return to original query
-        pass
-
-    tardata, filename = get_export(queryset, type)
-
-    response = HttpResponse(tardata.read())
-    response['Content-Disposition'] = 'attachment; filename=%s' % filename
-    response['Content-Type'] = 'application/x-gzip'
-    tardata.close()
-    return response
+    return get_export(sqs, type, request)
 
 def logout_view(request):
     '''
@@ -283,18 +266,3 @@ def main(request):
         RequestContext(request, {}),
     )
 
-# --------------------------------------------------
-# TEST FUNCTIONS
-# --------------------------------------------------
-def test(request):
-    #from django.core.exceptions import PermissionDenied
-    #raise PermissionDenied
-    tests = [u'Ond\u0159ej Sur\xfd<ondrej.sury@nic.cz>',
-            u'P \xe4r Mattsson <per@defero.se>']
-    msg = Message.objects.get(id=1)
-    body = msg.get_body()
-    return render_to_response('archive/test.html', {
-        'tests': tests,
-        'body': body},
-        RequestContext(request, {}),
-    )

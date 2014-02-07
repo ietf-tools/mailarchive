@@ -51,10 +51,10 @@ class EmailList(models.Model):
 
     def get_failed_dir(self):
         return os.path.join(settings.ARCHIVE_DIR,'_failed',self.name)
-    
+
     def get_removed_dir(self):
         return os.path.join(settings.ARCHIVE_DIR,self.name,'_removed')
-        
+
 class Message(models.Model):
     base_subject = models.CharField(max_length=512,blank=True)
     cc = models.TextField(blank=True,default='')
@@ -101,7 +101,8 @@ class Message(models.Model):
         return body
 
     def get_absolute_url(self):
-        return reverse('archive_detail',kwargs={'list_name':self.email_list.name,'id':self.hashcode})
+        return reverse('archive_detail',kwargs={'list_name':self.email_list.name,
+                                                'id':self.hashcode})
 
     def get_attachment_path(self):
         path = os.path.join(settings.ARCHIVE_DIR,self.email_list.name,'attachments')

@@ -2,7 +2,11 @@
 This module contains functions used in views.  We place them here to keep views "skinny"
 and facilitate clean unit testing.
 '''
+from django.conf import settings
+from django.contrib import messages
+from django.core.urlresolvers import reverse
 from django.forms.formsets import formset_factory
+from django.shortcuts import redirect
 from mlarchive.archive.forms import RulesForm
 from mlarchive.archive.models import EmailList
 from StringIO import StringIO
@@ -114,33 +118,54 @@ def get_columns(user):
 
     return columns
 
-def get_export(queryset, type):
+def get_export(sqs, type, request):
     '''
     This function takes a SearchQuerySet object, the result of a search, and a string:
     (mbox|maildir) the type of file to export.  It compiles messages from the queryset
     to the appropriate mail box type, in a zipped tarfile.  The function returns the
     tarfile, with seek(0) to reset for reading, and the filename as a string.
     '''
+    # don't allow export of huge querysets and skip empty querysets
+    count = sqs.count()
+    redirect_url = '%s?%s' % (reverse('archive_search'), request.META['QUERY_STRING'])
+    if count > settings.EXPORT_LIMIT:
+        messages.error(request,'Too many messages to export.')
+        return redirect(redirect_url)
+    elif count == 0:
+        messages.error(request,'No messages to export.')
+        return redirect(redirect_url)
+
     tardata = StringIO()
     tar = tarfile.open(fileobj=tardata, mode='w:gz')
 
+    # make filename
+    chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + '_'
+    rand = ''.join(random.choice(chars) for x in range(5))
+    now = datetime.datetime.now()
+    basename = '%s%s_%s' % (type,now.strftime('%m%d'),rand)
+    filename = basename + '.tar.gz'
+
+    #tardata, filename = get_export(queryset, type)
+
     if type == 'maildir':
-        for result in queryset:
-            arcname = os.path.join(result.object.email_list.name,result.object.hashcode)
+        for result in sqs:
+            arcname = os.path.join(basename,result.object.email_list.name,result.object.hashcode)
             tar.add(result.object.get_file_path(),arcname=arcname)
     elif type == 'mbox':
         # there are various problems adding non-file objects (ie. StringIO) to tar files
         # therefore the mbox files are first built on disk
-        mbox_date = queryset[0].object.date.strftime('%Y-%m')
-        mbox_list = queryset[0].object.email_list.name
+        mbox_date = sqs[0].object.date.strftime('%Y-%m')
+        mbox_list = sqs[0].object.email_list.name
         fd, temp_path = tempfile.mkstemp()
         mbox_file = os.fdopen(fd,'w')
-        for result in queryset:
+        for result in sqs:
             date = result.object.date.strftime('%Y-%m')
             mlist = result.object.email_list.name
             if date != mbox_date or mlist != mbox_list:
                 mbox_file.close()
-                tar.add(temp_path,arcname=mbox_list + '/' + mbox_date + '.mail')
+                tar.add(temp_path,arcname=os.path.join(basename,
+                                                       mbox_list,
+                                                       mbox_date + '.mbox'))
                 os.remove(temp_path)
                 fd, temp_path = tempfile.mkstemp()
                 mbox_file = os.fdopen(fd,'w')
@@ -148,21 +173,26 @@ def get_export(queryset, type):
                 mbox_list = mlist
 
             with open(result.object.get_file_path()) as input:
-                # TODO: if no envelope add one
+                # if there's no envelope add one
+                if not input.readline().startswith('From '):
+                    mbox_file.write('From {0} {1}\n'.format(
+                        result.object.frm_email,
+                        result.object.date.strftime('%a %b %d %H:%M:%S %Y')))
+                input.seek(0)
                 mbox_file.write(input.read())
                 mbox_file.write('\n')
 
         mbox_file.close()
-        tar.add(temp_path,arcname=mbox_list + '/' + mbox_date + '.mail')
+        tar.add(temp_path,arcname=os.path.join(basename,
+                                               mbox_list,
+                                               mbox_date + '.mbox'))
         os.remove(temp_path)
 
     tar.close()
     tardata.seek(0)
 
-    # make filename
-    chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + '_'
-    rand = ''.join(random.choice(chars) for x in range(5))
-    now = datetime.datetime.now()
-    filename = '%s%s_%s.tgz' % (type,now.strftime('%m%d'),rand)
-
-    return tardata,filename
+    response = HttpResponse(tardata.read())
+    response['Content-Disposition'] = 'attachment; filename=%s' % filename
+    response['Content-Type'] = 'application/x-tar-gz'
+    tardata.close()
+    return response

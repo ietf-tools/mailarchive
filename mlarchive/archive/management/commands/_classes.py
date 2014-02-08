@@ -98,6 +98,7 @@ def archive_message(data,listname,private=False,save_failed=True):
         mw = MessageWrapper(msg,listname,private=private)
         mw.save()
     except Exception as error:
+        logger.error('Archive message failed [{0}]'.format(error.args))
         if not save_failed:
             return 1
         if msg:

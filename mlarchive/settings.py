@@ -124,7 +124,7 @@ LOGGING = {
         'watched_file':
         {
             'level' : 'DEBUG',
-            #'formatter' : 'verbose', # from the django doc example
+            'formatter' : 'simple',
             'class' : 'logging.handlers.WatchedFileHandler',
             'filename' :   MY_LOG_FILENAME, # full path works
         },

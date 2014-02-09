@@ -4,7 +4,7 @@ Email Archive Installation Instructions
 
 DEPENDENCIES
 ============
-Python 2.7.3
+Python 2.7
 MySQL 5.5
 xapian-core 1.2.12
 # pyparsing 2.0.1

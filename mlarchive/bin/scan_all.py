@@ -25,6 +25,7 @@ from tzparse import tzparse
 from pytz import timezone
 
 import argparse
+import datetime
 import glob
 import mailbox
 import re
@@ -119,6 +120,19 @@ def html_only():
             if msg.is_multipart() == False:
                 if msg.get_content_type() == 'text/html':
                     print msg['message-id']
+
+def missing_files():
+    '''Scan messages in date range and report if any are missing the archive file'''
+    total = 0
+    start = datetime.datetime(2014,01,20)
+    end = datetime.datetime(2014,01,23)
+    messages = Message.objects.filter(date__gte=start,date__lte=end)
+    for message in messages:
+        if not os.path.exists(message.get_file_path()):
+            print 'missing: %s:%s:%s' % (message.email_list, message.pk, message.date)
+            total += 1
+            #message.delete()
+    print '%d of %d missing.' % (total, messages.count())
 
 def main():
     parser = argparse.ArgumentParser(description='Run an archive scan.')

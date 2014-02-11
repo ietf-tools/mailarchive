@@ -11,7 +11,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from haystack.views import SearchView, FacetedSearchView
 from haystack.query import SearchQuerySet
-from mlarchive.utils.decorators import check_access, superuser_only
+from mlarchive.utils.decorators import check_access, superuser_only, pad_id
 from mlarchive.archive import actions
 from mlarchive.archive.query_utils import get_kwargs
 from mlarchive.archive.view_funcs import initialize_formsets, get_columns, get_export
@@ -212,6 +212,7 @@ def browse_list(request, list_name):
         RequestContext(request, {}),
     )
 
+@pad_id
 @check_access
 def detail(request, list_name, id, msg):
     '''

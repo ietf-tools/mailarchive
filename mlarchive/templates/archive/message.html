@@ -28,5 +28,5 @@
 </div>
 
 {% if request %}
-<div id="msg-link"><a class="msg-link" href="https://{{ request.META.HTTP_HOST }}{% url "archive_detail" list_name=msg.email_list.name id=msg.hashcode %}">http://{{ request.META.HTTP_HOST }}{% url "archive_detail" list_name=msg.email_list.name id=msg.hashcode %}</a></div>
+<div id="msg-link"><a class="msg-link" href="https://{{ request.META.HTTP_HOST }}{{ msg.get_absolute_url }}">http://{{ request.META.HTTP_HOST }}{{ msg.get_absolute_url }}</a></div>
 {% endif %}

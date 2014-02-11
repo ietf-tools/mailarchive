@@ -101,8 +101,9 @@ class Message(models.Model):
         return body
 
     def get_absolute_url(self):
+        # strip padding, "=", to shorten URL
         return reverse('archive_detail',kwargs={'list_name':self.email_list.name,
-                                                'id':self.hashcode})
+                                                'id':self.hashcode.rstrip('=')})
 
     def get_attachment_path(self):
         path = os.path.join(settings.ARCHIVE_DIR,self.email_list.name,'attachments')

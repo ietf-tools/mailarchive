@@ -1,10 +1,13 @@
 import pytest
 from django.conf import settings
 from django.core.cache import cache
+from django.core.management import call_command
 from django.core.urlresolvers import reverse
 from factories import *
 from pprint import pprint
 from pyquery import PyQuery
+from StringIO import StringIO
+from mlarchive.archive.models import Message
 
 import os
 import shutil
@@ -63,36 +66,40 @@ def test_ajax_get_msg(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_ajax_get_messages(client):
-    '''
-    This test expects data in the xapian index.  However, since the database is empty search
-    result sets will contain empty items
-    '''
-    pass
-    '''
-    this may require testing against a live system
-        
-    url = '%s/?q=database' % reverse('archive_search')
+    """This test loads ancp-2010-03.mail file which contains 36 messages.
+    It takes about 10-12 seconds to run.
+    """
+    content = StringIO()
+    path = os.path.join(settings.BASE_DIR,'tests','data','ancp-2010-03.mail')
+    call_command('load', path, listname='ancp', summary=True, stdout=content)
+    content.seek(0)
+    count = Message.objects.count()
+    print content.read()
+    print count
+
+    # run initial query to setup cache
+    url = '%s/?email_list=ancp' % reverse('archive_search')
     response = client.get(url)
-    count = response.context['page'].paginator.count
-    pprint(response.context['page'].object_list)
-    assert count > 20
+    assert response.status_code == 200
+    assert len(response.context['results']) == 20
     q = PyQuery(response.content)
     id = q('#msg-list').attr('data-queryid')
 
+    # test successful get_messages call
     url = '%s/?queryid=%s&lastitem=20' % (reverse('ajax_messages'), id)
     response = client.get(url)
     assert response.status_code == 200
+    q = PyQuery(response.content)
+    assert len(q('tr')) > 1
 
-    # expire item and try again
+    # test end of results
+    url = '%s/?queryid=%s&lastitem=40' % (reverse('ajax_messages'), id)
+    response = client.get(url)
+    assert response.status_code == 204
+
+    # test expired cache
     cache.delete(id)
+    url = '%s/?queryid=%s&lastitem=20' % (reverse('ajax_messages'), id)
     response = client.get(url)
     assert response.status_code == 404
 
-    # test end of items
-    url = '%s/?queryid=%s&lastitem=%s' % (reverse('ajax_messages'), id, count + 1)
-    response = client.get(url)
-    print response.content
-    print response.status_code
-    print url
-    assert response.status_code == 204
-    '''

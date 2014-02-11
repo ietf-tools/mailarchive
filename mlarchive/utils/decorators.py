@@ -52,6 +52,17 @@ def check_datetime(func):
         return dt
     return wraps(func)(wrapper)
 
+def pad_id(func):
+    '''
+    This decorator checks to see if we've received an unpadded message id and pads it.
+    '''
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if 'id' in kwargs and not kwargs['id'].endswith("="):
+            kwargs['id'] = kwargs['id'] + "="
+        return func(*args, **kwargs)
+    return wrapper
+
 def log_timing(func):
     '''
     This is a decorator that logs the time it took to complete the decorated function.

@@ -42,9 +42,9 @@ def test_fixture(messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_asf_get_facets(client):
-    '''Ensure that calculating facet counts works and facets interact
+    """Ensure that calculating facet counts works and facets interact
     - this test requires the index
-    '''
+    """
     elist = EmailListFactory.create(name='ancp')
     elist = EmailListFactory.create(name='alto')
 

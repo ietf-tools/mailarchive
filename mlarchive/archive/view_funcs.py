@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.forms.formsets import formset_factory
+from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import redirect
 from mlarchive.archive.forms import RulesForm
 from mlarchive.archive.models import EmailList

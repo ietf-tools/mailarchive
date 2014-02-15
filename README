@@ -1,0 +1,41 @@
+DEVELOPMENT AND TESTING
+-----------------------
+
+What follows are instructions for setting up a development
+environment on a Mac OSX.  These instructions were tested
+on a MacBook Pro running OS X v10.9.1 (Mavericks).  
+
+Prerequisites:
+- MySQL 5.6
+- Homebrew (http://brew.sh/)
+
+Install Xapian
+$ brew install xapian
+$ brew info xapian
+
+Download appropriate bindings for xapian version
+$ curl -O http://oligarchy.co.uk/xapian/1.2.17/xapian-bindings-1.2.17.tar.xz
+
+activate virtual environment
+$ source mailarch/bin/activate
+
+See: http://nomad.coop/blog/installing-xapian-in-virtualenv-django/
+
+
+
+
+NOTES ON INFRASTRUCTURE
+-----------------------
+
+This section describes some of the parts of the system that aren't obvious.
+
+1) How are records added to the index?
+
+In settings.py is a setting:
+HAYSTACK_SIGNAL_PROCESSOR = 'celery_haystack.signals.CelerySignalProcessor'
+
+haystack/__init__.py uses this to setup Django signals to save records to the
+index when models are saved.
+
+CelerySignalProcessor: when objects are save checks to see if an index exists
+for them.  If so calls task to update index.

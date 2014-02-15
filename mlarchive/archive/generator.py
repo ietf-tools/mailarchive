@@ -72,6 +72,7 @@ class Generator:
             return self.parse_body(request=request)
 
     def as_text(self):
+        """Return only text, no markup, for use in indexing"""
         self.text_only = True
         if self.error:
             return self.error
@@ -83,14 +84,6 @@ class Generator:
         """Return headers decoded.  Takes a 2-tuple (the output of
         email.message.Message.items()) and returns a list of tuples.
         """
-        #result = []
-        #for k,v in headers:
-        #    if k in ('Subject','From','To','Cc','Received','Sender','Reply-To',
-        #             'References','In-Reply-To','List-ID','User-Agent','Date','DATE',
-        #             'Return-Receipt-To','CC'):
-        #        v = decode_safely(v)
-        #    result.append((k,v))
-        #return result
         return [ (k,decode_safely(v)) for k,v in headers ]
 
     def _dispatch(self,part):
@@ -179,7 +172,10 @@ class Generator:
             logger.debug('called: _handle_text_plain [{0}]'.format(self.msg.msgid))
 
         payload = self._get_decoded_payload(part)
-        return render_to_string('archive/message_plain.html', {'payload': payload})
+        if self.text_only:
+            return payload
+        else:
+            return render_to_string('archive/message_plain.html', {'payload': payload})
 
     @skip_attachment
     def _handle_text_html(self,part):
@@ -194,10 +190,13 @@ class Generator:
         payload = self._get_decoded_payload(part)
 
         # clean html document of unwanted elements (html,script,style,etc)
-        cleaner = Cleaner(style=True)
+        cleaner = Cleaner(scripts=True,meta=True,page_structure=True,style=True,
+                          remove_tags=['body'],forms=True,frames=True,add_nofollow=True)
         clean = cleaner.clean_html(payload)
 
         if self.text_only:
+            # document = lxml.html.document_fromstring(html_text)
+            # raw_text = document.text_content()
             soup = BeautifulSoup(clean,'html5')
             clean = soup.get_text()
 

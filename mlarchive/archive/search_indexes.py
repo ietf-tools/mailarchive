@@ -27,5 +27,3 @@ class MessageIndex(CelerySearchIndex, indexes.Indexable):
     # this is required in order to use start_date, end_date when reindexing
     def get_updated_field(self):
         return 'updated'
-
-#site.register(Message, MessageIndex)

@@ -65,28 +65,17 @@ def test_ajax_get_msg(client):
     assert response.status_code == 200
 
 @pytest.mark.django_db(transaction=True)
-def test_ajax_get_messages(client):
-    """This test loads ancp-2010-03.mail file which contains 36 messages.
-    It takes about 10-12 seconds to run.
-    """
-    content = StringIO()
-    path = os.path.join(settings.BASE_DIR,'tests','data','ancp-2010-03.mail')
-    call_command('load', path, listname='ancp', summary=True, stdout=content)
-    content.seek(0)
-    count = Message.objects.count()
-    print content.read()
-    print count
-
+def test_ajax_get_messages(client,messages):
     # run initial query to setup cache
-    url = '%s/?email_list=ancp' % reverse('archive_search')
+    url = '%s/?email_list=pubone,pubtwo' % reverse('archive_search')
     response = client.get(url)
     assert response.status_code == 200
-    assert len(response.context['results']) == 20
+    assert len(response.context['results']) == 6
     q = PyQuery(response.content)
     id = q('#msg-list').attr('data-queryid')
 
     # test successful get_messages call
-    url = '%s/?queryid=%s&lastitem=20' % (reverse('ajax_messages'), id)
+    url = '%s/?queryid=%s&lastitem=2' % (reverse('ajax_messages'), id)
     response = client.get(url)
     assert response.status_code == 200
     q = PyQuery(response.content)

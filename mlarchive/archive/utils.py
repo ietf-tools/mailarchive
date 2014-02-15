@@ -16,11 +16,10 @@ import mailbox
 # --------------------------------------------------
 
 def get_noauth(request):
-    '''
-    This function takes a request object and returns a list of private email list names (as string)
-    the user does NOT have access to, for use in an exclude().  The list is stored in the request
-    session to minimize database hits.
-    '''
+    """This function takes a request object and returns a list of private email list names
+    (as string) the user does NOT have access to, for use in an exclude().  The list is
+    stored in the request session to minimize database hits.
+    """
     noauth = request.session.get('noauth',None)
     if noauth:
         return noauth
@@ -36,6 +35,7 @@ def jsonapi(fn):
                 mimetype='application/json')
     return to_json
 
+'''
 def render(template, data, request):
     return render_to_response(template,
                               data,
@@ -56,3 +56,4 @@ def template(template):
                     )
         return render
     return decorator
+'''

@@ -38,14 +38,13 @@ This is a test email.  database
 '''
     status = archive_message(data,'test',private=False)
     assert status == 0
+    # ensure message in db
     assert Message.objects.all().count() == 1
-    
+    # ensure message in index
     url = '%s/?q=database' % reverse('archive_search')
     response = client.get(url)
-    count = response.context['page'].paginator.count
-    pprint(response.context['page'].object_list)
-    assert count > 20
-
+    results = response.context['results']
+    assert len(results) == 1
 
 @pytest.mark.django_db(transaction=True)
 def test_archive_message_fail(client):
@@ -72,10 +71,9 @@ This is a test email.  With no headers
     # From Kim.Fullbrook@O2.COM Tue, 01 Feb 2005 06:01:13 -0500
     # From eburger@brooktrout.com Thu, 3 Feb 2005 19:55:03 GMT
     # From scott.mcglashan@hp.com Wed, 6 Jul 2005 12:24:15 +0100 (BST)
-    
+
 def test_get_mime_extension():
     data = [('image/jpeg','jpg'),('text/html','html'),('hologram/3d','bin')]
     for item in data:
         ext, desc = get_mime_extension(item[0])
         assert ext == item[1]
-        

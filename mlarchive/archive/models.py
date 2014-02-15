@@ -1,4 +1,3 @@
-from django.db import models
 from django.db.models.signals import pre_delete, post_delete, post_save
 from django.dispatch.dispatcher import receiver
 from django.conf import settings
@@ -113,10 +112,9 @@ class Message(models.Model):
         return path
 
     def get_body(self):
-        '''
-        Returns the contents of the message body, text only for use in indexing.
-        ie. HTML is stripped.
-        '''
+        """Returns the contents of the message body, text only for use in indexing.
+        ie. HTML is stripped.  This is called from the index template.
+        """
         gen = Generator(self)
         return gen.as_text()
 

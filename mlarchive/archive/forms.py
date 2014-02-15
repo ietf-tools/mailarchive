@@ -46,13 +46,14 @@ ALL_PARAMS = ('f_list','f_from', 'so', 'sso', 'page', 'gbt')
 # --------------------------------------------------------
 def get_base_query(querydict,filters=False,string=False):
     """Get the base query by stripping any extra parameters from the query.
+
     Expects a QueryDict object, ie. request.GET.  Returns a copy of the querydict
     with parameters removed, or the query as a string if string=True.  Optional boolean
     "filters".  If filters=True leave filter parameters intact. For use with calculating
     base facets.
 
-    NOTE: the base query string we are using as a key is urlencoded.  Another option is to save
-    the query unquoted using urlib.unquote_plus()
+    NOTE: the base query string we are using as a key is urlencoded.  Another option is to
+    save the query unquoted using urlib.unquote_plus()
     """
     if filters:
         params = EXTRA_PARAMS
@@ -78,27 +79,42 @@ def get_list_info(value):
         cache.set('list_info',mapping,86400)
     return mapping.get(value)
 
-def group_by_thread(qs, so, sso, reverse=False):
-    """Group query by thread.  Takes a SearchQuerySet, search order (string),
-    secondary search order (string), reverse (boolean) and returns a SearchQuerySet
-    grouped by message thread"""
-    new_query = qs._clone()
-    # pass one, create thread-latest_date mapping
-    map = {}
-    for item in new_query:                      # this causes causes cache to be filled
-        val = map.get(item.object.thread.id,None)
-        if not val:
-            map[item.object.thread.id] = item.date
-            continue
-        if val < item.date:
-            map[item.object.thread.id] = item.date
+def group_by_thread(sqs, so, sso, reverse=False):
+    """Group search query by thread
 
-    # order map by date
-    map = sorted(map.iteritems(),key=operator.itemgetter(1))
-    order = { x[0]:i for i,x in enumerate(map) }
+    sqs is a SearchQuerySet, so is search order (string), sso is secondary search
+    order (string), reverse (boolean) tells whether to reverse sort order.  Default
+    sorts are ascending, for the archive app usually descending is preferred so this
+    function will typically be called with reverse=True, in which case both threads
+    and messages within them will be sorted by date, descending.
+
+    NOTE: so and sso could either be applied to the thread or messages within a thread.
+    Neither option is currently supported.
+
+    OPTIONS: if the Thread model had a thread-order field this grouping could be
+    accomplished easier.
+    """
+    new_query = sqs._clone()
+    # pass one, create thread:latest-date mapping
+    # TODO: or, order query by date and pick out first of each thread
+    threads = {}
+    for item in new_query:                      # this causes causes cache to be filled
+        date = threads.get(item.object.thread.id)
+        if not date:
+            threads[item.object.thread.id] = item.date
+            continue
+        if date < item.date:
+            threads[item.object.thread.id] = item.date
+
+    # sort thread map by date ascending
+    threads = sorted(threads.iteritems(),key=operator.itemgetter(1))
+
+    # create thread:index mapping (ascending)
+    order = { x[0]:i for i,x in enumerate(threads) }
 
     # build sorted list of SearchResult objects
-    result = sorted(new_query, key=lambda x: (order[x.object.thread.id],x.date),reverse=reverse)
+    result = sorted(new_query,
+                    key=lambda x: (order[x.object.thread.id],x.date),reverse=reverse)
 
     # swap in sorted list
     new_query._result_cache = result
@@ -128,7 +144,9 @@ def transform(val):
 
 # --------------------------------------------------------
 class AdminForm(forms.Form):
-    email_list = forms.ModelChoiceField(EmailList.objects.all(),empty_label='(All lists)',required=False)
+    email_list = forms.ModelChoiceField(EmailList.objects.all(),
+                                        empty_label='(All lists)',
+                                        required=False)
     end_date = forms.DateField(required=False)
     frm = forms.CharField(max_length=255,required=False)
     msgid = forms.CharField(max_length=255,required=False)
@@ -137,14 +155,17 @@ class AdminForm(forms.Form):
     subject = forms.CharField(max_length=255,required=False)
 
     def clean_email_list(self):
-        # return a list of names even though there's ever only one, so we match get_kwargs() api
+        # return a list of names even though there's ever only one,
+        # so we match get_kwargs() api
         email_list = self.cleaned_data['email_list']
         if email_list:
             return [email_list.name]
 
 class AdvancedSearchForm(FacetedSearchForm):
-    start_date = forms.DateField(required=False,widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
-    end_date = forms.DateField(required=False,widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
+    start_date = forms.DateField(required=False,
+            widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
+    end_date = forms.DateField(required=False,
+            widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
     email_list = forms.CharField(max_length=255,required=False,widget=forms.HiddenInput)
     subject = forms.CharField(max_length=255,required=False)
     frm = forms.CharField(max_length=255,required=False)
@@ -238,7 +259,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         return facets
 
     def get_filter_params(self, query):
-        '''Get filter parameters that appear in the QueryDict'''
+        """Get filter parameters that appear in the QueryDict"""
         return list(FILTER_SET & set(query.keys()))
 
     # use custom parser-----------------------------------------
@@ -253,7 +274,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         return sqs
     '''
     def process_query(self):
-        'Use Xapians builtin query parser'
+        """Use Xapians builtin query parser"""
         if self.q:
             #qp = xapian.QueryParser()
             #qp.set_default_op(xapian.Query.OP_AND)
@@ -269,9 +290,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         """
         # for now if search form doesn't validate return empty results
         if not self.is_valid():
-            #assert False, self.errors
-            # TODO
-            # messages.warning(self.request, 'invalid search parameters')
+            # TODO: messages.warning(self.request, 'invalid search parameters')
             return self.no_query_found()
 
         '''
@@ -287,13 +306,17 @@ class AdvancedSearchForm(FacetedSearchForm):
         self.f_list = self.cleaned_data['f_list']
         self.f_from = self.cleaned_data['f_from']
         self.q = self.cleaned_data.get('q')
+        self.kwargs = get_kwargs(self.cleaned_data)
+
+        # return empty queryset if no parameters passed
+        if not (self.q or self.kwargs):
+            return self.no_query_found()
 
         sqs = self.process_query()
 
         # handle URL parameters ------------------------------------
-        kwargs = get_kwargs(self.cleaned_data)
-        if kwargs:
-            sqs = sqs.filter(**kwargs)
+        if self.kwargs:
+            sqs = sqs.filter(**self.kwargs)
 
         # private lists -------------------------------------------
         if self.request.user.is_authenticated():
@@ -304,7 +327,6 @@ class AdvancedSearchForm(FacetedSearchForm):
             # exclude all private lists
             # TODO cache this query, see Low Level Cache API
             private_lists = [ str(x.id) for x in EmailList.objects.filter(private=True) ]
-            #assert False, (private_lists, sqs.count())
             sqs = sqs.exclude(email_list__in=private_lists)
 
         # faceting ------------------------------------------------
@@ -323,8 +345,8 @@ class AdvancedSearchForm(FacetedSearchForm):
             sqs = sqs.load_all()
 
         # grouping and sorting  -----------------------------------
-        # perform this step last because other operations may cause
-        # query to be re-run which loses custom sort order
+        # perform this step last because other operations, if they clone the
+        # SearchQuerySet, cause the query to be re-run which loses custom sort order
         so = transform(self.cleaned_data.get('so'))
         sso = transform(self.cleaned_data.get('sso'))
         gbt = self.cleaned_data.get('gbt')
@@ -340,7 +362,7 @@ class AdvancedSearchForm(FacetedSearchForm):
                 sqs = sqs.order_by(so,sso)
         else:
             # if there's no "so" param, and no query we are browsing, sort by -date
-            if len(kwargs) == 1 and kwargs.get('email_list__in'):
+            if len(self.kwargs) == 1 and self.kwargs.get('email_list__in'):
                 sqs = sqs.order_by('-date')
 
         # insert facets just before returning query, so they don't get overridden
@@ -383,7 +405,10 @@ class FilterForm(forms.Form):
     time = forms.ChoiceField(choices=TIME_CHOICES)
 
 class RulesForm(forms.Form):
-    field = forms.ChoiceField(choices=FIELD_CHOICES,widget=forms.Select(attrs={'class':'parameter'}))
-    qualifier = forms.ChoiceField(choices=QUALIFIER_CHOICES,widget=forms.Select(attrs={'class':'qualifier'}))
-    value = forms.CharField(max_length=120,widget=forms.TextInput(attrs={'class':'operand'}))
+    field = forms.ChoiceField(choices=FIELD_CHOICES,
+            widget=forms.Select(attrs={'class':'parameter'}))
+    qualifier = forms.ChoiceField(choices=QUALIFIER_CHOICES,
+            widget=forms.Select(attrs={'class':'qualifier'}))
+    value = forms.CharField(max_length=120,
+            widget=forms.TextInput(attrs={'class':'operand'}))
 

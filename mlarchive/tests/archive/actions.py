@@ -27,7 +27,7 @@ def test_remove_selected(client):
     query = Message.objects.all()
     assert query.count() == 1
     request = HttpRequest()
-    setattr(request, 'session', 'session')
+    setattr(request, 'session', {})
     messages = FallbackStorage(request)
     setattr(request, '_messages', messages)
     result = remove_selected(request, query)

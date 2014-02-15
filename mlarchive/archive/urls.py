@@ -28,8 +28,6 @@ urlpatterns += patterns('mlarchive.archive.views',
 
     # test pages ----------------
     # (r'^layout/$', TemplateView.as_view(template_name="archive/layout.html")),
-    # (r'^test/$', direct_to_template, {'template':'archive/test.html'}),
-    # (r'^test/$', 'test'),
 )
 
 

@@ -1,5 +1,6 @@
 import datetime
 import pytest
+from django.contrib.messages.storage.fallback import FallbackStorage
 from django.test.client import RequestFactory
 from factories import *
 from mlarchive.archive.view_funcs import *
@@ -33,6 +34,9 @@ def test_get_export_empty(client):
     redirect_url = '%s?%s' % (reverse('archive_search'), 'q=database')
     factory = RequestFactory()
     request = factory.get(get_url)
+    setattr(request, 'session', {})
+    messages = FallbackStorage(request)
+    setattr(request, '_messages', messages)
     response = get_export(SearchQuerySet().none(),'mbox',request)
     #response = client.get(url, follow=True)
     assert response.status_code == 302

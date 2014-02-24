@@ -200,6 +200,8 @@ MARK_BITS = { 'NON_ASCII_HEADER':0b0001,
 
 # MARK Flags.  0 = disabled.  Otherwise use unique integer
 MARK_HTML = 10
+MARK_LOAD_SPAM = 11
+
 
 # AUTH
 LOGIN_REDIRECT_URL = '/arch/'

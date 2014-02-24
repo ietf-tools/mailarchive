@@ -1,0 +1,1103 @@
+From: "Linn, John" <jlinn@securitydynamics.com>
+To: CAT-WG List <cat-ietf@mit.edu>
+Subject: CAT-WG Last-Call: draft-ietf-cat-ftpdsaauth-00.txt
+Date: Tue, 6 Jan 1998 23:44:38 -0500
+
+CAT/FTPsec fanciers:
+
+Per discussion at the DC IETF, this message is to open a CAT-WG
+Last-Call on draft-ietf-cat-ftpdsaauth-00.txt, "FTP Authentication using
+DSA", which profiles the use of FTP Security Extensions (RFC-2228) with
+DSA and SHA-1 algorithms.  Please send any discussion or comments on
+this draft and its prospective recommendation for advancement to
+Proposed Standard to the CAT-WG list NLT Tuesday, 3 February 1998.  
+
+Note: Per RFC-2026 ("The Internet Standards Process - Revision 3"), sec.
+4.1.1, IESG Proposed Standard advancement decisions require that a
+document has received significant community review and apparent
+community interest, and discussion of this draft has so far been
+relatively quiet.  To aid in supporting this document's progression per
+the RFC-2026 criteria, it would be helpful if readers and reviewers of
+draft-ietf-cat-ftpdsaauth-00 were to identify themselves to the list
+during the WG Last-Call even if no comments need be made against the
+draft's content.
+
+Thanks, ...
+
+--jl
+
+Date: Fri, 09 Jan 1998 08:37:59 -0600
+From: Doug Engert <deengert@anl.gov>
+Reply-To: deengert@anl.gov
+Organization: Argonne National Laboratory
+To: Carlisle Adams <carlisle.adams@entrust.com>
+Cc: cat-ietf@mit.edu
+Subject: GSSAPI-SPKM
+
+Carlisle,
+
+Are there any implementations of GSSAPI which implement
+SPKM - RFC-2025? Either comercial products or source code? 
+
+Is the Entrust product RFC-2025 compliant? 
+
+If there are more then one, has there been an
+interoperability testing? 
+
+Thanks. 
+
+-- 
+
+ Douglas E. Engert  <DEEngert@anl.gov>
+ Argonne National Laboratory
+ 9700 South Cass Avenue
+ Argonne, Illinois  60439 
+ (630) 252-5444
+
+To: cat-ietf@mit.edu, krb-protocol@mit.edu
+Subject: Contents of e-data with KDC_ERR_PREAUTH_REQUIRED
+X-Emacs: 19.34
+From: joda@pdc.kth.se (Johan Danielsson)
+Date: 11 Jan 1998 01:20:41 +0100
+Lines: 26
+
+
+If the client is required to use pre-authentication, what should the
+KDC return in the e-data field?
+
+Suppose I have a database with a list of keys for each principal. Each
+key corresponds to the same password, but are different because they
+are used with different crypto-systems, and/or because they are salted
+differently.
+
+What I would like to return is a list of keytype/salt-pairs, but there
+isn't any documented way to do this. I believe that the MIT KDC uses
+the PA-ETYPE-INFO padata-type for something similar. I basically want
+something like this:
+
+PA-KEY-INFO ::= SEQUENCE {
+	keytype[1]	INTEGER,
+	salttype[2]	INTEGER,
+	salt[3]		OCTET STRING
+}
+
+
+Generally, the various structures that has OCTET STRINGs instead of
+CHOICEs, need better descriptions of the intended use of the `opaque'
+data.
+
+/Johan
+
+From: "Mike Swift (NT)" <mikesw@microsoft.com>
+To: cat-ietf@mit.edu
+Subject: Exportable encryption & Kerberos
+Date: Mon, 12 Jan 1998 16:31:08 -0800
+
+> The current Kerberos protocol does not support exportablity very well -
+> there is not a convenient way to negotiate the strength of a key between
+> the client and a server. For large scale deployment and shipment of
+> internationalized products, this is a requirement. In the latest draft of
+> the protocol specification, the following is proposed:
+> 
+> To make this example more concrete, ifthe encryption method in use
+> required a 56 bit key, and for whatever reason,one of the parties was
+> prevented from using a key with more than 40 unknownbits, this method
+> would allow the the party which is prevented from usingmore than 40 bits
+> to either propose (if the client) an initial key with aknown quantity for
+> 16 of those bits, or to mask 16 of the bits (if theserver) with the known
+> quantity. 
+> 
+> However, it may be impossible to tell from inspecting a key how strong it
+> is - if salting is applied before a later modification, then a 128 bit and
+> a 40 bit key may appear similar. There are a couple of possibilities on
+> how to address this problem. Rather than sending a true key, a new
+> encryption type could be created that send just the keying material, which
+> would then be converting on either side into a key. The length of the key
+> material could be used as an indicator of its strength. Another
+> possibility is to introduce new encryption types for exportable
+> encryption. Both these possibilities require new encryption types, and the
+> AP request structure does not allow for easy negotiation of what
+> encryption types are supported.
+> Instead, I propose that one of two things: either a new flag be added to
+> the AP request that indicates that the client wants export strength
+> encryption, or the keytype field of the key itself be used to indicate
+> that the key is export strength. The advantage of the adding an AP request
+> flag is that if current servers ignore the flag and don't modify the
+> subsession key supplied by the client, they may continue to work with an
+> exportable client. 
+> There are four cases of domestic/exportable clients and servers to
+> consider.
+> 
+> DOMESTIC CLIENT, DOMESTIC SERVER
+> In this case, the client may propose a sub-session key. If the server
+> doesn't respond (this is not mutual auth) then the client's sub-session
+> key will be used by the server. If the server does respond, it may also
+> propose one in response, which will then be used by both sides.
+> 
+> EXPORT SERVER, DOMESTIC CLIENT
+> The client may or may not propose a key. If a flag indicating the key is
+> export strength is not sent, then the server will either generate an
+> export strength key for mutual-auth, or fail the request. It will also
+> return a flag indicating that the key is export strength. The key
+> generated by the server will be used by both sides. In this case, the
+> server is assured it is using an exportable key, while the client has to
+> trust the server that the key is the appropriate strength.
+> 
+> EXPORT CLIENT, DOMESTIC SERVER
+> The client will generate an export strength key and send the flag
+> indicating it is export strength. If there is no reply, the key will be
+> used. Otherwise the server must either send back the same key in the reply
+> or send no key in the reply. The client-generated key will be used by both
+> sides.  In this case, the client is assured it is using an exportable key,
+> while the server has to agree to use the key that is the appropriate
+> strength.
+> 
+> EXPORT CLIENT, EXPORT SERVER
+> The client will generate an export strength key and send the key and a
+> flag indicating it is export strength. The server must trust that the
+> client generated a true export-strength key and not a stronger key. The
+> server responds as in the case of a domestic server.
+> 
+> This model allows the code to use either domestic or export strength keys
+> but forces the server to trust that the client generated an appropriate
+> key. Without creating new encryption types it is difficult to do
+> otherwise.
+> 
+> Any comments are appreciated.
+
+From: David Hemsath <hemsath@us.ibm.com>
+To: <cat-Ietf@mit.edu>
+Subject: Re: Exportable encryption & Kerberos ?Date: Mon, 12 Jan 1998
+Date: Mon, 12 Jan 1998 21:03:57 -0500
+
+You might want to consider something less "US-Centric" for your proposal.  In a
+recent Open Group meeting, several members from Europe brought up the fact that
+other countries have their own sets of crypto import/export laws, so it's more
+than just the U.S. Govt's regulations to deal with here.
+
+The DCE community has been investigating the possibility of using the new
+Common Data Security Architecture's (CDSA's) crypto facilities to enable DCE to
+be shipped w/o a crypto engine for user data confidentiallity, and then hooked
+up at installation with a local governing authority-approved crypto service
+provider that plugs in "underneath" CDSA.  IBM and Intel both have CDSA
+implementations with more than one crypto service provider.
+
+David K. Hemsath, IBM DSS Security Strategy & Architecture
+
+To: "Mike Swift (NT)" <mikesw@microsoft.com>
+Cc: cat-ietf@MIT.EDU
+Subject: Re: Exportable encryption & Kerberos 
+Date: Tue, 13 Jan 1998 15:04:20 -0500
+From: Bill Sommerfeld <sommerfeld@orchard.arlington.ma.us>
+
+The IETF is about engineering, not politics.  Crypto export control is
+a political problem, not a technical one.
+
+There's nothing to stop anyone outside the borders of the US from
+implementing full-strength crypto, and there's nothing which requires
+folks outside the US to buy their crypto from inside the US.
+
+Therefore, there's a workaround to the political problem which doesn't
+require weakening the strength of the protocols; the export control
+laws only really affect the profitability of US companies.
+
+I object to any attempt to weaken the (already overly weak) crypto in
+Kerberos.
+
+						- Bill
+
+To: "Mike Swift (NT)" <mikesw@microsoft.com>
+Cc: cat-ietf@MIT.EDU
+Subject: Re: Exportable encryption & Kerberos 
+X-Face: "Evs"_GpJ]],xS)b$T2#V&{KfP_i2`TlPrY$Iv9+TQ!6+`~+l)#7I)0xr1>4hfd{#0B4
+	WIn3jU;bql;{2Uq%zw5bF4?%F&&j8@KaT?#vBGk}u07<+6/`.F-3_GA@6Bq5gN9\+s;_d
+	gD\SW #]iN_U0 KUmOR.P<|um5yP<ea#^"SJK;C*}fMI;Mv(aiO2z~9n.w?@\>kEpSD@*e`
+Date: Tue, 13 Jan 1998 15:06:40 -0500
+From: Ken Hornstein <kenh@cmf.nrl.navy.mil>
+
+>> encryption. Both these possibilities require new encryption types, and the
+>> AP request structure does not allow for easy negotiation of what
+>> encryption types are supported.
+
+Could you elaborate on this more?  It seems like Section 3.2.6 of the
+latest revision will do what you want ... am I missing something?
+(Entirely possible :-) ).
+
+On further reflection, I think I understand what you mean ... you can
+only propose one key in the subkey field of an AP_REQ, which kinda limits
+your choices.
+
+Maybe the thing to do is make the AP_REQ have an optional list of
+enctypes for the server to choose from?
+
+The only thing I don't like about your proposal is the use of "domestic"
+vs "exportable"; as someone else pointed out, this is pretty US-centric.
+And what do you do if the law changes? :-)
+
+--Ken
+
+From: joes@wrq.com
+X-Openmail-Hops: 1
+Date: Tue, 13 Jan 1998 14:46:58 -0800
+Subject: Re: Exportable encryption & Kerberos
+To: mikesw@microsoft.com
+Cc: cat-ietf@MIT.EDU
+
+Item Subject: Exportable encryption & Kerberos
+     The proposed scheme does provide additional information, but it does 
+     not address the problem of clients and servers with different crypto 
+     capabilities interoperating.  Having either the client or server 
+     blindly trust the other presents problems. A rogue could force the use 
+     of crypto that is too weak or too strong for a particular environment. 
+      
+     
+     It would be desirable to have a client that is capable of both strong 
+     and weak crypto.  There are several types of servers the client may 
+     interoperate with.
+     
+     1. Generic server -- the client must use weak crypto
+     2. Approved Server -- the server has characteristics (such as key 
+     recovery and key escrow) that allow for the use of stronger 
+     cryptography.
+     3. Approved Sever in an Approved Institution -- the institution which 
+     is using this server is approved for stronger crypto.
+     
+     It is therefore essential that the client have a means of identifying 
+     the cryptographic allowances of the server it is talking to.  I 
+     believe there is an SSL mechanism in practice that allows for a 
+     special certificate to be returned by the server to the client which 
+     proves that the server can use stronger crypto (If someone could point 
+     me to the details of these "special certificates" I would be 
+     grateful).  Current proposals in kerberos could be used in a similar 
+     way to help with this problem.
+     
+     The current PKINIT proposal allows the server to return a certificate. 
+     This certificate could provide the assurance of the capability to do 
+     stronger crypto.  However, this only identifies the KDC which may be 
+     sufficient for meeting government regulations in case 3.  It may cause 
+     problems with case 2 because there is no guarantee that the 
+     application server is participating in key management.  In this case I 
+     do not know of a specification to return a certificate from an 
+     application server (I don't think either PKTAPP or PKDA apply), one 
+     would probably have to be invented.  
+     
+     I'd appreciate any comments on this, I am coming from a US point of 
+     view.  The CAT working group may not be the best place to focus on 
+     these issues.  If there is a better forum let me know.  The problem of 
+     cryptographic restrictions is much broader than US export regulations. 
+      
+     Joe Salowey
+     WRQ Software
+     joes@wrq.com
+     
+
+
+______________________________ Reply Separator _________________________________
+Subject: Exportable encryption & Kerberos
+Author:  mikesw (mikesw@microsoft.com) at internet,shar
+Date:    1/12/98 4:31 PM
+
+
+> The current Kerberos protocol does not support exportablity very well - 
+> there is not a convenient way to negotiate the strength of a key between 
+> the client and a server. For large scale deployment and shipment of
+> internationalized products, this is a requirement. In the latest draft of 
+> the protocol specification, the following is proposed:
+> 
+> To make this example more concrete, ifthe encryption method in use
+> required a 56 bit key, and for whatever reason,one of the parties was 
+> prevented from using a key with more than 40 unknownbits, this method
+> would allow the the party which is prevented from usingmore than 40 bits 
+> to either propose (if the client) an initial key with aknown quantity for 
+> 16 of those bits, or to mask 16 of the bits (if theserver) with the known 
+> quantity. 
+> 
+> However, it may be impossible to tell from inspecting a key how strong it 
+> is - if salting is applied before a later modification, then a 128 bit and 
+> a 40 bit key may appear similar. There are a couple of possibilities on
+> how to address this problem. Rather than sending a true key, a new
+> encryption type could be created that send just the keying material, which 
+> would then be converting on either side into a key. The length of the key 
+> material could be used as an indicator of its strength. Another
+> possibility is to introduce new encryption types for exportable
+> encryption. Both these possibilities require new encryption types, and the 
+> AP request structure does not allow for easy negotiation of what
+> encryption types are supported.
+> Instead, I propose that one of two things: either a new flag be added to 
+> the AP request that indicates that the client wants export strength
+> encryption, or the keytype field of the key itself be used to indicate
+> that the key is export strength. The advantage of the adding an AP request 
+> flag is that if current servers ignore the flag and don't modify the
+> subsession key supplied by the client, they may continue to work with an 
+> exportable client. 
+> There are four cases of domestic/exportable clients and servers to 
+> consider.
+> 
+> DOMESTIC CLIENT, DOMESTIC SERVER
+> In this case, the client may propose a sub-session key. If the server
+> doesn't respond (this is not mutual auth) then the client's sub-session 
+> key will be used by the server. If the server does respond, it may also 
+> propose one in response, which will then be used by both sides.
+> 
+> EXPORT SERVER, DOMESTIC CLIENT
+> The client may or may not propose a key. If a flag indicating the key is 
+> export strength is not sent, then the server will either generate an
+> export strength key for mutual-auth, or fail the request. It will also 
+> return a flag indicating that the key is export strength. The key
+> generated by the server will be used by both sides. In this case, the
+> server is assured it is using an exportable key, while the client has to 
+> trust the server that the key is the appropriate strength.
+> 
+> EXPORT CLIENT, DOMESTIC SERVER
+> The client will generate an export strength key and send the flag
+> indicating it is export strength. If there is no reply, the key will be
+> used. Otherwise the server must either send back the same key in the reply 
+> or send no key in the reply. The client-generated key will be used by both 
+> sides.  In this case, the client is assured it is using an exportable key, 
+> while the server has to agree to use the key that is the appropriate
+> strength.
+> 
+> EXPORT CLIENT, EXPORT SERVER
+> The client will generate an export strength key and send the key and a 
+> flag indicating it is export strength. The server must trust that the
+> client generated a true export-strength key and not a stronger key. The 
+> server responds as in the case of a domestic server.
+> 
+> This model allows the code to use either domestic or export strength keys 
+> but forces the server to trust that the client generated an appropriate
+> key. Without creating new encryption types it is difficult to do 
+> otherwise.
+> 
+> Any comments are appreciated.
+
+From: Graham Bland <gbland@zergo.com>
+Date: Wed, 14 Jan 1998 14:12:58 +0000
+To: cat-ietf@mit.edu
+Subject: GSS and IDUP
+X-Mime-Autoconverted: from quoted-printable to 8bit by pad-thai.cam.ov.com id JAA09985
+X-Mime-Autoconverted: from 8bit to quoted-printable by pad-thai.cam.ov.com id JAB09987
+
+Firstly apology on two counts.
+The timing of these comments is poor following last call, however at that 
+time I had no comments.
+
+Secondly the length, this is a collection of comments and issues rather than 
+sending each as a seperate email I have collated them together.
+
+The background from most of these has come from looking at an environment 
+which will support both GSS and GSS-IDUP.  All are based on the latest 
+documents.
+
+
+IDUP_Get_token_details
+ ------------------------------------
+When Data encapsulation has been requested the application must pass 
+sufficient data from the start of the P_IDU to include the token to the 
+call.  The application has no way of determining how much data this is.  A 
+return code of IDUP_S_MORE_PIDU_NEEDED should be allowed to enable the 
+application to pass more data to the call.
+The other option would be to require a minimum data size of for example 4kb 
+or the entire token to be passed.  This would constrain the mechanism 
+implementors to include  all the required data within the first 4kb of a 
+token.
+
+The call returns the idu_size, however where data encapsulation and multiple 
+buffers are used a mechanism cannot determine this from the start of the 
+P_IDU as the mechanism does not know the IDU length until the IDU has been 
+fully processed (see later comment on IDU Length on multi buffer calls) as 
+indicated by the end protect call by which time the token at the start of 
+the P_IDU has already been emitted and cannot be changed.
+Suggested behaviour here would be to return UNKNOWN as the idu_size with a 
+status of GSS_S_COMPLETE for encapsulated data.
+
+IDUP Multibuffer processing
+ --------------------------------
+While examining some of the SE Start/Process/End sequences of calls We have 
+noted the following;
+
+A mechanism (directly or indirectly via the environment) will need to 
+preserve state information from one call to the next in a sequence of 
+(SE/EV/GP) Start/Process/End calls.  This state information will almost 
+certainly involve dynamic memory allocation.  If for some reason (e.g. an 
+I/O error or user abort) an application calls a Start followed by zero or 
+more Process calls but fails to call End, that memory will not be released 
+in the normal way (i.e. on the End call).
+
+Currently we have assumed, that, for a single instance of an environment, it 
+is only valid to be performing a single multi-step operation at one time 
+(e.g. a sequence such as SEStart, EVStart, SEProcess, EVProcess, SEEnd, 
+EVEnd is not allowed). We have further specified that an environment should 
+only be used in the thread that created it.
+
+As a mechanism implementation detail, under the current scheme, it should be 
+noted that if a mechanism receives a request to start any operation while a 
+previous operation is still in progress, it should cancel the previous 
+operation, releasing its state storage.  It should also release state 
+storage when the environment is abolished.  Note however that this may mean 
+that the state information may remain for some significant time after an 
+operation fails or is cancelled at the application level.
+
+At a specification level, it may be appropriate to suggest a 'cancel' 
+function for each of the multi-step operations (for example 
+IDUP_SE_MultiBuffer_Cancel), which would allow the application to indicate 
+to IDUP that it was unable to make the additional Process calls due to some 
+application level difficulty.
+
+A further point is the possibility of including an 'operation' handle within 
+the multi-step calls (i.e. an handle that is returned from the Start 
+operation and must be passed to each subsequent matching process/end or 
+cancel call).  This would allow state information to be associated with a 
+series of calls and not bound to the environment.  This would remove the 
+sequence and thread restrictions above.  At the moment any 
+multi-thread/fibre application will have to establish an environment for 
+each operation it will perform (and this may be expensive).  An alternative 
+would be to provide a 'duplicate environment' function which should be able 
+to avoid some aspects of environment establishment (e.g. certificate 
+validation) and thus be less expensive that establishing a new environment.
+
+On a side note, I dislike this start/process/end method of performing an 
+operation over a large data source. The application developer has to include 
+complex loops of calls, IDUP and the mechanism have to preserve state across 
+calls, including the fact the buffer may terminate in the middle of some 
+atomic unit of data at the token level (e.g. in the middle of an integer or 
+OID) making restarting complex.  A far better solution would be to allow 
+language specific bindings (where supported) to pass 'get more data' and 
+'put more data' functions (or abstract base class) into the API, then at any 
+point that the mechanism required more data, it simply calls back to 
+retrieve that data.  This method also reduces the number of times data is 
+copied from one buffer to another, as, for example,  these functions could 
+just be file system i/o functions where the data resides on disk.  The 
+start/process/end method was used extensively under Windows 3.1, as to 
+prevent the system freezing during a lengthy operation the application had 
+to invoke the message pump frequently.  The call-back method still allows 
+this, but may require more stack space.
+
+IDUP_ev_singlebuffer_verify
+ ------------------------------------------
+The idu_buffer is described in the API spec as an input and an output, in 
+the “C” bindings this is implemented as two parameters one input buffer and 
+one output buffer.  Both however have the same name of idu_buffer.  I 
+suggest renaming these to external_idu_buffer for the input buffer and 
+encapsulated_idu_buffer for the output.
+
+IDUP_establish_env
+ ------------------------------
+The ret_services parameter is defined as a gss_OID_set, I believe this 
+should be a gss_OID_set * to be consistent with the rest of the IDUP and GSS 
+calls. While it is technically possible to pass the OID set by value (since 
+it is a pointer) and for IDUP to add elements to a previously allocated set 
+(via the application calling gss_create_empty_oid_set), everywhere else the 
+allocation of the empty OID set is the responsibility of GSS/IDUP and it 
+returns this by double pointer.
+
+Status Codes
+ --------------------
+The GSS C-Bindings introduced two new status codes, defining error status 
+codes up to 18 (GSS_NAME_NOT_MN), however the May 97 IDUP C-Bindings starts 
+the IDUP extended error status codes from 17 (IDUP_S_BAD_TARG_INFO).  Thus 
+error codes 17 and 18 are defined in both GSS and IDUP as different status 
+returns.
+I propose as change to IDUP C-bindings whereby the IDUP return codes start 
+at 255 and work down to avoid conflicts with GSS
+
+Credential Usage Type
+ -----------------------------------
+GSS C-Bindings Defines credential usage as an INT.  Latest IDUP draft 
+defines it as a BIT-STRING.
+The spec states "The calls given in Section 2.1 of GSS-API (including all 
+associated parameters) are unchanged, although the interpretation of the 
+cred_usage parameter in the GSS_API calls for IDUP purposes is as follows. 
+..."
+However the determination of the usage of the credential (i.e. for GSS usage 
+ - context establishment, or for IDUP usage - environment establishment) 
+does not occur until later - possibly after credential elements have been 
+instantiated.
+While it is possible to overload the use of the parameter, it would ease 
+matters if the parameter was defined as a bit string in both cases.  For 
+example
+
+GSS_C_INITIATE                          1
+GSS_C_ACCEPT                           2
+IDUP_C_ENCRYPT_ONLY        8
+IDUP_C_DECRYPT_ONLY      16
+IDUP_C_SIGN_ONLY                32
+IDUP_C_VERIFY_ONLY           64
+
+GSS_C_BOTH                              (GSS_C_INITIATE | GSS_C_ACCEPT)
+IDUP_C_NO_RESTRICTION  (IDUP_C_ENCRYPT_ONLY  |          
+                                         IDUP_C_DECRYPT_ONLY  | 
+ IDP_C_SIGN_ONLY  |
+                                                              
+ IDUP_C_VERIFY_ONLY)
+
+ it is unclear as to what is intended in an environment with a mechanism 
+which implements both GSS and IDUP.
+
+This is proposed as a change to both IDUP and GSS C-bindings.
+
+Parameter Types
+ --------------------------
+A number of GSS and GSS/IDUP structures define ordinality or size, below is 
+a table summarising them.
+Struct                                                                 field 
+                     type
+=====                                                              ==== 
+                    ====
+gss_buffer_t                                                  length 
+                   size_t
+gss_OID                                                         length 
+                   OM_uint32
+gss_OID_set                                                 count 
+                    size_t
+IDUP_Target_Info                                       bad_count 
+          int
+IDUP_Services_To_Perform                  no_of_services  OM_uint32
+IDUP_Services_To_Receive no_of_services  OM_uint32
+IDUP_Service_Descriptor_Set              count                       int
+IDUP_Mechanism_Descriptor_Set      count                       int
+idup_name_set                                            count 
+                     int
+
+As you can see, they lack consistency.  Over time it appears that the GSS 
+C-Bindings have shifted from int to size_t for some items (e.g. 
+gss_OID_set.count) - in particular the IDUP C-Bindings still refer to the 
+old 'int' usage for GSS.
+
+For consistency both IDUP should adopt size_t for count fields and OM_uint32 
+for length fields.
+
+Case usage
+ ------------------
+The GSS “C” bindings specifies function calls and structure members as lower 
+case names, for consistency the IDUP “C” bindings should follow suit.
+
+Idup_name_set
+ -----------------------
+idup_name_set is defined as:
+typedef struct idup_name_set_desc_struct {
+     int       count ;
+     gss_name_t     elements ;
+} idup_name_set_desc, *idup_name_set;
+Where gss_name_t is an implementation defined type.
+
+This definition does not work for all definitions of gss_name_t.  In 
+particular it will not work for any which are either not pointer types or 
+where the sizeof() operator does not evaluate to a constant.  For binary 
+compatibility only, GSS  imposes the restriction that it should be a pointer 
+type (Section B.4) and discourages, but does not preclude the use of void*. 
+ For source compatibility, GSS does not impose any restriction on the 
+implementation of gss_name_t.
+
+With a rather simplistic view of the implementation of gss_name_t (e.g. 
+precluding opaque types, non-pointers, void *, derived classes and 
+extensible structures), the above would work.  However I don't believe that 
+this restriction is intentional, nor acceptable.
+
+In our case gss_name_t is defined as a pointer to an opaque type and thus 
+you cannot apply the sizeof() operator to it.  In particular, expressions 
+such as elements[1] cannot correctly be evaluated since the 
+sizeof(elements[0]) would depend on the actual implementation the type. 
+ Additionally we cannot expose the implementation as it is C++ specific and 
+would not compile in C.
+
+We have thus re-defined idup_name_set as;
+typedef struct idup_name_set_desc_struct {
+     int       count ;
+     gss_name_t*    elements ;
+} idup_name_set_desc, *idup_name_set;
+
+This should not have a significant impact on source level compatibility, 
+since most of the manipulation of name sets is via API functions 
+(idup_add_name_set_member etc.).
+Another choice would be to implement gss_name_t as a double pointer, but 
+this would impose an, otherwise unnecessary, overhead in development, 
+execution, and maintenance.
+
+idup_acquire_cred_with_auth
+ -------------------------------------------
+We have defined idup_acquire_cred_with_auth as follows;
+OM_uint32 GSS_ENTRY idup_acquire_cred_with_auth(
+   gss_name_t               desired_name,
+   gss_buffer_t             authenticator,
+   OM_uint32                  time_req,
+   gss_OID_set              desired_mechs,
+   gss_cred_usage_t           cred_usage,
+   OM_uint32*                 minor_status,
+   gss_cred_id_t*             output_cred_handle,
+   gss_OID_set*               actual_mechs,
+   OM_uint32*                 time_rec) ;
+
+This differs from the last C-Bindings where cred_usage is defined as 
+gss_buffer_t and actual_mechs is defined as gss_OID_set.
+
+It makes no sense whatsoever for cred_usage to be a gss_buffer_t, since 
+functions like inquire_cred return gss_cred_usage_t.  I can only assume that 
+this is some oddity from the fact that the parameter definition was noted as 
+changing from INT to BITSTRING in the language independent API - however we 
+have assumed that the intention here is to re-use the INT with bitmasks.
+
+Actual_mechs is another place where there appears to be a wrong (or at least 
+inconsistent) level of pointer.
+
+Appendix IDUP-GSS-API example
+ ---------------------------------------------------
+Would it not make sense to include the GSS header file rather than replicate 
+all the information.
+
+Error codes - IDUP_C_ROUTINE_ERROR_OFFSET is not defined, how does this 
+differ from GSS_C_ROUTINE_ERROR_OFFSET or is it the same.
+
+The struct definition for IDUP_Prot_Service_desc, last parameter is missing 
+a space between int and service_verification_info_id
+
+IDU Length on multi buffer calls
+ ---------------------------------------------
+The IDUP calls IDUP_SE_MultiBuffer_StartProtect, 
+IDUP_EV_MultiBuffer_Generate (with include_data_in_token TRUE) and 
+IDUP_Protect all create a PIDU which contains an encapsulated IDU.
+
+The total length of the IDU is not available at any point prior to the 
+matching IDUP_xxxEndxxx call.
+
+Thus the beginning of the PIDU cannot contain the length of the IDU (or 
+related length) without the mechanism buffering the entire IDU.  This may be 
+impractical due to the potential size of the IDU.
+
+IDUP mechanisms are therefore constrained to use either
+ - chaining (where the data is broken into blocks and the length of each 
+block prefixes the block and the last block is marked - this requires 
+buffering up to one block length or more at the receiver), or,
+ - an 'end of data' marker (this marker must be guarantee never to occur in 
+either the IDU or encrypted IDU - this requires buffering up to the length 
+of the EOD marker at the receiver).
+
+To resolve this issue, and allow mechanisms to store the size of the IDU at 
+the start of the PIDU, the three calls listed above should have an 
+additional parameter 'idu_size' which is required when encapsulation is 
+required.
+The idu_size should have a value 'UNKNOWN' (for example where encapsulating 
+data from a pipe, or compressing on the fly) - some mechanisms may not 
+support encapsulation if this value is UNKNOWN.
+
+Is it possible or desirable for mechanisms to implement a restriction 
+whereby encapsulation is not provided on the multi-buffer calls unless they 
+naturally use one of the above solutions (chaining or EOD).
+
+
+Return Codes
+ --------------------
+I suggest that an additional return code be added both to GSS and IDUP 
+specifications to cover a case of inconsistent parameters, for example in 
+idup_start_unprotect where only one of single_idu_buffer and 
+final_pidu_buffer may have a zero length and the caller has passed both. 
+Currently GSS_S_FAILURE must be returned which is not particularly 
+informative to the application developer.
+
+Idup_establish_env
+ -----------------------------
+Passing GSS_C_NO_OID_SET as the req_services parameter to idup_establish_env 
+should be defined as requesting the full set of available services for that 
+mechanism.
+
+There is no point in establishing an environment with no services (hence 
+GSS_C_NO_OID_SET is not really a valid input parameter), and given that the 
+services are mechanism specific and may grow over time, there is no way for 
+an application to discover which services are available without 
+pre-knowledge (OK - how it then uses these services is another matter...). 
+ It also simplifies the application developers job as they do not have to 
+create an OID set to start with.
+
+Credentials and Usage
+ ----------------------------------
+1.
+The GSS C Bindings define 'cred_usage' as input only for both 
+gss_acquire_cred and gss_add_cred. It does not comment on what should happen 
+if only a subset of the usage is available (e.g, if BOTH is requested and 
+only INITIATE is available, should that generate a GSS_C_NO_CRED?).
+
+2.
+The language API Specification (rfc2078bis-01) state that for 
+gss_acquire_cred, that it should fail if the requested usage is not 
+available, but gss_add_cred has an additional output parameter (with the 
+same name as an input parameter) which suggests that add cred should return 
+the set of usage”s available and succeed if any requested usage was 
+available.  I say 'suggests' since the interpretation depends entirely on 
+which 'cred_usage' the paragraph is referring to (i.e. the input or output).
+
+The reason that I question this is that in the case of gss_acquire_cred, 
+this would mean that the application programmer would basically have to 
+acquire separate credentials for each operation type, since they could not 
+be guaranteed that any combination would succeed (without making 
+installation specific assumptions) and they would thus have to perform an 
+exhaustive call search to find the best available.  Note that this is 
+compounded by IDUPs 4 additional 'cred_usage' values.
+
+For the above reason I believe that we should take the approach used by GSS 
+everywhere else - i.e. request a set of features, but the onus is on 
+application programmer to ensure that a sufficient subset was provided. 
+ Thus, both acquire_cred and add_cred should have 'actual_cred_usage' output 
+parameters.  The latter is a change to the c-bindings only, bringing it in 
+line with the GSS spec, the former deviates from both.  However without some 
+sort of resolution in this area, any application that wishes use GSS and 
+IDUP would have to maintain separate credentials for each, negating much of 
+ the value of a core set of credential management functions.
+
+Note that I am currently making the assumption that in a multi-mechanism 
+environment, credential acquisition succeeds if any combination of 
+mechanisms satisfies the cred_usage.
+
+3.
+For credential acquisition within IDUP, you are allowed to define a 
+restricted use for the credential (e.g. ENCRYPT_ONLY, DECRYPT_ONLY, 
+SIGN_ONLY, VERIFY_ONLY and combinations thereof).
+Additionally, when establishing the environment you can request an OID set 
+of services to request (e.g PER_CONF, REC_CONF, PER_POO, REC_POO, ... and 
+combinations thereof).
+Can you see any value in having both?  Any of the IDUP 'cred_usage' bits 
+appears to indicate that we require an IDUP credential element and thus I 
+see no reason why service requirements are duplicated at both levels.  Can 
+we suggest that the credential usage should therefore be IDUP_C_ENVIRONMENT 
+(in addition to GSS_C_INITIATE and GSS_C_ACCEPT) and that restricted service 
+requirements are only made at the environment establishment phase.  This is 
+more in line with the GSS model  - as per the service flags (deleg_req_flag, 
+mutual_req_flag, ...) given at gss_init_sec_context call.
+
+This does not negate the previous comments, but would rather simplify the 
+credential usage concept - i.e. a credential can be used for initiating 
+contexts, accepting contexts or creating environments or combinations 
+thereof (all lying in the same dimension).  The application programmer 
+should request the desired features and check to see if the required subset 
+is available.
+
+
+Graham Bland
+Zergo
+
+
+
+--
+Zergo Limited, The Square, Basing View, Basingstoke, Hants. RG21 4EG, UK
+Tel: + 44 (0) 1442 342 600    Fax: +44 (0) 1256 812 901
+Website:  http://www.zergo.com
+
+To: IETF-Announce@ns.ietf.org
+Cc: cat-ietf@MIT.EDU
+From: Internet-Drafts@ns.ietf.org
+Reply-To: Internet-Drafts@ns.ietf.org
+Subject: I-D ACTION:draft-ietf-cat-mpaker-00.txt
+Date: Wed, 14 Jan 1998 09:53:45 -0500
+
+A New Internet-Draft is available from the on-line Internet-Drafts directories.
+This draft is a work item of the Common Authentication Technology Working Group 
+of the IETF.
+
+	Title		: The Multiple-Path Authentication of Kerberos (MPAKER)
+	Author(s)	: L. Harn, Y. Xu
+	Filename	: draft-ietf-cat-mpaker-00.txt
+	Pages		: 9
+	Date		: 13-Jan-98
+	
+   This draft proposes an authentication scheme that improves the
+   efficiency and security without losing features of the standard
+   Kerberos and other extension schemes. Instead of completely replacing
+   those schemes, the new scheme can be integrated with them to provide
+   multiple-path authentication for Kerberos.
+
+Internet-Drafts are available by anonymous FTP.  Login with the username
+"anonymous" and a password of your e-mail address.  After logging in,
+type "cd internet-drafts" and then
+	"get draft-ietf-cat-mpaker-00.txt".
+A URL for the Internet-Draft is:
+ftp://ds.internic.net/internet-drafts/draft-ietf-cat-mpaker-00.txt
+
+Internet-Drafts directories are located at:
+
+	Africa:	ftp.is.co.za
+	
+	Europe: ftp.nordu.net
+		ftp.nis.garr.it
+			
+	Pacific Rim: munnari.oz.au
+	
+	US East Coast: ds.internic.net
+	
+	US West Coast: ftp.isi.edu
+
+Internet-Drafts are also available by mail.
+
+Send a message to:	mailserv@ds.internic.net.  In the body type:
+	"FILE /internet-drafts/draft-ietf-cat-mpaker-00.txt".
+	
+NOTE:	The mail server at ds.internic.net can return the document in
+	MIME-encoded form by using the "mpack" utility.  To use this
+	feature, insert the command "ENCODING mime" before the "FILE"
+	command.  To decode the response(s), you will need "munpack" or
+	a MIME-compliant mail reader.  Different MIME-compliant mail readers
+	exhibit different behavior, especially when dealing with
+	"multipart" MIME messages (i.e. documents which have been split
+	up into multiple messages), so check your local documentation on
+	how to manipulate these messages.
+		
+		
+Below is the data which will enable a MIME compliant mail reader
+implementation to automatically retrieve the ASCII version of the
+Internet-Draft.
+
+<ftp://ds.internic.net/internet-drafts/draft-ietf-cat-mpaker-00.txt>
+From: Graham Bland <gbland@zergo.com>
+Date: Thu, 15 Jan 1998 10:31:04 +0000
+To: cat-ietf@mit.edu
+Subject: IDUP Compatibility of call sets
+X-Mime-Autoconverted: from quoted-printable to 8bit by pad-thai.cam.ov.com id FAA02854
+
+Another question or change:
+
+When generating evidence by the EV call subset evidence_check is returned as 
+an octet string (implemented as a gss_buffer_t) which will be opaque to the 
+caller.
+
+When the EV calls are used for the verification of the evidence this is 
+passed to idup_ev_xxbuffer_startverify() in the same format.  However if the 
+GP calls are used for the verify I cannot see how  the evidence_check 
+contents can be mapped onto the parameters of the idup_start_unprotect call.
+
+Can anybody help or is this a change to the specification ?
+
+Graham Bland
+Zergo.
+--
+Zergo Limited, The Square, Basing View, Basingstoke, Hants. RG21 4EG, UK
+Tel: + 44 (0) 1442 342 600    Fax: +44 (0) 1256 812 901
+Website:  http://www.zergo.com
+
+Date: Thu, 15 Jan 1998 07:39:46 EST
+From: "Martin Carpenter" <mjc@uk.ibm.com>
+To: cat-ietf@mit.edu
+Cc: housley@spyrus.com, yee@spyrus.com, WANace@missi.ncsc.mil
+Subject: re: CAT-WG Last-Call: draft-ietf-cat-ftpdsaauth-00.txt
+
+
+John Linn wrote:
+
+> Per discussion at the DC IETF, this message is to open a CAT-WG
+> Last-Call on draft-ietf-cat-ftpdsaauth-00.txt, "FTP Authentication using
+> DSA", which profiles the use of FTP Security Extensions (RFC-2228) with
+> DSA and SHA-1 algorithms.  Please send any discussion or comments on
+> this draft and its prospective recommendation for advancement to
+> Proposed Standard to the CAT-WG list NLT Tuesday, 3 February 1998.
+
+Okay, here are mine.  My concerns are listed below in the order that I
+found them as I read the draft.  Apologies, as ever, for my slow
+response.
+
+
+1. "* server authentication -- normally done in conjunction with user
+   authentication;". I object to the clause after "--" (and pick nits
+   for England).  Anonymous FTP, anyone?
+
+
+2. "PROT commands may be sent on a transfer-by-transfer basis,
+   however, the session parameters may not be changed within a
+   session.".
+
+   What about successive AUTH commands within one session? From RFC 2228:
+
+      Some servers will allow the AUTH command to be reissued in order
+      to establish new authentication.  The AUTH command, if accepted,
+      removes any state associated with prior FTP Security commands.
+      The server must also require that the user reauthorize (that is,
+      reissue some or all of the USER, PASS, and ACCT commands) in this
+      case (see section 4 for an explanation of "authorize" in this
+      context).
+
+   Or is the draft meant to say something like "the session parameters
+   may not be altered during an existent data interchange such as to
+   effect the mechanism being employed for that interchange."? (I'm
+   thinking of a server happily accepting new AUTH commands on the
+   control connection whilst it's still sending/receiving stuff on the
+   data connection; perhaps I'm just not clear about the definition of
+   the word "session").
+
+
+3. The example exchange:
+
+    MIC Base64(Sign("PBSZ 65535"))      -->
+                                           <-- 200 PBSZ=32767
+    MIC Base64(Sign("USER yee"))        -->
+                                           <-- 331
+
+
+
+
+
+
+
+   and the accompanying text:
+
+   "Specifically, the file is broken up into blocks of data of less
+   than the negotiated protection buffer size (32768 bytes in the
+   example exchanges).".
+
+
+   Unless I've missed something subtle in the RFC, shouldn't this latter
+   paragraph read "...  (32767 bytes in the example exchanges)."?  Yes,
+   I am aware that number of bytes of file data sent per block will be
+   "less than" the negotiated PBSZ value, but won't the number of bytes
+   in any buffer that is sent in a block be "less than or equal" to the
+   negotiated PBSZ value (of 32767 in the example above)?  I *think* that
+   the author wanted to link the "32768 bytes" with the "less than" (to
+   get "less than or equal to 32767"), but I think that what it
+   *actually* says is that 32768 bytes was the negotiated buffer size,
+   which it wasn't.
+
+   And I'm not entirely happy with "...  the file is broken up...".
+   Perhaps: "...  the *encrypted* file" is broken up..." maybe, or
+   "... the file is broken up into blocks of data such that when
+   encrypted, the encrypted block size is less than or equal to the
+   negotiated protection buffer size".  *Phew* that took much longer to
+   say than I thought it would :-)
+
+
+Regards,
+
+Martin.
+
+Martin Carpenter                            Tie  7-664834
+IBM Global Network                         NOSS  CARPEMJ@NHBVM9
+EDI Dev & Spt, Warwick, UK                Notes  CARPEMJ@IBMGB
+Tel +44 (0)1926 464834                    email  mjc@uk.ibm.com
+
+From: Martin Rex <martin.rex@sap-ag.de>
+Subject: GSS-API per msg prot negotiation
+To: cat-ietf@MIT.EDU
+Date: Thu, 15 Jan 1998 17:04:32 +0100 (MEZ)
+Reply-To: Martin.Rex@sap-ag.de
+
+I'm worried about potential side effects when implementing "political"
+solutions, specifically in the availability of per-message protection
+services.  "Political" requirements are currently inflicted on a significant
+fraction of implementors, so explicit statements may be necessary in
+some areas to maintain interoperability.
+
+
+Scenario:
+Two components of an application use gssapi to authenticate and
+secure their communication and successfully establish a security
+context (i.e. both sides get to see GSS_S_COMPLETE from context
+establishment).  If one side gets back the availability flag
+for confidentiality protection, the other side must get it as well
+and the application(s) must be able to use gss_wrap WITH confidentiality
+protection to talk to their peer, independent of the combination of
+"compliant" but independent implemenations of the same gssapi mechanism. 
+
+The same requirement applies to integrity protection and gss_getmic(),
+gss_verifymic().  I think that each of the INTEGRITY, CONFIDENTIALITY,
+MUTUAL_AUTH and ANON flags must be consistently returned by both
+sides: gss_init_sec_context() and gss_accept_sec_context() in case
+of success (GSS_S_COMPLETE).  I'm wondering if that applies also to
+REPLAY and SEQUENCE.
+
+
+Besides being a significant application portability issue for us,  ;-)
+I assume it is a severe interoperability issue and as such needs to be
+resolved before GSS-API may eventually advance to Draft Standard on the
+Internet Standards track.  
+
+
+More or less obvious mechanism spec and/or implementation issues:
+
+- If a gssapi mechanism spec doesn't mandate confidentiality,
+  it must provide a handshake during context establishment so
+  that independent implemenations may figure out availability
+  of a common confidentiality mechanism.
+
+- If a gssapi mechanism spec doesn't mandate confidentiality,
+  a one-way authentication with confidentiality can not meet
+  the interoperability requirement.
+
+- If a gssapi mechanism spec mandates confidentiality,
+  a one-way authentication with confidentiality would be limited to
+  the mandated confidentiality algorithm(s).
+
+
+On top of that, I think such requirements have to be extended
+to QOP values:
+
+- If a gssapi mechanism spec allows optional confidentiality
+  or integrity mechanisms to be selected by the application
+  by using an explicit QOP parameter, the context establishment
+  must provide for negotiation of common QOP values.
+
+- When using an optional QOP value that is known to the local
+  gssapi implementation but not by the peer and therefore not
+  available for the established security context, the failure
+  of the gss_getmic() or gss_wrap() must not interfere with
+  the context validity, sequence protection or replay protection
+  as provided by the gssapi mechanism.
+
+Talking of QOP values: gss_wrap_size_limit() takes a qop for
+input and may return GSS_S_BAD_QOP.  Could we add the statement
+that a QOP value accepted by gss_wrap_size_limit() doesn't mean
+that this QOP is acutally valid and would be accepted by gss_wrap()?
+(I have a layered GSS-API mechanism with a qop-independent wrap_size
+ increase where validating the QOP value would be extremely awkward
+ due to the layering.)
+
+
+What is the optional/mandatory status for the Kerberos 5 gssapi mechanism
+RFC-1964, mech-OID
+     iso(1) member-body(2) United States(840)
+                            mit(113554) infosys(1) gssapi(2) krb5(2)
+
+Is per-message integrity protection mandatory-to-implement?
+Is per-message confidentiality protection mandatory-to-implement?
+
+
+I haven't seen any specific requirements concerning these interoperability
+issues in both of the GSS-API documents rfc2078bis, C-bindings,
+and neither the Kerberos 5 GSS-API mechanism spec rfc1964.
+
+
+I'm especially interested in implementation practice -- especially
+where political solutions are already technical problems today.
+
+-Martin
+
+From: "Mike Swift (NT)" <mikesw@microsoft.com>
+To: Ken Hornstein <kenh@cmf.nrl.navy.mil>
+Cc: cat-ietf@mit.edu
+Subject: RE: Exportable encryption & Kerberos 
+Date: Fri, 16 Jan 1998 10:58:32 -0800
+
+I agree that the words "domestic" and "exportable" were poor choices - how
+about "strong" and "weak", so that there are no doubts about what is being
+offered? I thought about extending the AP request to include additional enc
+types. However, negotiating both a key & and encryption type at the same
+time is difficult - the thing to do might be to expand the key in the AP_REQ
+to be a sequence of keys, and the server replies with they key it chose or
+its own key. 
+
+Any support for distinguishing between strong & weak encryption is by its
+very nature incompatible - clients and servers that only do weak encryption
+have to fail requests to and from machine that do strong encryption, so
+extending the AP request structure might be reasonable.
+
+- Mike
+
+> -----Original Message-----
+> From:	Ken Hornstein [SMTP:kenh@cmf.nrl.navy.mil]
+> Sent:	Tuesday, January 13, 1998 12:07 PM
+> To:	Mike Swift (NT)
+> Cc:	cat-ietf@mit.edu
+> Subject:	Re: Exportable encryption & Kerberos 
+> 
+	...
+> Maybe the thing to do is make the AP_REQ have an optional list of
+> enctypes for the server to choose from?
+> 
+> The only thing I don't like about your proposal is the use of "domestic"
+> vs "exportable"; as someone else pointed out, this is pretty US-centric.
+> And what do you do if the law changes? :-)
+> 
+> --Ken
+

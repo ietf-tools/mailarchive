@@ -1,0 +1,421 @@
+
+Received: from CNRI.Reston.VA.US by IETF.CNRI.Reston.VA.US id aa09448;
+          9 Sep 94 15:37 EDT
+Received: from ietf.cnri.reston.va.us by CNRI.Reston.VA.US id aa16631;
+          9 Sep 94 15:37 EDT
+Received: from ietf.cnri.reston.va.us by IETF.CNRI.Reston.VA.US id aa09332;
+          9 Sep 94 15:37 EDT
+Received: from [127.0.0.1] by IETF.CNRI.Reston.VA.US id aa09210;
+          9 Sep 94 15:33 EDT
+Mime-Version: 1.0
+Content-Type: Multipart/Mixed; Boundary="NextPart"
+To: IETF-Announce: ;
+cc: uri@bunyip.com
+Sender:ietf-announce-request@IETF.CNRI.Reston.VA.US
+From: Internet-Drafts@CNRI.Reston.VA.US
+Reply-to: Internet-Drafts@CNRI.Reston.VA.US
+Subject: I-D ACTION:draft-ietf-uri-url-07.txt
+Date: Fri, 09 Sep 94 15:33:46 -0400
+X-Orig-Sender: cclark@CNRI.Reston.VA.US
+Message-ID:  <9409091533.aa09210@IETF.CNRI.Reston.VA.US>
+
+--NextPart
+
+A Revised Internet-Draft is available from the on-line Internet-Drafts 
+directories. This draft is a work item of the Uniform Resource Identifiers 
+Working Group of the IETF.                                                 
+
+       Title     : Uniform Resource Locators (URL)                         
+       Author(s) : T. Berners-Lee, L. Masinter, M. McCahill
+       Filename  : draft-ietf-uri-url-07.txt
+       Pages     : 16
+       Date      : 09/08/1994
+
+This document specifies a Uniform Resource Locator (URL), the syntax and 
+semantics of formalized information for location and access of resources 
+via the Internet.                                                          
+
+Internet-Drafts are available by anonymous FTP.  Login with the	
+username "anonymous" and password "guest".  After logging in,
+Type "cd internet-drafts".
+     "get draft-ietf-uri-url-07.txt".
+ 
+Internet-Drafts directories are located at:	
+	                                                
+     o  US East Coast                            
+        Address:  ds.internic.net (198.49.45.10)	
+	                                                
+     o  US West Coast                            
+        Address:  ftp.isi.edu (128.9.0.32)  	
+	                                                
+     o  Pacific Rim                              
+        Address:  munnari.oz.au (128.250.1.21)	
+	                                                
+     o  Europe                                   
+        Address:  nic.nordu.net (192.36.148.17)	
+	                                                
+Internet-Drafts are also available by mail.	
+	                                                
+Send a message to:  mailserv@ds.internic.net. In the body type: 
+     "FILE /internet-drafts/draft-ietf-uri-url-07.txt".
+							
+NOTE: The mail server at ds.internic.net can return the document in
+      MIME-encoded form by using the "mpack" utility.  To use this
+      feature, insert the command "ENCODING mime" before the "FILE"
+      command.  To decode the response(s), you will need "munpack" or
+      a MIME-compliant mail reader.  Different MIME-compliant mail readers
+      exhibit different behavior, especially when dealing with
+      "multipart" MIME messages (i.e., documents which have been split
+      up into multiple messages), so check your local documentation on
+      how to manipulate these messages.
+							
+For questions, please mail to Internet-Drafts@cnri.reston.va.us.
+							
+
+Below is the data which will enable a MIME compliant mail reader 
+implementation to automatically retrieve the ASCII version
+of the Internet-Draft.
+
+--NextPart
+Content-Type: Multipart/Alternative; Boundary="OtherAccess"
+
+--OtherAccess
+Content-Type:  Message/External-body;
+        access-type="mail-server";
+        server="mailserv@ds.internic.net"
+
+Content-Type: text/plain
+Content-ID: <19940908095344.I-D@CNRI.Reston.VA.US>
+
+ENCODING mime
+FILE /internet-drafts/draft-ietf-uri-url-07.txt
+
+--OtherAccess
+Content-Type:   Message/External-body;
+        name="draft-ietf-uri-url-07.txt";
+        site="ds.internic.net";
+        access-type="anon-ftp";
+        directory="internet-drafts"
+
+Content-Type: text/plain
+Content-ID: <19940908095344.I-D@CNRI.Reston.VA.US>
+
+--OtherAccess--
+
+--NextPart--
+
+
+Received: from CNRI.Reston.VA.US by IETF.CNRI.Reston.VA.US id aa09479;
+          9 Sep 94 15:37 EDT
+Received: from ietf.cnri.reston.va.us by CNRI.Reston.VA.US id aa16650;
+          9 Sep 94 15:37 EDT
+Received: from ietf.cnri.reston.va.us by IETF.CNRI.Reston.VA.US id ab09327;
+          9 Sep 94 15:37 EDT
+Received: from [127.0.0.1] by IETF.CNRI.Reston.VA.US id aa09078;
+          9 Sep 94 15:32 EDT
+Mime-Version: 1.0
+Content-Type: Multipart/Mixed; Boundary="NextPart"
+To: IETF-Announce: ;
+Sender:ietf-announce-request@IETF.CNRI.Reston.VA.US
+From: Internet-Drafts@CNRI.Reston.VA.US
+Reply-to: Internet-Drafts@CNRI.Reston.VA.US
+Subject: I-D ACTION:draft-simpson-ipv6-hc-00.txt
+Date: Fri, 09 Sep 94 15:32:27 -0400
+X-Orig-Sender: cclark@CNRI.Reston.VA.US
+Message-ID:  <9409091532.aa09078@IETF.CNRI.Reston.VA.US>
+
+--NextPart
+
+A New Internet-Draft is available from the on-line Internet-Drafts 
+directories.                                                               
+
+       Title     : IPv6 Header Compression                                 
+       Author(s) : W. Simpson
+       Filename  : draft-simpson-ipv6-hc-00.txt
+       Pages     : 26
+       Date      : 09/08/1994
+
+This document describes a mechanism to improve IP performance over low and 
+medium speed (300 bps to 155.2 Kbps and beyond) point-to-point links.      
+
+Internet-Drafts are available by anonymous FTP.  Login with the	
+username "anonymous" and password "guest".  After logging in,
+Type "cd internet-drafts".
+     "get draft-simpson-ipv6-hc-00.txt".
+ 
+Internet-Drafts directories are located at:	
+	                                                
+     o  US East Coast                            
+        Address:  ds.internic.net (198.49.45.10)	
+	                                                
+     o  US West Coast                            
+        Address:  ftp.isi.edu (128.9.0.32)  	
+	                                                
+     o  Pacific Rim                              
+        Address:  munnari.oz.au (128.250.1.21)	
+	                                                
+     o  Europe                                   
+        Address:  nic.nordu.net (192.36.148.17)	
+	                                                
+Internet-Drafts are also available by mail.	
+	                                                
+Send a message to:  mailserv@ds.internic.net. In the body type: 
+     "FILE /internet-drafts/draft-simpson-ipv6-hc-00.txt".
+							
+NOTE: The mail server at ds.internic.net can return the document in
+      MIME-encoded form by using the "mpack" utility.  To use this
+      feature, insert the command "ENCODING mime" before the "FILE"
+      command.  To decode the response(s), you will need "munpack" or
+      a MIME-compliant mail reader.  Different MIME-compliant mail readers
+      exhibit different behavior, especially when dealing with
+      "multipart" MIME messages (i.e., documents which have been split
+      up into multiple messages), so check your local documentation on
+      how to manipulate these messages.
+							
+For questions, please mail to Internet-Drafts@cnri.reston.va.us.
+							
+
+Below is the data which will enable a MIME compliant mail reader 
+implementation to automatically retrieve the ASCII version
+of the Internet-Draft.
+
+--NextPart
+Content-Type: Multipart/Alternative; Boundary="OtherAccess"
+
+--OtherAccess
+Content-Type:  Message/External-body;
+        access-type="mail-server";
+        server="mailserv@ds.internic.net"
+
+Content-Type: text/plain
+Content-ID: <19940908153739.I-D@CNRI.Reston.VA.US>
+
+ENCODING mime
+FILE /internet-drafts/draft-simpson-ipv6-hc-00.txt
+
+--OtherAccess
+Content-Type:   Message/External-body;
+        name="draft-simpson-ipv6-hc-00.txt";
+        site="ds.internic.net";
+        access-type="anon-ftp";
+        directory="internet-drafts"
+
+Content-Type: text/plain
+Content-ID: <19940908153739.I-D@CNRI.Reston.VA.US>
+
+--OtherAccess--
+
+--NextPart--
+
+
+
+Received: from ietf.nri.reston.va.us by IETF.CNRI.Reston.VA.US id aa09500;
+          9 Sep 94 15:37 EDT
+Received: from CNRI.Reston.VA.US by IETF.CNRI.Reston.VA.US id aa09480;
+          9 Sep 94 15:37 EDT
+Received: from ietf.cnri.reston.va.us by CNRI.Reston.VA.US id aa16649;
+          9 Sep 94 15:37 EDT
+Received: from ietf.cnri.reston.va.us by IETF.CNRI.Reston.VA.US id aa09323;
+          9 Sep 94 15:37 EDT
+Received: from [127.0.0.1] by IETF.CNRI.Reston.VA.US id aa08907;
+          9 Sep 94 15:30 EDT
+Mime-Version: 1.0
+Content-Type: Multipart/Mixed; Boundary="NextPart"
+To: IETF-Announce: ;
+X-Orig-Sender:ietf-announce-request@IETF.CNRI.Reston.VA.US
+Sender:ietf-archive-request@IETF.CNRI.Reston.VA.US
+From: Internet-Drafts@CNRI.Reston.VA.US
+Reply-to: Internet-Drafts@CNRI.Reston.VA.US
+Subject: I-D ACTION:draft-kessler-primer-01.txt
+Date: Fri, 09 Sep 94 15:30:30 -0400
+X-Orig-Sender: cclark@CNRI.Reston.VA.US
+Message-ID:  <9409091530.aa08907@IETF.CNRI.Reston.VA.US>
+
+--NextPart
+
+A Revised Internet-Draft is available from the on-line Internet-Drafts 
+directories.                                                               
+
+       Title     : A Primer On Internet and TCP/IP Tools                   
+       Author(s) : G. Kessler, S. Shepard
+       Filename  : draft-kessler-primer-01.txt
+       Pages     : 32
+       Date      : 09/08/1994
+
+This memo is an introductory guide to some of the TCP/IP and Internet tools
+and utilities that allow users to access the wide variety of information on
+the network, from determining if a particular host is up to viewing a 
+multimedia thesis on foreign policy.  It also describes discussion lists 
+accessible from the Internet, ways to obtain Internet documents, and 
+resources that help users weave their way through the Internet.  This memo 
+may be used as a tutorial for individual self-learning, a step-by-step 
+laboratory manual for a course, or as the basis for a site's users manual. 
+It is intended as a basic guide only and will refer to other sources for 
+more detailed information.                                                 
+
+Internet-Drafts are available by anonymous FTP.  Login with the	
+username "anonymous" and password "guest".  After logging in,
+Type "cd internet-drafts".
+     "get draft-kessler-primer-01.txt".
+ 
+Internet-Drafts directories are located at:	
+	                                                
+     o  US East Coast                            
+        Address:  ds.internic.net (198.49.45.10)	
+	                                                
+     o  US West Coast                            
+        Address:  ftp.isi.edu (128.9.0.32)  	
+	                                                
+     o  Pacific Rim                              
+        Address:  munnari.oz.au (128.250.1.21)	
+	                                                
+     o  Europe                                   
+        Address:  nic.nordu.net (192.36.148.17)	
+	                                                
+Internet-Drafts are also available by mail.	
+	                                                
+Send a message to:  mailserv@ds.internic.net. In the body type: 
+     "FILE /internet-drafts/draft-kessler-primer-01.txt".
+							
+NOTE: The mail server at ds.internic.net can return the document in
+      MIME-encoded form by using the "mpack" utility.  To use this
+      feature, insert the command "ENCODING mime" before the "FILE"
+      command.  To decode the response(s), you will need "munpack" or
+      a MIME-compliant mail reader.  Different MIME-compliant mail readers
+      exhibit different behavior, especially when dealing with
+      "multipart" MIME messages (i.e., documents which have been split
+      up into multiple messages), so check your local documentation on
+      how to manipulate these messages.
+							
+For questions, please mail to Internet-Drafts@cnri.reston.va.us.
+							
+
+Below is the data which will enable a MIME compliant mail reader 
+implementation to automatically retrieve the ASCII version
+of the Internet-Draft.
+
+--NextPart
+Content-Type: Multipart/Alternative; Boundary="OtherAccess"
+
+--OtherAccess
+Content-Type:  Message/External-body;
+        access-type="mail-server";
+        server="mailserv@ds.internic.net"
+
+Content-Type: text/plain
+Content-ID: <19940908163348.I-D@CNRI.Reston.VA.US>
+
+ENCODING mime
+FILE /internet-drafts/draft-kessler-primer-01.txt
+
+--OtherAccess
+Content-Type:   Message/External-body;
+        name="draft-kessler-primer-01.txt";
+        site="ds.internic.net";
+        access-type="anon-ftp";
+        directory="internet-drafts"
+
+Content-Type: text/plain
+Content-ID: <19940908163348.I-D@CNRI.Reston.VA.US>
+
+--OtherAccess--
+
+--NextPart--
+
+
+
+Received: from ietf.nri.reston.va.us by IETF.CNRI.Reston.VA.US id aa14307;
+          9 Sep 94 17:59 EDT
+Received: from CNRI.Reston.VA.US by IETF.CNRI.Reston.VA.US id aa14297;
+          9 Sep 94 17:59 EDT
+Received: from ietf.cnri.reston.va.us by CNRI.Reston.VA.US id aa20244;
+          9 Sep 94 17:59 EDT
+Received: from ietf.nri.reston.va.us by IETF.CNRI.Reston.VA.US id aa14271;
+          9 Sep 94 17:59 EDT
+Received: from CNRI.Reston.VA.US by IETF.CNRI.Reston.VA.US id aa14221;
+          9 Sep 94 17:56 EDT
+Received: from [128.95.135.58] by CNRI.Reston.VA.US id aa20177;
+          9 Sep 94 17:56 EDT
+Received: from UW-Gateway.Panda.COM by Tomobiki-Cho.CAC.Washington.EDU
+	(NX5.67e/UW-NDC Revision: 2.27.MRC ) id AA19547; Fri, 9 Sep 94 14:56:34 -0700
+Received: from localhost by Ikkoku-Kan.Panda.COM
+	(NX5.67e/UW-NDC/Panda Revision: 2.27.MRC ) id AA04550; Fri, 9 Sep 94 14:56:27 -0700
+Date: Fri, 9 Sep 1994 14:42:30 -0700 (PDT)
+X-Orig-Sender:ietf-request@IETF.CNRI.Reston.VA.US
+Sender:ietf-archive-request@IETF.CNRI.Reston.VA.US
+From: Mark Crispin <MRC@panda.com>
+X-Orig-Sender: Mark Crispin <mrc@ikkoku-kan.panda.com>
+Subject: 8-bit transmission in NNTP
+To: Internet Engineering Task Force <ietf@CNRI.Reston.VA.US>
+Cc: IETF Mail Extensions WG <ietf-822@dimacs.rutgers.edu>, 
+    IETF SMTP Extensions WG <ietf-smtp@dimacs.rutgers.edu>
+Message-Id: <MailManager.779146950.1843.mrc@Ikkoku-Kan.Panda.COM>
+Mime-Version: 1.0
+Content-Type: TEXT/PLAIN; CHARSET=US-ASCII
+
+The issue has come up recently about the use of quoted-printable vs. 8-bit in
+netnews postings and in particular in the NNTP protocol.  It appears, from a
+cursory examination of the status quo, that officially netnews is 7-bit;
+however, ``just send 8 bits'' is common practice within the netnews community.
+
+``Common practice'', as opposed to an IETF standard, does little to give us
+warm fuzzy feelings; and as a veteran of the ``just send 8 bits'' SMTP wars I
+am particularly nervous about travelling down that slippery slop.
+
+On the other hand, it is arguable that the ``all the world is UNIX'' attitude
+is an acceptable one for netnews and there really is no problem with ``just
+send 8 bits'' in netnews.  There is, of course, a problem for implementors of
+software that supports both mail and news, since they would have to keep
+firmly in mind that they can't ``just send 8 bits'' in mail (read: we'll see a
+lot of illicit 8-bit SMTP to non-EHLO servers).
+
+The purpose of this message is to get discussion going on this question, if it
+isn't already, and hopefully result in a ruling.  Maybe (shudder!) it's time
+for an IETF-NNTP working group?  ;-)
+
+-- Mark --
+
+
+
+Received: from ietf.nri.reston.va.us by IETF.CNRI.Reston.VA.US id aa14806;
+          9 Sep 94 18:48 EDT
+Received: from CNRI.Reston.VA.US by IETF.CNRI.Reston.VA.US id aa14797;
+          9 Sep 94 18:48 EDT
+Received: from ietf.cnri.reston.va.us by CNRI.Reston.VA.US id aa20994;
+          9 Sep 94 18:48 EDT
+Received: from ietf.nri.reston.va.us by IETF.CNRI.Reston.VA.US id aa14780;
+          9 Sep 94 18:48 EDT
+Received: from CNRI.Reston.VA.US by IETF.CNRI.Reston.VA.US id aa14745;
+          9 Sep 94 18:46 EDT
+Received: from apple.com by CNRI.Reston.VA.US id aa20962; 9 Sep 94 18:46 EDT
+Received: by apple.com with SMTP (5.61/8-Oct-1993-eef)
+	id AA28351; Fri, 9 Sep 94 15:45:20 -0700
+	for ietf@cnri.reston.va.us
+X-Orig-Sender:ietf-request@IETF.CNRI.Reston.VA.US
+Sender:ietf-archive-request@IETF.CNRI.Reston.VA.US
+From: "Erik E. Fair" (Internet Architect) <fair@apple.com>
+Subject: Re: 8-bit transmission in NNTP 
+In-Reply-To: <MailManager.779146950.1843.mrc@Ikkoku-Kan.Panda.COM> 
+To: Mark Crispin <MRC@panda.com>
+X-Return-Path: owner-ietf-822@dimacs.rutgers.edu 
+Cc: Internet Engineering Task Force <ietf@CNRI.Reston.VA.US>, 
+    IETF Mail Extensions WG <ietf-822@dimacs.rutgers.edu>, 
+    IETF SMTP Extensions WG <ietf-smtp@dimacs.rutgers.edu>, lear@corp.sgi.com
+Date: Fri, 09 Sep 94 15:45:15 -0700
+Message-Id: <28311.779150715@apple.com>
+X-Orig-Sender: fair@apple.com
+
+There was an NNTP v2 effort a while ago, but it petered out from lack
+of interest.
+
+As one of the original authors of NNTP, and as a participant in the
+MIME effort, I can authoritatively say that NNTP was indeed explicitly
+7-bit NETASCII, and anyone just sending 8 bits is in violation of
+protocol. The whole idea behind MIME was to get the user interface
+software changed to properly support character sets other than ASCII
+*independent* of transport and it does no damn good if we don't label
+the silly things which is where the "just send 8 bits" idiocy leaves
+us. This goes for NetNews too.
+
+	Erik E. Fair	apple!fair	fair@apple.com
+

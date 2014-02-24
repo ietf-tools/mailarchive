@@ -1,13 +1,13 @@
 #!/usr/bin/python
-'''
+"""
 Generic scan script.  Define a scan as a function.  Specifiy the function as the
 first command line argument.
 
 usage:
 
-scan_all [func name]
+scan_all.py [func name] [optional arguments][
 
-'''
+"""
 # Set PYTHONPATH and load environment variables for standalone script -----------------
 # for file living in project/bin/
 import os
@@ -22,6 +22,7 @@ from mlarchive.archive.models import *
 from mlarchive.bin.scan_utils import *
 from mlarchive.archive.management.commands import _classes
 from tzparse import tzparse
+from pprint import pprint
 from pytz import timezone
 
 import argparse
@@ -43,8 +44,9 @@ date_formats = ["%a %b %d %H:%M:%S %Y",
 # ---------------------------------------------------------
 
 def get_date_part(str):
-    '''Get the date portion of the envelope header.  Based on the observation
-    that all date parts start with abbreviated weekday'''
+    """Get the date portion of the envelope header.  Based on the observation
+    that all date parts start with abbreviated weekday
+    """
     match = date_pattern.search(str)
     if match:
         date = match.group()
@@ -59,7 +61,7 @@ def get_date_part(str):
         return None
 
 def convert_date(date):
-    'Try different patterns to convert string to naive UTC datetime object'
+    """Try different patterns to convert string to naive UTC datetime object"""
     for format in date_formats:
         try:
             result = tzparse(date.rstrip(),format)
@@ -76,9 +78,9 @@ def convert_date(date):
 # ---------------------------------------------------------
 
 def bodies():
-    '''Call get_body_html() and get_body() for every message in db. Use logging in
+    """Call get_body_html() and get_body() for every message in db. Use logging in
     generator_handler methods to gather stats.
-    '''
+    """
     query = Message.objects.filter(pk__gte=457000)
     total = Message.objects.count()
     for msg in query:
@@ -90,8 +92,22 @@ def bodies():
         if msg.pk % 1000 == 0:
             print 'processed {0} of {1}'.format(msg.pk,total)
 
+def count(listname):
+    """Count number of messages in legacy archive for listname"""
+    total = 0
+    years = {}
+    for mb in get_mboxs(listname):
+        parts = mb._file.name.split('/')
+        num = len(mb)
+        year = parts[-1][:4]
+        years[year] = years.get(year,0) + num
+        print "%s/%s: %d" % (parts[-2],parts[-1],num)
+        total += num
+    print "Total: %d" % total
+    pprint(years)
+
 def envelope_date():
-    'Quickly test envelope date parsing on every standard mbox file in archive'
+    """Quickly test envelope date parsing on every standard mbox file in archive"""
     #for path in ['/a/www/ietf-mail-archive/text/lemonade/2002-09.mail']:
     for path in all_mboxs():
         with open(path) as f:
@@ -105,8 +121,23 @@ def envelope_date():
                 if not convert_date(date.rstrip()):
                     print path,date
 
+def envelope_regex():
+    """Quickly test envelope regex matching on every standard mbox file in archive"""
+    #for path in ['/a/www/ietf-mail-archive/text/lemonade/2002-09.mail']:
+    # pattern = re.compile(r'From (.*@.* |MAILER-DAEMON ).{24}')
+    pattern = re.compile(r'From .* (Sun|Mon|Tue|Wed|Thu|Fri|Sat)( |,)')
+
+    for path in all_mboxs():
+        with open(path) as f:
+            line = f.readline()
+            while not line or line == '\n':
+                line = f.readline()
+            if line.startswith('From '):
+                if not pattern.match(line):
+                    print path,line
+
 def html_only():
-    '''Scan all mboxs and report messages that have only one MIME part that is text/html'''
+    """Scan all mboxs and report messages that have only one MIME part that is text/html"""
     elist = ''
     for path in all_mboxs():
         name = os.path.basename(os.path.dirname(path))
@@ -121,8 +152,26 @@ def html_only():
                 if msg.get_content_type() == 'text/html':
                     print msg['message-id']
 
+def mailbox_types():
+    """Scan all mailbox files and print example of each unique envelope form other
+    than typical mbox or mmdf
+    """
+    matches = dict.fromkeys(_classes.SEPARATOR_PATTERNS)
+    for path in all_mboxs():
+        with open(path) as f:
+            line = f.readline()
+            while not line or line == '\n':
+                line = f.readline()
+            if not (line.startswith('From ') or line.startswith('\x01\x01\x01\x01')):
+                for pattern in _classes.SEPARATOR_PATTERNS:
+                    if pattern.match(line):
+                        if not matches[pattern]:
+                            matches[pattern] = path
+                            print "%s: %s" % (pattern.pattern, path)
+                        break
+
 def missing_files():
-    '''Scan messages in date range and report if any are missing the archive file'''
+    """Scan messages in date range and report if any are missing the archive file"""
     total = 0
     start = datetime.datetime(2014,01,20)
     end = datetime.datetime(2014,01,23)
@@ -134,13 +183,23 @@ def missing_files():
             #message.delete()
     print '%d of %d missing.' % (total, messages.count())
 
+def subjects(listname):
+    """Return subject line of all messages for listname"""
+    for msg in process([listname]):
+        print "%s: %s" % (msg.get('date'),msg.get('subject'))
+
+# ---------------------------------------------------------
+# Main
+# ---------------------------------------------------------
+
 def main():
     parser = argparse.ArgumentParser(description='Run an archive scan.')
     parser.add_argument('function')
+    parser.add_argument('extras', nargs='*')
     args = vars(parser.parse_args())
     if args['function'] in globals():
         func = globals()[args['function']]
-        func()
+        func(*args['extras'])
     else:
         raise argparse.ArgumentTypeError('no scan function: %s' % args['function'])
 

@@ -1,0 +1,303 @@
+
+Return-Path: <pthubert@cisco.com>
+X-Original-To: 6tsch@ietfa.amsl.com
+Delivered-To: 6tsch@ietfa.amsl.com
+Received: from localhost (localhost [127.0.0.1]) by ietfa.amsl.com (Postfix) with ESMTP id 9DA9221E8207 for <6tsch@ietfa.amsl.com>; Mon,  7 Oct 2013 15:25:29 -0700 (PDT)
+X-Virus-Scanned: amavisd-new at amsl.com
+X-Spam-Flag: NO
+X-Spam-Score: -10.599
+X-Spam-Level: 
+X-Spam-Status: No, score=-10.599 tagged_above=-999 required=5 tests=[AWL=0.000, BAYES_00=-2.599, RCVD_IN_DNSWL_HI=-8]
+Received: from mail.ietf.org ([12.22.58.30]) by localhost (ietfa.amsl.com [127.0.0.1]) (amavisd-new, port 10024) with ESMTP id tqS4+VGR34oI for <6tsch@ietfa.amsl.com>; Mon,  7 Oct 2013 15:25:24 -0700 (PDT)
+Received: from rcdn-iport-6.cisco.com (rcdn-iport-6.cisco.com [173.37.86.77]) by ietfa.amsl.com (Postfix) with ESMTP id 762B621E8202 for <6tsch@ietf.org>; Mon,  7 Oct 2013 15:25:24 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=cisco.com; i=@cisco.com; l=1878; q=dns/txt; s=iport; t=1381184724; x=1382394324; h=from:to:cc:subject:date:message-id:references: in-reply-to:content-transfer-encoding:mime-version; bh=/n2JqfwAEibJ41WDRqCW4cuVPXEEYAnosoU+M0tkD/o=; b=hq48Vs4VEztNBNVYje5fG/Q5/8BJcqS78OUp6c+tiUOlpfpVNtgCdel0 7cQ5zpukaBm6qyi7I8opcpxujb1SPiMm759an046ZDIxDOTwETw2P3OFK ympi9/phYi8kSu92/4DHHGZ5IK0E3+pky7CB0I8g8usargS1dp7vN2r/B c=;
+X-IronPort-Anti-Spam-Filtered: true
+X-IronPort-Anti-Spam-Result: AgkFABY0U1KtJV2a/2dsb2JhbABZDoJ5OIN6vXkXgQcWdIIlAQEBAwEBAQEgEToLBQsCAQYCGgImAgICJQsVEAIEDgWIAAYMjRubXJItBIEpjXUzB4JqgTkDmAGSAIJlPw
+X-IronPort-AV: E=Sophos;i="4.90,1051,1371081600"; d="scan'208";a="269206899"
+Received: from rcdn-core-3.cisco.com ([173.37.93.154]) by rcdn-iport-6.cisco.com with ESMTP; 07 Oct 2013 22:25:17 +0000
+Received: from xhc-rcd-x01.cisco.com (xhc-rcd-x01.cisco.com [173.37.183.75]) by rcdn-core-3.cisco.com (8.14.5/8.14.5) with ESMTP id r97MPFDU002958 (version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=FAIL); Mon, 7 Oct 2013 22:25:17 GMT
+Received: from xmb-rcd-x01.cisco.com ([169.254.1.2]) by xhc-rcd-x01.cisco.com ([173.37.183.75]) with mapi id 14.02.0318.004; Mon, 7 Oct 2013 17:25:15 -0500
+From: "Pascal Thubert (pthubert)" <pthubert@cisco.com>
+To: "<xvilajosana@eecs.berkeley.edu>" <xvilajosana@eecs.berkeley.edu>
+Thread-Topic: [6tsch] rank, Dagrank(rank) and Join Priority
+Thread-Index: AQHOw5bLQ7tgxIQ9hUuYpowdqQw8KJnp0QOu
+Date: Mon, 7 Oct 2013 22:25:15 +0000
+Message-ID: <16AA9E8A-B91F-40C9-BF6E-83521741653F@cisco.com>
+References: <CALEMV4aWvMWKkhFMpUSix30D0j_FQHg_o1L3t6fGmWgpriENSg@mail.gmail.com>
+In-Reply-To: <CALEMV4aWvMWKkhFMpUSix30D0j_FQHg_o1L3t6fGmWgpriENSg@mail.gmail.com>
+Accept-Language: fr-FR, en-US
+Content-Language: fr-FR
+X-MS-Has-Attach: 
+X-MS-TNEF-Correlator: 
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: base64
+MIME-Version: 1.0
+Cc: "6tsch@ietf.org" <6tsch@ietf.org>
+Subject: Re: [6tsch] rank, Dagrank(rank) and Join Priority
+X-BeenThere: 6tsch@ietf.org
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: "Discuss link layer model for Deterministic IPv6 over the TSCH mode of IEEE 802.15.4e, and impacts on RPL and 6LoWPAN such as resource allocation" <6tsch.ietf.org>
+List-Unsubscribe: <https://www.ietf.org/mailman/options/6tsch>, <mailto:6tsch-request@ietf.org?subject=unsubscribe>
+List-Archive: <http://www.ietf.org/mail-archive/web/6tsch>
+List-Post: <mailto:6tsch@ietf.org>
+List-Help: <mailto:6tsch-request@ietf.org?subject=help>
+List-Subscribe: <https://www.ietf.org/mailman/listinfo/6tsch>, <mailto:6tsch-request@ietf.org?subject=subscribe>
+X-List-Received-Date: Mon, 07 Oct 2013 22:25:29 -0000
+
+SGVsbG8gWGF2aQ0KDQpZZXMgeW91IGNhbiBzYWZlbHkgaW5zaXN0IHRoYXQgdGhlIGZsb29yIGlz
+IG9uZSBvY3RldCBiZWNhdXNlIHdlIGZvcmNlIG1pbiBpbmNyZWFlIHRvIDI1Niwgbm8gcHJvYmxl
+bSB0aGVyZSwgaW4gZmFjdCBpdCBpcyBhIGRlc2lnbiBwb2ludCDwn5iKDQoNCkNoZWVycw0KDQpQ
+YXNjYWwNCg0KPiBMZSA3IG9jdC4gMjAxMyDDoCAyMTo1MiwgIlhhdmllciBWaWxham9zYW5hIEd1
+aWxsZW4iIDx4dmlsYWpvc2FuYUBlZWNzLmJlcmtlbGV5LmVkdT4gYSDDqWNyaXQgOg0KPiANCj4g
+SGksDQo+IA0KPiBJIGFtIHJldmlld2luZyB0aGUgbWluaW1hbCBkcmFmdCBhbmQgSSB3YW50IHRv
+IGNsYXJpZnkgb25lIHRoaW5nOg0KPiANCj4gYWNjb3JkaW5nIHRvIFJGQzY1NTANCj4gDQo+IERB
+R1JhbmsocmFuaykgPSBmbG9vcihyYW5rL01pbkhvcFJhbmtJbmNyZWFzZSkNCj4gDQo+IHRoZSBS
+RkMgZG9lcyBub3Qgc3BlY2lmeSB3aGV0aGVyIERBR1JhbmsocmFuaykgaXMgYSAxNmJpdCBpbnRl
+Z2VyIG9yIGEgOGJpdCBpbnRlZ2VyIChvciBhbm90aGVyIHR5cGUpIGJ1dCBpZiBNaW5Ib3BSYW5r
+SW5jcmVhc2UgaXMgMjU2LCB0aGVuIGZvciBzdXJlIHRoYXQgdGhlIHJlc3VsdCBvZiBEQUdSYW5r
+KHJhbmspIHdpbGwgYmUgc21hbGxlciB0aGFuIDI1NiBhbmQgaGVuY2Ugd2lsbCBmaXQgaW4gYW4g
+OGJpdCB2YXJpYWJsZS4NCj4gDQo+IElmIHRoYXQgaXMgdGhlIGNhc2UgdGhlbiB0aGUgam9pbiBw
+cmlvcml0eSBmaWVsZCBjYW4gYmUgZXhhY3RseSBEQUdSYW5rKHJhbmspIGFuZCB3ZSBkbyBub3Qg
+bmVlZCB0byBkbyB0aGlzIHNoaWZ0aW5nIHRoYXQgd2UndmUgYmVlbiBkaXNjdXNzaW5nIHNvIGZh
+ci4NCj4gDQo+IE5vdyB0aGUgbWluaW1hbCBkcmFmdCBzdGF0ZXMgdGhhdCBKb2luIFByaW9yaXR5
+ID09IERBR1JhbmsocmFuaykNCj4gDQo+IHNob3VsZCBJIGNsYXJpZnkgdGhlcmUgdGhhdCB0aGlz
+IGFzc3VtZXMgdGhhdCBEQUdSYW5rKHJhbmspIGlzIGFuIDhiaXQgaW50ZWdlci4gSW4gY2FzZSBp
+dCBpcyBub3QgYW4gOGJpdCBpbnRlZ2VyIHRoZW4gd2UgbmVlZCB0byBzaGlmdCBpdCB0byBjb25z
+aWRlciB0aGUgbW9zdCBzaWduaWZpY2FudCA4IGJpdHMuIA0KPiANCj4gRG8geW91IGFncmVlIG9u
+IHRoYXQ/IA0KPiANCj4gc29ycnkgdG8gY29tZSBiYWNrIGFnYWluIHRvIHRoZSB0b3BpYyBidXQg
+SSB3YW50IHRvIGNsb3NlIGl0IGFzYXAgOi0pDQo+IFgNCj4gX19fX19fX19fX19fX19fX19fX19f
+X19fX19fX19fX19fX19fX19fX19fX19fX18NCj4gNnRzY2ggbWFpbGluZyBsaXN0DQo+IDZ0c2No
+QGlldGYub3JnDQo+IGh0dHBzOi8vd3d3LmlldGYub3JnL21haWxtYW4vbGlzdGluZm8vNnRzY2gN
+Cg==
+
+Return-Path: <xvilajosana@berkeley.edu>
+X-Original-To: 6tsch@ietfa.amsl.com
+Delivered-To: 6tsch@ietfa.amsl.com
+Received: from localhost (localhost [127.0.0.1]) by ietfa.amsl.com (Postfix) with ESMTP id E7ABE11E8116 for <6tsch@ietfa.amsl.com>; Mon,  7 Oct 2013 12:51:31 -0700 (PDT)
+X-Virus-Scanned: amavisd-new at amsl.com
+X-Spam-Flag: NO
+X-Spam-Score: -2.976
+X-Spam-Level: 
+X-Spam-Status: No, score=-2.976 tagged_above=-999 required=5 tests=[BAYES_00=-2.599, FM_FORGED_GMAIL=0.622, HTML_MESSAGE=0.001, RCVD_IN_DNSWL_LOW=-1]
+Received: from mail.ietf.org ([12.22.58.30]) by localhost (ietfa.amsl.com [127.0.0.1]) (amavisd-new, port 10024) with ESMTP id 7tnaU7E5NsVt for <6tsch@ietfa.amsl.com>; Mon,  7 Oct 2013 12:51:26 -0700 (PDT)
+Received: from mail-pb0-f43.google.com (mail-pb0-f43.google.com [209.85.160.43]) by ietfa.amsl.com (Postfix) with ESMTP id AF3EC11E8152 for <6tsch@ietf.org>; Mon,  7 Oct 2013 12:51:17 -0700 (PDT)
+Received: by mail-pb0-f43.google.com with SMTP id md4so7527948pbc.30 for <6tsch@ietf.org>; Mon, 07 Oct 2013 12:51:17 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=1e100.net; s=20130820; h=x-gm-message-state:mime-version:reply-to:date:message-id:subject :from:to:content-type; bh=Cym37pgle2GOpMOPUuRBbByxVG1og/xlH/eUhk88m6A=; b=MwMKPG2H92+/LHQKYVQpM41+DHVuH+kka9LrVdx/FKog2UAdGbz+1ZneWaFzgnIB2o bKp3zb/yRsBuXS9d8gkk87e/QAB/5+6e1V69j5Hf6DKiq7Vtu2eEg6Y+evwtkviFxHt8 R5Rwjg4Xp2LNR4OjgTIuJcLA6/1f7CuNZ4AMymLmjoJch5/CLTNHZRg8VeKq7WMF2BTa pBNNj8tcsF4fo9havzc4IYK+HyNDHEuf5YCljVYiuhYdx1s0gZI+wG0SpYM43Gyp6T/X MrgjfeuCYNekcTBqNXudd03Mfr+5NM8FjExhfSgZYS3uH6fOLdw1LqR9w8kHCb7+C6Da bnhA==
+X-Gm-Message-State: ALoCoQkWhtefhH0f5n/ZlMvhmrIXh12bpGuoPLKl7L1fm0z4zipu2NaVVmxtAF4PTujryYh1Cilk
+MIME-Version: 1.0
+X-Received: by 10.68.0.101 with SMTP id 5mr11504141pbd.106.1381175477272; Mon, 07 Oct 2013 12:51:17 -0700 (PDT)
+Received: by 10.70.34.44 with HTTP; Mon, 7 Oct 2013 12:51:17 -0700 (PDT)
+Date: Mon, 7 Oct 2013 12:51:17 -0700
+Message-ID: <CALEMV4aWvMWKkhFMpUSix30D0j_FQHg_o1L3t6fGmWgpriENSg@mail.gmail.com>
+From: Xavier Vilajosana Guillen <xvilajosana@eecs.berkeley.edu>
+To: "6tsch@ietf.org" <6tsch@ietf.org>
+Content-Type: multipart/alternative; boundary=bcaec5215e9db21a7004e82bf973
+Subject: [6tsch] rank, Dagrank(rank) and Join Priority
+X-BeenThere: 6tsch@ietf.org
+X-Mailman-Version: 2.1.12
+Precedence: list
+Reply-To: xvilajosana@eecs.berkeley.edu
+List-Id: "Discuss link layer model for Deterministic IPv6 over the TSCH mode of IEEE 802.15.4e, and impacts on RPL and 6LoWPAN such as resource allocation" <6tsch.ietf.org>
+List-Unsubscribe: <https://www.ietf.org/mailman/options/6tsch>, <mailto:6tsch-request@ietf.org?subject=unsubscribe>
+List-Archive: <http://www.ietf.org/mail-archive/web/6tsch>
+List-Post: <mailto:6tsch@ietf.org>
+List-Help: <mailto:6tsch-request@ietf.org?subject=help>
+List-Subscribe: <https://www.ietf.org/mailman/listinfo/6tsch>, <mailto:6tsch-request@ietf.org?subject=subscribe>
+X-List-Received-Date: Mon, 07 Oct 2013 19:51:32 -0000
+
+--bcaec5215e9db21a7004e82bf973
+Content-Type: text/plain; charset=ISO-8859-1
+
+Hi,
+
+I am reviewing the minimal draft and I want to clarify one thing:
+
+according to RFC6550
+
+DAGRank(rank) = floor(rank/MinHopRankIncrease)
+
+the RFC does not specify whether DAGRank(rank) is a 16bit integer or a 8bit
+integer (or another type) but if MinHopRankIncrease is 256, then for sure
+that the result of DAGRank(rank) will be smaller than 256 and hence will
+fit in an 8bit variable.
+
+If that is the case then the join priority field can be exactly
+DAGRank(rank) and we do not need to do this shifting that we've been
+discussing so far.
+
+Now the minimal draft states that Join Priority == DAGRank(rank)
+
+should I clarify there that this assumes that DAGRank(rank) is an 8bit
+integer. In case it is not an 8bit integer then we need to shift it to
+consider the most significant 8 bits.
+
+Do you agree on that?
+
+sorry to come back again to the topic but I want to close it asap :-)
+X
+
+--bcaec5215e9db21a7004e82bf973
+Content-Type: text/html; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><div>Hi,</div><div><br></div><div>I am reviewing the minim=
+al draft and I want to clarify one thing:</div><div><br></div><div>accordin=
+g to RFC6550</div><div><br></div><div>DAGRank(rank) =3D floor(rank/MinHopRa=
+nkIncrease)</div>
+<div><br></div><div>the RFC does not specify whether DAGRank(rank) is a 16b=
+it integer or a 8bit integer (or another type) but if MinHopRankIncrease is=
+ 256, then for sure that the result of DAGRank(rank) will be smaller than 2=
+56 and hence will fit in an 8bit variable.</div>
+<div><br></div><div>If that is the case then the join priority field can be=
+ exactly DAGRank(rank) and we do not need to do this shifting that we&#39;v=
+e been discussing so far.</div><div><br></div><div>Now the minimal draft st=
+ates that Join Priority =3D=3D DAGRank(rank)</div>
+<div><br></div><div>should I clarify there that this assumes that DAGRank(r=
+ank) is an 8bit integer. In case it is not an 8bit integer then we need to =
+shift it to consider the most significant 8 bits.=A0</div><div><br></div>
+<div>Do you agree on that?=A0</div><div><br></div><div>sorry to come back a=
+gain to the topic but I want to close it asap :-)</div><div>X</div></div>
+
+--bcaec5215e9db21a7004e82bf973--
+
+
+Return-Path: <xvilajosana@berkeley.edu>
+X-Original-To: 6tsch@ietfa.amsl.com
+Delivered-To: 6tsch@ietfa.amsl.com
+Received: from localhost (localhost [127.0.0.1]) by ietfa.amsl.com (Postfix) with ESMTP id 1681021F9CC5 for <6tsch@ietfa.amsl.com>; Sat,  5 Oct 2013 13:45:14 -0700 (PDT)
+X-Virus-Scanned: amavisd-new at amsl.com
+X-Spam-Flag: NO
+X-Spam-Score: -2.976
+X-Spam-Level: 
+X-Spam-Status: No, score=-2.976 tagged_above=-999 required=5 tests=[AWL=-0.000, BAYES_00=-2.599, FM_FORGED_GMAIL=0.622, HTML_MESSAGE=0.001, RCVD_IN_DNSWL_LOW=-1]
+Received: from mail.ietf.org ([12.22.58.30]) by localhost (ietfa.amsl.com [127.0.0.1]) (amavisd-new, port 10024) with ESMTP id VYmQZtYVGYRr for <6tsch@ietfa.amsl.com>; Sat,  5 Oct 2013 13:45:10 -0700 (PDT)
+Received: from mail-pb0-f46.google.com (mail-pb0-f46.google.com [209.85.160.46]) by ietfa.amsl.com (Postfix) with ESMTP id 592AE21F9CB5 for <6tsch@ietf.org>; Sat,  5 Oct 2013 13:45:09 -0700 (PDT)
+Received: by mail-pb0-f46.google.com with SMTP id rq2so5416449pbb.5 for <6tsch@ietf.org>; Sat, 05 Oct 2013 13:45:01 -0700 (PDT)
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=1e100.net; s=20130820; h=x-gm-message-state:mime-version:reply-to:in-reply-to:references :date:message-id:subject:from:to:cc:content-type; bh=2KAxgJE+S5EBJlYHLf6RT44dGoeAWoHumYaAKdBNqAE=; b=YvQloFhiwB9rkArs+CVcJvBfsVASCxxfGSeaa+1MOFiW0CMp4TtpK40G4COb6Pav5z 7dBV8wuwBGAhEpXbo+dREe/b+DCZGEpRBsVguUQJSbFQYqrw/G7vY8F86C6OsFFZXgFI gFKGStea4CDXkyzZS7WrssONgQIQcfKmRbLAxQWv/w2eWbfd2FaD7VnP1KL6FN1GcWse g/Qq4vcoRNLfy/qp7/HBovkkaInULJLXgJXx+f9XaenQN2CNiDUVgETpgJkqR7yr/HVu QkZy6reqMsdhGiJ4hxd0TQVBE8CbpIGCaBl+66cus3SVoDtL0ORIOtcwk1d6CCT26nkV OJUg==
+X-Gm-Message-State: ALoCoQkL9bI0fmF0Mm+2Gz8gAY4kvN0Swl4skuKqfs86fnbDVqyUeOTN160Ogvk1uJH2yPqZsYHk
+MIME-Version: 1.0
+X-Received: by 10.68.215.38 with SMTP id of6mr21842890pbc.14.1381005901737; Sat, 05 Oct 2013 13:45:01 -0700 (PDT)
+Received: by 10.70.34.44 with HTTP; Sat, 5 Oct 2013 13:45:01 -0700 (PDT)
+In-Reply-To: <C5D823CD-BBE8-473E-A0A0-42C8121EE500@tzi.org>
+References: <2C3A8CAFDCAFCA41B8BF705CD9471C5B18609FCD@xmb-rcd-x04.cisco.com> <C5D823CD-BBE8-473E-A0A0-42C8121EE500@tzi.org>
+Date: Sat, 5 Oct 2013 13:45:01 -0700
+Message-ID: <CALEMV4Z5Aq0TV8E2AE-fadTYqW_cJbYdunZp7b3d9G0-r+vBzQ@mail.gmail.com>
+From: Xavier Vilajosana Guillen <xvilajosana@eecs.berkeley.edu>
+To: Carsten Bormann <cabo@tzi.org>
+Content-Type: multipart/alternative; boundary=001a11346638357c4104e8047e93
+Cc: "Raghuram Sudhaakar \(rsudhaak\)" <rsudhaak@cisco.com>, "6tsch@ietf.org" <6tsch@ietf.org>
+Subject: Re: [6tsch] payload format for CoAP
+X-BeenThere: 6tsch@ietf.org
+X-Mailman-Version: 2.1.12
+Precedence: list
+Reply-To: xvilajosana@eecs.berkeley.edu
+List-Id: "Discuss link layer model for Deterministic IPv6 over the TSCH mode of IEEE 802.15.4e, and impacts on RPL and 6LoWPAN such as resource allocation" <6tsch.ietf.org>
+List-Unsubscribe: <https://www.ietf.org/mailman/options/6tsch>, <mailto:6tsch-request@ietf.org?subject=unsubscribe>
+List-Archive: <http://www.ietf.org/mail-archive/web/6tsch>
+List-Post: <mailto:6tsch@ietf.org>
+List-Help: <mailto:6tsch-request@ietf.org?subject=help>
+List-Subscribe: <https://www.ietf.org/mailman/listinfo/6tsch>, <mailto:6tsch-request@ietf.org?subject=subscribe>
+X-List-Received-Date: Sat, 05 Oct 2013 20:45:14 -0000
+
+--001a11346638357c4104e8047e93
+Content-Type: text/plain; charset=windows-1252
+Content-Transfer-Encoding: quoted-printable
+
+Hi Carsten
+
+can we have access to a cbor parser implementation to do some testing in a
+very small microcontroller (e.g msp430).
+
+thanks!
+Xavi
+
+
+
+
+On Sat, Oct 5, 2013 at 9:02 AM, Carsten Bormann <cabo@tzi.org> wrote:
+
+> On Oct 5, 2013, at 17:29, "Raghuram Sudhaakar (rsudhaak)" <
+> rsudhaak@cisco.com> wrote:
+>
+> >       =95 the additional overhead of a CBOR parser. NVPs are easy to pa=
+rse.
+>
+> CBOR is easy to parse, too.
+>
+> To inject some data here, if you are talking about code size overhead:
+> size -m cn-cbor.o
+>         Section (__TEXT, __text): 880
+>
+> If all you need is name-value pairs, a tailored CBOR parser will be even
+> less than those 880 bytes, which is armv7 code for a fully generic parser
+> (for instance, this code includes an implementation of half-precision
+> floating point.).
+>
+> For every single application, it is of course easy to come up with a
+> bespoke format that has some advantages over CBOR but only works for this
+> application, and we engineers of course like doing that :-).
+> Your node may need to do other things in addition to exchanging 6tisch
+> data.
+> So you already may have a CBOR parser in your constrained device, which
+> could make the incremental cost for using it with 6tisch near zero.
+>
+> Gr=FC=DFe, Carsten
+>
+> _______________________________________________
+> 6tsch mailing list
+> 6tsch@ietf.org
+> https://www.ietf.org/mailman/listinfo/6tsch
+>
+
+--001a11346638357c4104e8047e93
+Content-Type: text/html; charset=windows-1252
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><div><div><div>Hi Carsten<br><br></div>can we have access =
+to a cbor parser implementation to do some testing in a very small microcon=
+troller (e.g msp430). <br><br></div>thanks!<br></div>Xavi<br><div><div><br>
+<br></div></div></div><div class=3D"gmail_extra"><br><br><div class=3D"gmai=
+l_quote">On Sat, Oct 5, 2013 at 9:02 AM, Carsten Bormann <span dir=3D"ltr">=
+&lt;<a href=3D"mailto:cabo@tzi.org" target=3D"_blank">cabo@tzi.org</a>&gt;<=
+/span> wrote:<br>
+<blockquote class=3D"gmail_quote" style=3D"margin:0 0 0 .8ex;border-left:1p=
+x #ccc solid;padding-left:1ex"><div class=3D"im">On Oct 5, 2013, at 17:29, =
+&quot;Raghuram Sudhaakar (rsudhaak)&quot; &lt;<a href=3D"mailto:rsudhaak@ci=
+sco.com">rsudhaak@cisco.com</a>&gt; wrote:<br>
+
+<br>
+&gt; =A0 =A0 =A0 =95 the additional overhead of a CBOR parser. NVPs are eas=
+y to parse.<br>
+<br>
+</div>CBOR is easy to parse, too.<br>
+<br>
+To inject some data here, if you are talking about code size overhead:<br>
+size -m cn-cbor.o<br>
+=A0 =A0 =A0 =A0 Section (__TEXT, __text): 880<br>
+<br>
+If all you need is name-value pairs, a tailored CBOR parser will be even le=
+ss than those 880 bytes, which is armv7 code for a fully generic parser (fo=
+r instance, this code includes an implementation of half-precision floating=
+ point.).<br>
+
+<br>
+For every single application, it is of course easy to come up with a bespok=
+e format that has some advantages over CBOR but only works for this applica=
+tion, and we engineers of course like doing that :-).<br>
+Your node may need to do other things in addition to exchanging 6tisch data=
+.<br>
+So you already may have a CBOR parser in your constrained device, which cou=
+ld make the incremental cost for using it with 6tisch near zero.<br>
+<br>
+Gr=FC=DFe, Carsten<br>
+<br>
+_______________________________________________<br>
+6tsch mailing list<br>
+<a href=3D"mailto:6tsch@ietf.org">6tsch@ietf.org</a><br>
+<a href=3D"https://www.ietf.org/mailman/listinfo/6tsch" target=3D"_blank">h=
+ttps://www.ietf.org/mailman/listinfo/6tsch</a><br>
+</blockquote></div><br></div>
+
+--001a11346638357c4104e8047e93--
+

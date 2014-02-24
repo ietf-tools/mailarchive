@@ -61,7 +61,7 @@ class Generator:
             with open(msg.get_file_path()) as f:
                 self.mdmsg = mailbox.MaildirMessage(f)
         except IOError:
-            logger.warn('Error reading message file: %s' % msg.get_file_path())
+            logger.warning('Error reading message file: %s' % msg.get_file_path())
             self.error = 'Error reading message file'
 
     def as_html(self, request):

@@ -5,6 +5,6 @@ def decode_safely(data, charset=DEFAULT_CHARSET):
     try:
         return unicode(data,charset or DEFAULT_CHARSET)
     except (UnicodeDecodeError, LookupError) as error:
-        # logger.warn("Decode Error [{0}]".format(error.args))
+        # logger.warning("Decode Error [{0}]".format(error.args))
         return unicode(data,DEFAULT_CHARSET,errors='replace')
 

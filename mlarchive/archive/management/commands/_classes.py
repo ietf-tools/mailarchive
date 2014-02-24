@@ -85,14 +85,13 @@ class UnknownFormat(Exception):
 # Helper Functions
 # --------------------------------------------------
 def archive_message(data,listname,private=False,save_failed=True):
-    '''
-    This function is the internals of the interface to Mailman.  It is called by the
+    """This function is the internals of the interface to Mailman.  It is called by the
     standalone script archive-mail.py.  Inputs are:
     data: the message as a string (comes from sys.stdin.read())
     listname: a string, provided as command line argument to archive-mail
-    private: boolean, True if the list is private.  Only used if this happens to be a new list
+    private: boolean, True if the list is private.  Only used if this is a new list
     save_failed: default is True, set to false when calling from compare utility script
-    '''
+    """
     try:
         msg = email.message_from_string(data)
         mw = MessageWrapper(msg,listname,private=private)
@@ -109,12 +108,12 @@ def archive_message(data,listname,private=False,save_failed=True):
     return 0
 
 def clean_spaces(s):
-    "Reduce all whitespaces to one space"
+    """Reduce all whitespaces to one space"""
     s = re.sub(r'\s+',' ',s)
     return s
 
 def convert_date(date):
-    'Try different patterns to convert string to naive UTC datetime object'
+    """Try different patterns to convert string to naive UTC datetime object"""
     for format in date_formats:
         try:
             result = tzparse(date,format)
@@ -127,52 +126,52 @@ def convert_date(date):
         except ValueError:
             pass
 
-def decode_rfc2047_header(h):
-    return ' '.join(decode_safely(s, charset) for s, charset in decode_header(h))
+def decode_rfc2047_header(text):
+    return ' '.join(decode_safely(s, charset) for s, charset in decode_header(text))
 
-def get_base_subject(str):
-    '''
-    Get the "base subject" of a message.  This is the subject which has specific subject artifacts
-    removed.  This function implements the algorithm defined in section 2.1 of RFC5256
-    '''
+def get_base_subject(text):
+    """Returns 'base subject' of a message.  This is the subject which has specific
+    subject artifacts removed.  This function implements the algorithm defined in
+    section 2.1 of RFC5256
+    """
     # step 1 - now all handled by normalize
-    # uni = decode_rfc2047_header(str)
+    # uni = decode_rfc2047_header(text)
     # utf8 = uni.encode('utf8')
-    # str = clean_spaces(utf8)
-    # str = str.rstrip()
+    # text = clean_spaces(utf8)
+    # text = text.rstrip()
 
     while True:
         # step 2
-        while str.endswith('(fwd)'):
-            str = str[:-5].rstrip()
+        while text.endswith('(fwd)'):
+            text = text[:-5].rstrip()
 
         while True:
             # step 3
-            strin = str
-            str = subj_leader_regex.sub('',str)
+            textin = text
+            text = subj_leader_regex.sub('',text)
 
             # step 4
-            m = subj_blob_regex.match(str)
+            m = subj_blob_regex.match(text)
             if m:
-                temp = subj_blob_regex.sub('',str)
+                temp = subj_blob_regex.sub('',text)
                 if temp:
-                    str = temp
-            if str == strin:    # step 5 (else repeat 3 & 4)
+                    text = temp
+            if text == textin:    # step 5 (else repeat 3 & 4)
                 break
 
         # step 6
-        if str.startswith('[Fwd:') and str.endswith(']'):
-            str = str[5:-1]
-            str = str.strip()
+        if text.startswith('[Fwd:') and text.endswith(']'):
+            text = text[5:-1]
+            text = text.strip()
         else:
             break
 
-    return str
+    return text
 
-def get_date_part(str):
-    '''Get the date portion of the envelope header.  Based on the observation
-    that all date parts start with abbreviated weekday'''
-    match = ENVELOPE_DATE_PATTERN.search(str)
+def get_date_part(text):
+    """Returns date portion of the envelope header line.  Based on the observation
+    that all date parts start with abbreviated weekday"""
+    match = ENVELOPE_DATE_PATTERN.search(text)
     if match:
         date = match.group()
 
@@ -186,34 +185,26 @@ def get_date_part(str):
         return None
 
 def get_envelope_date(msg):
-    '''
-    This function takes a email.message.Message object and returns a datetime object
-    derived from the message envelope
+    """Returns the date, a naive datetime object converted to UTC, from the message
+    envelope line.  msg is a email.message.Message object
 
     NOTE: Some files have mangled email addresses in "From" line:
     iesg/2008-01.mail: From dromasca at avaya.com  Tue Jan  1 04:49:41 2008
-    '''
+    """
     line = get_from(msg)
     if not line:
         return None
 
     date = get_date_part(line.rstrip())
     if date:
-        converted = convert_date(date)
-        if converted:
-            return converted
-
-    #if '@' in line:
-    #    return parsedate_to_datetime(' '.join(line.split()[1:]))
-    #elif parsedate_to_datetime(line):    # sometimes Date: is first line of MMDF message
-    #    return parsedate_to_datetime(line)
+        return convert_date(date)
 
 def get_from(msg):
-    '''
-    This function is required because of the disparity between different message objects.
-    email.message.Message has a get_unixfrom() method while mailbox.mboxMessage has the
-    get_from() method
-    '''
+    """Returns the 'from' line of message.  This function is required because of the
+    disparity between different message objects.  email.message.Message has a
+    get_unixfrom() method while mailbox.mboxMessage has both get_unixfrom() and
+    a get_from() method, but the get_unixfrom() returns None
+    """
     if hasattr(msg, 'get_unixfrom'):
         frm = msg.get_unixfrom()
         if frm:
@@ -224,11 +215,10 @@ def get_from(msg):
             return frm
 
 def get_header_date(msg):
-    '''
-    This function takes a email.message.Message object and tries to parse the date from the
-    Date: header field.  It returns a Datetime object, either naive or aware, if it can,
-    otherwise None.
-    '''
+    """Returns the date, a naive or aware datetime object converted to UTC, from the
+    message header.  First checks the 'Date:' field, then 'Sent:'.  Returns None if
+    it can't find it locate and interpret either of these.
+    """
     date = msg.get('date')
     if not date:
         date = msg.get('sent')
@@ -243,11 +233,7 @@ def get_header_date(msg):
     # try tzparse for some odd formations
     date_formats = ["%a %d %b %y %H:%M:%S-%Z",
                     "%d %b %Y %H:%M-%Z",
-                    "%Y-%m-%d %H:%M:%S",
-                    #"%a %b %d %H:%M:%S %Y",
-                    #"%a %b %d %H:%M:%S %Y %Z",
-                    #"%a, %d %b %Y %H:%M:%S %Z"
-                    ]
+                    "%Y-%m-%d %H:%M:%S"]
     for format in date_formats:
         try:
             result = tzparse(date,format)
@@ -275,13 +261,12 @@ def get_header_date(msg):
         return datetime.datetime.strptime(date_string,'%a %m/%d/%Y %I:%M %p')
 
 def get_mb(path):
-    '''
-    This function takes the path to a file and returns a mailbox object.
+    """Returns a mailbox object.
     Currently supported types are:
     - mailbox.mmdf
     - BetterMbox (derived from mailbox.mbox)
     - CustomMbox (like mbox but no from line)
-    '''
+    """
     with open(path) as f:
         line = f.readline()
         while not line or line == '\n':
@@ -298,10 +283,9 @@ def get_mb(path):
     raise UnknownFormat('%s, %s' % (path,line))
 
 def get_mime_extension(type):
-    '''
-    Looks up the proper file extension for the given mime content type (string),
+    """Returns the proper file extension for the given mime content type (string),
     returns a tuple of extension, description
-    '''
+    """
     if type in CONTENT_TYPES:
         ext,desc = CONTENT_TYPES[type]
         # return only the first of multiple extensions
@@ -313,10 +297,8 @@ def get_mime_extension(type):
         return (UNKNOWN_CONTENT_TYPE,type)
 
 def get_received_date(msg):
-    '''
-    This function takes a email.message.Message object and returns a datetime object
-    derived from the Received header or else None
-    '''
+    """Returns the date from the received header field.
+    """
     rec = msg.get('received')
     if not rec:
         return None
@@ -327,23 +309,24 @@ def get_received_date(msg):
     except IndexError:
         return None
 
-def is_aware(dt):
-    '''
-    This function takes a datetime object and returns True if the object is aware, False if
-    it is naive
-    '''
-    if not isinstance(dt,datetime.datetime):
+def is_aware(date):
+    """Returns True if the date object passed in timezone aware, False if naive.
+    See http://docs.python.org/2/library/datetime.html section 8.1.1
+    """
+    if not isinstance(date,datetime.datetime):
         return False
-    if dt.tzinfo and dt.tzinfo.utcoffset(dt) is not None:
+    if date.tzinfo and date.tzinfo.utcoffset(date) is not None:
         return True
     return False
 
-def parsedate_to_datetime(data):
-    '''
+def parsedate_to_datetime(date):
+    """Returns a datetime object from string.  May return naive or aware datetime.
+
     This function is from email standard library v3.3, converted to 2.x
-    '''
+    http://python.readthedocs.org/en/latest/library/email.util.html
+    """
     try:
-        tuple = parsedate_tz(data)
+        tuple = parsedate_tz(date)
         if not tuple:
             return None
         tz = tuple[-1]
@@ -354,13 +337,12 @@ def parsedate_to_datetime(data):
         return None
 
 def save_failed_msg(data,listname,error):
-    '''
-    Called when an attempt to import a message fails.  "data" will typically be an instance of
-    email.message.Message.  In some odd case where message parsing fails "data" will be a string
-    (this should never happen because the email.parser excepts even empty strings).
-    Log error entry should contain useful information about the error, the message identity and
-    the filename it is being saved under
-    '''
+    """Called when an attempt to import a message fails.  "data" will typically be an
+    instance of email.message.Message.  In some odd case where message parsing fails
+    "data" will be a string (this should never happen because the email.parser excepts
+    even empty strings).  Log error entry should contain useful information about the
+    error, the message identity and the filename it is being saved under
+    """
     # get filename
     path = os.path.join(settings.ARCHIVE_DIR,'_failed',listname)
     basename = datetime.datetime.today().strftime('%Y-%m-%d')
@@ -394,19 +376,6 @@ def save_failed_msg(data,listname,error):
         f.write(output)
     os.chmod(filepath,0660)
 
-def seek_charset(msg):
-    '''
-    Try and derive non-ascii charset from message payload(s).
-    Return None if none found.
-    '''
-    for part in msg.walk():
-        charset = part.get_content_charset()
-        if charset and charset not in ('ascii','us-ascii'):
-            break
-    if charset in ('ascii','us-ascii'):
-        return None
-    else:
-        return charset
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------
@@ -548,7 +517,7 @@ class Loader(object):
             try:
                 self.load_message(m)
             except GenericWarning as error:
-                logger.warn("Import Warn [{0}, {1}, {2}]".format(self.filename,error.args,get_from(m)))
+                logger.warning("Import Warn [{0}, {1}, {2}]".format(self.filename,error.args,get_from(m)))
             except Exception as error:
                 save_failed_msg(m,self.listname,error)
                 self.stats['errors'] += 1
@@ -625,7 +594,7 @@ class MessageWrapper(object):
             elif func.__name__ == 'get_received_date':
                 self.spam_score = self.spam_score | settings.MARK_BITS['NO_RECVD_DATE']
 
-        #logger.warn("Import Warn [{0}, {1}, {2}]".format(self.msgid,'Used None or naive date',
+        #logger.warning("Import Warn [{0}, {1}, {2}]".format(self.msgid,'Used None or naive date',
         #                                                 self.email_message.get_from()))
 
         else:

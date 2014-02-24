@@ -1,0 +1,586 @@
+
+2005
+Message-Id: <MON.28.FEB.2005.175411.0500.>
+Date: Mon, 28 Feb 2005 17:54:11 -0500
+From: "Joel M. Halpern" <joel@stevecrocker.com>
+Subject: Re: WG question: Should draft-ansari-forces-discovery-01.txt be accepted as WG document?
+Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"; format=flowed
+
+If we assume that the interfaces are dedicated to being either internal or
+external to the NE, and we assume that the CE actually has per-interface
+OSPF configuration, then it won't start OSPF on those interfaces.
+In that case, a protocol such as BFD would seem sensible.
+
+I could equally easily imagine the normal configuration being
+"run OSPF'
+"noroute internal"
+which would enable OSPF on all interfaces, and then tell the enigne not to
+bother exchanging routing information on internal interfaces.
+
+There are probably other existing alternatives I have not thought of that
+can be used.
+We should be very cautious before inventing another protocol for a problem
+that comes up repeatedly (neighbor detection.)
+
+It may be that we do need a very light weight specialized protocol.
+I want to understand what problem it is to solve and its relationship to
+existing work before discussing the design details of the protocol.
+
+Yours,
+Joel
+
+At 04:40 PM 2/28/2005, Furquan Ansari wrote:
+>Joel,
+>    I am trying to understand what you are saying. Let's take this simple
+> example of an NE with three
+>different FEs in it - See figure below. If a routing protocol such as OSPF
+>is started on this NE, the CE
+>will send hello packets to neighboring NEs (NE2 and NE3) only through
+>interfaces configured in OSPF -
+>which would be interface "D" on FE1 and "B" on FE2. It would not be
+>correct behavior if the CE
+>decides to send the routing protocol Hellos through all the interfaces on
+>an FE - that haven't been
+>configured for that routing protocol - i.e. CE should not send hellos on
+>interface "B" and "C" on FE1
+>and "C" and "D" of FE2. Further FE3 is completely internal to the NE and
+>who is it sending it's hello
+>packets to?
+>The discovery is meant to discover the internal topology - albiet through
+>as simple a mechanim as
+>a hello protocol - but has been delineated from the routing protocol Hellos.
+>
+>Thanks,
+
+
+
+2005
+Message-Id: <MON.28.FEB.2005.165018.0500.>
+Date: Mon, 28 Feb 2005 16:50:18 -0500
+From: Furquan Ansari <furquan@lucent.com>
+Organization: Lucent Technologies
+Subject: Re: WG question: Should draft-ansari-forces-discovery-01.txt be accepted as WG document?
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Transfer-Encoding: 7bit
+
+Sorry, looks like my previous mail had formatting problems with the
+figure.... let me try again.
+
+--------------------
+Joel,
+
+  I am trying to understand what you are saying. Let's take this simple
+example of an NE with three different FEs in it - See figure below. If a
+routing protocol such as OSPF is started on this NE, the CE will send hello
+packets to neighboring NEs (NE2 and NE3) only through interfaces configured
+in OSPF - which would be interface "D" on FE1 and "B" on FE2. It would not
+be correct behavior if the CE decides to send the routing protocol Hellos
+through all the interfaces on an FE - that haven't been configured for that
+routing protocol - i.e. CE should not send hellos on interface "B" and "C"
+on FE1 and "C" and "D" of FE2. Further FE3 is completely internal to the NE
+and who is it sending it's hello packets to?
+
+The discovery is meant to discover the internal topology - albiet
+through as
+simple a mechanim as a hello protocol - but has been delineated from the
+routing protocol Hellos.
+
+Thanks,
+
+
+               NE 1
+  .....................................
+  .         -----------------          .
+  .         |      CE       |          .
+  .         -----------------          .            ----------
+  .        A ^    B ^    C ^           .            |  NE 1  |
+  .         /       |       \          .            |        |
+  .        /      A v        \         .            ----------
+  .       /      ------- B    \        .             ^      ^
+  .      /    +->| FE3 |<-+    \       . <====>     /        \
+  .     /     |C |     |  |     \      .           /          \
+  .  A v      |  -------  |      v A   .          v            v
+  .  -------B |           |D -------   .       --------      ---------
+  .  | FE1 |<-+           +->| FE2 |   .       | NE 2 |<---->|  NE 3 |
+  .  |     |<--------------->|     |   .       |      |      |       |
+  .  ------- C             C -------   .       --------      ---------
+  .   D^                       ^B      .
+  .....|.......................|........
+       |                       |
+       |OSPF Hello             | OSPF HEllo
+       V                       v
+   --------                 --------
+   | NE 2 |<--------------->| NE 3 |
+   |      |    OSPF Hello   |      |
+   --------                 --------
+
+
+
+
+Joel M. Halpern wrote:
+
+> I would agree that running a separate instance of the routing protocol
+> within the FE would be undesirable.
+>
+> However, the CE could send routing protocol hellos through all the
+> interfaces, and receive routing protocol hellos through all the
+> interfaces.  It could then sensibly decide that hello maintenance is
+> all it needs on any adjacency for which it is both sides.  (Note, a
+> normal router with two physical interfaces on the same subnet has to
+> do this anyway.)
+>
+> This works if the interface is shared with elements not within the NE,
+> and works if the interface is dedicated to the NE.  It requires no new
+> protocols.
+> There may be requirements it does not meet.  But we should articulate
+> those and agree on the relevance of such requirements.
+>
+> Yours,
+> Joel
+>
+> At 12:01 PM 2/28/2005, Furquan Ansari wrote:
+>
+>> Joel,
+>>    As jamal already pointed out this is meant to be within a NE
+>> boundary and not span NE. The reason why an
+>> existing routing protocol neighbor discovery would not be sufficient
+>> is because, the routing protocol may/will
+>> not be running over internal links (imagine that there is a network
+>> of FEs internconnected and belong to the same
+>> NE - only FEs that connect to FEs of other NEs need to have the
+>> routing protocol like OSPF enabled.)
+>> An alternate would be to run a separate instance of the routing
+>> protocol "only" within the NE for neighbor discovery
+>> purposes - but this seems like an overkill for the solution we want.
+>> Further, the interconnection between the
+>> FEs within the NE may not necessarily be IP - in which case you may
+>> not be able to run IP routing protocols.
+>>
+>>
+>> Thanks,
+>>
+>> Joel M. Halpern wrote:
+>>
+>>> Can you describe some of the requirements, and the situations in
+>>> which they apply?
+>>>
+>>> I imagine there is some reason why simply routing protocol neighbor
+>>> discovery is not sufficient, but I can not divine the shortfall.  (I
+>>> suspect that there is some case where a CE is responsbile for
+>>> forwarding packets through FEs, but is not running routing protocols.
+>>> But I can not quite determine what it is.)
+>>>
+>>> I presume that there are also other goals.
+>>>
+>>> Yours,
+>>> Joel
+>>>
+>>> At 10:47 PM 2/27/2005, Khosravi, Hormuzd M wrote:
+>>>
+>>>> Joel,
+>>>>
+>>>> I think it is fine to have this discussion via email. Jamal has
+>>>> already
+>>>> started this via a detailed email on some of the existing solutions. I
+>>>> wouldn't go to the extent of having another draft to define the
+>>>> problem,
+>>>> requirements, etc...some of this should be already covered in our
+>>>> draft.
+>>>>
+>>>> When we started working on this draft, we did some research in this
+>>>> space and found that.. yes there are several protocols out there for
+>>>> topology discovery as you suggest. However, there is no existing
+>>>> protocol that would work well for our framework. However, if you have
+>>>> something in mind pls feel to share it with us. You had previously
+>>>> suggested BFD but unfortunately this doesn't meet all our
+>>>> requirements.
+>>>>
+>>>> regards
+>>>> Hormuzd
+>>>>
+>>>> -----Original Message-----
+>>>> From: Forwarding and Control Element Separation
+>>>> [mailto:FORCES@PEACH.EASE.LSOFT.COM] On Behalf Of Joel M. Halpern
+>>>>
+>>>> We should determine that there is a problem, and that we need to solve
+>>>> it,
+>>>> before adopting as a work item for the working group a specific
+>>>> solution.  I would be interested in seeing a draft that outlined what
+>>>> problem needed to be solved, why the many existing solutions among
+>>>> themselves did not provide sufficient coverage, and what properties a
+>>>> solution might need to have.  It does not need to be a full
+>>>> "requirements"
+>>>> document.
+>>>>
+>>>> It could also be that we have extended email and face to face
+>>>> discussion
+>>>> of
+>>>> the problem, conclude it really needs to be addressed without a
+>>>> problem-oriented ID, and then see what we want to do about solutions.
+>>>>
+>>>> But adopting a solution document as a working group work item is
+>>>> not the
+>>>>
+>>>> way to decide if there is a problem to be solved.
+>>>>
+>>>> Yours,
+>>>> Joel M. Halpern
+>>>>
+>>>> At 06:12 PM 2/27/2005, Alistair Munro wrote:
+>>>> >Hi All,
+>>>> >
+>>>> >I support adopting this document as a WG draft so that it is properly
+>>>> >discussed. The functions are useful even if the protocol may be
+>>>> redundant
+>>>> >when the multitude of other discovery protocols are properly taken
+>>>> into
+>>>>
+>>>> >account. If there are genuine competitors then it is a debate that is
+>>>> >worth having.
+>>>> >
+>>>> >Regards,
+>>>> >
+>>>> >Alistair
+>>>> >
+>>>
+>>
+>> --
+>> Furquan Ansari
+>> Bell Labs Research                      Ph : 732-949-5249
+>> Holmdel, NJ                             Fax: 732-949-4556
+>
+
+--
+Furquan Ansari
+Bell Labs Research			Ph : 732-949-5249
+Holmdel, NJ				Fax: 732-949-4556
+
+
+2005
+Message-Id: <MON.28.FEB.2005.164020.0500.>
+Date: Mon, 28 Feb 2005 16:40:20 -0500
+From: Furquan Ansari <furquan@lucent.com>
+Organization: Lucent Technologies
+Subject: Re: WG question: Should draft-ansari-forces-discovery-01.txt be accepted as WG document?
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii; format=flowed
+Content-Transfer-Encoding: 7bit
+
+Joel,
+    I am trying to understand what you are saying. Let's take this
+simple example of an NE with three
+different FEs in it - See figure below. If a routing protocol such as
+OSPF is started on this NE, the CE
+will send hello packets to neighboring NEs (NE2 and NE3) only through
+interfaces configured in OSPF -
+which would be interface "D" on FE1 and "B" on FE2. It would not be
+correct behavior if the CE
+decides to send the routing protocol Hellos through all the interfaces
+on an FE - that haven't been
+configured for that routing protocol - i.e. CE should not send hellos on
+interface "B" and "C" on FE1
+and "C" and "D" of FE2. Further FE3 is completely internal to the NE and
+who is it sending it's hello
+packets to?
+The discovery is meant to discover the internal topology - albiet
+through as simple a mechanim as
+a hello protocol - but has been delineated from the routing protocol Hellos.
+
+Thanks,
+
+                 NE 1
+   .....................................
+   .         -----------------          .
+   .         |      CE       |          .
+   .         -----------------          .            ----------
+   .        A ^    B ^    C ^           .            |  NE 1  |
+   .        /      A v        \         .            ----------
+   .       /      ------- B    \        .             ^      ^
+   .      /    +->| FE3 |<-+    \       . <====>     /        \
+   .     /     |C |     |  |     \      .           /          \
+   .  A v      |  -------  |      v A   .          v            v
+   .  -------B |           |D -------   .       --------      ---------
+   .  | FE1 |<-+           +->| FE2 |   .       | NE 2 |<---->|  NE 3 |
+   .  |     |<--------------->|     |   .       |      |      |       |
+   .  ------- C             C -------   .       --------      ---------
+   .   D^                       ^B      .
+   .....|.......................|........
+	|			|
+        | OSPF HEllo            | OSPF Hello
+        V                       v
+    --------                 --------
+    | NE 2 |<--------------->| NE 3 |
+    |      |     OSPF HEllo  |      |
+    --------                 --------
+
+
+
+Joel M. Halpern wrote:
+
+> I would agree that running a separate instance of the routing protocol
+> within the FE would be undesirable.
+>
+> However, the CE could send routing protocol hellos through all the
+> interfaces, and receive routing protocol hellos through all the
+> interfaces.  It could then sensibly decide that hello maintenance is
+> all it needs on any adjacency for which it is both sides.  (Note, a
+> normal router with two physical interfaces on the same subnet has to
+> do this anyway.)
+>
+> This works if the interface is shared with elements not within the NE,
+> and works if the interface is dedicated to the NE.  It requires no new
+> protocols.
+> There may be requirements it does not meet.  But we should articulate
+> those and agree on the relevance of such requirements.
+>
+> Yours,
+> Joel
+>
+> At 12:01 PM 2/28/2005, Furquan Ansari wrote:
+>
+>> Joel,
+>>    As jamal already pointed out this is meant to be within a NE
+>> boundary and not span NE. The reason why an
+>> existing routing protocol neighbor discovery would not be sufficient
+>> is because, the routing protocol may/will
+>> not be running over internal links (imagine that there is a network
+>> of FEs internconnected and belong to the same
+>> NE - only FEs that connect to FEs of other NEs need to have the
+>> routing protocol like OSPF enabled.)
+>> An alternate would be to run a separate instance of the routing
+>> protocol "only" within the NE for neighbor discovery
+>> purposes - but this seems like an overkill for the solution we want.
+>> Further, the interconnection between the
+>> FEs within the NE may not necessarily be IP - in which case you may
+>> not be able to run IP routing protocols.
+>>
+>>
+>> Thanks,
+>>
+>> Joel M. Halpern wrote:
+>>
+>>> Can you describe some of the requirements, and the situations in
+>>> which they apply?
+>>>
+>>> I imagine there is some reason why simply routing protocol neighbor
+>>> discovery is not sufficient, but I can not divine the shortfall.  (I
+>>> suspect that there is some case where a CE is responsbile for
+>>> forwarding packets through FEs, but is not running routing protocols.
+>>> But I can not quite determine what it is.)
+>>>
+>>> I presume that there are also other goals.
+>>>
+>>> Yours,
+>>> Joel
+>>>
+>>> At 10:47 PM 2/27/2005, Khosravi, Hormuzd M wrote:
+>>>
+>>>> Joel,
+>>>>
+>>>> I think it is fine to have this discussion via email. Jamal has
+>>>> already
+>>>> started this via a detailed email on some of the existing solutions. I
+>>>> wouldn't go to the extent of having another draft to define the
+>>>> problem,
+>>>> requirements, etc...some of this should be already covered in our
+>>>> draft.
+>>>>
+>>>> When we started working on this draft, we did some research in this
+>>>> space and found that.. yes there are several protocols out there for
+>>>> topology discovery as you suggest. However, there is no existing
+>>>> protocol that would work well for our framework. However, if you have
+>>>> something in mind pls feel to share it with us. You had previously
+>>>> suggested BFD but unfortunately this doesn't meet all our
+>>>> requirements.
+>>>>
+>>>> regards
+>>>> Hormuzd
+>>>>
+>>>> -----Original Message-----
+>>>> From: Forwarding and Control Element Separation
+>>>> [mailto:FORCES@PEACH.EASE.LSOFT.COM] On Behalf Of Joel M. Halpern
+>>>>
+>>>> We should determine that there is a problem, and that we need to solve
+>>>> it,
+>>>> before adopting as a work item for the working group a specific
+>>>> solution.  I would be interested in seeing a draft that outlined what
+>>>> problem needed to be solved, why the many existing solutions among
+>>>> themselves did not provide sufficient coverage, and what properties a
+>>>> solution might need to have.  It does not need to be a full
+>>>> "requirements"
+>>>> document.
+>>>>
+>>>> It could also be that we have extended email and face to face
+>>>> discussion
+>>>> of
+>>>> the problem, conclude it really needs to be addressed without a
+>>>> problem-oriented ID, and then see what we want to do about solutions.
+>>>>
+>>>> But adopting a solution document as a working group work item is
+>>>> not the
+>>>>
+>>>> way to decide if there is a problem to be solved.
+>>>>
+>>>> Yours,
+>>>> Joel M. Halpern
+>>>>
+>>>> At 06:12 PM 2/27/2005, Alistair Munro wrote:
+>>>> >Hi All,
+>>>> >
+>>>> >I support adopting this document as a WG draft so that it is properly
+>>>> >discussed. The functions are useful even if the protocol may be
+>>>> redundant
+>>>> >when the multitude of other discovery protocols are properly taken
+>>>> into
+>>>>
+>>>> >account. If there are genuine competitors then it is a debate that is
+>>>> >worth having.
+>>>> >
+>>>> >Regards,
+>>>> >
+>>>> >Alistair
+>>>> >
+>>>
+>>
+>> --
+>> Furquan Ansari
+>> Bell Labs Research                      Ph : 732-949-5249
+>> Holmdel, NJ                             Fax: 732-949-4556
+>
+
+--
+Furquan Ansari
+Bell Labs Research			Ph : 732-949-5249
+Holmdel, NJ				Fax: 732-949-4556
+
+
+2005
+Message-Id: <MON.28.FEB.2005.134924.0500.>
+Date: Mon, 28 Feb 2005 13:49:24 -0500
+From: "Joel M. Halpern" <joel@stevecrocker.com>
+Subject: Re: WG question: Should draft-ansari-forces-discovery-01.txt be accepted as WG document?
+Mime-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"; format=flowed
+
+I would agree that running a separate instance of the routing protocol
+within the FE would be undesirable.
+
+However, the CE could send routing protocol hellos through all the
+interfaces, and receive routing protocol hellos through all the
+interfaces.  It could then sensibly decide that hello maintenance is all it
+needs on any adjacency for which it is both sides.  (Note, a normal router
+with two physical interfaces on the same subnet has to do this anyway.)
+
+This works if the interface is shared with elements not within the NE, and
+works if the interface is dedicated to the NE.  It requires no new protocols.
+There may be requirements it does not meet.  But we should articulate those
+and agree on the relevance of such requirements.
+
+Yours,
+Joel
+
+At 12:01 PM 2/28/2005, Furquan Ansari wrote:
+>Joel,
+>    As jamal already pointed out this is meant to be within a NE boundary
+> and not span NE. The reason why an
+>existing routing protocol neighbor discovery would not be sufficient is
+>because, the routing protocol may/will
+>not be running over internal links (imagine that there is a network of FEs
+>internconnected and belong to the same
+>NE - only FEs that connect to FEs of other NEs need to have the routing
+>protocol like OSPF enabled.)
+>An alternate would be to run a separate instance of the routing protocol
+>"only" within the NE for neighbor discovery
+>purposes - but this seems like an overkill for the solution we want.
+>Further, the interconnection between the
+>FEs within the NE may not necessarily be IP - in which case you may not be
+>able to run IP routing protocols.
+>
+>
+>Thanks,
+>
+>Joel M. Halpern wrote:
+>
+>>Can you describe some of the requirements, and the situations in which
+>>they apply?
+>>
+>>I imagine there is some reason why simply routing protocol neighbor
+>>discovery is not sufficient, but I can not divine the shortfall.  (I
+>>suspect that there is some case where a CE is responsbile for forwarding
+>>packets through FEs, but is not running routing protocols.
+>>But I can not quite determine what it is.)
+>>
+>>I presume that there are also other goals.
+>>
+>>Yours,
+>>Joel
+>>
+>>At 10:47 PM 2/27/2005, Khosravi, Hormuzd M wrote:
+>>
+>>>Joel,
+>>>
+>>>I think it is fine to have this discussion via email. Jamal has already
+>>>started this via a detailed email on some of the existing solutions. I
+>>>wouldn't go to the extent of having another draft to define the problem,
+>>>requirements, etc...some of this should be already covered in our draft.
+>>>
+>>>When we started working on this draft, we did some research in this
+>>>space and found that.. yes there are several protocols out there for
+>>>topology discovery as you suggest. However, there is no existing
+>>>protocol that would work well for our framework. However, if you have
+>>>something in mind pls feel to share it with us. You had previously
+>>>suggested BFD but unfortunately this doesn't meet all our requirements.
+>>>
+>>>regards
+>>>Hormuzd
+>>>
+>>>-----Original Message-----
+>>>From: Forwarding and Control Element Separation
+>>>[mailto:FORCES@PEACH.EASE.LSOFT.COM] On Behalf Of Joel M. Halpern
+>>>
+>>>We should determine that there is a problem, and that we need to solve
+>>>it,
+>>>before adopting as a work item for the working group a specific
+>>>solution.  I would be interested in seeing a draft that outlined what
+>>>problem needed to be solved, why the many existing solutions among
+>>>themselves did not provide sufficient coverage, and what properties a
+>>>solution might need to have.  It does not need to be a full
+>>>"requirements"
+>>>document.
+>>>
+>>>It could also be that we have extended email and face to face discussion
+>>>of
+>>>the problem, conclude it really needs to be addressed without a
+>>>problem-oriented ID, and then see what we want to do about solutions.
+>>>
+>>>But adopting a solution document as a working group work item is not the
+>>>
+>>>way to decide if there is a problem to be solved.
+>>>
+>>>Yours,
+>>>Joel M. Halpern
+>>>
+>>>At 06:12 PM 2/27/2005, Alistair Munro wrote:
+>>> >Hi All,
+>>> >
+>>> >I support adopting this document as a WG draft so that it is properly
+>>> >discussed. The functions are useful even if the protocol may be
+>>>redundant
+>>> >when the multitude of other discovery protocols are properly taken into
+>>>
+>>> >account. If there are genuine competitors then it is a debate that is
+>>> >worth having.
+>>> >
+>>> >Regards,
+>>> >
+>>> >Alistair
+>>> >
+>
+>--
+>Furquan Ansari
+>Bell Labs Research                      Ph : 732-949-5249
+>Holmdel, NJ                             Fax: 732-949-4556
+
+

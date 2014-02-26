@@ -6,6 +6,9 @@ These take a request object and queryset of objects to act on.
 from django.contrib import messages
 from django.shortcuts import redirect
 
+from django.utils.log import getLogger
+logger = getLogger('mlarchive.custom')
+
 def remove_selected(request, queryset):
     """Remove selected messages from the database and index.
 
@@ -17,6 +20,10 @@ def remove_selected(request, queryset):
     directory
     """
     count = queryset.count()
+    for message in queryset:
+        logger.info('User %s removed message [list=%s,hash=%s,msgid=%s,pk=%s]' %
+                (request.user,message.email_list,message.hashcode,message.msgid,
+                message.pk))
     queryset.delete()
     messages.success(request, '%d Message(s) Removed' % count)
     return redirect('archive_admin')

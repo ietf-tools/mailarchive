@@ -10,6 +10,7 @@
 <div id="admin_page">
     <ul>
         <li><a href="#add_list">How do I add a new list?</a></li>
+        <li><a href="#delete_message">How do I delete unwanted messages from the archive?</a></li>
         <li><a href="#rebuild_index">How do I rebuild the index for a subset of messages?</a></li>
         <li><a href="#subpoena">How do I collect messages for response to a subpoena?</a></li>
         <li><a href="#xapian">Xapian</a></li>
@@ -18,11 +19,22 @@
         <li><a href="#celery">Celery</a></li>
     </ul>
     <hr>
-    
+
     <span id="add_list"></span>
     <h2>How do I add a new list?</h2>
-    <p></p>
-    
+    <p>Lists that do not already exist are added automatically when new mail is received
+    from mailman.  NOTE: if the list is private, an authorized user will need to use the
+    Django Administrative interface:<br>
+    <a href="https://{{ request.META.HTTP_HOST }}/admin">Django Admin</a></p>
+
+    <span id="delete_message"></span>
+    <h2>How do I delete unwanted messages from the archive?</h2>
+    <p>Sign in (must have superuser privileges).  Click Admin link under simple search
+    box.  Use the form to search for messages.  Select the messages you want to delete.
+    Choose "Remove selected messages" Action and click Go.  Messages will be moved to the
+    [INSTALL]/data/archive/[listname]/_removed directory.<br>
+    <a href="{% url "archive_admin" %}">Archive Admin</a></p>
+
     <span id="add_list"></span>
     <h2>How do I rebuild the index for a subset of messages?</h2>
     <p>If you need to rebuild the index for messages updated within a specific date range,
@@ -35,18 +47,18 @@
     Then restart Celery
     <pre class="example">sudo /etc/init.d/celeryd start</pre>
     </p>
-    
+
     <span id="add_list"></span>
     <h2>How do I collect messages for response to a subpoena?</h2>
     <p>If the subpoena calls for messages from a specific list containing a search term, use the
-    standard search interface to export messages from the archive.  In addition you can collect 
+    standard search interface to export messages from the archive.  In addition you can collect
     messages removed as spam in this way:
     <pre class="example">mkdir /tmp/sub012214
 cd /a/mailarch/data/archive/spam/[listname]
 for fil in `grep -m1 -l searchterm *`; do cp $fil /tmp/sub012214/; done;
 cd /tmp
 tar cvf sub012214.tar ./sub012214</pre></p>
-    
+
     <span id="xapian"></span>
     <h2>Xapian Utilities</h2>
     <p>The email archive uses the Xapian search engine library.<br><br>
@@ -68,7 +80,7 @@ has positional information = true</pre>
     <pre class="example">quest -d ./archive_index/ database</pre>
     </p>
     <br>
-    
+
     <h1>Auxiliary Services</h1>
     <span id="memcached"></span>
     <h2>Memcached</h2>
@@ -87,7 +99,7 @@ quit</pre>
     References:<br>
     <a href="http://memcached.org">Memcache Homepage</a><br>
     <a href="http://www.pal-blog.de/entwicklung/perl/memcached-statistics-stats-command.html">Memcached Statistics</a>
-    
+
     <span id="rabbitmq"></span>
     <h2>RabbitMQ</h2>
     Rabbitmq is the messaging backend for the Email Archive.  It is used to queue index update requests because the Xapian index only support one writer process.  Celery is the corresponding piece that consumes the index update messages.<br><br>
@@ -95,14 +107,14 @@ quit</pre>
     Start / Stop Rabbitmq server
     <pre class="example">service rabbitmq-server start|stop|restart
 ** NOTE ** stop celery first, or restart after a rabbitmq restart</pre>
-    
+
     Check status of server
     <pre class="example">rabbitmqctl status</pre>
-    
+
     List info for the message queue
     <pre class="example">rabbitmqctl list_queues
 rabbitmqctl list_queues name messages messages_ready messages_unacknowledged</pre>
-    
+
     Reset message queue (removes all messages!)
     <pre class="example">rabbitmqctl stop_app
 rabbitmqctl reset
@@ -112,19 +124,19 @@ rabbitmqctl start_app</pre>
     <br>
     References:<br>
     <a href="https://www.rabbitmq.com/man/rabbitmqctl.1.man.html">rabbitmqctl man page</a>
-    
+
     <span id="celery"></span>
     <h2>Celery</h2>
     Celery is the asynchronous task queue used to queue index updates.  It uses RabbitMQ as it's backend<br>
     <br>
     Restart
     <pre class="example"># /etc/init.d/celeryd restart</pre>
-    
+
     Troubleshooting: start celery process with -x
     <pre class="example"># sh -x /etc/init.d/celeryd start
 -- or --
 # C_FAKEFORK=1 sh -x /etc/init.d/celeryd start</pre>
-    
+
     Troubleshooting: ensure perms correct on /a/mailarch/data/log/mlarchive.log<br>
     Troubleshooting: run worker manually to check for errors
     <pre class="example">> Starting nodes...

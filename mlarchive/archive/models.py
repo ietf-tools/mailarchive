@@ -206,6 +206,7 @@ def _message_remove(sender, instance, **kwargs):
     target = instance.get_removed_dir()
     if not os.path.exists(target):
         os.mkdir(target)
+        os.chmod(target,02777)
     shutil.move(path,target)
 
 @receiver([post_save, post_delete], sender=EmailList)

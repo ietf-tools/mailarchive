@@ -75,23 +75,19 @@ def main():
                     fp.seek(0)
                     msg = email.message_from_file(fp)
                     mw = _classes.MessageWrapper(msg,listname)
+                    # mark for later review
+                    mw.archive_message.spam_score = settings.MARK_LOAD_SPAM
                     if not args.check:
                         mw.save()
                 except Exception as error:
                     logger.error('%s: import failed %s (%s)' % (progname, fullpath, error.args))
                     continue
 
-                # mark for later review
-                archmsg = mw.archive_message
-                archmsg.spam_score = settings.MARK_LOAD_SPAM
-                if not args.check:
-                    archmsg.save()
-
                 # remove from spam directory
                 if not args.check:
                     os.remove(fullpath)
 
-                logger.info('%s: successful import (pk=%s)' % (progname, archmsg.pk))
+                logger.info('%s: successful import (list=%s,pk=%s)' % (progname, listname, mw.archive_message.pk))
             else:
                 shutil.move(fullpath,os.path.join(args.path,'_' + file))
 

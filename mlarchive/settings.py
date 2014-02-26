@@ -86,7 +86,6 @@ TEMPLATE_DIRS = (
     BASE_DIR + '/templates',
 )
 
-# STATIC_URL =
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -105,6 +104,7 @@ INSTALLED_APPS = (
 )
 
 STATIC_URL = '/static/'
+STATIC_DOC_ROOT = BASE_DIR + '../static'
 
 
 ###########

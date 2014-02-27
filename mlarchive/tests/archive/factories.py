@@ -23,13 +23,17 @@ class MessageFactory(factory.DjangoModelFactory):
     date = datetime.datetime.now()
     subject = 'This is a test message'
     frm = 'rcross@amsl.com'
-    msgid = id_generator() + '@amsl.com'
-    hashcode = id_generator()
-    thread = ThreadFactory.create()
+    #msgid = id_generator() + '@amsl.com'
+    #hashcode = id_generator()
+    #thread = ThreadFactory.create()
+    msgid = factory.Sequence(lambda n: "%03d@amsl.com" % n)
+    hashcode = factory.Sequence(lambda n: "a%03d" % n)
+    thread = factory.SubFactory(ThreadFactory)
 
 class UserFactory(factory.DjangoModelFactory):
     FACTORY_FOR = User
 
+    email = 'admin@admin.com'
     username = 'admin'
-    password = 'pass'
+    password = factory.PostGenerationMethodCall('set_password', 'admin')
 

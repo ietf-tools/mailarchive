@@ -10,7 +10,8 @@ def test_remove_selected(client):
     elist = EmailListFactory.create(name='public')
     thread = ThreadFactory.create()
     msg = MessageFactory.create(email_list=elist,thread=thread)
-    assert client.login(username='test-chair',password='ietf-test')
+    user = UserFactory.create(is_superuser=True)
+    assert client.login(username='admin',password='admin')
 
     # create message file
     path = msg.get_file_path()
@@ -28,6 +29,7 @@ def test_remove_selected(client):
     assert query.count() == 1
     request = HttpRequest()
     setattr(request, 'session', {})
+    setattr(request, 'user', user)
     messages = FallbackStorage(request)
     setattr(request, '_messages', messages)
     result = remove_selected(request, query)
@@ -44,7 +46,8 @@ def test_not_spam(client):
     elist = EmailListFactory.create(name='public')
     thread = ThreadFactory.create()
     msg = MessageFactory.create(email_list=elist,thread=thread,spam_score=1)
-    assert client.login(username='test-chair',password='ietf-test')
+    user = UserFactory.create(is_superuser=True)
+    assert client.login(username='admin',password='admin')
 
     query = Message.objects.all()
     assert query.count() == 1

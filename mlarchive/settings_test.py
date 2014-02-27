@@ -8,6 +8,8 @@ from mlarchive.settings import *
 
 ARCHIVE_DIR = '/tmp/mailarch/data/archive/'
 
+AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
+
 # HAYSTACK SETTINGS
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 #HAYSTACK_USE_REALTIME_SEARCH = True

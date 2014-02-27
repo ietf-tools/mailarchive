@@ -26,7 +26,8 @@ def test_unauth_browse(client):
     a member of.
     '''
     elist = EmailListFactory.create(name='private',private=True)
-    assert client.login(username='test-chair',password='ietf-test')
+    user = UserFactory.create()
+    assert client.login(username='admin',password='admin')
     url = reverse('archive_browse')
     response = client.get(url)
     assert response.status_code == 200
@@ -39,9 +40,9 @@ def test_auth_browse(client):
     a member of.
     '''
     elist = EmailListFactory.create(name='private',private=True)
-    user = UserFactory.create(username='test-chair')
+    user = UserFactory.create()
+    assert client.login(username='admin',password='admin')
     elist.members.add(user)
-    assert client.login(username='test-chair',password='ietf-test')
     url = reverse('archive_browse')
     response = client.get(url)
     assert response.status_code == 200

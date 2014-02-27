@@ -20,7 +20,7 @@ Haystack 2.1.1 (Included)
 Python Packages
 ---------------
 pip install python-dateutil
-pip install pytest-dajngo
+pip install pytest-django
 pip install factory-boy
 
 Prerequisites

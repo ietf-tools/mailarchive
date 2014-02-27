@@ -26,9 +26,9 @@ def test_ajax_get_list(client):
     assert response.content == '[{"id": 1, "label": "public"}]'
 
     # logged in
-    user = UserFactory.create(username='test-chair')
+    user = UserFactory.create(is_superuser=True)
+    assert client.login(username='admin',password='admin')
     prilist.members.add(user)
-    assert client.login(username='test-chair',password='ietf-test')
     response = client.get(url)
     assert response.content  == '[{"id": 1, "label": "public"}, {"id": 2, "label": "private"}]'
 
@@ -36,7 +36,7 @@ def test_ajax_get_list(client):
 def test_ajax_get_msg(client):
     publist = EmailListFactory.create(name='public')
     prilist = EmailListFactory.create(name='private',private=True)
-    user = UserFactory.create(username='test-chair')
+    user = UserFactory.create(is_superuser=True)
     prilist.members.add(user)
     thread = ThreadFactory.create()
     msg = MessageFactory.create(email_list=publist,thread=thread,hashcode='00001')
@@ -58,7 +58,7 @@ def test_ajax_get_msg(client):
     assert response.status_code == 403
 
     # test authorized access to restricted Message
-    assert client.login(username='test-chair',password='ietf-test')
+    assert client.login(username='admin',password='admin')
     url = '%s/?id=%s' % (reverse('ajax_get_msg'), primsg.pk)
     response = client.get(url)
     print response

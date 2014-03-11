@@ -7,23 +7,61 @@ on a MacBook Pro running OS X v10.9.1 (Mavericks).
 
 Prerequisites:
 - MySQL 5.6
-- Homebrew (http://brew.sh/)
+- Python 2.7
+- Xcode
+- virtualenv (ie. http://docs.python-guide.org/en/latest/dev/virtualenvs/)
 
-Install Xapian
-$ brew install xapian
-$ brew info xapian
+Setup Xapian in VirtualEnv
+--------------------------
+From: http://nomad.coop/blog/installing-xapian-in-virtualenv-django/
 
-Download appropriate bindings for xapian version
-$ curl -O http://oligarchy.co.uk/xapian/1.2.17/xapian-bindings-1.2.17.tar.xz
+(within activated virtualenv)
+export VENV=$VIRTUAL_ENV
+mkdir $VENV/packages && cd $VENV/packages
 
-activate virtual environment
-$ source mailarch/bin/activate
+curl -O http://oligarchy.co.uk/xapian/1.2.17/xapian-core-1.2.17.tar.xz
+curl -O http://oligarchy.co.uk/xapian/1.2.17/xapian-bindings-1.2.17.tar.xz
 
-See: http://nomad.coop/blog/installing-xapian-in-virtualenv-django/
+tar xzvf xapian-core-1.2.17.tar.xz
+tar xzvf xapian-bindings-1.2.17.tar.xz
 
+cd $VENV/packages/xapian-core-1.2.17
+./configure --prefix=$VENV && make && make install
+
+export LD_LIBRARY_PATH=$VENV/lib
+
+cd $VENV/packages/xapian-bindings-1.2.17
+./configure --prefix=$VENV --with-python && make && make install
+
+Test:
+python -c "import xapian" 
+
+
+Install additional packages
+---------------------------
 $ pip install MySQL-python lxml six pyquery factory-boy pytest-django datetutil
 
-Configure settings_local.py and settings_test.py
+
+Settings configuration
+---------------------------
+To setup to run the test suite modify settings_test.py:
+Examples:
+ARCHIVE_DIR = '/tmp/mailarch/data/archive/'
+HAYSTACK_XAPIAN_PATH = '/tmp/mailarch/data/archive_index'
+HAYSTACK_CONNECTIONS = {
+    'default': {
+        'ENGINE': 'haystack.backends.xapian_backend.XapianEngine',
+        'PATH': '/tmp/mailarch/data/archive_index',
+    },
+}
+
+similar changes should be made to settings_local.py
+
+
+Running tests
+---------------------------
+- cd to root of working directory
+- py.test tests
 
 
 NOTES ON INFRASTRUCTURE

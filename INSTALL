@@ -10,6 +10,7 @@ xapian-core 1.2.12
 # pyparsing 2.0.1
 python-xapian 1.2.12
 python-memcached
+lxml 3.3.1
 memcached 1.4.15
 RabbitMQ Server 2.8.7
 Celery v3.1.6
@@ -111,6 +112,20 @@ ietfarch-atompub-archive:               "|/a/ietf/scripts/archive-mail atompub"
 
 ietfarch-atompub-archive:               "|/a/ietf/scripts/call-archives atompub"
 x) Install Cronscripts
+
+
+6. Xapian Replication
+On the Server: add the following line to celeryd.conf:
+export XAPIAN_MAX_CHANGESETS=10
+
+Copy systemd/xapian-replicate-server.service to /etc/systemd/system/
+# systemctl enable xapian-replicate-server
+# systemctl start xapian-replicate-server
+
+On the Client: periodically run the following
+
+cd /a/mailarch/data
+xapian-replicate -o -h [server hostname] -p 7010 archive_index
 
 
 TESTING:

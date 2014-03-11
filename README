@@ -21,7 +21,7 @@ $ source mailarch/bin/activate
 
 See: http://nomad.coop/blog/installing-xapian-in-virtualenv-django/
 
-$ pip install MySQL-python lxml pyquery factory-boy pytest-django datetutil
+$ pip install MySQL-python lxml six pyquery factory-boy pytest-django datetutil
 
 Configure settings_local.py and settings_test.py
 

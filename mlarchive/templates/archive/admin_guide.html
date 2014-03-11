@@ -35,7 +35,7 @@
     [INSTALL]/data/archive/[listname]/_removed directory.<br>
     <a href="{% url "archive_admin" %}">Archive Admin</a></p>
 
-    <span id="add_list"></span>
+    <span id="rebuild_index"></span>
     <h2>How do I rebuild the index for a subset of messages?</h2>
     <p>If you need to rebuild the index for messages updated within a specific date range,
     first stop the Celery worker from processing new index updates (the updates will safely
@@ -48,7 +48,7 @@
     <pre class="example">sudo /etc/init.d/celeryd start</pre>
     </p>
 
-    <span id="add_list"></span>
+    <span id="subpoena"></span>
     <h2>How do I collect messages for response to a subpoena?</h2>
     <p>If the subpoena calls for messages from a specific list containing a search term, use the
     standard search interface to export messages from the archive.  In addition you can collect

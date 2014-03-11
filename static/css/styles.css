@@ -1006,3 +1006,17 @@ th.col3 {
     display: inline;
     font-size: 11px;
 }
+/* ==========================================================================
+   Help Page
+   ========================================================================== */
+#help_table {
+    border-top: 1px solid #EEE;
+    border-right: 1px solid #EEE;
+    margin: 2em 0 2em 0;
+    width: 100%;
+}
+#help_table td {
+    border-bottom: 1px solid #EEE;
+    border-left: 1px solid #EEE;
+}
+

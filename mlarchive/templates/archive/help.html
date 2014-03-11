@@ -1,24 +1,54 @@
-{% extends "base.html" %}
+{% extends "base_960.html" %}
 
-{% block title %}Mail Archive{% endblock %}
+
+{% block title %}Mail Archive - User Guide{% endblock %}
+
+{% block header %}{{ block.super }} - User Guide{% endblock %}
 
 {% block content %}
 
-<h1>Email Archive Help</h1>
-<ul>
-<li>Supported Query Syntax:<a href="http://xapian.org/docs/queryparser.html">http://xapian.org/docs/queryparser.html</a></li>
-<li>Advanced Search: non keyword fields act as a filter on the keyword search</li>
-<li>Supported Field Specifiers: frm, subject, </li>
-<li>Simple search input and Advanced Search keywords search message subject and body</li>
-</ul>
+<div id="admin_page">
 
-<h1>Search Query Tips</h1>
-<h2>Punctuation Characters</h2>
-<p>Punctuation characters are treated as word separators when indexing.  Therefore they are excluded
+<h2>Email Archive Help</h2>
+Narrow your search results by using search operators.  Supported operators are:
+
+<table id="help_table">
+    <tr>
+        <td>Search for an exact word or phrase.<br>"search"</td><td>Use quotes to search for an exact word or phrase in a message.</td>
+    </tr>
+    <tr>
+        <td>Exclude a word<br>-exclude</td><td>Use a dash to exclude a word from the search</td>
+    </tr>
+    <tr>
+        <td>Search a specific header field<br><br>frm:<br>to:<br>subject:<br>msgid:</td><td>Use the header field followed by a colon.  Do not put spaces between the field identifier and search term</td>
+    </tr>
+    <tr>
+        <td>Search for either word<br>OR</td><td>Use a capital "OR" to include messages with either word</td>
+    </tr>
+    <tr>
+        <td>Search both words<br>AND</td><td>Use a capital "AND" to include messages with both words</td>
+    </tr>
+    <tr>
+        <td>Wildcard<br>*</td><td>Use an asterisk to perform a wildcard search</td>
+    </tr>
+</table>
+
+
+<h1>Search Tips</h1>
+
+<p><strong>Advanced Search:</strong> non keyword fields act as a filter on the keyword search</p>
+
+<p><strong>Simple search:</strong> input and Advanced Search keywords search message subject and body</p>
+
+<p><strong>Punctuation characters</strong> are treated as word separators when indexing.  Therefore they are excluded
 from search queries.  For example a search for "http://www.ietf.org" is translated to "http" and
 "www" and "ietf" and "org", returning any documents containing all these terms.  To improve results
-you can quote the URL, which will return documents where these terms are adjacent to each other.
-</p>
+you can quote the URL, which will return documents where these terms are adjacent to each other.</p>
+
+<p>Supported Query Syntax:<a href="http://xapian.org/docs/queryparser.html">http://xapian.org/docs/queryparser.html</a></p>
+
+</div> <!-- admin_page -->
+
 {% endblock %}
 
 

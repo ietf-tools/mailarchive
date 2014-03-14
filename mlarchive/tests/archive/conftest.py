@@ -15,8 +15,10 @@ def load_db():
     bthread = ThreadFactory.create()
     MessageFactory.create(email_list=pubone,
                           thread=bthread,
+                          subject='BBQ Invitation',
                           base_subject=get_base_subject('BBQ Invitation'),
-                          date=datetime.datetime(2013,2,1))
+                          date=datetime.datetime(2013,2,1),
+                          to='to@amsl.com')
     MessageFactory.create(email_list=pubone,
                           thread=athread,
                           base_subject=get_base_subject('Another message'),
@@ -29,7 +31,8 @@ def load_db():
                           thread=athread,
                           frm='larry@amsl.com',
                           base_subject=get_base_subject('[RE] BBQ Invitation things'),
-                          date=datetime.datetime(2014,1,1))
+                          date=datetime.datetime(2014,1,1),
+                          spam_score=1)
     MessageFactory.create(email_list=pubtwo)
     MessageFactory.create(email_list=pubtwo)
 

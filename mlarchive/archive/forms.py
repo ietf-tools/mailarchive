@@ -18,7 +18,7 @@ logger = getLogger('mlarchive.custom')
 
 FIELD_CHOICES = (('text','Subject and Body'),
                  ('subject','Subject'),
-                 ('frm','From'),
+                 ('from','From'),
                  ('to','To'),
                  ('msgid','Message-ID'))
 

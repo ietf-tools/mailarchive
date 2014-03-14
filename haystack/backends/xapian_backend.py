@@ -583,6 +583,11 @@ class XapianSearchBackend(BaseSearchBackend):
                 DOCUMENT_CUSTOM_TERM_PREFIX + field_dict['field_name'].upper()
             )
 
+        # AMS customization.  Can't use "from" as a field name because it is
+        # a python reserved work.  Need to add special prefix so user can 
+        # still use intuitive "from:" field specifier
+        qp.add_prefix('from', DOCUMENT_CUSTOM_TERM_PREFIX + 'FRM')
+
         vrp = XHValueRangeProcessor(self)
         qp.add_valuerangeprocessor(vrp)
 

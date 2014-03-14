@@ -14,7 +14,7 @@ class MessageIndex(CelerySearchIndex, indexes.Indexable):
     frm_email = indexes.CharField(model_attr='frm_email', faceted=True)
     msgid = indexes.CharField(model_attr='msgid')
     subject = indexes.CharField(model_attr='subject')
-    to = indexes.CharField(model_attr='to')
+    to = indexes.CharField(model_attr='to_and_cc')
     spam_score = indexes.IntegerField(model_attr='spam_score')
 
     def get_model(self):

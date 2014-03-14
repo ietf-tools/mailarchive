@@ -528,14 +528,13 @@ class Loader(object):
         self.cleanup()
 
 class MessageWrapper(object):
-    '''
-    This class takes a email.message.Message object (email_message) and listname as a string
+    """This class takes a email.message.Message object (email_message) and listname as a string
     and constructs the mlarchive.archive.models.Message (archive_message) object.
     Use the save() method to save the message in the archive.
 
     Use lazy initialization.  On init only get message-id.  If this message is being filtered
     by message id, no use performing rest of message parsing.
-    '''
+    """
     def __init__(self, email_message, listname, private=False):
         self._archive_message = None
         self._date = None
@@ -554,7 +553,7 @@ class MessageWrapper(object):
         self.msgid = self.get_msgid()
 
     def _get_archive_message(self):
-        "Returns the archive.models.Message instance"
+        """Returns the archive.models.Message instance"""
         if self._archive_message is None:
             self.process()
         return self._archive_message
@@ -566,6 +565,27 @@ class MessageWrapper(object):
         return self._date
     date = property(_get_date)
 
+    @staticmethod
+    def get_addresses(text):
+        """Returns a string of realname and email address RFC2822 addresses from a 
+        string suitable for a To or CC header
+        """
+        result = []
+        tuples = getaddresses([decode_rfc2047_header(text)]) # getaddresses takes a sequence
+        for name,address in tuples:                          # flatten list of tuples
+            if name:
+                result.append(name)
+            if address:
+                result.append(address)
+        return ' '.join(result)
+
+    def get_cc(self):
+        """Returns the CC field realname and email addresses"""
+        cc = self.email_message.get('cc')
+        if not cc:
+            return ''
+        return self.get_addresses(cc)
+        
     @check_datetime
     def get_date(self):
         '''
@@ -598,13 +618,14 @@ class MessageWrapper(object):
         #                                                 self.email_message.get_from()))
 
         else:
-            # can't really proceed without a date, this likely indicates bigger parsing error
+            # can't really proceed without a date, likely indicates bigger parsing error
             raise DateError("%s, %s" % (self.msgid,self.email_message.get_unixfrom()))
 
     def get_hash(self):
-        '''
-        Takes the msgid and returns the hashcode
-        '''
+        """Returns the message hashcode, a SHA-1 digest of the Message-ID and listname.
+        Similar to the popular Web Email Archive, mail-archive.com
+        see: https://www.mail-archive.com/faq.html#msgid
+        """
         sha = hashlib.sha1(self.msgid)
         sha.update(self.listname)
         return base64.urlsafe_b64encode(sha.digest())
@@ -647,20 +668,11 @@ class MessageWrapper(object):
         return subject
 
     def get_to(self):
-        '''
-        Use utility functions to extract RFC2822 addresses.  Returns a string with space
-        deliminated addresses and names.
-        '''
+        """Returns the To field realname and email addresses"""
         to = self.email_message.get('to')
         if not to:
             return ''
-        result = []
-        addrs = getaddresses([decode_rfc2047_header(to)])   # getaddresses takes a sequence
-        # flatten list of tuples
-        for tuple in addrs:
-            result = result + list(tuple)
-
-        return ' '.join(result)
+        return self.get_addresses(to)
 
     def get_thread(self):
         '''
@@ -753,16 +765,17 @@ class MessageWrapper(object):
         self.base_subject = get_base_subject(self.subject)
         self.thread = self.get_thread()
 
-        self._archive_message = Message(date=self.date,
+        self._archive_message = Message(base_subject=self.base_subject,
+                             cc=self.get_cc(),
+                             date=self.date,
                              email_list=self.email_list,
                              frm = self.normalize(self.email_message.get('From','')),
                              hashcode=self.hashcode,
                              in_reply_to=self.in_reply_to,
                              msgid=self.msgid,
-                             subject=self.subject,
                              references=self.references,
-                             base_subject=self.base_subject,
                              spam_score=self.spam_score,
+                             subject=self.subject,
                              thread=self.thread,
                              to=self.get_to())
         # not saving here.

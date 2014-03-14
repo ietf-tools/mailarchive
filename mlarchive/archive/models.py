@@ -75,9 +75,9 @@ class Message(models.Model):
         return self.msgid
 
     def as_html(self):
-        '''
-        A method that returns the message formated as HTML.  Uses MHonarc standalone
-        '''
+        """Returns the message formated as HTML.  Uses MHonarc standalone
+        Not used as of v1.00
+        """
         with open(self.get_file_path()) as f:
             mhout = subprocess.check_output(TXT2HTML,stdin=f)
 
@@ -99,6 +99,18 @@ class Message(models.Model):
 
         return body
 
+    @property
+    def friendly_frm(self):
+        pass
+
+    @property
+    def frm_email(self):
+        """This property is the email portion of the "From" header all lowercase
+        (the realname is stripped).  It is used in faceting search results as well 
+        as display.
+        """
+        return parseaddr(self.frm)[1].lower()
+        
     def get_absolute_url(self):
         # strip padding, "=", to shorten URL
         return reverse('archive_detail',kwargs={'list_name':self.email_list.name,
@@ -119,21 +131,22 @@ class Message(models.Model):
         return gen.as_text()
 
     def get_body_html(self, request=None):
+        """Returns the contents of the message body with as HTML, for use in display
+        """
         gen = Generator(self)
         return gen.as_html(request=request)
 
     def get_body_raw(self):
-        '''
-        Utility function.  Returns the raw contents of the message file.
+        """Returns the raw contents of the message file.
         NOTE: this will include encoded attachments
-        '''
+        """
         try:
             with open(self.get_file_path()) as f:
                 return f.read()
         except IOError as error:
-            #logger.warning('IOError %s' % error)
-            # TODO: handle this better
-            return 'Error: message not found.'
+            msg = 'Error reading message file: %s' % self.get_file_path()
+            logger.warning(msg)
+            return msg
 
     def get_file_path(self):
         return os.path.join(settings.ARCHIVE_DIR,self.email_list.name,self.hashcode)
@@ -141,29 +154,21 @@ class Message(models.Model):
     def get_removed_dir(self):
         return os.path.join(settings.ARCHIVE_DIR,self.email_list.name,'_removed')
 
-    def export(self):
-        '''export this message'''
-        pass
-
-    @property
-    def friendly_frm(self):
-        pass
-
-    @property
-    def frm_email(self):
-        '''
-        This property is the email portion of the "From" header all lowercase (the realname
-        is stripped).  It is used in faceting search results as well as display.
-        '''
-        return parseaddr(self.frm)[1].lower()
-
     def mark(self,bit):
-        '''
-        Mark this message using the bit provided, using field spam_score
-        '''
+        """Mark this message using the bit provided, using field spam_score
+        """
         self.spam_score = self.spam_score | bit
         self.save()
 
+    @property
+    def to_and_cc(self):
+        """Returns 'To' and 'CC' fields combined, for use in indexing
+        """
+        if self.cc:
+            return self.to + ' ' + self.cc
+        else:
+            return self.to
+            
 class Attachment(models.Model):
     error = models.CharField(max_length=255,blank=True) # message if problem with attachment
     description = models.CharField(max_length=255)      # description of file contents
@@ -197,9 +202,9 @@ class Legacy(models.Model):
 
 @receiver(pre_delete, sender=Message)
 def _message_remove(sender, instance, **kwargs):
-    '''When messages are removed, via the admin page, we need to move the message
+    """When messages are removed, via the admin page, we need to move the message
     archive file to the "_removed" directory
-    '''
+    """
     path = instance.get_file_path()
     if not os.path.exists(path):
         return
@@ -211,5 +216,5 @@ def _message_remove(sender, instance, **kwargs):
 
 @receiver([post_save, post_delete], sender=EmailList)
 def _clear_cache(sender,instance, **kwargs):
-    '''If EmailList object is saved or deleted remove the list_info cache entry'''
+    """If EmailList object is saved or deleted remove the list_info cache entry"""
     cache.delete('list_info')

@@ -112,9 +112,9 @@ def test_queries_msgid_field(client,messages):
     assert len(results) == 1
 
 @pytest.mark.django_db(transaction=True)
-def test_queries_msgid_field(client,messages):
+def test_queries_spam_score_field(client,messages):
     url = reverse('archive_search') + '?q=spam_score:1'
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
-    assert len(results) == 1
+    assert len(results) == 1>>>>>>> .r323

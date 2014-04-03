@@ -54,7 +54,7 @@
     standard search interface to export messages from the archive.  In addition you can collect
     messages removed as spam in this way:
     <pre class="example">mkdir /tmp/sub012214
-cd /a/mailarch/data/archive/spam/[listname]
+cd /a/mailarch/data/archive/[listname]/_filtered
 for fil in `grep -m1 -l searchterm *`; do cp $fil /tmp/sub012214/; done;
 cd /tmp
 tar cvf sub012214.tar ./sub012214</pre></p>

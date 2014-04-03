@@ -40,13 +40,12 @@ This is a test email.  With no headers
 '''
     # remove any existing failed messages
     publist = EmailListFactory.create(name='public')
-    failed_dir = publist.get_failed_dir()
-    if os.path.exists(failed_dir):              # ensure failed directory empty
-        assert not os.listdir(failed_dir)
+    if os.path.exists(publist.failed_dir):              # ensure failed directory empty
+        assert not os.listdir(publist.failed_dir)
     status = archive_message(data,'public',private=False)
     assert status == 1
     assert Message.objects.all().count() == 0
-    filename = os.path.join(failed_dir,
+    filename = os.path.join(publist.failed_dir,
             datetime.datetime.today().strftime('%Y-%m-%d') + '.0000')
     assert os.path.exists(filename)
     os.remove(filename)                         # cleanup

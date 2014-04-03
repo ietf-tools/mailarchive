@@ -48,12 +48,22 @@ class EmailList(models.Model):
     def __unicode__(self):
         return self.name
 
-    def get_failed_dir(self):
-        return os.path.join(settings.ARCHIVE_DIR,'_failed',self.name)
+    @staticmethod
+    def get_failed_dir(listname):
+        return os.path.join(settings.ARCHIVE_DIR,listname,'_failed')
 
-    def get_removed_dir(self):
-        return os.path.join(settings.ARCHIVE_DIR,self.name,'_removed')
+    @property
+    def failed_dir(self):
+        return self.get_failed_dir(self.name)
+    
+    @staticmethod
+    def get_removed_dir(listname):
+        return os.path.join(settings.ARCHIVE_DIR,listname,'_removed')
 
+    @property
+    def removed_dir(self):
+        return self.get_removed_dir(self.name)
+        
 class Message(models.Model):
     base_subject = models.CharField(max_length=512,blank=True)
     cc = models.TextField(blank=True,default='')
@@ -152,7 +162,7 @@ class Message(models.Model):
         return os.path.join(settings.ARCHIVE_DIR,self.email_list.name,self.hashcode)
 
     def get_removed_dir(self):
-        return os.path.join(settings.ARCHIVE_DIR,self.email_list.name,'_removed')
+        return self.email_list.removed_dir
 
     def mark(self,bit):
         """Mark this message using the bit provided, using field spam_score

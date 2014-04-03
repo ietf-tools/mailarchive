@@ -106,6 +106,61 @@ def count(listname):
     print "Total: %d" % total
     pprint(years)
 
+def date(start):
+    listname = ''
+    processing = False
+    total = 0
+    for path in all_mboxs():
+        name = os.path.basename(os.path.dirname(path))
+        if start == name or processing == True:
+            processing = True
+        else:
+            continue
+            
+        if name != listname:
+            listname = name
+            print listname
+        try:
+            mb = _classes.get_mb(path)
+        except _classes.UnknownFormat:
+            print "Unknown format: %s" % path
+            continue
+        
+        for i,msg in enumerate(mb):
+            total += 1
+            try:
+                mw = _classes.MessageWrapper(msg,listname)
+                date = mw.get_date()
+            except _classes.NoHeaders as error:
+                print "Error: %s,%d (%s)" % (path, i, error.args)
+                
+    print "Total: %s" % total
+    
+def header_date():
+    nf = 0
+    count = 0
+    with open('received.log') as f:
+        paths = f.read().splitlines()
+    for path in paths:
+        mb = _classes.get_mb(path)
+        for i,msg in enumerate(mb):
+            count += 1
+            date = msg.get('date')
+            if not date:
+                date = msg.get('sent')
+
+            if not date:
+                print "Date not found: %s,%s" % (path,i)
+                nf += 1
+                #sys.exit(1)
+                continue
+                
+            result = _classes.parsedate_to_datetime(date)
+            if not result:
+                print "Parse Error: %s" % date
+                #sys.exit(1)
+    print "Count: %s\nNot Found: %s" % (count,nf)
+    
 def envelope_date():
     """Quickly test envelope date parsing on every standard mbox file in archive"""
     #for path in ['/a/www/ietf-mail-archive/text/lemonade/2002-09.mail']:
@@ -182,6 +237,76 @@ def missing_files():
             total += 1
             #message.delete()
     print '%d of %d missing.' % (total, messages.count())
+
+def mmdfs():
+    """Scan all mailbox files and print first lines of MMDF types, looking for 
+    different styles
+    """
+    #import binascii
+    count = 0
+    for path in all_mboxs():
+        try:
+            mb = _classes.get_mb(path)
+        except _classes.UnknownFormat:
+            pass
+        if isinstance(mb,_classes.CustomMMDF):
+            with open(path) as f:
+                if f.read(10) == '\x01\x01\x01\x01\n\x01\x01\x01\x01\n':
+                    print "%s" % path
+                    count += 1
+    print "Total: %s" % count
+    
+def received_date(start):
+    """Test receive date parsing.  Start at list named by 'start', use 80companions
+    to run in full
+    """
+    listname = ''
+    processing = False
+    norecs = 0
+    nrmap = {}
+    total = 0
+    aware = 0
+    for path in all_mboxs():
+        name = os.path.basename(os.path.dirname(path))
+        if start == name or processing == True:
+            processing = True
+        else:
+            continue
+            
+        if name != listname:
+            listname = name
+            print listname
+        try:
+            mb = _classes.get_mb(path)
+        except _classes.UnknownFormat:
+            print "Unknown format: %s" % path
+            continue
+        
+        for i,msg in enumerate(mb):
+            total += 1
+            recs = msg.get_all('received')
+            if not recs:
+                norecs += 1
+                print "no received header:%s,%s" % (path,i)
+                nrmap[path] = nrmap.get(path,0) + 1
+                continue
+            parts = recs[0].split(';')
+            try:
+                # take the final bit (almost always 2, but sometimes ";" appears earlier
+                date =  _classes.parsedate_to_datetime(parts[-1])
+            except IndexError as error:
+                print "Failed: %s:%s (%s)" % (path,i,error)
+                sys.exit(1)
+            if not date:
+                print "Total: %s\nnorecs: %s" % (total,norecs)
+                print "Failed: %s:%s:%s" % (path,i,recs) 
+                sys.exit(1)
+            elif _classes.is_aware(date):
+                aware += 1
+    print "Total: %s\nnorecs: %s\naware: %s" % (total,norecs,aware)
+    with open('received.log','w') as f:
+        for key in nrmap:
+            f.write(key + '\n')
 
 def subjects(listname):
     """Return subject line of all messages for listname"""

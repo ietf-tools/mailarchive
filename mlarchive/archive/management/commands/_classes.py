@@ -40,6 +40,7 @@ date_formats = ["%a %b %d %H:%M:%S %Y",
                 "%a, %d %b %Y %H:%M:%S %Z",
                 "%a %b %d %H:%M:%S %Y %Z"]
 
+MBOX_SEPARATOR_PATTERN = re.compile(r'^From .* (Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+')
 SEPARATOR_PATTERNS = [ re.compile(r'^Return-[Pp]ath:'),
                        re.compile(r'^Envelope-to:'),
                        re.compile(r'^Received:'),
@@ -112,20 +113,6 @@ def clean_spaces(s):
     s = re.sub(r'\s+',' ',s)
     return s
 
-def convert_date(date):
-    """Try different patterns to convert string to naive UTC datetime object"""
-    for format in date_formats:
-        try:
-            result = tzparse(date,format)
-            if result:
-                # convert to UTC and make naive
-                utc_tz = timezone('utc')
-                time = utc_tz.normalize(result.astimezone(utc_tz))
-                time = time.replace(tzinfo=None)                # make naive
-                return time
-        except ValueError:
-            pass
-
 def decode_rfc2047_header(text):
     return ' '.join(decode_safely(s, charset) for s, charset in decode_header(text))
 
@@ -168,22 +155,6 @@ def get_base_subject(text):
 
     return text
 
-def get_date_part(text):
-    """Returns date portion of the envelope header line.  Based on the observation
-    that all date parts start with abbreviated weekday"""
-    match = ENVELOPE_DATE_PATTERN.search(text)
-    if match:
-        date = match.group()
-
-        # a very few dates have redundant timezone designations on the end
-        # which tzparse can't handle.  If this is the case strip it off
-        # ie. Wed, 6 Jul 2005 12:24:15 +0100 (BST)
-        if ENVELOPE_DUPETZ_PATTERN.search(date):
-            date = re.sub(r'\s\([A-Z]+\)$','',date)
-        return date
-    else:
-        return None
-
 def get_envelope_date(msg):
     """Returns the date, a naive datetime object converted to UTC, from the message
     envelope line.  msg is a email.message.Message object
@@ -195,9 +166,13 @@ def get_envelope_date(msg):
     if not line:
         return None
 
-    date = get_date_part(line.rstrip())
-    if date:
-        return convert_date(date)
+    match = ENVELOPE_DATE_PATTERN.search(line)
+    if match:
+        date = match.group()
+    else:
+        return None
+    
+    return parsedate_to_datetime(date)
 
 def get_from(msg):
     """Returns the 'from' line of message.  This function is required because of the
@@ -226,56 +201,24 @@ def get_header_date(msg):
     if not date:
         return None
 
-    result = parsedate_to_datetime(date)
-    if result:
-        return result
-
-    # try tzparse for some odd formations
-    date_formats = ["%a %d %b %y %H:%M:%S-%Z",
-                    "%d %b %Y %H:%M-%Z",
-                    "%Y-%m-%d %H:%M:%S"]
-    for format in date_formats:
-        try:
-            result = tzparse(date,format)
-            if result:
-                return result
-        except ValueError:
-            pass
-
-    # try some known patterns that require transformation
-    try:
-        return datetime.datetime.strptime(date,'%A, %B %d, %Y %I:%M %p')
-    except ValueError:
-        pass
-
-    match = SENT_PATTERN.match(date)
-    if match:
-        date_string = '{0} {1}/{2}/{3} {4}:{5} {6}'.format(match.group(1),
-                                                           match.group(2).zfill(2),
-                                                           match.group(3).zfill(2),
-                                                           match.group(4),
-                                                           match.group(5),
-                                                           match.group(6),
-                                                           match.group(7))
-
-        return datetime.datetime.strptime(date_string,'%a %m/%d/%Y %I:%M %p')
+    return parsedate_to_datetime(date)
 
 def get_mb(path):
-    """Returns a mailbox object.
-    Currently supported types are:
-    - mailbox.mmdf
-    - BetterMbox (derived from mailbox.mbox)
-    - CustomMbox (like mbox but no from line)
+    """Returns a mailbox object based on the first line of the file.
+    "From " -> MBOX
+    "^A^A^A^A" -> MMDF
+    [another header line] -> Custom Type
     """
     with open(path) as f:
         line = f.readline()
         while not line or line == '\n':
             line = f.readline()
-        if line.startswith('From '):
-            return BetterMbox(path)
-        elif line == '\x01\x01\x01\x01\n':
-            return mailbox.MMDF(path)
-        for pattern in SEPARATOR_PATTERNS:
+        if line.startswith('From '):                # most common mailbox type, MBOX
+            #return BetterMbox(path)
+            return CustomMbox(path,separator=MBOX_SEPARATOR_PATTERN)
+        elif line == '\x01\x01\x01\x01\n':          # next most common type, MMDF
+            return CustomMMDF(path)
+        for pattern in SEPARATOR_PATTERNS:          # less common types
             if pattern.match(line):
                 return CustomMbox(path,separator=pattern)
 
@@ -297,17 +240,16 @@ def get_mime_extension(type):
         return (UNKNOWN_CONTENT_TYPE,type)
 
 def get_received_date(msg):
-    """Returns the date from the received header field.
+    """Returns the date from the received header field.  Date field is last field
+    using semicolon as separator, per RFC 2821 Section 4.4.  parsedate_to_datetime
+    returns a timezone aware date if date includes timezone info, otherwise a 
+    naive date.  Use the most recent Received field, first in list returned by get_all()
     """
-    rec = msg.get('received')
-    if not rec:
+    recs = msg.get_all('received')
+    if not recs:
         return None
-
-    parts = rec.split(';')
-    try:
-        return parsedate_to_datetime(parts[1])
-    except IndexError:
-        return None
+    else:
+        return parsedate_to_datetime(recs[0].split(';')[-1])
 
 def is_aware(date):
     """Returns True if the date object passed in timezone aware, False if naive.
@@ -344,7 +286,7 @@ def save_failed_msg(data,listname,error):
     error, the message identity and the filename it is being saved under
     """
     # get filename
-    path = os.path.join(settings.ARCHIVE_DIR,'_failed',listname)
+    path = EmailList.get_failed_dir(listname)
     basename = datetime.datetime.today().strftime('%Y-%m-%d')
     files = glob.glob(os.path.join(path,basename + '.*'))
     if files:
@@ -379,52 +321,45 @@ def save_failed_msg(data,listname,error):
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------
-class BetterMbox(mailbox.mbox):
-    '''
-    A better mbox class.  We are overriding the _generate_toc function to use a more restrictive
-    From line check.  Based on the deprecated UnixMailbox.  Also, separator lines must be preceeded
-    by a blank line.
-    '''
-    _fromlinepattern = (r'From (.*@.* |MAILER-DAEMON ).{24}')
-    _regexp = None
-
-    def _generate_toc(self):
-        """Generate key-to-(start, stop) table of contents."""
-        starts, stops = [], []
-        lines = deque(' ',maxlen=2)
-        self._file.seek(0)
-        while True:
-            line_pos = self._file.tell()
-            lines.append(self._file.readline())
-            if lines[1][:5] == 'From ' and self._isrealfromline(lines[1]) and not lines[0].strip():
-                if len(stops) < len(starts):
-                    stops.append(line_pos - len(os.linesep))
-                starts.append(line_pos)
-            elif lines[1] == '':
-                stops.append(line_pos)
-                break
-        self._toc = dict(enumerate(zip(starts, stops)))
-        self._next_key = len(self._toc)
-        self._file_length = self._file.tell()
-
-    def _strict_isrealfromline(self, line):
-        if not self._regexp:
-            import re
-            self._regexp = re.compile(self._fromlinepattern)
-        return self._regexp.match(line)
-
-    _isrealfromline = _strict_isrealfromline
-
+class CustomMMDF(mailbox.MMDF):
+    """Custom implementation of mailbox.MMDF.  The original class from the standard
+    library is flawed in that it uses the same get_message() function as mailbox.mbox,
+    which consumes the first line of the message as the "From " line envelope header.
+    The MMDF format has "^A^A^A^A" postmark that separates messages, but these are 
+    already excluded in the _toc.
+    """
+    def get_message(self, key):
+        """Return a Message representation or raise a KeyError."""
+        start, stop = self._lookup(key)
+        self._file.seek(start)
+        #from_line = self._file.readline().replace(os.linesep, '')
+        string = self._file.read(stop - self._file.tell())
+        msg = self._message_factory(string.replace(os.linesep, '\n'))
+        #msg.set_from(from_line[5:])
+        return msg
+        
 class CustomMbox(mailbox.mbox):
-    '''
-    Custom mbox class.  Designed to handle mbox-like files which do not have "From " envelope
-    headers.  Keyword argument "separator" is required.  It is an RE object that is the pattern
-    of the separator line.  ie. "^Envelope-to:".  Separator lines must be preceeded by a blank
-    line.
-    '''
+    """Custom mbox class that improves message parsing.  Expects the separator keyword
+    argument which is a compiled regex object representing the new message indicator.
+    
+    A standard mbox will match this expression
+    '^From .* (Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+'
+    
+    NOTE: we exclude false matches to lines like:
+    From your message Mon, 9 Nov 1998 06:09:48 -0000:
+    
+    There are numerous mailbox files where messages simply lead with the same header
+    field.  For example:
+    '^Return-[Pp]ath:'
+    '^Envelope-to:'
+    
+    NOTE: in all cases the matched line must be preceeded by a blank line
+    """
     def __init__(self, *args, **kwargs):
         self._separator = kwargs.pop('separator')
-        mailbox.mbox.__init__(self, *args, **kwargs)    # can't use super because mbox is old style class
+        self._false_separator = re.compile(r'^From .* message (Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+')
+        # can't use super because mbox is old style class
+        mailbox.mbox.__init__(self, *args, **kwargs)
 
     def _generate_toc(self):
         """Generate key-to-(start, stop) table of contents."""
@@ -434,7 +369,7 @@ class CustomMbox(mailbox.mbox):
         while True:
             line_pos = self._file.tell()
             lines.append(self._file.readline())
-            if self._separator.match(lines[1]) and not lines[0].strip():
+            if self._separator.match(lines[1]) and not lines[0].strip() and not self._false_separator.match(lines[1]):
                 if len(stops) < len(starts):
                     stops.append(line_pos - len(os.linesep))
                 starts.append(line_pos)
@@ -447,14 +382,17 @@ class CustomMbox(mailbox.mbox):
 
     def get_message(self, key):
         """Return a Message representation or raise a KeyError."""
+        from_ = True
         start, stop = self._lookup(key)
         self._file.seek(start)
         from_line = self._file.readline().replace(os.linesep, '')
         if HEADER_PATTERN.match(from_line):
-            self._file.seek(start)                      # reset pointer to keep first header line
+            self._file.seek(start)              # reset pointer to keep first header line
+            from_ = False
         string = self._file.read(stop - self._file.tell())
         msg = self._message_factory(string.replace(os.linesep, '\n'))
-        msg.set_from(from_line[5:])
+        if from_:
+            msg.set_from(from_line)
         return msg
 
 class Loader(object):
@@ -499,7 +437,7 @@ class Loader(object):
             if not legacy:
                 self.stats['spam'] += 1
                 if not (self.options.get('dryrun') or self.options.get('test')):
-                    mw.write_msg(subdir='spam')
+                    mw.write_msg(subdir='_filtered')
                 return
 
         # process message
@@ -588,35 +526,28 @@ class MessageWrapper(object):
         
     @check_datetime
     def get_date(self):
-        '''
-        This function gets the message date.  It takes an email.Message object and returns a naive
+        """Returns the message date.  It takes an email.Message object and returns a naive
         Datetime object in UTC time.
 
-        First we inspect the Date: header field, since it should correspond with the date and
-        time the message composer sent the email.  It also usually contains the timezone
-        information which is important for calculating correct UTC.  Unfortunately the Date header
-        can vary dramatically in format or even be missing.  Next we check for a Received header
-        which should contain an RFC2822 date.  Lastly we check the envelope header, which should
-        have an asctime date (no timezone info).
-        '''
-        fallback = None
-        for func in (get_envelope_date,get_header_date,get_received_date):
+        First we inspect the first Received header field since the format is consistent
+        and the time is actually more reliable then the time on the message.
+        Next check the Date: header field, Unfortunately the Date header
+        can vary dramatically in format or even be missing.  Finally check the envelope
+        date.
+        
+        NOTE: in a test run we can find the date in the Received header in
+        2366079 of 2426328 records, 97.5% of the time (all but 2 were timezone aware)
+        """
+        for func in (get_received_date,get_header_date,get_envelope_date):
             date = func(self.email_message)
             if date:
                 if is_aware(date):
-                    try:
-                        return date.astimezone(pytz.utc).replace(tzinfo=None)   # return as naive UTC
-                    except ValueError:
-                        pass
+                    #try:
+                    return date.astimezone(pytz.utc).replace(tzinfo=None)   # return as naive UTC
+                    #except ValueError:
+                    #    pass
                 else:
                     return date
-            # if get_received_date fails could be spam or corrupt message, flag it
-            elif func.__name__ == 'get_received_date':
-                self.spam_score = self.spam_score | settings.MARK_BITS['NO_RECVD_DATE']
-
-        #logger.warning("Import Warn [{0}, {1}, {2}]".format(self.msgid,'Used None or naive date',
-        #                                                 self.email_message.get_from()))
-
         else:
             # can't really proceed without a date, likely indicates bigger parsing error
             raise DateError("%s, %s" % (self.msgid,self.email_message.get_unixfrom()))
@@ -846,14 +777,14 @@ class MessageWrapper(object):
         '''
         Write a copy of the original email message to the disk archive.
         Use optional argument subdir to specify a special location,
-        ie. "spam" or "failure" subdirectory.
+        ie. "_filtered" or "_failure" subdirectory.
         '''
         filename = self.hashcode
         if not filename:
             filename = str(uuid.uuid4())
 
         if subdir:
-            path = os.path.join(settings.ARCHIVE_DIR,subdir,self.listname,filename)
+            path = os.path.join(settings.ARCHIVE_DIR,self.listname,subdir,filename)
         else:
             path = os.path.join(settings.ARCHIVE_DIR,self.listname,filename)
         if not os.path.exists(os.path.dirname(path)):

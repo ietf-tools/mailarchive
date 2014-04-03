@@ -17,9 +17,8 @@ logger = getLogger('mlarchive.custom')
 # --------------------------------------------------
 
 def guess_list(path):
-    '''
-    Determine the list we are importing based on header values
-    '''
+    """Determine the list we are importing based on header values
+    """
     mb = _classes.get_mb(path)
 
     # not enough info in MMDF-style mailbox to guess list
@@ -41,9 +40,9 @@ def guess_list(path):
             return match.groups()[0]
 
 def isfile(path):
-    '''
-    Custom version of os.path.isfile, return True if path is an existing regular file and not empty
-    '''
+    """Custom version of os.path.isfile, return True if path is an existing regular file
+    and not empty
+    """
     if not os.path.isfile(path):
         return False
     statinfo = os.stat(path)
@@ -117,7 +116,7 @@ class Command(BaseCommand):
             except _classes.UnknownFormat as error:
                 # save failed message
                 if not (options['dryrun'] or options['test']):
-                    target = os.path.join(settings.ARCHIVE_DIR,'_failed',options['listname'])
+                    target = EmailList.get_failed_dir(options['listname'])
                     if not os.path.exists(target):
                         os.makedirs(target)
                     shutil.copy(filename,target)

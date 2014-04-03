@@ -2,13 +2,11 @@ from django.conf import settings
 from django.core.management.base import CommandError
 from dateutil.tz import tzoffset
 from email.header import decode_header
-from email.utils import parsedate, parsedate_tz, mktime_tz, getaddresses, make_msgid
-from mlarchive.archive.models import *
-from mlarchive.archive.management.commands._mimetypes import *
+from email.utils import parsedate_tz, getaddresses, make_msgid
+from mlarchive.archive.models import EmailList, Message, Thread, Attachment
+from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES, UNKNOWN_CONTENT_TYPE
 from mlarchive.utils.decorators import check_datetime
 from mlarchive.utils.encoding import decode_safely
-from pytz import timezone
-from tzparse import tzparse
 
 from collections import deque
 
@@ -23,15 +21,10 @@ import pytz
 import random
 import re
 import string
-import time
 import uuid
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
-
-# Suppress database warnings
-#from warnings import filterwarnings
-#filterwarnings('ignore', category = MySQLdb.Warning)
 
 # --------------------------------------------------
 # Globals
@@ -61,8 +54,6 @@ subj_refwd_pattern = r'([Rr][eE]|F[Ww][d]?)\s*' + subj_blob_pattern + r'?:\s'
 subj_leader_pattern = subj_blob_pattern + r'*' + subj_refwd_pattern
 subj_blob_regex = re.compile(r'^' + subj_blob_pattern)
 subj_leader_regex = re.compile(r'^' + subj_leader_pattern)
-
-#subj_leader = r'^(\[[\040-\132\134\136-\176]{1,}\]\s*)*([Rr][eE]|F[Ww][d]?)\s*(\[[\040-\132\134\136-\176]{1,}\]\s*)?:\s'
 
 # --------------------------------------------------
 # Custom Exceptions
@@ -115,6 +106,17 @@ def clean_spaces(s):
 
 def decode_rfc2047_header(text):
     return ' '.join(decode_safely(s, charset) for s, charset in decode_header(text))
+
+def flatten_message(msg):
+    """Returns the message flattened to a string, for use in writing to a file.  NOTE:
+    use this instead of message.as_string() to avoid mangling message.
+    """
+    from cStringIO import StringIO
+    from email.generator import Generator
+    fp = StringIO()
+    g = Generator(fp, mangle_from_=False)
+    g.flatten(msg)
+    return = fp.getvalue()
 
 def get_base_subject(text):
     """Returns 'base subject' of a message.  This is the subject which has specific
@@ -298,11 +300,10 @@ def save_failed_msg(data,listname,error):
 
     # log entry
     if isinstance(data,email.message.Message):
-        output = data.as_string()
-        if isinstance(data,BetterMbox):
+        output = flatten_message(data)
+        identifier = data.get('Message-ID','')
+        if not identifier:
             identifier = get_from(data)
-        else:
-            identifier = data.get('Message-ID','')
     else:
         output = data
         identifier = ''
@@ -409,24 +410,23 @@ class Loader(object):
         logger.info('loader called with: %s' % self.filename)
 
     def cleanup(self):
-        '''
-        Call this function when you are done with the loader object
-        '''
+        """Call this function when you are done with the loader object
+        """
         #logger.info('size: %s, loaded: %s' % (self.mb._file_length,self.stats['bytes_loaded']))
         self.mb.close()
 
     def load_message(self,msg):
-        '''
-        This function uses MessageWrapper to save a Message to the archive.  If we are in test
+        """Use MessageWrapper to save a Message to the archive.  If we are in test
         mode the save() step is skipped.  If this is the firstrun of the import, we filter
         spam by checking that the message exists in the legacy web archive (which has been
         purged of spam) before saving.
 
-        NOTE: if the message is from the last 30 days we skip this step, because there will be some
-        lag between when the legacy archive index was created and the firstrun import completes.
-        The check will also be skipped if msgid was not found in the original message and we
-        had to create one, becasue it obviously won't exist in the web archive.
-        '''
+        NOTE: if the message is from the last 30 days we skip this step, because there
+        will be some lag between when the legacy archive index was created and the
+        firstrun import completes.  The check will also be skipped if msgid was not
+        found in the original message and we had to create one, becasue it obviously
+        won't exist in the web archive.
+        """
         self.stats['count'] += 1
 
         mw = MessageWrapper(msg, self.listname, private=self.private)
@@ -441,16 +441,15 @@ class Loader(object):
                 return
 
         # process message
-        x = mw.archive_message
+        mw.archive_message
         self.stats['bytes_loaded'] += mw.bytes
 
         if not self.options.get('dryrun'):
             mw.save(test=self.options.get('test'))
 
     def process(self):
-        '''
-        If the "break" option is set propogate the exception
-        '''
+        """If the "break" option is set propogate the exception
+        """
         for m in self.mb:
             try:
                 self.load_message(m)
@@ -482,7 +481,7 @@ class MessageWrapper(object):
         self.listname = listname
         self.private = private
         self.spam_score = 0
-        self.bytes = len(email_message.as_string(unixfrom=True))
+        self.bytes = len(flatten_message(email_message))
 
         # fail right away if no headers
         if not self.email_message.items():         # no headers, something is wrong
@@ -578,20 +577,18 @@ class MessageWrapper(object):
         return msgid
 
     def get_random_name(self, ext):
-        '''
-        This function generates a randomized filename for storing attachments.  It takes the
+        """generates a randomized filename for storing attachments.  It takes the
         file extension as a string and builds a name like extXXXXXXXXXX.ext, where X is a random
         letter digit or underscore, and ext is the file extension.
-        '''
+        """
         chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + '_'
         rand = ''.join(random.choice(chars) for x in range(10))
         return '%s%s.%s' % (ext, rand, ext)
 
     def get_subject(self):
-        '''
-        This function gets the message subject.  If the subject looks like spam, long line with
+        """Gets the message subject.  If the subject looks like spam, long line with
         no spaces, truncate it so as not to cause index errors
-        '''
+        """
         subject = self.normalize(self.email_message.get('Subject',''))
         # TODO: spam?
         #if len(subject) > 120 and len(subject.split()) == 1:
@@ -606,15 +603,15 @@ class MessageWrapper(object):
         return self.get_addresses(to)
 
     def get_thread(self):
-        '''
-        This is a simplified version of the Zawinski threading algorithm.  The process is:
-        1) If there are References, lookup the first message-id in the list and return it's thread.
-           If the message isn't found try the next message-id, repeat.  According to RFC1036
-           the references list is ordered oldest first.  To start searching from the nearest
-           thread sibling reverse the list.
+        """This is a simplified version of the Zawinski threading algorithm.  
+        The process is:
+        1) If there are References, lookup the first message-id in the list and return
+           it's thread.  If the message isn't found try the next message-id, repeat.
+           According to RFC1036 the references list is ordered oldest first.  To start
+           searching from the nearest thread sibling reverse the list.
         2) If 'In-Reply-To-' is set, look up that message and return it's thread id.
-        3) If the subject line has a "Re:" prefix look for the message matching base-subject
-           and return it's thread
+        3) If the subject line has a "Re:" prefix look for the message matching
+           base-subject and return it's thread
         4) If none of the above, return a new thread id
 
         Messages must be loaded in chronological order for this to work properly.
@@ -622,8 +619,7 @@ class MessageWrapper(object):
         Referecnces:
         - http://www.jwz.org/doc/threading.html
         - http://tools.ietf.org/html/rfc5256
-        '''
-        # TODO: one option is to leave these fields off the model instance
+        """
 
         # try References
         if self.references:
@@ -657,14 +653,13 @@ class MessageWrapper(object):
         return Thread.objects.create()
 
     def normalize(self, header_text):
-        '''
-        This function takes some header_text as a string.
+        """This function takes some header_text as a string.
         It returns the string decoded and normalized.
         Checks if the header needs decoding:
         - if text contains encoded_words, "=?", use decode_rfc2047_header()
         - or call decode_safely
         - finally, compress whitespace characters to one space
-        '''
+        """
         if not header_text:                  # just return if we are passed an empty string
             return header_text
 
@@ -683,10 +678,9 @@ class MessageWrapper(object):
         return normal.rstrip()
 
     def process(self):
-        '''
-        Perform the rest of the parsing and construct the Message object.  Note, we are not
-        saving the object to the database.  This happens in the save() function.
-        '''
+        """Perform the rest of the parsing and construct the Message object.  Note, 
+        we are not saving the object to the database.  This happens in the save() function.
+        """
         self.email_list,created = EmailList.objects.get_or_create(
             name=self.listname,defaults={'description':self.listname,'private':self.private})
         self.hashcode = self.get_hash()
@@ -712,9 +706,8 @@ class MessageWrapper(object):
         # not saving here.
 
     def process_attachments(self, test=False):
-        '''
-        This function walks the message parts and saves any attachments
-        '''
+        """Walks the message parts and saves any attachments
+        """
         for part in self.email_message.walk():
             # TODO can we have an attachment without a filename (content disposition) ??
             name = part.get_filename()
@@ -750,20 +743,19 @@ class MessageWrapper(object):
                             logger.error("ERROR: couldn't pick unique attachment name in ten tries (list:%s)" % (self.listname))
 
     def save(self, test=False):
-        '''
-        Ensure message is not duplicate message-id or hash.  Save message to database.  Save
-        to disk (if not test mode) and process attachments.
-        '''
+        """Ensure message is not duplicate message-id or hash.  Save message to database.
+        Save to disk (if not test mode) and process attachments.
+        """
         # ensure process has been run
         # self._get_archive_message()
 
         # check for duplicate message id, and skip
         if Message.objects.filter(msgid=self.msgid,email_list__name=self.listname):
+            # TODO: save duplicates
             raise GenericWarning('Duplicate msgid: %s' % self.msgid)
 
         # check for duplicate hash
         if Message.objects.filter(hashcode=self.hashcode):
-            # TODO different error?
             raise CommandError('Duplicate hash, msgid: %s' % self.msgid)
 
         self.archive_message.save()     # save to database
@@ -774,11 +766,10 @@ class MessageWrapper(object):
         self.process_attachments(test=test)
 
     def write_msg(self,subdir=None):
-        '''
-        Write a copy of the original email message to the disk archive.
-        Use optional argument subdir to specify a special location,
-        ie. "_filtered" or "_failure" subdirectory.
-        '''
+        """Write a copy of the original email message to the disk archive.
+        Use optional argument subdir to specify a subdirectory within the list directory
+        ie. "_filtered" or "_failure"
+        """
         filename = self.hashcode
         if not filename:
             filename = str(uuid.uuid4())
@@ -791,5 +782,5 @@ class MessageWrapper(object):
             os.makedirs(os.path.dirname(path))
             os.chmod(os.path.dirname(path),02777)
         with open(path,'w') as f:
-            f.write(self.email_message.as_string())
+            f.write(flatten_message(self.email_message))
         os.chmod(path,0660)

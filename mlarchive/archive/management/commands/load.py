@@ -1,7 +1,7 @@
 from optparse import make_option
 from django.core.management.base import BaseCommand, CommandError
 from mlarchive.archive.models import *
-from ._classes import BetterMbox
+from ._classes import CustomMbox
 
 import _classes
 import datetime
@@ -22,7 +22,7 @@ def guess_list(path):
     mb = _classes.get_mb(path)
 
     # not enough info in MMDF-style mailbox to guess list
-    if not isinstance(mb,BetterMbox):
+    if not isinstance(mb,CustomMbox):
         return None
 
     if len(mb) == 0:

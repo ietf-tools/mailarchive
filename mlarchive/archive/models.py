@@ -70,6 +70,7 @@ class Message(models.Model):
     date = models.DateTimeField(db_index=True)
     email_list = models.ForeignKey(EmailList,db_index=True)
     frm = models.CharField(max_length=125,db_index=True)    # really long from lines are spam
+    from_line = models.CharField(max_length=255,blank=True)
     hashcode = models.CharField(max_length=28,db_index=True)
     in_reply_to = models.CharField(max_length=1024,blank=True)     # in-reply-to header field
     legacy_number = models.IntegerField(blank=True,null=True,db_index=True)  # for mapping mhonarc
@@ -127,7 +128,7 @@ class Message(models.Model):
                                                 'id':self.hashcode.rstrip('=')})
 
     def get_attachment_path(self):
-        path = os.path.join(settings.ARCHIVE_DIR,self.email_list.name,'attachments')
+        path = os.path.join(settings.ARCHIVE_DIR,self.email_list.name,'_attachments')
         if not os.path.exists(path):
             os.makedirs(path)
             os.chmod(path,02777)
@@ -194,9 +195,7 @@ class Attachment(models.Model):
         return path
 
     def get_file_path(self):
-        directory = os.path.dirname(self.message.get_file_path())
-        path = os.path.join(directory,'attachments',self.filename)
-        return path
+        return os.path.join(self.message.get_atttachment_path(),self.filename)
 
 class Legacy(models.Model):
     email_list_id = models.CharField(max_length=40)

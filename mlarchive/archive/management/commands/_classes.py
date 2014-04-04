@@ -18,9 +18,9 @@ import hashlib
 import mailbox
 import os
 import pytz
-import random
 import re
 import string
+import tempfile
 import uuid
 
 from django.utils.log import getLogger
@@ -116,7 +116,7 @@ def flatten_message(msg):
     fp = StringIO()
     g = Generator(fp, mangle_from_=False)
     g.flatten(msg)
-    return = fp.getvalue()
+    return fp.getvalue()
 
 def get_base_subject(text):
     """Returns 'base subject' of a message.  This is the subject which has specific
@@ -182,12 +182,12 @@ def get_from(msg):
     get_unixfrom() method while mailbox.mboxMessage has both get_unixfrom() and
     a get_from() method, but the get_unixfrom() returns None
     """
-    if hasattr(msg, 'get_unixfrom'):
-        frm = msg.get_unixfrom()
-        if frm:
-            return frm
     if hasattr(msg, 'get_from'):
         frm = msg.get_from()
+        if frm:
+            return frm
+    if hasattr(msg, 'get_unixfrom'):
+        frm = msg.get_unixfrom()
         if frm:
             return frm
 
@@ -207,7 +207,7 @@ def get_header_date(msg):
 
 def get_mb(path):
     """Returns a mailbox object based on the first line of the file.
-    "From " -> MBOX
+    "From " -> Custom Type
     "^A^A^A^A" -> MMDF
     [another header line] -> Custom Type
     """
@@ -216,7 +216,6 @@ def get_mb(path):
         while not line or line == '\n':
             line = f.readline()
         if line.startswith('From '):                # most common mailbox type, MBOX
-            #return BetterMbox(path)
             return CustomMbox(path,separator=MBOX_SEPARATOR_PATTERN)
         elif line == '\x01\x01\x01\x01\n':          # next most common type, MMDF
             return CustomMMDF(path)
@@ -383,16 +382,16 @@ class CustomMbox(mailbox.mbox):
 
     def get_message(self, key):
         """Return a Message representation or raise a KeyError."""
-        from_ = True
+        has_from = True
         start, stop = self._lookup(key)
         self._file.seek(start)
         from_line = self._file.readline().replace(os.linesep, '')
         if HEADER_PATTERN.match(from_line):
             self._file.seek(start)              # reset pointer to keep first header line
-            from_ = False
+            has_from = False
         string = self._file.read(stop - self._file.tell())
         msg = self._message_factory(string.replace(os.linesep, '\n'))
-        if from_:
+        if has_from:
             msg.set_from(from_line)
         return msg
 
@@ -576,15 +575,6 @@ class MessageWrapper(object):
             #raise GenericWarning('No MessageID (%s)' % self.email_message.get_from())
         return msgid
 
-    def get_random_name(self, ext):
-        """generates a randomized filename for storing attachments.  It takes the
-        file extension as a string and builds a name like extXXXXXXXXXX.ext, where X is a random
-        letter digit or underscore, and ext is the file extension.
-        """
-        chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + '_'
-        rand = ''.join(random.choice(chars) for x in range(10))
-        return '%s%s.%s' % (ext, rand, ext)
-
     def get_subject(self):
         """Gets the message subject.  If the subject looks like spam, long line with
         no spaces, truncate it so as not to cause index errors
@@ -689,12 +679,13 @@ class MessageWrapper(object):
         self.subject = self.get_subject()
         self.base_subject = get_base_subject(self.subject)
         self.thread = self.get_thread()
-
+        self.from_line = get_from(self.email_message) or ''
         self._archive_message = Message(base_subject=self.base_subject,
                              cc=self.get_cc(),
                              date=self.date,
                              email_list=self.email_list,
                              frm = self.normalize(self.email_message.get('From','')),
+                             from_line = self.from_line,
                              hashcode=self.hashcode,
                              in_reply_to=self.in_reply_to,
                              msgid=self.msgid,
@@ -729,26 +720,20 @@ class MessageWrapper(object):
 
                 # write to disk
                 if not test:
-                    for i in range(10):     # try up to ten random filenames
-                        filename = self.get_random_name(extension)
-                        path = os.path.join(self.archive_message.get_attachment_path(),filename)
-                        if not os.path.exists(path):
-                            with open(path, 'wb') as f:
-                                f.write(payload)
-                                attach.filename = filename
-                                attach.save()
-                            os.chmod(path,0660)
-                            break
-                        else:
-                            logger.error("ERROR: couldn't pick unique attachment name in ten tries (list:%s)" % (self.listname))
+                    fp = tempfile.NamedTemporaryFile(dir=self.archive_message.get_attachment_path(),
+                                                     prefix=extension,
+                                                     suffix=extenstion,
+                                                     delete=False)
+                    with fp as f:
+                        f.write(payload)
+                    attach.filename = filename
+                    attach.save()
+                    os.chmod(filename,0660)
 
     def save(self, test=False):
         """Ensure message is not duplicate message-id or hash.  Save message to database.
         Save to disk (if not test mode) and process attachments.
         """
-        # ensure process has been run
-        # self._get_archive_message()
-
         # check for duplicate message id, and skip
         if Message.objects.filter(msgid=self.msgid,email_list__name=self.listname):
             # TODO: save duplicates
@@ -773,7 +758,6 @@ class MessageWrapper(object):
         filename = self.hashcode
         if not filename:
             filename = str(uuid.uuid4())
-
         if subdir:
             path = os.path.join(settings.ARCHIVE_DIR,self.listname,subdir,filename)
         else:

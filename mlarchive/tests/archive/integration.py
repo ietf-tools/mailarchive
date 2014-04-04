@@ -117,4 +117,5 @@ def test_queries_spam_score_field(client,messages):
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
-    assert len(results) == 1>>>>>>> .r323
+    assert len(results) == 1
+

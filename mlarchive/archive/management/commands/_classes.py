@@ -396,6 +396,21 @@ class CustomMbox(mailbox.mbox):
         return msg
 
 class Loader(object):
+    """Object which handles loading messages from a mailbox file.  filename is the name
+    of the file to load.  Accepts the following keyword options:
+    
+    dryrun: if True just perform parsing, no saves
+    firstrun: True if this is the initial load, skips messages not in "legacy" table
+    listname: the name of the email list we are loading messages for
+    private: True is this is a private list
+    test: if True don't save the message to disk archive (only to database)
+
+    NOTE: if the message is from the last 30 days we skip firstrun step, because there
+    will be some lag between when the legacy archive index was created and the
+    firstrun import completes.  The check will also be skipped if msgid was not
+    found in the original message and we had to create one, becasue it obviously
+    won't exist in the web archive.
+    """
     def __init__(self, filename, **options):
         self.filename = filename
         self.options = options
@@ -408,26 +423,16 @@ class Loader(object):
 
         logger.info('loader called with: %s' % self.filename)
 
-    def cleanup(self):
+    def _cleanup(self):
         """Call this function when you are done with the loader object
         """
         #logger.info('size: %s, loaded: %s' % (self.mb._file_length,self.stats['bytes_loaded']))
         self.mb.close()
 
-    def load_message(self,msg):
-        """Use MessageWrapper to save a Message to the archive.  If we are in test
-        mode the save() step is skipped.  If this is the firstrun of the import, we filter
-        spam by checking that the message exists in the legacy web archive (which has been
-        purged of spam) before saving.
-
-        NOTE: if the message is from the last 30 days we skip this step, because there
-        will be some lag between when the legacy archive index was created and the
-        firstrun import completes.  The check will also be skipped if msgid was not
-        found in the original message and we had to create one, becasue it obviously
-        won't exist in the web archive.
+    def _load_message(self,msg):
+        """Use MessageWrapper to save a Message to the archive.
         """
         self.stats['count'] += 1
-
         mw = MessageWrapper(msg, self.listname, private=self.private)
 
         # filter using Legacy archive
@@ -451,7 +456,7 @@ class Loader(object):
         """
         for m in self.mb:
             try:
-                self.load_message(m)
+                self._load_message(m)
             except GenericWarning as error:
                 logger.warning("Import Warn [{0}, {1}, {2}]".format(self.filename,error.args,get_from(m)))
             except Exception as error:
@@ -461,7 +466,7 @@ class Loader(object):
                     print log_msg
                     raise
 
-        self.cleanup()
+        self._cleanup()
 
 class MessageWrapper(object):
     """This class takes a email.message.Message object (email_message) and listname as a string
@@ -722,7 +727,7 @@ class MessageWrapper(object):
                 if not test:
                     fp = tempfile.NamedTemporaryFile(dir=self.archive_message.get_attachment_path(),
                                                      prefix=extension,
-                                                     suffix=extenstion,
+                                                     suffix=extension,
                                                      delete=False)
                     with fp as f:
                         f.write(payload)

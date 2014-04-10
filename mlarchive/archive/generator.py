@@ -10,16 +10,16 @@ still possibly encoded using the Content-Type charset.
 string.decode(codec) decodes a string according to the codec provided.  Returns a
 unicode object.
 """
+from email.utils import collapse_rfc2231_value
+import mailbox
 
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.conf import settings
-from email.utils import collapse_rfc2231_value
 from lxml.html.clean import Cleaner
-from mlarchive.utils.encoding import decode_safely
 
-import mailbox
+from mlarchive.utils.encoding import decode_safely
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')

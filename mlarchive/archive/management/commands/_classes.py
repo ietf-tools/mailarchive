@@ -1,15 +1,3 @@
-from django.conf import settings
-from django.core.management.base import CommandError
-from dateutil.tz import tzoffset
-from email.header import decode_header
-from email.utils import parsedate_tz, getaddresses, make_msgid
-from mlarchive.archive.models import EmailList, Message, Thread, Attachment
-from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES, UNKNOWN_CONTENT_TYPE
-from mlarchive.utils.decorators import check_datetime
-from mlarchive.utils.encoding import decode_safely
-
-from collections import deque
-
 import base64
 import datetime
 import email
@@ -22,6 +10,18 @@ import re
 import string
 import tempfile
 import uuid
+from collections import deque
+from email.header import decode_header
+from email.utils import parsedate_tz, getaddresses, make_msgid
+
+from django.conf import settings
+from django.core.management.base import CommandError
+from dateutil.tz import tzoffset
+
+from mlarchive.archive.models import Attachment, EmailList, Legacy, Message, Thread
+from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES, UNKNOWN_CONTENT_TYPE
+from mlarchive.utils.decorators import check_datetime
+from mlarchive.utils.encoding import decode_safely
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
@@ -173,7 +173,7 @@ def get_envelope_date(msg):
         date = match.group()
     else:
         return None
-    
+
     return parsedate_to_datetime(date)
 
 def get_from(msg):
@@ -204,6 +204,16 @@ def get_header_date(msg):
         return None
 
     return parsedate_to_datetime(date)
+
+def get_incr_path(path):
+    """Return path with unused incremental suffix"""
+    files = glob.glob(path + '.*')
+    if files:
+        files.sort()
+        sequence = str(int(files[-1][-4:]) + 1)
+    else:
+        sequence = '0'
+    return path + '.' + sequence.zfill(4)
 
 def get_mb(path):
     """Returns a mailbox object based on the first line of the file.
@@ -243,7 +253,7 @@ def get_mime_extension(type):
 def get_received_date(msg):
     """Returns the date from the received header field.  Date field is last field
     using semicolon as separator, per RFC 2821 Section 4.4.  parsedate_to_datetime
-    returns a timezone aware date if date includes timezone info, otherwise a 
+    returns a timezone aware date if date includes timezone info, otherwise a
     naive date.  Use the most recent Received field, first in list returned by get_all()
     """
     recs = msg.get_all('received')
@@ -325,7 +335,7 @@ class CustomMMDF(mailbox.MMDF):
     """Custom implementation of mailbox.MMDF.  The original class from the standard
     library is flawed in that it uses the same get_message() function as mailbox.mbox,
     which consumes the first line of the message as the "From " line envelope header.
-    The MMDF format has "^A^A^A^A" postmark that separates messages, but these are 
+    The MMDF format has "^A^A^A^A" postmark that separates messages, but these are
     already excluded in the _toc.
     """
     def get_message(self, key):
@@ -337,22 +347,22 @@ class CustomMMDF(mailbox.MMDF):
         msg = self._message_factory(string.replace(os.linesep, '\n'))
         #msg.set_from(from_line[5:])
         return msg
-        
+
 class CustomMbox(mailbox.mbox):
     """Custom mbox class that improves message parsing.  Expects the separator keyword
     argument which is a compiled regex object representing the new message indicator.
-    
+
     A standard mbox will match this expression
     '^From .* (Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+'
-    
+
     NOTE: we exclude false matches to lines like:
     From your message Mon, 9 Nov 1998 06:09:48 -0000:
-    
+
     There are numerous mailbox files where messages simply lead with the same header
     field.  For example:
     '^Return-[Pp]ath:'
     '^Envelope-to:'
-    
+
     NOTE: in all cases the matched line must be preceeded by a blank line
     """
     def __init__(self, *args, **kwargs):
@@ -398,7 +408,7 @@ class CustomMbox(mailbox.mbox):
 class Loader(object):
     """Object which handles loading messages from a mailbox file.  filename is the name
     of the file to load.  Accepts the following keyword options:
-    
+
     dryrun: if True just perform parsing, no saves
     firstrun: True if this is the initial load, skips messages not in "legacy" table
     listname: the name of the email list we are loading messages for
@@ -463,7 +473,7 @@ class Loader(object):
                 save_failed_msg(m,self.listname,error)
                 self.stats['errors'] += 1
                 if self.options.get('break'):
-                    print log_msg
+                    #print
                     raise
 
         self._cleanup()
@@ -508,7 +518,7 @@ class MessageWrapper(object):
 
     @staticmethod
     def get_addresses(text):
-        """Returns a string of realname and email address RFC2822 addresses from a 
+        """Returns a string of realname and email address RFC2822 addresses from a
         string suitable for a To or CC header
         """
         result = []
@@ -526,7 +536,7 @@ class MessageWrapper(object):
         if not cc:
             return ''
         return self.get_addresses(cc)
-        
+
     @check_datetime
     def get_date(self):
         """Returns the message date.  It takes an email.Message object and returns a naive
@@ -537,7 +547,7 @@ class MessageWrapper(object):
         Next check the Date: header field, Unfortunately the Date header
         can vary dramatically in format or even be missing.  Finally check the envelope
         date.
-        
+
         NOTE: in a test run we can find the date in the Received header in
         2366079 of 2426328 records, 97.5% of the time (all but 2 were timezone aware)
         """
@@ -598,7 +608,7 @@ class MessageWrapper(object):
         return self.get_addresses(to)
 
     def get_thread(self):
-        """This is a simplified version of the Zawinski threading algorithm.  
+        """This is a simplified version of the Zawinski threading algorithm.
         The process is:
         1) If there are References, lookup the first message-id in the list and return
            it's thread.  If the message isn't found try the next message-id, repeat.
@@ -673,7 +683,7 @@ class MessageWrapper(object):
         return normal.rstrip()
 
     def process(self):
-        """Perform the rest of the parsing and construct the Message object.  Note, 
+        """Perform the rest of the parsing and construct the Message object.  Note,
         we are not saving the object to the database.  This happens in the save() function.
         """
         self.email_list,created = EmailList.objects.get_or_create(
@@ -684,7 +694,7 @@ class MessageWrapper(object):
         self.subject = self.get_subject()
         self.base_subject = get_base_subject(self.subject)
         self.thread = self.get_thread()
-        self.from_line = get_from(self.email_message) or ''
+        self.from_line = self.normalize(get_from(self.email_message)) or ''
         self._archive_message = Message(base_subject=self.base_subject,
                              cc=self.get_cc(),
                              date=self.date,
@@ -731,9 +741,9 @@ class MessageWrapper(object):
                                                      delete=False)
                     with fp as f:
                         f.write(payload)
-                    attach.filename = filename
+                    attach.filename = fp.name
                     attach.save()
-                    os.chmod(filename,0660)
+                    os.chmod(fp.name,0660)
 
     def save(self, test=False):
         """Ensure message is not duplicate message-id or hash.  Save message to database.
@@ -741,11 +751,12 @@ class MessageWrapper(object):
         """
         # check for duplicate message id, and skip
         if Message.objects.filter(msgid=self.msgid,email_list__name=self.listname):
-            # TODO: save duplicates
+            self.write_msg(subdir='_dupes')
             raise GenericWarning('Duplicate msgid: %s' % self.msgid)
 
         # check for duplicate hash
         if Message.objects.filter(hashcode=self.hashcode):
+            self.write_msg(subdir='_dupes')
             raise CommandError('Duplicate hash, msgid: %s' % self.msgid)
 
         self.archive_message.save()     # save to database
@@ -760,16 +771,27 @@ class MessageWrapper(object):
         Use optional argument subdir to specify a subdirectory within the list directory
         ie. "_filtered" or "_failure"
         """
+        # set filename
         filename = self.hashcode
         if not filename:
             filename = str(uuid.uuid4())
+
+        # build path
         if subdir:
             path = os.path.join(settings.ARCHIVE_DIR,self.listname,subdir,filename)
         else:
             path = os.path.join(settings.ARCHIVE_DIR,self.listname,filename)
+
+        # if directory doesn't exist create it
         if not os.path.exists(os.path.dirname(path)):
             os.makedirs(os.path.dirname(path))
             os.chmod(os.path.dirname(path),02777)
+
+        # if the file already exists, append a suffix
+        if os.path.exists(path):
+            path = get_incr_path(path)
+
+        # write file
         with open(path,'w') as f:
             f.write(flatten_message(self.email_message))
         os.chmod(path,0660)

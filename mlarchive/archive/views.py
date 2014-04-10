@@ -1,3 +1,7 @@
+import json
+import re
+import os
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout
@@ -11,6 +15,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from haystack.views import SearchView, FacetedSearchView
 from haystack.query import SearchQuerySet
+
 from mlarchive.utils.decorators import check_access, superuser_only, pad_id
 from mlarchive.archive import actions
 from mlarchive.archive.query_utils import get_kwargs
@@ -19,10 +24,6 @@ from mlarchive.archive.view_funcs import initialize_formsets, get_columns, get_e
 from models import *
 from forms import *
 
-import json
-import re
-import os
-
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
 
@@ -30,22 +31,21 @@ logger = getLogger('mlarchive.custom')
 # Classes
 # --------------------------------------------------
 class CustomSearchView(SearchView):
-    '''
-    A customized SearchView.  Need to add request object to the form init so we can use it
-    for authorization
-    '''
+    """A customized SearchView.  Need to add request object to the form init so we can
+    use it for authorization
+    """
     def __name__(self):
         return "CustomSearchView"
 
     def __call__(self, request):
-        """
-        Generates the actual response to the search.
+        """Generates the actual response to the search.
 
         Relies on internal, overridable methods to construct the response.
 
-        CUSTOM: as soon as queryset is returned from get_results() check for custom attribute
-        myfacets and save to SearchView so we can add to context in extra_context().  This
-        is required because create_response() corrupts regular facet_counts().
+        CUSTOM: as soon as queryset is returned from get_results() check for custom
+        attribute myfacets and save to SearchView so we can add to context in
+        extra_context().  This is required because create_response() corrupts regular
+        facet_counts().
         """
         self.request = request
 
@@ -64,7 +64,7 @@ class CustomSearchView(SearchView):
         return super(self.__class__,self).build_form(form_kwargs={ 'request' : self.request })
 
     def extra_context(self):
-        '''Add variables to template context'''
+        """Add variables to template context"""
         extra = super(CustomSearchView, self).extra_context()
         query_string = '?' + self.request.META['QUERY_STRING']
 
@@ -113,10 +113,9 @@ class CustomSearchView(SearchView):
 #@user_passes_test(lambda u: u.is_superuser)
 @superuser_only
 def admin(request):
-    '''
-    Administrator View.  Only accessible by the superuser this view allows
+    """Administrator View.  Only accessible by the superuser this view allows
     the administrator to delete spam messages
-    '''
+    """
     results = None
     if request.method == 'POST':
         if 'action' not in request.POST:
@@ -144,8 +143,6 @@ def admin(request):
 @superuser_only
 def admin_console(request):
     form = None
-
-    #cache_data = {'list_info': cache.get('list_info')}
     return render_to_response('archive/admin_console.html', {
         'form': form},
         RequestContext(request, {}),
@@ -158,14 +155,11 @@ def admin_guide(request):
     )
 
 def advsearch(request):
-    '''
-    The Advanced Search View
-    '''
+    """Advanced Search View"""
     if request.GET:
         # reverse engineer advanced search form from query string
         form = AdvancedSearchForm(request=request,initial=request.GET)
         query_formset, not_formset = initialize_formsets(request.GET.get('q'))
-
     else:
         form = AdvancedSearchForm(request=request)
         RulesFormset = formset_factory(RulesForm)
@@ -180,10 +174,9 @@ def advsearch(request):
     )
 
 def browse(request):
-    '''
-    This view presents a list of Email Lists the user has access to.  There are
+    """Presents a list of Email Lists the user has access to.  There are
     separate sections for private, active and inactive.
-    '''
+    """
     form = BrowseForm()
     columns = get_columns(request.user)
 
@@ -195,9 +188,7 @@ def browse(request):
 
 # TODO if we use this, need access decorator
 def browse_list(request, list_name):
-    '''
-    Browse emails by list.  The simple version.
-    '''
+    """Browse emails by list.  The simple version."""
     list_obj = get_object_or_404(EmailList, name=list_name)
 
     # default sort order is date descending
@@ -215,10 +206,9 @@ def browse_list(request, list_name):
 @pad_id
 @check_access
 def detail(request, list_name, id, msg):
-    '''
-    This view displays the requested message.
+    """Displays the requested message.
     NOTE: the "msg" argument is a Message object added by the check_access decorator
-    '''
+    """
     msg_html = msg.get_body_html()
 
     return render_to_response('archive/detail.html', {
@@ -227,10 +217,9 @@ def detail(request, list_name, id, msg):
     )
 
 def export(request, type):
-    '''
-    This view takes a search query string and builds a gzipped tar archive of the messages
+    """Takes a search query string and builds a gzipped tar archive of the messages
     in the query results.  Two formats are supported: maildir and mbox.
-    '''
+    """
     # force sort order and run query
     data = request.GET.copy()
     data['so'] = 'email_list'
@@ -241,16 +230,12 @@ def export(request, type):
     return get_export(sqs, type, request)
 
 def logout_view(request):
-    '''
-    Logout the user
-    '''
+    """Logout the user"""
     logout(request)
     return HttpResponseRedirect(reverse('archive'))
 
 def main(request):
-    '''
-    The main page.  This page contains a simple search form and some links.
-    '''
+    """Main page.  This page contains a simple search form and some links."""
     if request.GET:
         form = SearchForm(request.GET)
     else:

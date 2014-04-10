@@ -3,13 +3,15 @@ try:
 except ImportError:
     import simplejson as json
 
+import mailbox
+
 from django.http import HttpResponse
+from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.template.loader import render_to_string
-from django.shortcuts import render_to_response
+
 from mlarchive.archive.models import EmailList
 
-import mailbox
 
 # --------------------------------------------------
 # Helper Functions

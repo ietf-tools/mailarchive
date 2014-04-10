@@ -1,3 +1,9 @@
+from email.utils import parseaddr
+import os
+import re
+import shutil
+import subprocess
+
 from django.db.models.signals import pre_delete, post_delete, post_save
 from django.dispatch.dispatcher import receiver
 from django.conf import settings
@@ -6,13 +12,8 @@ from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.template.loader import render_to_string
-from email.utils import parseaddr
-from mlarchive.archive.generator import Generator
 
-import os
-import re
-import shutil
-import subprocess
+from mlarchive.archive.generator import Generator
 
 TXT2HTML = ['/usr/bin/mhonarc','-single']
 ATTACHMENT_PATTERN = r'<p><strong>Attachment:((?:.|\n)*?)</p>'
@@ -31,9 +32,21 @@ logger = getLogger('mlarchive.custom')
 # --------------------------------------------------
 
 class Thread(models.Model):
+    first = models.ForeignKey('Message',related_name='thread_key',blank=True,null=True)  # first message in thread, by date
+    date = models.DateTimeField(auto_now_add=True,db_index=True)     # date of first message
 
     def __unicode__(self):
         return str(self.id)
+
+    def set_first(self, message=None):
+        """Sets the first message of the thread.  Call when adding or removing
+        messages
+        """
+        if not message:
+            message = self.message_set.all().order_by('date').first()
+        self.first = message
+        self.date = message.date
+        self.save()
 
 class EmailList(models.Model):
     active = models.BooleanField(default=True,db_index=True)
@@ -55,7 +68,7 @@ class EmailList(models.Model):
     @property
     def failed_dir(self):
         return self.get_failed_dir(self.name)
-    
+
     @staticmethod
     def get_removed_dir(listname):
         return os.path.join(settings.ARCHIVE_DIR,listname,'_removed')
@@ -63,7 +76,7 @@ class EmailList(models.Model):
     @property
     def removed_dir(self):
         return self.get_removed_dir(self.name)
-        
+
 class Message(models.Model):
     base_subject = models.CharField(max_length=512,blank=True)
     cc = models.TextField(blank=True,default='')
@@ -117,11 +130,11 @@ class Message(models.Model):
     @property
     def frm_email(self):
         """This property is the email portion of the "From" header all lowercase
-        (the realname is stripped).  It is used in faceting search results as well 
+        (the realname is stripped).  It is used in faceting search results as well
         as display.
         """
         return parseaddr(self.frm)[1].lower()
-        
+
     def get_absolute_url(self):
         # strip padding, "=", to shorten URL
         return reverse('archive_detail',kwargs={'list_name':self.email_list.name,
@@ -172,6 +185,13 @@ class Message(models.Model):
         self.save()
 
     @property
+    def thread_date(self):
+        """Returns the date of the first message in the associated thread.  Use for
+        grouping by Thread
+        """
+        return self.thread.date
+
+    @property
     def to_and_cc(self):
         """Returns 'To' and 'CC' fields combined, for use in indexing
         """
@@ -179,7 +199,7 @@ class Message(models.Model):
             return self.to + ' ' + self.cc
         else:
             return self.to
-            
+
 class Attachment(models.Model):
     error = models.CharField(max_length=255,blank=True) # message if problem with attachment
     description = models.CharField(max_length=255)      # description of file contents
@@ -223,7 +243,20 @@ def _message_remove(sender, instance, **kwargs):
         os.chmod(target,02777)
     shutil.move(path,target)
 
+    # TODO
+    # if this message was the first in the thread reset
+    #if instance == instance.thread.first:
+    #   instance.thread.set_first(ignore=instance)
+
+@receiver(post_save, sender=Message)
+def _message_save(sender, instance, **kwargs):
+    """When messages are saved, call thread.set_first()
+    """
+    if instance.date < instance.thread.date:
+        instance.thread.set_first(instance)
+
 @receiver([post_save, post_delete], sender=EmailList)
 def _clear_cache(sender,instance, **kwargs):
     """If EmailList object is saved or deleted remove the list_info cache entry"""
     cache.delete('list_info')
+

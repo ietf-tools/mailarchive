@@ -1,6 +1,7 @@
 from celery_haystack.indexes import CelerySearchIndex
 from django.conf import settings
 from haystack import indexes
+
 from mlarchive.archive.models import Message
 
 #BaseSearch = indexes.RealTimeSearchIndex if settings.HAYSTACK_USE_REALTIME_SEARCH else indexes.SearchIndex
@@ -14,6 +15,7 @@ class MessageIndex(CelerySearchIndex, indexes.Indexable):
     frm_email = indexes.CharField(model_attr='frm_email', faceted=True)
     msgid = indexes.CharField(model_attr='msgid')
     subject = indexes.CharField(model_attr='subject')
+    tdate = indexes.DateTimeField(model_attr='thread_date')
     to = indexes.CharField(model_attr='to_and_cc')
     spam_score = indexes.IntegerField(model_attr='spam_score')
 

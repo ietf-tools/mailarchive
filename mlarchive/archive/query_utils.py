@@ -1,12 +1,12 @@
-from haystack.query import SQ
-from django.conf import settings
-from django.utils.log import getLogger
 from datetime import datetime, timedelta
-
 import re
 import string
 import sys
 
+from django.conf import settings
+from haystack.query import SQ
+
+from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
 
 HAYSTACK_DEFAULT_OPERATOR = getattr(settings,'HAYSTACK_DEFAULT_OPERATOR','AND')

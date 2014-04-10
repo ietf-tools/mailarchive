@@ -1,8 +1,9 @@
 from django.conf.urls import patterns, include, url
 from django.views.generic import TemplateView
+from haystack.views import search_view_factory
+
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.views import CustomSearchView
-from haystack.views import search_view_factory
 
 urlpatterns = patterns('mlarchive.archive.ajax',
     url(r'ajax/list/?$', 'ajax_get_list', name='ajax_get_list'),

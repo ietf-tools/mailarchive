@@ -2,8 +2,37 @@
 
 import django.conf.global_settings as DEFAULT_SETTINGS
 import os
+import json
+from django.core.exceptions import ImproperlyConfigured
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# THE ONE TRUE WAY
+# JSON-based secrets module
+with open(os.path.join(BASE_DIR,"settings","secrets.json")) as f:
+    secrets = json.loads(f.read())
+
+def get_secret(setting, secrets=secrets):
+    """Get the secret variable or return explicit exception."""
+    try:
+        return secrets[setting]
+    except KeyError:
+        error_msg = "Set the {0} environment variable".format(setting)
+        raise ImproperlyConfigured(error_msg)
+
+SECRET_KEY = get_secret("SECRET_KEY")
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'mailarch',
+        'TEST_NAME': 'mailarch_test',
+        'USER': get_secret("DATABASES_USER"),
+        'PASSWORD': get_secret("DATABASES_PASSWORD"),
+        'HOST': '',
+        'PORT': '',
+    }
+}
 
 DEBUG = False
 TEMPLATE_DEBUG = False
@@ -53,14 +82,10 @@ MEDIA_URL = ''
 # Examples: "http://foo.com/media/", "/media/".
 #ADMIN_MEDIA_PREFIX = '/media/'
 
-# Make this unique, and don't share it with anybody.
-SECRET_KEY = 'ezuvpao6ju9dqpx1555dt$saly@_-rqgjgtvy2_xmfzdvop^+6'
-
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
     'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = DEFAULT_SETTINGS.TEMPLATE_CONTEXT_PROCESSORS + (
@@ -80,9 +105,6 @@ MIDDLEWARE_CLASSES = (
 ROOT_URLCONF = 'mlarchive.urls'
 
 TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
     BASE_DIR + '/templates',
 )
 
@@ -92,11 +114,8 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     #'django.contrib.staticfiles',
-    # Uncomment the next line to enable the admin:
     'django.contrib.admin',
     'django.contrib.admindocs',
-    # Uncomment the next line to enable admin documentation:
-    # 'django.contrib.admindocs',
     'haystack',
     'celery_haystack',
     'mlarchive.archive',
@@ -105,7 +124,6 @@ INSTALLED_APPS = (
 
 STATIC_URL = '/static/'
 STATIC_DOC_ROOT = BASE_DIR + '../static'
-
 
 ###########
 # LOGGING #
@@ -166,11 +184,9 @@ LOGGING = {
     }
 }
 
-
 # HAYSTACK SETTINGS
-#HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+HAYSTACK_DEFAULT_OPERATOR = 'AND'
 HAYSTACK_SIGNAL_PROCESSOR = 'celery_haystack.signals.CelerySignalProcessor'
-#HAYSTACK_USE_REALTIME_SEARCH = True
 
 HAYSTACK_XAPIAN_PATH = '/a/mailarch/data/archive_index'
 HAYSTACK_CONNECTIONS = {
@@ -202,7 +218,6 @@ MARK_BITS = { 'NON_ASCII_HEADER':0b0001,
 MARK_HTML = 10
 MARK_LOAD_SPAM = 11
 
-
 # AUTH
 LOGIN_REDIRECT_URL = '/arch/'
 AUTHENTICATION_BACKENDS = (
@@ -213,7 +228,6 @@ AUTHENTICATION_BACKENDS = (
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
-        #'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': '127.0.0.1:11211',
         'TIMEOUT': 300,
     }
@@ -229,6 +243,3 @@ CELERY_HAYSTACK_MAX_RETRIES = 1
 CELERY_HAYSTACK_RETRY_DELAY = 300
 CELERY_HAYSTACK_TRANSACTION_SAFE = False
 
-# Put SECRET_KEY in here, or any other sensitive or site-specific
-# changes.  DO NOT commit settings_local.py to svn.
-from settings_local import *

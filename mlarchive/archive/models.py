@@ -82,10 +82,10 @@ class Message(models.Model):
     cc = models.TextField(blank=True,default='')
     date = models.DateTimeField(db_index=True)
     email_list = models.ForeignKey(EmailList,db_index=True)
-    frm = models.CharField(max_length=125,db_index=True)    # really long from lines are spam
+    frm = models.TextField(db_index=True)          # really long from lines are spam
     from_line = models.CharField(max_length=255,blank=True)
     hashcode = models.CharField(max_length=28,db_index=True)
-    in_reply_to = models.CharField(max_length=1024,blank=True)     # in-reply-to header field
+    in_reply_to = models.TextField(blank=True,default='')     # in-reply-to header field
     legacy_number = models.IntegerField(blank=True,null=True,db_index=True)  # for mapping mhonarc
     msgid = models.CharField(max_length=255,db_index=True)
     references = models.TextField(blank=True,default='')

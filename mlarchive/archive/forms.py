@@ -11,7 +11,7 @@ from haystack.forms import SearchForm, FacetedSearchForm
 from haystack.query import SearchQuerySet
 import xapian
 
-from mlarchive.archive.query_utils import parse, get_kwargs
+from mlarchive.archive.query_utils import get_kwargs
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
 
@@ -42,6 +42,8 @@ VALID_SORT_OPTIONS = ('frm','-frm','date','-date','email_list','-email_list',
 
 EXTRA_PARAMS = ('so', 'sso', 'page', 'gbt')
 ALL_PARAMS = ('f_list','f_from', 'so', 'sso', 'page', 'gbt')
+
+DEFAULT_SORT = getattr(settings, 'ARCHIVE_DEFAULT_SORT', '-date')
 
 def profile(func):
     """Decorator to log the time it takes to run a function"""
@@ -330,9 +332,7 @@ class AdvancedSearchForm(FacetedSearchForm):
             else:
                 sqs = sqs.order_by(so,sso)
         else:
-            # if there's no "so" param, and no query we are browsing, sort by -date
-            if len(self.kwargs) == 1 and self.kwargs.get('email_list__in'):
-                sqs = sqs.order_by('-date')
+            sqs = sqs.order_by(DEFAULT_SORT)
 
         # insert facets just before returning query, so they don't get overridden
         # sqs.query.run()                     # force run of query

@@ -695,11 +695,16 @@ class MessageWrapper(object):
         self.base_subject = get_base_subject(self.subject)
         self.thread = self.get_thread()
         self.from_line = self.normalize(get_from(self.email_message)) or ''
+        self.frm = self.normalize(self.email_message.get('From',''))
+        if len(self.frm) > 125:
+            # TODO
+            # makrkbits
+            pass
         self._archive_message = Message(base_subject=self.base_subject,
                              cc=self.get_cc(),
                              date=self.date,
                              email_list=self.email_list,
-                             frm = self.normalize(self.email_message.get('From','')),
+                             frm = self.frm,
                              from_line = self.from_line,
                              hashcode=self.hashcode,
                              in_reply_to=self.in_reply_to,

@@ -1,6 +1,9 @@
+import hashlib
 import operator
 import random
 import time
+import urllib
+from collections import OrderedDict
 
 from django import forms
 from django.conf import settings
@@ -80,6 +83,22 @@ def get_base_query(querydict,filters=False,string=False):
         return copy.urlencode()
     else:
         return copy
+
+def get_cache_key(request):
+    """Returns a hash key that identifies a unique query.  First we strip all URL
+    parameters that do not modify the result set, ie. sort order.  We order the
+    parameters for consistency and finally add the request.user because different
+    users will have access to different private lists and therefor have different
+    results sets.
+    """
+    # strip parameters that don't modify query result set
+    base_query = get_base_query(request.GET,filters=True)
+    # order for consistency
+    ordered = OrderedDict(sorted(base_query.items()))
+    m = hashlib.md5()
+    m.update(urllib.urlencode(ordered))
+    m.update(str(request.user))
+    return m.hexdigest()
 
 def get_list_info(value):
     """Map list name to list id or list id to list name.  This is essentially a cached
@@ -166,11 +185,13 @@ class AdvancedSearchForm(FacetedSearchForm):
         filters.
         """
         # first check the cache
-        # leave filter options in facet cache key because counts will be unqiue
-        query = get_base_query(self.request.GET,filters=True,string=True)
-        facets = cache.get(query)
+        cache_key = get_cache_key(self.request)
+        facets = cache.get(cache_key)
         if facets:
             return facets
+
+        if settings.DEBUG:
+            messages.info(self.request,'Facets not in cache')
 
         # calculating facet_counts on large results sets is too costly so skip it
         # If you call results.count() before results.facet_counts() the facet_counts
@@ -226,7 +247,7 @@ class AdvancedSearchForm(FacetedSearchForm):
             facets = facets = {'fields': {},'dates': {},'queries': {}}
 
         # save in cache
-        cache.set(query,facets)
+        cache.set(cache_key,facets)
         return facets
 
     def get_filter_params(self, query):

@@ -129,7 +129,6 @@ STATIC_DOC_ROOT = BASE_DIR + '../static'
 # LOGGING #
 ###########
 
-MY_LOG_FILENAME = '/a/mailarch/data/log/mlarchive.log'
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -144,7 +143,7 @@ LOGGING = {
             'level' : 'DEBUG',
             'formatter' : 'simple',
             'class' : 'logging.handlers.WatchedFileHandler',
-            'filename' :   MY_LOG_FILENAME, # full path works
+            'filename' :  '/a/mailarch/data/log/mlarchive.log',
         },
         'archive-mail_file_handler':
         {
@@ -223,6 +222,7 @@ LOGIN_REDIRECT_URL = '/arch/'
 AUTHENTICATION_BACKENDS = (
     'htauth.backend.HtauthBackend',
     )
+HTAUTH_PASSWD_FILENAME = get_secret("HTAUTH_PASSWD_FILENAME")
 
 # Cache settings
 CACHES = {

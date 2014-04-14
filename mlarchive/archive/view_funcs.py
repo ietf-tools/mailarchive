@@ -176,12 +176,13 @@ def get_export(sqs, type, request):
                 mbox_list = mlist
 
             with open(result.object.get_file_path()) as input:
-                # if there's no envelope add one
-                if not input.readline().startswith('From '):
+                # add envelope header
+                if result.object.from_line:
+                    mbox_file.write(result.object.from_line + '\n')
+                else:
                     mbox_file.write('From {0} {1}\n'.format(
                         result.object.frm_email,
                         result.object.date.strftime('%a %b %d %H:%M:%S %Y')))
-                input.seek(0)
                 mbox_file.write(input.read())
                 mbox_file.write('\n')
 

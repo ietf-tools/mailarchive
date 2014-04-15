@@ -25,8 +25,8 @@ SECRET_KEY = get_secret("SECRET_KEY")
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'mailarch',
-        'TEST_NAME': 'mailarch_test',
+        'NAME': get_secret("DATABASES_NAME"),
+        'TEST_NAME': get_secret("DATABASES_TEST_NAME"),
         'USER': get_secret("DATABASES_USER"),
         'PASSWORD': get_secret("DATABASES_PASSWORD"),
         'HOST': '',

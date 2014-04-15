@@ -1,7 +1,7 @@
-'''
+"""
 This module contains functions used in views.  We place them here to keep views "skinny"
 and facilitate clean unit testing.
-'''
+"""
 import datetime
 import math
 import os
@@ -30,9 +30,7 @@ exact_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\"(?P<value>[^\"]+)\
 # Helper Functions
 # --------------------------------------------------
 def chunks(l, n):
-    '''
-    Yield successive n-sized chunks from l
-    '''
+    """Yield successive n-sized chunks from l"""
     result = []
     for i in xrange(0, len(l), n):
         #yield l[i:i+n]
@@ -44,11 +42,10 @@ def chunks(l, n):
 # --------------------------------------------------
 
 def initialize_formsets(query):
-    '''
-    This function takes an advanced search query string and intiailizes the advanced
-    search formsets to match.  It is used when the GET of advanced search includes
-    URL parameters, in other words we are returning to modify the search
-    '''
+    """Initialize advanced search form formsets based on the query.
+    Used when the GET of advanced search includes URL parameters, in other words
+    we are returning to modify the search
+    """
     RulesFormset0 = formset_factory(RulesForm,extra=0)
     RulesFormset1 = formset_factory(RulesForm,extra=1)
 
@@ -92,11 +89,9 @@ def initialize_formsets(query):
     return query_formset, not_formset
 
 def get_columns(user):
-    '''
-    This function takes a user object and returns the columns to use in displaying
-    lists in the browse view.  columns is a dictionary of lists containing keys:
-    active, inactive, private
-    '''
+    """Returns email lists the user can view, grouped in columns for display.
+    columns is a dictionary of lists containing keys: active, inactive, private
+    """
     display_columns = 5
     columns = {'private':[],'active':[],'inactive':[]}
 
@@ -122,12 +117,13 @@ def get_columns(user):
     return columns
 
 def get_export(sqs, type, request):
-    '''
-    This function takes a SearchQuerySet object, the result of a search, and a string:
+    """Returns a tar archive of messages
+
+    sqs is SearchQuerySet object, the result of a search, and type is a string
     (mbox|maildir) the type of file to export.  It compiles messages from the queryset
     to the appropriate mail box type, in a zipped tarfile.  The function returns the
     tarfile, with seek(0) to reset for reading, and the filename as a string.
-    '''
+    """
     # don't allow export of huge querysets and skip empty querysets
     count = sqs.count()
     redirect_url = '%s?%s' % (reverse('archive_search'), request.META['QUERY_STRING'])

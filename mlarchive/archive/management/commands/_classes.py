@@ -62,6 +62,10 @@ class DateError(Exception):
     # failed to parse the message date
     pass
 
+class DuplicateMessage(Exception):
+    # Duplicate Message-id
+    pass
+
 class GenericWarning(Exception):
     pass
 
@@ -199,10 +203,8 @@ def get_header_date(msg):
     date = msg.get('date')
     if not date:
         date = msg.get('sent')
-
     if not date:
         return None
-
     return parsedate_to_datetime(date)
 
 def get_incr_path(path):
@@ -467,7 +469,7 @@ class Loader(object):
         for m in self.mb:
             try:
                 self._load_message(m)
-            except GenericWarning as error:
+            except DuplicateMessage as error:
                 logger.warning("Import Warn [{0}, {1}, {2}]".format(self.filename,error.args,get_from(m)))
             except Exception as error:
                 save_failed_msg(m,self.listname,error)
@@ -695,6 +697,8 @@ class MessageWrapper(object):
         self.base_subject = get_base_subject(self.subject)
         self.thread = self.get_thread()
         self.from_line = self.normalize(get_from(self.email_message)) or ''
+        if self.from_line:
+            self.from_line = self.from_line[5:].lstrip()    # we only need the unique part
         self.frm = self.normalize(self.email_message.get('From',''))
         if len(self.frm) > 125:
             # TODO
@@ -757,7 +761,7 @@ class MessageWrapper(object):
         # check for duplicate message id, and skip
         if Message.objects.filter(msgid=self.msgid,email_list__name=self.listname):
             self.write_msg(subdir='_dupes')
-            raise GenericWarning('Duplicate msgid: %s' % self.msgid)
+            raise DuplicateMessage('Duplicate msgid: %s' % self.msgid)
 
         # check for duplicate hash
         if Message.objects.filter(hashcode=self.hashcode):

@@ -144,8 +144,6 @@ def get_export(sqs, type, request):
     basename = '%s%s_%s' % (type,now.strftime('%m%d'),rand)
     filename = basename + '.tar.gz'
 
-    #tardata, filename = get_export(queryset, type)
-
     if type == 'maildir':
         for result in sqs:
             arcname = os.path.join(basename,result.object.email_list.name,result.object.hashcode)
@@ -173,12 +171,7 @@ def get_export(sqs, type, request):
 
             with open(result.object.get_file_path()) as input:
                 # add envelope header
-                if result.object.from_line:
-                    mbox_file.write(result.object.from_line + '\n')
-                else:
-                    mbox_file.write('From {0} {1}\n'.format(
-                        result.object.frm_email,
-                        result.object.date.strftime('%a %b %d %H:%M:%S %Y')))
+                mbox_file.write(result.object.get_from_line() + '\n')
                 mbox_file.write(input.read())
                 mbox_file.write('\n')
 

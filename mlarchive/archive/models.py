@@ -50,16 +50,25 @@ class Thread(models.Model):
 
 class EmailList(models.Model):
     active = models.BooleanField(default=True,db_index=True)
-    date_created = models.DateTimeField(auto_now_add=True)
-    description = models.CharField(max_length=255,blank=True)
-    name = models.CharField(max_length=255,db_index=True,unique=True)
-    private = models.BooleanField(default=False,db_index=True)
     alias = models.CharField(max_length=255,blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    description = models.CharField(max_length=255,blank=True)
     members = models.ManyToManyField(User)
     members_digest = models.CharField(max_length=28,blank=True)
+    name = models.CharField(max_length=255,db_index=True,unique=True)
+    private = models.BooleanField(default=False,db_index=True)
+    updated = models.DateTimeField(auto_now=True)
 
     def __unicode__(self):
         return self.name
+
+    @staticmethod
+    def get_attachments_dir(listname):
+        return os.path.join(settings.ARCHIVE_DIR,listname,'_attachments')
+
+    @property
+    def attachments_dir(self):
+        return self.get_attachments_dir(self.name)
 
     @staticmethod
     def get_failed_dir(listname):
@@ -82,7 +91,7 @@ class Message(models.Model):
     cc = models.TextField(blank=True,default='')
     date = models.DateTimeField(db_index=True)
     email_list = models.ForeignKey(EmailList,db_index=True)
-    frm = models.TextField(db_index=True)          # really long from lines are spam
+    frm = models.CharField(max_length=255,blank=True)          # really long from lines are spam
     from_line = models.CharField(max_length=255,blank=True)
     hashcode = models.CharField(max_length=28,db_index=True)
     in_reply_to = models.TextField(blank=True,default='')     # in-reply-to header field
@@ -141,7 +150,7 @@ class Message(models.Model):
                                                 'id':self.hashcode.rstrip('=')})
 
     def get_attachment_path(self):
-        path = os.path.join(settings.ARCHIVE_DIR,self.email_list.name,'_attachments')
+        path = self.email_list.attachments_dir
         if not os.path.exists(path):
             os.makedirs(path)
             os.chmod(path,02777)
@@ -174,6 +183,16 @@ class Message(models.Model):
 
     def get_file_path(self):
         return os.path.join(settings.ARCHIVE_DIR,self.email_list.name,self.hashcode)
+
+    def get_from_line(self):
+        """Returns the "From " envelope header from the original mbox file if it
+        exists or constructs one.  Useful when exporting in mbox format.
+        """
+        if self.from_line:
+            return 'From {0}'.format(self.from_line)
+        else:
+            return 'From {0} {1}'.format(self.frm_email,
+                                         self.date.strftime('%a %b %d %H:%M:%S %Y'))
 
     def get_removed_dir(self):
         return self.email_list.removed_dir
@@ -211,8 +230,7 @@ class Attachment(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        path = os.path.join(reverse('archive'),'attach',self.message.email_list.name,self.filename)
-        return path
+        return os.path.join(reverse('archive'),'attach',self.message.email_list.name,self.filename)
 
     def get_file_path(self):
         return os.path.join(self.message.get_atttachment_path(),self.filename)

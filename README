@@ -2,28 +2,149 @@ DEVELOPMENT AND TESTING
 -----------------------
 
 What follows are instructions for setting up a development
-environment on a Mac OSX.  These instructions were tested
+environment on Mac OSX.  These instructions were tested
 on a MacBook Pro running OS X v10.9.1 (Mavericks).  
 
 Prerequisites:
 - MySQL 5.6
-- Homebrew (http://brew.sh/)
+- Python 2.7
+- Xcode
+- virtualenv (ie. http://docs.python-guide.org/en/latest/dev/virtualenvs/)
 
-Install Xapian
-$ brew install xapian
-$ brew info xapian
+Setup Xapian in VirtualEnv
+--------------------------
+From: http://nomad.coop/blog/installing-xapian-in-virtualenv-django/
 
-Download appropriate bindings for xapian version
-$ curl -O http://oligarchy.co.uk/xapian/1.2.17/xapian-bindings-1.2.17.tar.xz
+(within activated virtualenv)
+export VENV=$VIRTUAL_ENV
+mkdir $VENV/packages && cd $VENV/packages
 
-activate virtual environment
-$ source mailarch/bin/activate
+curl -O http://oligarchy.co.uk/xapian/1.2.17/xapian-core-1.2.17.tar.xz
+curl -O http://oligarchy.co.uk/xapian/1.2.17/xapian-bindings-1.2.17.tar.xz
 
-See: http://nomad.coop/blog/installing-xapian-in-virtualenv-django/
+tar xzvf xapian-core-1.2.17.tar.xz
+tar xzvf xapian-bindings-1.2.17.tar.xz
 
+cd $VENV/packages/xapian-core-1.2.17
+./configure --prefix=$VENV && make && make install
+
+export LD_LIBRARY_PATH=$VENV/lib
+
+cd $VENV/packages/xapian-bindings-1.2.17
+./configure --prefix=$VENV --with-python && make && make install
+
+Test:
+python -c "import xapian" 
+
+
+Install additional packages
+---------------------------
 $ pip install MySQL-python lxml six pyquery factory-boy pytest-django datetutil
 
-Configure settings_local.py and settings_test.py
+
+Settings configuration
+---------------------------
+configure settings_local.py
+EXAMPLE:
+
+---- snip ----
+DEBUG=True
+SERVER_MODE = 'development'
+ROOT_DIR = '/Users/ams/dev/mailarch'
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 's qlite3' or 'oracle'.
+        'NAME': 'archive',                      # Or path to database file if using sqlite3.
+        'TEST_NAME': 'archive_test',
+        'USER': 'django',                      # Not used with sqlite3.
+        'PASSWORD': 'secret',                  # Not used with sqlite3.
+        'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
+        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
+    }
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'test-cache'
+    }
+}
+
+#HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.BaseSignalProcessor'
+HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+HAYSTACK_XAPIAN_PATH = ROOT_DIR + '/data/archive_index'
+HAYSTACK_CONNECTIONS = {
+    'default': {
+        'ENGINE': 'haystack.backends.xapian_backend.XapianEngine',
+        'PATH': HAYSTACK_XAPIAN_PATH,
+    },
+}
+
+# ARCHIVE SETTINGS
+ARCHIVE_DIR = ROOT_DIR + '/data/archive'
+CONSOLE_STATS_FILE = ROOT_DIR + '/data/log/console.json'
+LOG_FILE = ROOT_DIR + '/data/log/mlarchive.log'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {
+            'format': "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        }
+    },
+    'handlers': {
+        'watched_file':
+        {
+            'level' : 'DEBUG',
+            'formatter' : 'simple',
+            'class' : 'logging.handlers.WatchedFileHandler',
+            'filename' :   LOG_FILE, # full path works
+        },
+        'archive-mail_file_handler':
+        {
+            'level' : 'DEBUG',
+            'formatter' : 'simple',
+            'class' : 'logging.handlers.WatchedFileHandler',
+            'filename' :   LOG_FILE,
+        }
+    },
+    'loggers': {
+        'mlarchive.custom': {
+            'handlers': ['watched_file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'archive-mail': {
+            'handlers': ['archive-mail_file_handler'],
+            'level': 'DEBUG',
+            'propagate': True,
+        }
+    }
+}
+---- snip ----
+
+configure settings_test.py:
+Use same path settings or remove enries altogether.
+
+Examples:
+ARCHIVE_DIR = '/Users/ams/dev/mailarch/data/archive/'
+HAYSTACK_XAPIAN_PATH = '/Users/ams/dev/mailarch/data/archive_index'
+HAYSTACK_CONNECTIONS = {
+    'default': {
+        'ENGINE': 'haystack.backends.xapian_backend.XapianEngine',
+        'PATH': HAYSTACK_XAPIAN_PATH,
+    },
+}
+
+
+Running tests
+---------------------------
+- cd to root of working directory
+- export PYTHONPATH=$PWD
+- cd mlarchive
+- py.test tests
 
 
 NOTES ON INFRASTRUCTURE

@@ -1,13 +1,13 @@
-from optparse import make_option
-from django.core.management.base import BaseCommand, CommandError
-from mlarchive.archive.models import *
-from ._classes import BetterMbox
-
-import _classes
 import datetime
 import re
 import shutil
 import time
+from optparse import make_option
+
+from django.core.management.base import BaseCommand, CommandError
+
+from mlarchive.archive.models import *
+from mlarchive.archive.management.commands import _classes
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
@@ -17,13 +17,12 @@ logger = getLogger('mlarchive.custom')
 # --------------------------------------------------
 
 def guess_list(path):
-    '''
-    Determine the list we are importing based on header values
-    '''
+    """Try to guess the list we are importing based on header values
+    """
     mb = _classes.get_mb(path)
 
     # not enough info in MMDF-style mailbox to guess list
-    if not isinstance(mb,BetterMbox):
+    if not isinstance(mb,_classes.CustomMbox):
         return None
 
     if len(mb) == 0:
@@ -41,9 +40,9 @@ def guess_list(path):
             return match.groups()[0]
 
 def isfile(path):
-    '''
-    Custom version of os.path.isfile, return True if path is an existing regular file and not empty
-    '''
+    """Custom version of os.path.isfile, return True if path is an existing regular file
+    and not empty
+    """
     if not os.path.isfile(path):
         return False
     statinfo = os.stat(path)
@@ -107,6 +106,9 @@ class Command(BaseCommand):
         if not options['listname']:
             raise CommandError("list not specified and not guessable [%s]" % files[0])
 
+        # force listname lowercase
+        options['listname'] = options['listname'].lower()
+
         start_time = time.time()
         for filename in files:
             try:
@@ -117,7 +119,7 @@ class Command(BaseCommand):
             except _classes.UnknownFormat as error:
                 # save failed message
                 if not (options['dryrun'] or options['test']):
-                    target = os.path.join(settings.ARCHIVE_DIR,'_failed',options['listname'])
+                    target = EmailList.get_failed_dir(options['listname'])
                     if not os.path.exists(target):
                         os.makedirs(target)
                     shutil.copy(filename,target)
@@ -132,7 +134,4 @@ class Command(BaseCommand):
             items = [ '%s:%s' % (k,v) for k,v in stats.items() if k != 'time']
             items.append('Elapsed Time:%s' % str(datetime.timedelta(seconds=stats['time'])))
             items.append('\n')
-            #output = 'Messages Processed: %d' % stats['count']
-            #output += 'Errors: %d' % stats['errors']
-            #output += 'Elapsed Time: %s' % stats['time']
             return '\n'.join(items)

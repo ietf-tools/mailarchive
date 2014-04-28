@@ -18,7 +18,7 @@ from django.utils.encoding import force_unicode
 
 from haystack import connections
 from haystack.backends import BaseEngine, BaseSearchBackend, BaseSearchQuery, SearchNode, log_query
-from haystack.constants import ID
+from haystack.constants import ID, DEFAULT_OPERATOR
 from haystack.exceptions import HaystackError, MissingDependency
 from haystack.models import SearchResult
 from haystack.utils import get_identifier
@@ -572,6 +572,11 @@ class XapianSearchBackend(BaseSearchBackend):
             return xapian.Query()  # Match nothing
 
         qp = xapian.QueryParser()
+
+        # AMS custom.  use HAYSTACK_DEFAULT_OPERATOR
+        if DEFAULT_OPERATOR == 'AND':
+            qp.set_default_op(xapian.Query.OP_AND)
+
         qp.set_database(self._database())
         qp.set_stemmer(xapian.Stem(self.language))
         qp.set_stemming_strategy(xapian.QueryParser.STEM_SOME)
@@ -582,6 +587,11 @@ class XapianSearchBackend(BaseSearchBackend):
                 field_dict['field_name'],
                 DOCUMENT_CUSTOM_TERM_PREFIX + field_dict['field_name'].upper()
             )
+
+        # AMS customization.  Can't use "from" as a field name because it is
+        # a python reserved work.  Need to add special prefix so user can 
+        # still use intuitive "from:" field specifier
+        qp.add_prefix('from', DOCUMENT_CUSTOM_TERM_PREFIX + 'FRM')
 
         vrp = XHValueRangeProcessor(self)
         qp.add_valuerangeprocessor(vrp)

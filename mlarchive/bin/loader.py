@@ -13,10 +13,10 @@ will be considered spam.x
 # for file living in project/bin/
 import os
 import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings'
+#path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+#if not path in sys.path:
+#    sys.path.insert(0, path)
+#os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings'
 # -------------------------------------------------------------------------------------
 
 from django.core.management import call_command

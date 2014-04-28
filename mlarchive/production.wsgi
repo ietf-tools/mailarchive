@@ -9,7 +9,7 @@ if not path in sys.path:
 
 #sys.path.append('/a/www/ietf-datatracker/web')
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mlarchive.settings")
+os.environ["DJANGO_SETTINGS_MODULE"] = "mlarchive.settings.production"
 
 from django.core.wsgi import get_wsgi_application
 application = get_wsgi_application()

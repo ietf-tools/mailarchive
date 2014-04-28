@@ -1,14 +1,15 @@
+import json
+
 from django.core.cache import cache
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from django.utils import simplejson
+
 from mlarchive.archive.utils import jsonapi
 from mlarchive.archive.models import EmailList, Message
 from mlarchive.utils.decorators import check_access
-
-import json
 
 @jsonapi
 def ajax_get_list(request):

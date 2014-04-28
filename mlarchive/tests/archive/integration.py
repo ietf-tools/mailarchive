@@ -79,5 +79,43 @@ def test_odd_queries(client):
     response = client.get(url)
     assert response.status_code == 200
 
+@pytest.mark.django_db(transaction=True)
+def test_queries_to_field(client,messages):
+    url = reverse('archive_search') + '?q=to:to@amsl.com'
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert len(results) == 1
 
+@pytest.mark.django_db(transaction=True)
+def test_queries_from_field(client,messages):
+    url = reverse('archive_search') + '?q=from:larry@amsl.com'
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert len(results) == 1
+
+@pytest.mark.django_db(transaction=True)
+def test_queries_subject_field(client,messages):
+    url = reverse('archive_search') + '?q=subject:BBQ'
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert len(results) == 1
+
+@pytest.mark.django_db(transaction=True)
+def test_queries_msgid_field(client,messages):
+    url = reverse('archive_search') + '?q=msgid:000@amsl.com'
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert len(results) == 1
+
+@pytest.mark.django_db(transaction=True)
+def test_queries_spam_score_field(client,messages):
+    url = reverse('archive_search') + '?q=spam_score:1'
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert len(results) == 1
 

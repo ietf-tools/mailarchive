@@ -85,6 +85,7 @@ def test_asf_get_facets(client,messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_asf_search_no_query(client,messages):
+    """Test that empty search returns no results"""
     url = reverse('archive_search') + '?q='
     response = client.get(url)
     assert response.status_code == 200

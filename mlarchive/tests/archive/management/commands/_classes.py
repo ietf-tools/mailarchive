@@ -40,13 +40,12 @@ This is a test email.  With no headers
 '''
     # remove any existing failed messages
     publist = EmailListFactory.create(name='public')
-    failed_dir = publist.get_failed_dir()
-    if os.path.exists(failed_dir):              # ensure failed directory empty
-        assert not os.listdir(failed_dir)
+    if os.path.exists(publist.failed_dir):              # ensure failed directory empty
+        assert not os.listdir(publist.failed_dir)
     status = archive_message(data,'public',private=False)
     assert status == 1
     assert Message.objects.all().count() == 0
-    filename = os.path.join(failed_dir,
+    filename = os.path.join(publist.failed_dir,
             datetime.datetime.today().strftime('%Y-%m-%d') + '.0000')
     assert os.path.exists(filename)
     os.remove(filename)                         # cleanup
@@ -197,5 +196,40 @@ def test_parsedate_to_datetime():
 
 #def test_Loader()
 
-#def test_MessageWrapper
-    # various exceptions raised
+def test_MessageWrapper_get_addresses():
+    data = [('ancp@ietf.org',                               # simple
+            'ancp@ietf.org'),
+            ('Tom Taylor <tom.taylor.stds@gmail.com>',      # compound
+            'Tom Taylor tom.taylor.stds@gmail.com'),
+            ('Tom Taylor <tom.taylor.stds@gmail.com>, "ancp@ietf.org" <ancp@ietf.org>',
+            'Tom Taylor tom.taylor.stds@gmail.com ancp@ietf.org ancp@ietf.org')]
+    for item in data:
+        assert MessageWrapper.get_addresses(item[0]) == item[1]
+    
+def test_MessageWrapper_get_cc():
+    data = '''From: joe@acme.com
+To: larry@acme.com
+Cc: ancp@ietf.org
+Subject: Hi
+Date: Mon, 24 Feb 2014 08:04:41 -0800
+
+This is the message.
+'''
+    msg = email.message_from_string(data)
+    mw = MessageWrapper(msg,'ancp')
+    assert mw.get_to() == 'larry@acme.com'
+    
+def test_MessageWrapper_get_to():
+    data = '''From: joe@acme.com
+To: larry@acme.com
+Cc: ancp@ietf.org
+Subject: Hi
+Date: Mon, 24 Feb 2014 08:04:41 -0800
+
+This is the message.
+'''
+    msg = email.message_from_string(data)
+    mw = MessageWrapper(msg,'ancp')
+    assert mw.get_cc() == 'ancp@ietf.org'
+    
+# test various exceptions raised

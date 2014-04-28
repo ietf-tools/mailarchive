@@ -1,3 +1,10 @@
+import hashlib
+import operator
+import random
+import time
+import urllib
+from collections import OrderedDict
+
 from django import forms
 from django.conf import settings
 from django.contrib import messages
@@ -5,20 +12,18 @@ from django.core.cache import cache
 from haystack.backends.xapian_backend import XapianSearchBackend
 from haystack.forms import SearchForm, FacetedSearchForm
 from haystack.query import SearchQuerySet
-from mlarchive.archive.query_utils import parse, get_kwargs
+import xapian
+
+from mlarchive.archive.query_utils import get_kwargs
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
-
-import operator
-import random
-import xapian
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
 
 FIELD_CHOICES = (('text','Subject and Body'),
                  ('subject','Subject'),
-                 ('frm','From'),
+                 ('from','From'),
                  ('to','To'),
                  ('msgid','Message-ID'))
 
@@ -40,6 +45,17 @@ VALID_SORT_OPTIONS = ('frm','-frm','date','-date','email_list','-email_list',
 
 EXTRA_PARAMS = ('so', 'sso', 'page', 'gbt')
 ALL_PARAMS = ('f_list','f_from', 'so', 'sso', 'page', 'gbt')
+
+DEFAULT_SORT = getattr(settings, 'ARCHIVE_DEFAULT_SORT', '-date')
+
+def profile(func):
+    """Decorator to log the time it takes to run a function"""
+    def wrap(*args, **kwargs):
+        started_at = time.time()
+        result = func(*args, **kwargs)
+        logger.info("Function time: %s" % (time.time() - started_at))
+        return result
+    return wrap
 
 # --------------------------------------------------------
 # Helper Functions
@@ -68,6 +84,22 @@ def get_base_query(querydict,filters=False,string=False):
     else:
         return copy
 
+def get_cache_key(request):
+    """Returns a hash key that identifies a unique query.  First we strip all URL
+    parameters that do not modify the result set, ie. sort order.  We order the
+    parameters for consistency and finally add the request.user because different
+    users will have access to different private lists and therefor have different
+    results sets.
+    """
+    # strip parameters that don't modify query result set
+    base_query = get_base_query(request.GET,filters=True)
+    # order for consistency
+    ordered = OrderedDict(sorted(base_query.items()))
+    m = hashlib.md5()
+    m.update(urllib.urlencode(ordered))
+    m.update(str(request.user))
+    return m.hexdigest()
+
 def get_list_info(value):
     """Map list name to list id or list id to list name.  This is essentially a cached
     bi-directional dictionary lookup."""
@@ -78,48 +110,6 @@ def get_list_info(value):
         mapping.update(reversed)
         cache.set('list_info',mapping,86400)
     return mapping.get(value)
-
-def group_by_thread(sqs, so, sso, reverse=False):
-    """Group search query by thread
-
-    sqs is a SearchQuerySet, so is search order (string), sso is secondary search
-    order (string), reverse (boolean) tells whether to reverse sort order.  Default
-    sorts are ascending, for the archive app usually descending is preferred so this
-    function will typically be called with reverse=True, in which case both threads
-    and messages within them will be sorted by date, descending.
-
-    NOTE: so and sso could either be applied to the thread or messages within a thread.
-    Neither option is currently supported.
-
-    OPTIONS: if the Thread model had a thread-order field this grouping could be
-    accomplished easier.
-    """
-    new_query = sqs._clone()
-    # pass one, create thread:latest-date mapping
-    # TODO: or, order query by date and pick out first of each thread
-    threads = {}
-    for item in new_query:                      # this causes causes cache to be filled
-        date = threads.get(item.object.thread.id)
-        if not date:
-            threads[item.object.thread.id] = item.date
-            continue
-        if date < item.date:
-            threads[item.object.thread.id] = item.date
-
-    # sort thread map by date ascending
-    threads = sorted(threads.iteritems(),key=operator.itemgetter(1))
-
-    # create thread:index mapping (ascending)
-    order = { x[0]:i for i,x in enumerate(threads) }
-
-    # build sorted list of SearchResult objects
-    result = sorted(new_query,
-                    key=lambda x: (order[x.object.thread.id],x.date),reverse=reverse)
-
-    # swap in sorted list
-    new_query._result_cache = result
-
-    return new_query
 
 def sort_by_subject(qs, sso, reverse=False):
     new_query = qs._clone()
@@ -195,11 +185,13 @@ class AdvancedSearchForm(FacetedSearchForm):
         filters.
         """
         # first check the cache
-        # leave filter options in facet cache key because counts will be unqiue
-        query = get_base_query(self.request.GET,filters=True,string=True)
-        facets = cache.get(query)
+        cache_key = get_cache_key(self.request)
+        facets = cache.get(cache_key)
         if facets:
             return facets
+
+        if settings.DEBUG:
+            messages.info(self.request,'Facets not in cache')
 
         # calculating facet_counts on large results sets is too costly so skip it
         # If you call results.count() before results.facet_counts() the facet_counts
@@ -255,7 +247,7 @@ class AdvancedSearchForm(FacetedSearchForm):
             facets = facets = {'fields': {},'dates': {},'queries': {}}
 
         # save in cache
-        cache.set(query,facets)
+        cache.set(cache_key,facets)
         return facets
 
     def get_filter_params(self, query):
@@ -352,7 +344,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         gbt = self.cleaned_data.get('gbt')
 
         if gbt:
-            sqs = group_by_thread(sqs,so,sso,reverse=True)
+            sqs = sqs.order_by('tdate','date')
         elif so:
             if so == 'subject':
                 sqs = sort_by_subject(sqs,sso)
@@ -361,9 +353,7 @@ class AdvancedSearchForm(FacetedSearchForm):
             else:
                 sqs = sqs.order_by(so,sso)
         else:
-            # if there's no "so" param, and no query we are browsing, sort by -date
-            if len(self.kwargs) == 1 and self.kwargs.get('email_list__in'):
-                sqs = sqs.order_by('-date')
+            sqs = sqs.order_by(DEFAULT_SORT)
 
         # insert facets just before returning query, so they don't get overridden
         # sqs.query.run()                     # force run of query

@@ -17,6 +17,7 @@ from bs4 import BeautifulSoup
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.conf import settings
+from lxml.etree import XMLSyntaxError
 from lxml.html.clean import Cleaner
 
 from mlarchive.utils.encoding import decode_safely
@@ -192,7 +193,14 @@ class Generator:
         # clean html document of unwanted elements (html,script,style,etc)
         cleaner = Cleaner(scripts=True,meta=True,page_structure=True,style=True,
                           remove_tags=['body'],forms=True,frames=True,add_nofollow=True)
-        clean = cleaner.clean_html(payload)
+        try:
+            clean = cleaner.clean_html(payload)
+        except XMLSyntaxError as error:
+            logger.error('Error cleaning HTML body [{}, {}, {}]'.format(self.msg.email_list,self.msg.msgid,error.args))
+            if self.text_only:
+                return None
+            else:
+                return '<< invalid HTML >>'
 
         if self.text_only:
             # document = lxml.html.document_fromstring(html_text)

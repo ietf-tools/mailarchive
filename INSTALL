@@ -53,28 +53,26 @@ svn checkout http://svn.tools.ietf.org/svn/tools/mailarch/trunk
 
 2. Create a symlink to the release directory, INSTALL_DIR/current -> INSTALL_DIR/trunk
 
-3. Create (or copy) INSTALL_DIR/current/mlarchive/settings_local.py which contains production
-settings.  At a minimum this musts contain the DATABASE credentials.
+3. Create (or copy) INSTALL_DIR/current/mlarchive/settings/secrets.json which contains production
+settings.  It should cotain the following settings: 
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql', 
-        'NAME': 'DATABASE NAME',               
-        'TEST_NAME': 'TEST DATABASE NAME',
-        'USER': 'USER',              
-        'PASSWORD': 'PASSWORD',
-        'HOST': '',           
-        'PORT': '',          
-    }
+Example:
+{
+    "FILENAME": "secrets.json",
+    "SECRET_KEY": [KEY],
+    "DATABASES_NAME": "archive",
+    "DATABASES_TEST_NAME": "archive_test",
+    "DATABASES_USER": [USER],
+    "DATABASES_PASSWORD": [PASSORD],
+    "HTAUTH_PASSWD_FILENAME": "/Users/ams/dev/mailarch/htpasswd"
 }
-
 
 4. Sample Apache Configuration
 
         RemoveHandler cgi-script .py
         Alias /static/ /a/mailarch/current/static/
 
-        WSGIScriptAlias / /a/mailarch/current/mlarchive/wsgi.py
+        WSGIScriptAlias / /a/mailarch/current/mlarchive/productions.wsgi
         WSGIApplicationGroup %{GLOBAL}
         WSGIProcessGroup mailarchive.ietf.org
 

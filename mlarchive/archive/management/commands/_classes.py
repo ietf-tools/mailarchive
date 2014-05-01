@@ -162,7 +162,7 @@ def get_base_subject(text):
     return text
 
 def get_envelope_date(msg):
-    """Returns the date, a naive datetime object converted to UTC, from the message
+    """Returns the date, a naive or aware datetime object, from the message
     envelope line.  msg is a email.message.Message object
 
     NOTE: Some files have mangled email addresses in "From" line:
@@ -196,9 +196,9 @@ def get_from(msg):
             return frm
 
 def get_header_date(msg):
-    """Returns the date, a naive or aware datetime object converted to UTC, from the
-    message header.  First checks the 'Date:' field, then 'Sent:'.  Returns None if
-    it can't find it locate and interpret either of these.
+    """Returns the date, a naive or aware datetime object, from the message header.
+    First checks the 'Date:' field, then 'Sent:'.  Returns None if it can't locate
+    and interpret either of these.
     """
     date = msg.get('date')
     if not date:

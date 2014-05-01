@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.auth.models import AnonymousUser
 from django.core.urlresolvers import reverse
 from django.http import HttpRequest, QueryDict
 from django.test.client import RequestFactory
@@ -31,7 +32,7 @@ def test_get_list_info():
 @pytest.mark.django_db(transaction=True)
 def test_group_by_thread(messages):
     sqs = SearchQuerySet().filter(email_list=1)
-    sqs = group_by_thread(sqs,None,None,reverse=True)
+    sqs = sqs.order_by('tdate','date')
     assert [ x.pk for x in sqs ] == [4,2,3,1]       # assert grouped by thread order
 
 @pytest.mark.django_db(transaction=True)
@@ -53,7 +54,9 @@ def test_asf_get_facets(client,messages):
     factory = RequestFactory()
 
     # low-levet test
-    form = AdvancedSearchForm(request=factory.get('/arch/search/?q=dummy'))
+    request=factory.get('/arch/search/?q=dummy')
+    request.user=AnonymousUser()
+    form = AdvancedSearchForm(request=request)
     sqs = SearchQuerySet()
     facets = form.get_facets(sqs)
     assert 'email_list' in facets['fields']

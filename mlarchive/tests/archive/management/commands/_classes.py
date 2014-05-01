@@ -54,18 +54,6 @@ def test_clean_spaces():
     s = 'this     is   a    string   with extra    spaces'
     assert clean_spaces(s) == 'this is a string with extra spaces'
 
-def test_convert_date():
-    data = ['Fri Feb 21 11:09:00 2014',
-            'Fri, 21 Feb 2014 11:09:00 PST',
-            'Fri Feb 21 11:09:00 2014 PST']
-    date = datetime.datetime(2014,02,21,19,9)  # utc date
-    for item in data:
-        result = convert_date(item)
-        assert result == date
-        assert not is_aware(result)
-
-    assert convert_date('bogus date string') == None
-
 def decode_rfc2047_header():
     data = [('=?utf-8?b?562U5aSNOiAgQU5DUCBGcmFtZXdvcmsgdXBkYXRl?=',
             u'\u7b54\u590d:  ANCP Framework update'),
@@ -92,34 +80,24 @@ def test_get_base_subject():
         base = get_base_subject(normal)
         assert base == item[1]
 
-def test_get_date_part():
-    data = [('iesg-bounces@ietf.org Fri Dec 01 02:58:22 2006',
-            'Fri Dec 01 02:58:22 2006'),                                # normal
-            ('denis.pinkas at bull.net  Fri Feb  1 03:12:37 2008',
-            'Fri Feb  1 03:12:37 2008'),                                # obfiscated
-            ('fluffy@cisco.com Thu, 15 Jul 2004 17:15:16 -0700 (PDT)',
-            'Thu, 15 Jul 2004 17:15:16 -0700'),                         # double tzinfo
-            ('Kim.Fullbrook@O2.COM Tue, 01 Feb 2005 06:01:13 -0500',
-            'Tue, 01 Feb 2005 06:01:13 -0500'),                         # numeric tzinfo
-            ('eburger@brooktrout.com Thu, 3 Feb 2005 19:55:03 GMT',
-            'Thu, 3 Feb 2005 19:55:03 GMT'),                            # char tzinfo
-            ('scott.mcglashan@hp.com Wed, 6 Jul 2005 12:24:15 +0100 (BST)',
-            'Wed, 6 Jul 2005 12:24:15 +0100'),                          # odd tzinfo
-            ('scoya  Fri Sep  1 02:28:55 2000',
-            'Fri Sep  1 02:28:55 2000')]                                # simple from
-    for item in data:
-        assert get_date_part(item[0]) == item[1]
-
 def test_get_envelope_date():
-    data = '''From rcross@amsl.com Fri Feb 21 11:09:00 2014
-From: rcross@amsl.com
-To: rcross@amsl.com
-Subject: Test
-
-Hello.
-'''
-    message = email.message_from_string(data)
-    assert get_envelope_date(message) == datetime.datetime(2014,2,21,19,9)
+    data = [('From iesg-bounces@ietf.org Fri Dec 01 02:58:00 2006',
+            datetime.datetime(2006,12,1,2,58)),                          # normal
+            ('From denis.pinkas at bull.net  Fri Feb  1 03:12:00 2008',
+            datetime.datetime(2008,2,1,3,12)),                           # obfiscated
+            ('From fluffy@cisco.com Thu, 15 Jul 2004 17:15:16 -0700 (PDT)',
+            datetime.datetime(2004, 7, 15, 17, 15, 16, tzinfo=tzoffset(None, -25200))),   # double tzinfo
+            ('From Kim.Fullbrook@O2.COM Tue, 01 Feb 2005 06:01:13 -0500',
+            datetime.datetime(2005, 2, 1, 6, 1, 13, tzinfo=tzoffset(None, -18000))),      # numeric tzinfo
+            ('From eburger@brooktrout.com Thu, 3 Feb 2005 19:55:03 GMT',
+            datetime.datetime(2005, 2, 3, 19, 55, 3, tzinfo=tzoffset(None, 0))),          # char tzinfo
+            ('From scott.mcglashan@hp.com Wed, 6 Jul 2005 12:24:15 +0100 (BST)',
+            datetime.datetime(2005, 7, 6, 12, 24, 15, tzinfo=tzoffset(None, 3600))),      # odd tzinfo
+            ('From scoya  Fri Sep  1 02:28:00 2000',
+            datetime.datetime(2000,9,1,2,28))]                           # simple from
+    for item in data:
+        message = email.message_from_string(item[0])
+        assert get_envelope_date(message) == item[1]
 
 def test_get_from():
     data = '''From rcross@amsl.com Fri Feb 21 11:09:00 2014

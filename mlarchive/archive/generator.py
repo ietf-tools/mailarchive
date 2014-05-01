@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 from django.conf import settings
 from django.template.loader import render_to_string
 from django.conf import settings
-from lxml.etree import XMLSyntaxError
+from lxml.etree import XMLSyntaxError, ParserError
 from lxml.html.clean import Cleaner
 
 from mlarchive.utils.encoding import decode_safely
@@ -195,7 +195,7 @@ class Generator:
                           remove_tags=['body'],forms=True,frames=True,add_nofollow=True)
         try:
             clean = cleaner.clean_html(payload)
-        except XMLSyntaxError as error:
+        except (XMLSyntaxError, ParserError) as error:
             logger.error('Error cleaning HTML body [{}, {}, {}]'.format(self.msg.email_list,self.msg.msgid,error.args))
             if self.text_only:
                 return None

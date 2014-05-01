@@ -40,7 +40,24 @@ def chunks(l, n):
 # --------------------------------------------------
 # View Functions
 # --------------------------------------------------
-
+def get_index(sqs, msg):
+    """Returns the position message occurs in the SearchQuerySet.  Use the
+    bisection method to locate the record.  Right now this only supports a sqs
+    sorted by date
+    """
+    lo = 1
+    hi = sqs.count()
+    while lo < hi:
+        mid = (lo+hi)/2
+        midval = sqs[mid]
+        if midval.date < msg.date:
+            lo = mid+1
+        elif midval.date > msg.date: 
+            hi = mid
+        else:
+            return mid
+    return -1
+    
 def initialize_formsets(query):
     """Initialize advanced search form formsets based on the query.
     Used when the GET of advanced search includes URL parameters, in other words

@@ -271,7 +271,12 @@ class XapianSearchBackend(BaseSearchBackend):
                     DOCUMENT_CT_TERM_PREFIX + u'%s.%s' %
                     (obj._meta.app_label, obj._meta.module_name)
                 )
-                database.replace_document(document_id, document)
+                # AMS custom: silently capture xapian.InvalidArgumentError, when garbage is > 245 chars
+                try:
+                    database.replace_document(document_id, document)
+                except xapian.InvalidArgumentError:
+                    sys.stderr.write('Replace failed.\n')
+                    pass
 
         except UnicodeDecodeError:
             sys.stderr.write('Chunk failed.\n')

@@ -29,8 +29,12 @@ DATABASES = {
         'TEST_NAME': get_secret("DATABASES_TEST_NAME"),
         'USER': get_secret("DATABASES_USER"),
         'PASSWORD': get_secret("DATABASES_PASSWORD"),
-        'HOST': '',
-        'PORT': '',
+    },
+    'ietf': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': get_secret("IETF_DATABASES_NAME"),
+        'USER': get_secret("IETF_DATABASES_USER"),
+        'PASSWORD': get_secret("IETF_DATABASES_PASSWORD"),
     }
 }
 

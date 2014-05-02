@@ -8,10 +8,11 @@ periodically by cron.
 # for file living in project/bin/
 import os
 import sys
+sys.path.insert(0, '/a/www/ietf-datatracker/web')
 path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if not path in sys.path:
     sys.path.insert(0, path)
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production'
 # -------------------------------------------------------------------------------------
 from django.conf import settings
 from django.contrib.auth.models import User

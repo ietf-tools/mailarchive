@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export PYTHONPATH=/a/mailarch/current
-export DJANGO_SETTINGS_MODULE=mlarchive.settings
+export DJANGO_SETTINGS_MODULE=mlarchive.settings.production
 cd /a/mailarch/current/mlarchive
 
 if [ ! -f /a/mailarch/lockfile ]; then

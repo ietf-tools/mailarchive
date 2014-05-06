@@ -23,6 +23,34 @@ def test_get_base_query():
     assert result == u'%3Fq=database'
 
 @pytest.mark.django_db(transaction=True)
+def test_get_cache_key():
+    factory = RequestFactory()
+    # test regular
+    url = reverse('archive_search') + '?q=database'
+    request=factory.get(url)
+    request.user=AnonymousUser()
+    key = get_cache_key(request)
+    assert key
+    # sort param should not change key
+    url = reverse('archive_search') + '?q=database&so=date'
+    request=factory.get(url)
+    request.user=AnonymousUser()
+    key2 = get_cache_key(request)
+    assert key == key2
+    # user should change key
+    url = reverse('archive_search') + '?q=database'
+    request=factory.get(url)
+    request.user=UserFactory.build()
+    key3 = get_cache_key(request)
+    assert key != key3
+    # test encoded URL
+    url = reverse('archive_search') + '?q=database%E2%80%8F'
+    request=factory.get(url)
+    request.user=AnonymousUser()
+    key4 = get_cache_key(request)
+    assert key4
+    
+@pytest.mark.django_db(transaction=True)
 def test_get_list_info():
     EmailListFactory.create(name='ancp')
     EmailListFactory.create(name='alto')

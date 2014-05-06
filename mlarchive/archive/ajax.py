@@ -51,7 +51,8 @@ def ajax_messages(request):
     query = cache.get(queryid)
 
     if query:
-        results = query[lastitem+1:lastitem+26]
+        # lastitem from request is 0 based, slice below is 1 based
+        results = query[lastitem:lastitem+25]
     else:
         # TODO or fail?, signal to reload query
         return HttpResponse(status=404)     # Request Timeout (query gone from cache)

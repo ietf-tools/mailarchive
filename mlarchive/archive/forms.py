@@ -2,13 +2,13 @@ import hashlib
 import operator
 import random
 import time
-import urllib
 from collections import OrderedDict
 
 from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.core.cache import cache
+from django.utils.http import urlencode
 from haystack.backends.xapian_backend import XapianSearchBackend
 from haystack.forms import SearchForm, FacetedSearchForm
 from haystack.query import SearchQuerySet
@@ -96,7 +96,7 @@ def get_cache_key(request):
     # order for consistency
     ordered = OrderedDict(sorted(base_query.items()))
     m = hashlib.md5()
-    m.update(urllib.urlencode(ordered))
+    m.update(urlencode(ordered))
     m.update(str(request.user))
     return m.hexdigest()
 

@@ -1,0 +1,14 @@
+mailarch (1.1.0) ietf; urgency=medium
+  
+  This release included small changes to the db schema and email parsing
+  functions.
+
+  * Changed default search result sort order to date descending
+
+  * Changed default search term operator to AND
+  
+  * Added support for "from:" field specifier
+
+  * Improved performance of Group by Thread option
+
+-- Ryan Cross <rcross@amsl.com>  01 May 2014 10:00:00 +0800

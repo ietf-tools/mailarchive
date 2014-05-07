@@ -145,12 +145,12 @@ class AdminForm(forms.Form):
     subject = forms.CharField(max_length=255,required=False)
 
     def clean_email_list(self):
-        # return a list of names even though there's ever only one,
+        # return a list of IDs even though there's ever only one,
         # so we match get_kwargs() api
         email_list = self.cleaned_data['email_list']
         if email_list:
-            return [email_list.name]
-
+            return [email_list.pk]
+            
 class AdvancedSearchForm(FacetedSearchForm):
     start_date = forms.DateField(required=False,
             widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))

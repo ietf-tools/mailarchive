@@ -114,7 +114,8 @@ class CustomSearchView(SearchView):
 @superuser_only
 def admin(request):
     """Administrator View.  Only accessible by the superuser this view allows
-    the administrator to delete spam messages
+    the administrator to run queries and perform actions, ie. remove spam, on the 
+    results.  Available actions are defined in actions.py
     """
     results = None
     if request.method == 'POST':

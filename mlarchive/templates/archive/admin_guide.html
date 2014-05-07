@@ -76,9 +76,12 @@ document length upper bound = 3258372
 highest document id ever used = 1473883
 has positional information = true</pre>
     Lookup a record in the search index by database primary key
-    <pre class="example">delve -t Qarchive.message.[PK] ./archive_index</pre>
+    <pre class="example">$ delve -t Qarchive.message.[PK] ./archive_index
+Posting List for term `Qarchive.message.1721161' (termfreq 1, collfreq 1, wdf_max 1): 1716268
+
+$ delve -r 1716268 ./archive_index</pre>
     Command line search tool
-    <pre class="example">quest -d ./archive_index/ database</pre>
+    <pre class="example">quest -d ./archive_index/ searchterm</pre>
     </p>
     <br>
 

@@ -92,6 +92,10 @@ def archive_message(data,listname,private=False,save_failed=True):
         msg = email.message_from_string(data)
         mw = MessageWrapper(msg,listname,private=private)
         mw.save()
+    except DuplicateMessage as error:
+        # if DuplicateMessage it's already been saved to _dupes
+        logger.error('Archive message failed [{0}]'.format(error.args))
+        return 0
     except Exception as error:
         logger.error('Archive message failed [{0}]'.format(error.args))
         if not save_failed:
@@ -481,12 +485,14 @@ class Loader(object):
         self._cleanup()
 
 class MessageWrapper(object):
-    """This class takes a email.message.Message object (email_message) and listname as a string
-    and constructs the mlarchive.archive.models.Message (archive_message) object.
+    """This class takes a email.message.Message object (email_message) and listname as
+    a string and constructs the mlarchive.archive.models.Message (archive_message) object.
     Use the save() method to save the message in the archive.
 
-    Use lazy initialization.  On init only get message-id.  If this message is being filtered
-    by message id, no use performing rest of message parsing.
+    Use lazy initialization.  On init only get message-id.  If this message is being
+    filtered by message id, no use performing rest of message parsing.  This means you
+    must explicitly call process() or access the archive_message object for the object
+    to contain valid data.
     """
     def __init__(self, email_message, listname, private=False):
         self._archive_message = None
@@ -768,9 +774,14 @@ class MessageWrapper(object):
             self.write_msg(subdir='_dupes')
             raise CommandError('Duplicate hash, msgid: %s' % self.msgid)
 
-        self.archive_message.save()     # save to database
+        # ensure message has been processed
+        x = self.archive_message
+        
+        # write message to disk and then save, post_save signal calls indexer
+        # which requires file to be present
         if not test:
-            self.write_msg()            # write to disk archive
+            self.write_msg()
+        self.archive_message.save()
 
         # now that the archive.Message object is created we can process any attachments
         self.process_attachments(test=test)
@@ -803,4 +814,4 @@ class MessageWrapper(object):
         # write file
         with open(path,'w') as f:
             f.write(flatten_message(self.email_message))
-        os.chmod(path,0660)
+        os.chmod(path,0666)

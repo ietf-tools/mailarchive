@@ -1,3 +1,17 @@
+mailarch (1.1.1) ietf; urgency=high
+
+  * Fixes UnicodeEncodeError when query contains ULR encoded data.
+    Fixes ticket #1395.
+
+  * Fixes bug with ajax routine where messages were missing from 
+    search results.  Fixes ticket #1266. 
+
+  * Fixes bug where index routine, in Message post_save signal,
+    is called before the message was written to disk, causing an error
+    in the log and indexing of the message to fail.  Fixes ticket #1359.
+
+-- Ryan Cross <rcross@amsl.com>  07 May 2014 12:20:00 +0800
+
 mailarch (1.1.0) ietf; urgency=medium
   
   This release included small changes to the db schema and email parsing

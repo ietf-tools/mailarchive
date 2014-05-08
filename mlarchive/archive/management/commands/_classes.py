@@ -113,8 +113,12 @@ def clean_spaces(s):
     return s
 
 def decode_rfc2047_header(text):
-    return ' '.join(decode_safely(s, charset) for s, charset in decode_header(text))
-
+    try:
+        return ' '.join(decode_safely(s, charset) for s, charset in decode_header(text))
+    except email.header.HeaderParseError as error:
+        logger.error('Decode header failed [{0},{1}]'.format(error.args,text))
+        return ''
+        
 def flatten_message(msg):
     """Returns the message flattened to a string, for use in writing to a file.  NOTE:
     use this instead of message.as_string() to avoid mangling message.

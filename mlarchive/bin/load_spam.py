@@ -95,6 +95,7 @@ def main():
                 # if duplicate message has been saved to _dupes
                 logger.warning("Import Warn [{0}, {1}, {2}]".format(file,error.args,_classes.get_from(mw)))
             except Exception as error:
+                logger.error("Import Error [{0}, {1}, {2}]".format(file,error.args,_classes.get_from(mw)))
                 _classes.save_failed_msg(msg,listname,error)
 
             # remove from filtered directory

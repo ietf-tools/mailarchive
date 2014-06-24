@@ -10,6 +10,7 @@
 <div id="admin_page">
     <ul>
         <li><a href="#add_list">How do I add a new list?</a></li>
+        <li><a href="#import">How do I import messages from an archive file?</a></li>
         <li><a href="#delete_message">How do I delete unwanted messages from the archive?</a></li>
         <li><a href="#rebuild_index">How do I rebuild the index for a subset of messages?</a></li>
         <li><a href="#subpoena">How do I collect messages for response to a subpoena?</a></li>
@@ -26,6 +27,15 @@
     from mailman.  NOTE: if the list is private, an authorized user will need to use the
     Django Administrative interface:<br>
     <a href="https://{{ request.META.HTTP_HOST }}/admin">Django Admin</a></p>
+
+    <span id="import"></span>
+    <h2>How do I import messages from an archive file?</h2>
+    <p>The mail archive supports imports from mbox files.  Use the following procedure
+    to load messages into the live archive.<br>
+    <pre class="example">django-admin.py load [path-to-file] -l [listname] --settings=mlarchive.settings.noindex</pre>
+    This will load messages into the database without flooding the index update queue.
+    Next follow the instructions for rebuilding the index below.
+    </p>
 
     <span id="delete_message"></span>
     <h2>How do I delete unwanted messages from the archive?</h2>

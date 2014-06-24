@@ -332,11 +332,11 @@ def save_failed_msg(data,listname,error):
     # write file
     if not os.path.exists(path):
         os.makedirs(path)
-        os.chmod(os.path.dirname(path),02777)
+        os.chmod(path,02777)
     filepath = os.path.join(path,filename)
     with open(filepath,'w') as f:
         f.write(output)
-    os.chmod(filepath,0660)
+    os.chmod(filepath,0666)
 
 # --------------------------------------------------
 # Classes
@@ -756,11 +756,11 @@ class MessageWrapper(object):
                 if not test:
                     fp = tempfile.NamedTemporaryFile(dir=self.archive_message.get_attachment_path(),
                                                      prefix=extension,
-                                                     suffix=extension,
+                                                     suffix='.' + extension,
                                                      delete=False)
                     with fp as f:
                         f.write(payload)
-                    attach.filename = fp.name
+                    attach.filename = os.path.basename(fp.name)
                     attach.save()
                     os.chmod(fp.name,0660)
 

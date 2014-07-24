@@ -762,7 +762,7 @@ class MessageWrapper(object):
                         f.write(payload)
                     attach.filename = os.path.basename(fp.name)
                     attach.save()
-                    os.chmod(fp.name,0660)
+                    os.chmod(fp.name,0666)
 
     def save(self, test=False):
         """Ensure message is not duplicate message-id or hash.  Save message to database.

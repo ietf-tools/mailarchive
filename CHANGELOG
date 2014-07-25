@@ -1,3 +1,20 @@
+mailarch (1.1.2) ietf; urgency=high
+
+  * Fix bug where attachment files of recently added groups
+    are being added with group=mailman perms=660, causing
+    404.  Use perms=666
+
+  * Added links to RabbitMQ and Celery web admin interfaces
+    to Admin Guide
+
+-- Ryan Cross <rcross@amsl.com>  13 June 2014 09:37:00 +0800
+
+mailarch (1.1.1.p1) ietf; urgency=high
+
+  * Fix bug with naming of email attachments
+
+-- Ryan Cross <rcross@amsl.com>  13 June 2014 09:37:00 +0800
+
 mailarch (1.1.1) ietf; urgency=high
 
   * Fixes UnicodeEncodeError when query contains ULR encoded data.

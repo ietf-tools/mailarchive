@@ -135,6 +135,11 @@ rabbitmqctl reset
 rabbitmqctl start_app</pre>
     List plugins
     <pre class="example">rabbitmq-plugins list</pre>
+    
+    <br>
+    Admin:<br>
+    <a href="http://{{ request.META.HTTP_HOST }}:55672/">RabbitMQ Management (Web GUI)</a><br>
+    
     <br>
     References:<br>
     <a href="https://www.rabbitmq.com/man/rabbitmqctl.1.man.html">rabbitmqctl man page</a>
@@ -146,6 +151,16 @@ rabbitmqctl start_app</pre>
     Restart
     <pre class="example"># /etc/init.d/celeryd restart</pre>
 
+    <br>
+    Admin:<br>
+    Before you can access the Celery web admin tool, Flower, you need to start a 
+    web-server:
+    <pre class="example">export PYTHONPATH=/a/mailarch/current
+export DJANGO_SETTINGS_MODULE=mlarchive.settings.production
+celery -A mlarchive flower</pre>
+    <a href="http://{{ request.META.HTTP_HOST }}:5555/">Celery Management</a><br>
+    
+    <br>
     Troubleshooting: start celery process with -x
     <pre class="example"># sh -x /etc/init.d/celeryd start
 -- or --
@@ -168,6 +183,7 @@ $ celery worker -A mlarchive.celeryapp:app</pre>
     DatabaseOpeningError: check perms on database files<br>
     DatabaseError:<br>
     <br>
+    
     References:<br>
     <a href="http://docs.celeryproject.org/en/latest/userguide/monitoring.html">Celery admin & monitoring</a><br>
 

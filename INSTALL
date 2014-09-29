@@ -2,6 +2,51 @@
 Email Archive Installation Instructions
 =======================================
 
+
+General Instructions for Deployment of a New Release
+====================================================
+
+
+ 1. In order to fetch a new release of the django mail archive code, simply
+    check out the appropriate tag from svn::
+
+      svn co http://svn.tools.ietf.org/svn/tools/mailarch/tags/$releasenumber
+
+ 2. Don't forget to copy $releasenumber/mlarchive/settings/secrets.json from the
+    old release to the new one; otherwise things won't work!
+    ::
+
+      cp $oldreleasenumber/mlarchive/settings/secrets.json $releasenumber/mlarchive/settings/
+
+ 3. Change into the directory of the new release and run migrations::
+
+      cd $releasenumber
+      PYTHONPATH=$PWD django-admin.py migrate --settings=mlarchive.settings.production
+      cd ..
+
+ 4. Then re-point the 'current' symlink::
+
+      rm ./current; ln -s $releasenumber current
+
+ 5. Restart apache::
+
+      sudo /etc/init.d/apache2 restart
+
+ 6. It's now also a good idea to go to the mailarchive front page:
+
+      http://mailarchive.ietf.org/
+
+    to check that it's alive and kicking, and displaying the new release
+    number at the bottom of the page
+
+ 7. If things **aren't** cool, revert the symlink step, re-pointing the
+    symlink to the release that was running before the new release, and restart
+    apache again to roll back to that.
+
+
+Installing from Scratch
+=======================
+
 DEPENDENCIES
 ============
 Python 2.7

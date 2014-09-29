@@ -32,7 +32,6 @@ def main():
                       action="store_true", dest='private', default=False)
     (options, args) = parser.parse_args()
 
-    # TODO should we use EX_TEMPFAIL?
     try:
         listname = sys.argv[1]
     except IndexError:
@@ -47,10 +46,8 @@ def main():
     logger.info('envelope: %s' % data.split('\n', 1)[0])
     status = _classes.archive_message(data,listname,private=options.private)
 
-    #sys.exit(status)
-    # NOTE: unless it is determined that mailman retries work correctly return 0
     logger.info('archive_message exit status: %s' % status)
-    sys.exit(0)
+    sys.exit(status)
 
 if __name__ == "__main__":
     main()

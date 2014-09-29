@@ -1,3 +1,12 @@
+mailarch (1.1.3) ietf; urgency=high
+
+  * Change mailman interface "tee" script, call-archives.py, to
+    call new archiver even if MHonarc archive script fails.
+    Also add email error handler which send emails to admins
+    in the event of archive errors
+
+-- Ryan Cross <rcross@amsl.com>  29 Sep 2014 10:00:00 +0800
+
 mailarch (1.1.2) ietf; urgency=high
 
   * Fix bug where attachment files of recently added groups

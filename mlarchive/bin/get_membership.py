@@ -53,7 +53,7 @@ def process_members(mlist, emails):
     This function takes an EmailList object and a list of emails, from the mailman list_members
     command and creates the appropriate list membership relationships
     '''
-    mlist.members.clear()
+    #mlist.members.clear()
     for email in emails:
         name = lookup(email)
         if name:

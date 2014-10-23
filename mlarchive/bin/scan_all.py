@@ -39,6 +39,12 @@ date_formats = ["%a %b %d %H:%M:%S %Y",
                 "%a, %d %b %Y %H:%M:%S %Z",
                 "%a %b %d %H:%M:%S %Y %Z"]
 
+mlists = ['abfab','alto','aqm','codec','dane','dmarc','dmm','dnsop',
+    'dns-privacy','endymail','gen-art','grow','hipsec','homenet',
+    'i2rs','ipsec','jose','l3vpn','lisp','lwip','mif','multimob',
+    'nvo3','oauth','opsawg','opsec','ospf','p2psip','paws','pce',
+    'perpass','precis','rtgwg','sidr','softwires','spring','sshmgmt',
+    'taps','trans','uta','websec']
 # ---------------------------------------------------------
 # Helper Functions
 # ---------------------------------------------------------
@@ -256,6 +262,12 @@ def mmdfs():
                     count += 1
     print "Total: %s" % count
     
+def multimessage():
+    """Scan specified lists for messages with more than one message/rfc822 part"""
+    for msg in Message.objects.filter(email_list__in=mlists):
+        path = msg.get_file_path()
+                
+
 def received_date(start):
     """Test receive date parsing.  Start at list named by 'start', use 80companions
     to run in full

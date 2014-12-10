@@ -32,7 +32,9 @@
     <h2>How do I import messages from an archive file?</h2>
     <p>The mail archive supports imports from mbox files.  Use the following procedure
     to load messages into the live archive.<br>
-    <pre class="example">django-admin.py load [path-to-file] -l [listname] --settings=mlarchive.settings.noindex</pre>
+    <pre class="example">cd /a/mailarch/current
+export PYTHONPATH=$PWD
+django-admin.py load [path-to-file] -l [listname] --settings=mlarchive.settings.noindex</pre>
     This will load messages into the database without flooding the index update queue.
     Next follow the instructions for rebuilding the index below.
     </p>
@@ -54,7 +56,9 @@
     Then use the Haystack update_index command
     <pre class="example">cd /a/mailarch/current
 export PYTHONPATH=$PWD
-django-admin.py update_index --start='2014-01-14T00:00:00' --end='2014-01-16T23:59:59' --settings=mlarchive.settings.production</pre>
+django-admin.py update_index --start='2014-01-14T00:00:00' --end='2014-01-16T23:59:59' --settings=mlarchive.settings.production
+-- or --
+django-admin.py update_index --age=1 --settings=mlarchive.settings.production</pre>
     Then restart Celery
     <pre class="example">sudo /etc/init.d/celeryd start</pre>
     </p>

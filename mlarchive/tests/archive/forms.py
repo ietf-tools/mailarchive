@@ -61,7 +61,7 @@ def test_get_list_info():
 def test_group_by_thread(messages):
     sqs = SearchQuerySet().filter(email_list=1)
     sqs = sqs.order_by('tdate','date')
-    assert [ x.pk for x in sqs ] == [4,2,3,1]       # assert grouped by thread order
+    assert [ x.pk for x in sqs ] == [2,4,1,3]       # assert grouped by thread order
 
 @pytest.mark.django_db(transaction=True)
 def test_sort_by_subject(messages):

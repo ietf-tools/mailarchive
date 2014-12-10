@@ -105,10 +105,13 @@ def test_queries_subject_field(client,messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_queries_msgid_field(client,messages):
-    url = reverse('archive_search') + '?q=msgid:000@amsl.com'
+    msgid = Message.objects.first().msgid
+    #url = reverse('archive_search') + '?q=msgid:000@amsl.com'
+    url = reverse('archive_search') + '?q=msgid:{}'.format(msgid)
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
+    #print '%s' % ([ x.msgid for x in response.context['results'] ])
     assert len(results) == 1
 
 @pytest.mark.django_db(transaction=True)

@@ -1,11 +1,11 @@
 import json
 
+from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
-from django.utils import simplejson
 
 from mlarchive.archive.utils import jsonapi
 from mlarchive.archive.models import EmailList, Message
@@ -44,15 +44,23 @@ def ajax_get_msg(request, msg):
     return HttpResponse(msg.get_body_html(request))
 
 def ajax_messages(request):
-    """Ajax function to retrieve next 25 messages from the cached queryset
+    """Ajax function to retrieve more messages from queryset.  Expects one of two args:
+    lastitem: return set of messages after lastitem
+    firstitem: return set of messages before firstitem
     """
+    buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
     queryid = request.GET.get('queryid')
-    lastitem = int(request.GET.get('lastitem'))
+    lastitem = int(request.GET.get('lastitem',0))
+    firstitem = int(request.GET.get('firstitem',0))
     query = cache.get(queryid)
 
     if query:
-        # lastitem from request is 0 based, slice below is 1 based
-        results = query[lastitem:lastitem+25]
+        if lastitem:
+            # lastitem from request is 0 based, slice below is 1 based
+            results = query[lastitem:lastitem+buffer]
+        elif firstitem:
+            start = firstitem - buffer if firstitem > buffer else 0
+            results = query[start:firstitem]
     else:
         # TODO or fail?, signal to reload query
         return HttpResponse(status=404)     # Request Timeout (query gone from cache)

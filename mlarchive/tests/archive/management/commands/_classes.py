@@ -29,8 +29,12 @@ This is a test email.  database
     # ensure message in index
     url = '%s/?q=database' % reverse('archive_search')
     response = client.get(url)
-    results = response.context['results']
-    assert len(results) == 1
+    assert len(response.context['results']) == 1
+    # ensure message on disk
+    # TODO
+    # test that thread date is correct in index
+    url = reverse('archive_search') + '/?q=tdate:20131107175455'
+    assert len(response.context['results']) == 1
 
 @pytest.mark.django_db(transaction=True)
 def test_archive_message_fail(client):
@@ -49,6 +53,11 @@ This is a test email.  With no headers
             datetime.datetime.today().strftime('%Y-%m-%d') + '.0000')
     assert os.path.exists(filename)
     os.remove(filename)                         # cleanup
+
+def test_archive_message_bad_order():
+    # test that index thread id / date correct if older message added later
+    # TODO
+    pass
 
 def test_clean_spaces():
     s = 'this     is   a    string   with extra    spaces'
@@ -211,3 +220,5 @@ This is the message.
     assert mw.get_cc() == 'ancp@ietf.org'
     
 # test various exceptions raised
+
+# test that older message added causes update to all tdates in index

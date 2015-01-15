@@ -26,15 +26,13 @@ $(function() {
         location.search = $.param(urlParams);
     }
 
-    function add_messages(data,textStatus,jqXHR) {
-        // append new messages to end of results list table
-        $('#msg-table tbody').append(data);
-        lastItem = $('#msg-table tr').length;
+    function set_lastItem() {
+        var offset = $('#msg-list').data('queryset-offset');
+        lastItem = $('#msg-table tr').length + offset;
     }
-
+    
     function init_search() {
-        // set lastItem
-        lastItem = $('#msg-table tr').length;
+        set_lastItem();
 
         // search results header widths ---------------------
         set_widths();
@@ -139,6 +137,7 @@ $(function() {
 
         // INFINTE SCROLL
         $("#msg-list").on( "scroll", function() {
+            // BOTTOM OF SCROLL
             if($(this).scrollTop() + $(this).innerHeight() == $(this)[0].scrollHeight) {
                 var queryid = $('#msg-list').attr('data-queryid');
                 var request = $.ajax({
@@ -149,7 +148,38 @@ $(function() {
                 request.done(function(data, testStatus, xhr) {
                     if(xhr.status == 200){
                         $('#msg-table tbody').append(data);
-                        lastItem = $('#msg-table tr').length;
+                        set_lastItem();
+                    } else if(xhr.status == 204)  {
+                        $("#msg-list").off( "scroll" );
+                    }
+                });
+                request.fail(function(xhr, textStatus, errorThrown) {
+                    if(xhr.status == 404){
+                        // server returns a 404 when query has expired from cache
+                        window.location.reload();
+                    }
+                });
+            }
+            if($(this).scrollTop() == 0 && $("#msg-list").data("queryset-offset")){
+                var queryid = $('#msg-list').attr('data-queryid');
+                var firstItem = $('#msg-list').data('queryset-offset');
+                var request = $.ajax({
+                    "type": "GET",
+                    "url": "/arch/ajax/messages/",
+                    "data": { "queryid": queryid, "firstitem": firstItem }
+                });
+                request.done(function(data, testStatus, xhr) {
+                    if(xhr.status == 200){
+                        // NOTE: when prepending data scrollTop stays at zero
+                        // meaning user loses context, so we need to reposition
+                        // scrollTop after prepend.
+                        var lengthBefore = $('#msg-table tr').length;
+                        $('#msg-table tbody').prepend(data);
+                        var numNewRows = $('#msg-table tr').length - lengthBefore;
+                        var newOffset = firstItem - numNewRows;
+                        var rowHeight = $('#msg-table tr:eq(0)').height();
+                        $('#msg-list').data('queryset-offset',newOffset);
+                        $('#msg-list').scrollTop(numNewRows * rowHeight);
                     } else if(xhr.status == 204)  {
                         $("#msg-list").off( "scroll" );
                     }
@@ -201,8 +231,15 @@ $(function() {
     }
 
     // auto select first item in result list
-    function select_first_msg() {
-        var row = $('table#msg-table tr:first');
+    function select_initial_msg() {
+        var offset = $('#msg-list').data('selected-offset');
+        if(offset > 0){
+            var row = $('table#msg-table tr:eq(' + offset + ')');
+            var height = $('#msg-table tr:eq(0)').height();
+            $('#msg-list').scrollTop((offset-1)*height);
+        } else {
+            var row = $('table#msg-table tr:first');
+        }
         row.addClass('row-selected');
         load_msg(row);
     }
@@ -372,5 +409,5 @@ $(function() {
 
     setup_buttons();
     init_search();
-    select_first_msg();
+    select_initial_msg();
 });

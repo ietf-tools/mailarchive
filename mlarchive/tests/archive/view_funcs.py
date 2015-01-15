@@ -11,6 +11,53 @@ def test_chunks():
     assert len(result) == 3
     assert result[0] == [1,2,3]
 
+@pytest.mark.django_db(transaction=True)
+def test_find_message_date(messages):
+    sqs = SearchQuerySet().order_by('date')
+    #for x in sqs: print x.date,x.object.pk,x.object.date
+    last = sqs.count() - 1
+    assert find_message_date(sqs,sqs[0].object) == 0        # first
+    assert find_message_date(sqs,sqs[1].object) == 1        # second
+    assert find_message_date(sqs,sqs[last].object) == last  # last
+    # queryset of one
+    sqs = SearchQuerySet().filter(msgid=sqs[0].msgid)
+    assert find_message_date(sqs,sqs[0].object) == 0
+    # empty queryset
+    msg = sqs[0].object
+    sqs = SearchQuerySet().filter(msgid='bogus')
+    assert find_message_date(sqs,msg) == -1
+    
+@pytest.mark.django_db(transaction=True)
+def test_find_message_date_reverse(messages):
+    sqs = SearchQuerySet().order_by('-date')
+    #for x in sqs: print x.date,x.object.pk,x.object.date
+    last = sqs.count() - 1
+    assert find_message_date_reverse(sqs,sqs[0].object) == 0        # first
+    assert find_message_date_reverse(sqs,sqs[1].object) == 1        # second
+    assert find_message_date_reverse(sqs,sqs[last].object) == last  # last
+    # queryset of one
+    sqs = SearchQuerySet().filter(msgid=sqs[0].msgid)
+    assert find_message_date(sqs,sqs[0].object) == 0
+    # empty queryset
+    msg = sqs[0].object
+    sqs = SearchQuerySet().filter(msgid='bogus')
+    assert find_message_date(sqs,msg) == -1
+
+@pytest.mark.django_db(transaction=True)
+def test_find_message_gbt(messages):
+    sqs = SearchQuerySet().order_by('tdate','date')
+    last = sqs.count() - 1
+    assert find_message_gbt(sqs,sqs[0].object) == 0        # first
+    assert find_message_gbt(sqs,sqs[1].object) == 1        # second
+    assert find_message_gbt(sqs,sqs[last].object) == last  # last
+    # queryset of one
+    sqs = SearchQuerySet().filter(msgid=sqs[0].msgid)
+    assert find_message_date(sqs,sqs[0].object) == 0
+    # empty queryset
+    msg = sqs[0].object
+    sqs = SearchQuerySet().filter(msgid='bogus')
+    assert find_message_date(sqs,msg) == -1
+    
 def test_initialize_formsets():
     query = 'text:(value) -text:(negvalue)'
     reg, neg = initialize_formsets(query)

@@ -9,10 +9,22 @@
 {% block content %}
 
 <div id="msg-detail">
-  {{ msg_html|safe }}
+  {{ msg.get_body_html|safe }}
+  
+  <div id="msg-nav">
+    <ul>
+      <li><a href="{{ msg.list_by_date_url }}">View by Date</a></li>
+      <li><a href="{{ msg.list_by_thread_url }}">View by Thread</a></li>
+    </ul>
+  </div>
 </div>
 
 <div id="msg-aside">
+  <ul>
+      <li><a href="{{ msg.list_by_date_url }}">View by Date</a></li>
+      <li><a href="{{ msg.list_by_thread_url }}">View by Thread</a></li>
+  </ul>
 </div>
+
 
 {% endblock %}

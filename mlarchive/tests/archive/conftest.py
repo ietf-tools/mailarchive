@@ -11,18 +11,18 @@ def load_db():
     pubone = EmailListFactory.create(name='pubone')
     pubtwo = EmailListFactory.create(name='pubtwo')
     prilist = EmailListFactory.create(name='private',private=True)
-    athread = ThreadFactory.create()
-    bthread = ThreadFactory.create()
+    athread = ThreadFactory.create(date=datetime.datetime(2013,1,1))
+    bthread = ThreadFactory.create(date=datetime.datetime(2013,2,1))
+    MessageFactory.create(email_list=pubone,
+                          thread=athread,
+                          base_subject=get_base_subject('Another message'),
+                          date=datetime.datetime(2013,1,1))
     MessageFactory.create(email_list=pubone,
                           thread=bthread,
                           subject='BBQ Invitation',
                           base_subject=get_base_subject('BBQ Invitation'),
                           date=datetime.datetime(2013,2,1),
                           to='to@amsl.com')
-    MessageFactory.create(email_list=pubone,
-                          thread=athread,
-                          base_subject=get_base_subject('Another message'),
-                          date=datetime.datetime(2013,1,1))
     MessageFactory.create(email_list=pubone,
                           thread=bthread,
                           base_subject=get_base_subject('Zero conf stuff'),
@@ -35,7 +35,9 @@ def load_db():
                           spam_score=1)
     MessageFactory.create(email_list=pubtwo)
     MessageFactory.create(email_list=pubtwo)
-
+    #MessageFactory.create(email_list=pubtwo,date=datetime.datetime(2014,7,1))
+    #MessageFactory.create(email_list=pubtwo,date=datetime.datetime(2014,7,1))
+    
 @pytest.fixture(scope="session")
 def index_resource():
     if not Message.objects.first():

@@ -54,6 +54,15 @@ tr.hidden {
     padding-left: 1em;
 }
 
+#logo-link {
+    text-decoration: none;
+}
+
+img#logo {
+    vertical-align: middle;
+    padding: 0 10px;
+}
+
 #login {
     color: white;
     font-size: 0.85em;
@@ -874,6 +883,12 @@ div.browse_section h2 {
 /* ==========================================================================
    Detail
    ========================================================================== */
+
+#msg-detail, #aside {
+    float: left;
+    padding: 0 0 20px;
+}
+
 #msg-detail {
     width: 645px;
 }
@@ -889,6 +904,42 @@ div.browse_section h2 {
 #msg-detail pre {
     font-size: 13px;
     margin-top: 1em;
+}
+
+#msg-detail #msg-body {
+    margin-bottom: 1em;
+}
+
+#msg-nav {
+    margin-bottom: 60px;
+}
+
+#msg-aside {
+    float: left;
+    margin-left: 10px;
+}
+
+#msg-aside ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    text-align: left;
+}
+
+#msg-aside ul li { 
+    margin: 1em 0;
+}
+
+#msg-nav ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    text-align: center;
+}
+
+#msg-nav ul li { 
+    display: inline;
+    margin: 0 2em 0 2em;
 }
 
 #subject {

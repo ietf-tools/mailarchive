@@ -16,11 +16,13 @@ class EmailListFactory(factory.DjangoModelFactory):
 
 class ThreadFactory(factory.DjangoModelFactory):
     FACTORY_FOR = Thread
-
+    
+    date = datetime.datetime.now()
+    
 class MessageFactory(factory.DjangoModelFactory):
     FACTORY_FOR = Message
 
-    date = datetime.datetime.now()
+    date = datetime.datetime.now().replace(second=0,microsecond=0)
     subject = 'This is a test message'
     frm = 'rcross@amsl.com'
     #msgid = id_generator() + '@amsl.com'

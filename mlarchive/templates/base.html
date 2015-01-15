@@ -29,7 +29,7 @@
 <div id="container">
 
     <div id="header"{% if server_mode != "production" %} class="test"{% endif %}>
-        <div id="header-text">{% block header %}<a href="/">Mail Archive</a>{% endblock %}</div>
+        <div id="header-text">{% block header %}<a id="logo-link" href="/"><img id="logo" src="{{ STATIC_URL }}/images/ietf-logo-trans-small.png" width="68" height="36" alt="logo">Mail Archive</a>{% endblock %}</div>
         {% if user %}
             <div id="login" class="noprint">
             {% if user.is_authenticated %}

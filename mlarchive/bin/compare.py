@@ -10,7 +10,11 @@ import sys
 path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if not path in sys.path:
     sys.path.insert(0, path)
+
+import django
 os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production'
+django.setup()
+
 # -------------------------------------------------------------------------------------
 
 import argparse

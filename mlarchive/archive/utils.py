@@ -1,8 +1,4 @@
-try:
-    import json
-except ImportError:
-    import simplejson as json
-
+import json
 import mailbox
 
 from django.http import HttpResponse
@@ -33,8 +29,7 @@ def get_noauth(request):
 def jsonapi(fn):
     def to_json(request, *args, **kwargs):
         context_data = fn(request, *args, **kwargs)
-        return HttpResponse(json.dumps(context_data),
-                mimetype='application/json')
+        return HttpResponse(json.dumps(context_data),content_type='application/json')
     return to_json
 
 '''

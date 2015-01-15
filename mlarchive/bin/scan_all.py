@@ -15,7 +15,11 @@ import sys
 path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if not path in sys.path:
     sys.path.insert(0, path)
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production'
+
+import django
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.development'
+django.setup()
+
 # -------------------------------------------------------------------------------------
 
 from mlarchive.archive.models import *
@@ -325,6 +329,28 @@ def subjects(listname):
     for msg in process([listname]):
         print "%s: %s" % (msg.get('date'),msg.get('subject'))
 
+def lookups():
+    """Test the message find routines"""
+    from haystack.query import SearchQuerySet
+    from mlarchive.archive.view_funcs import find_message_date, find_message_date_reverse, find_message_gbt
+    
+    for elist in EmailList.objects.all():
+        print "Checking list: {}".format(elist.name)
+        sqs = SearchQuerySet().filter(email_list=elist.pk).order_by('date')
+        print "-date"
+        for m in sqs:
+            if find_message_date(sqs,m.object) == -1:
+                print "Problem with {}:{}".format(elist.name,m.object.msgid)
+        sqs = SearchQuerySet().filter(email_list=elist.pk).order_by('-date')
+        print "-date-reverse"
+        for m in sqs:
+            if find_message_date_reverse(sqs,m.object) == -1:
+                print "Problem with {}:{}".format(elist.name,m.object.msgid)
+        sqs = SearchQuerySet().filter(email_list=elist.pk).order_by('tdate','date')
+        print "-gbt"
+        for m in sqs:
+            if find_message_gbt(sqs,m.object) == -1:
+                print "Problem with {}:{}".format(elist.name,m.object.msgid)
 # ---------------------------------------------------------
 # Main
 # ---------------------------------------------------------

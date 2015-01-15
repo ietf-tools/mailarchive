@@ -10,7 +10,7 @@ from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.forms.formsets import formset_factory
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 from haystack.views import SearchView, FacetedSearchView
@@ -19,7 +19,8 @@ from haystack.query import SearchQuerySet
 from mlarchive.utils.decorators import check_access, superuser_only, pad_id
 from mlarchive.archive import actions
 from mlarchive.archive.query_utils import get_kwargs
-from mlarchive.archive.view_funcs import initialize_formsets, get_columns, get_export
+from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export, 
+    find_message_date, find_message_date_reverse, find_message_gbt)
 
 from models import *
 from forms import *
@@ -63,6 +64,29 @@ class CustomSearchView(SearchView):
     def build_form(self, form_kwargs=None):
         return super(self.__class__,self).build_form(form_kwargs={ 'request' : self.request })
 
+    def build_page(self):
+        """Returns tuple of: 
+        - subset of results for display
+        - queryset offset: the offset of results subset within entire queryset
+        - selected offset: the offset of message specified in query arguments within
+        results subset
+        
+        If request arguments include "index", returns slice of results containing
+        message named in "index" with appropriate offset within slice, otherwise returns
+        first #(results_per_page) messages and offsets=0.
+        """
+        buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
+        index = self.request.GET.get('index')
+        if index:
+            position = self.find_message(index)
+            if position == -1:
+                raise Http404("No such message!")
+            start = position - buffer if position > buffer else 0
+            selected_offset = position if position < buffer else buffer
+            return (self.results[start:position + self.results_per_page + 1], start, selected_offset)
+        else:
+            return (self.results[:self.results_per_page + 1],0,0)
+
     def extra_context(self):
         """Add variables to template context"""
         extra = super(CustomSearchView, self).extra_context()
@@ -104,8 +128,40 @@ class CustomSearchView(SearchView):
 
         return extra
 
-    # override this for export
-    #def create_response(self):
+    def find_message(self,hash):
+        """Returns the position of message identified by hash in self.results.
+        """
+        try:
+            msg = Message.objects.get(hashcode=hash+'=')
+        except Message.DoesNotExist:
+            raise Http404("No such message!")
+            
+        if self.request.GET.get('gbt'):
+            return find_message_gbt(self.results,msg)
+        else:
+            return find_message_date_reverse(self.results,msg)
+
+    def create_response(self):
+        """
+        Generates the actual HttpResponse to send back to the user.
+        """
+        results, queryset_offset, selected_offset = self.build_page()
+
+        context = {
+            'query': self.query,
+            'form': self.form,
+            'results': results,
+            'count': self.results.count(),
+            'suggestion': None,
+            'queryset_offset': queryset_offset,
+            'selected_offset': selected_offset,
+        }
+
+        if self.results and hasattr(self.results, 'query') and self.results.query.backend.include_spelling:
+            context['suggestion'] = self.form.get_suggestion()
+
+        context.update(self.extra_context())
+        return render_to_response(self.template, context, context_instance=self.context_class(self.request))
 
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
@@ -210,10 +266,8 @@ def detail(request, list_name, id, msg):
     """Displays the requested message.
     NOTE: the "msg" argument is a Message object added by the check_access decorator
     """
-    msg_html = msg.get_body_html()
-
     return render_to_response('archive/detail.html', {
-        'msg_html': msg_html},
+        'msg':msg},
         RequestContext(request, {}),
     )
 

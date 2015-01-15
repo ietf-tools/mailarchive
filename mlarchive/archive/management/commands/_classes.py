@@ -667,7 +667,7 @@ class MessageWrapper(object):
                 return messages[0].thread
 
         # return a new thread
-        return Thread.objects.create()
+        return Thread.objects.create(date=self.date)
 
     def normalize(self, header_text):
         """This function takes some header_text as a string.

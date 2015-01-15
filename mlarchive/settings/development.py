@@ -14,6 +14,8 @@ CACHES = {
 }
 
 # HAYSTACK SETTINGS
+# BaseSignalProcessor does not update the index
+# RealtimeSignalProccessor updates the index immediately
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.BaseSignalProcessor'
 #HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 HAYSTACK_XAPIAN_PATH = os.path.join(DATA_ROOT,'archive_index')

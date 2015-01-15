@@ -33,7 +33,7 @@ logger = getLogger('mlarchive.custom')
 
 class Thread(models.Model):
     first = models.ForeignKey('Message',related_name='thread_key',blank=True,null=True)  # first message in thread, by date
-    date = models.DateTimeField(auto_now_add=True,db_index=True)     # date of first message
+    date = models.DateTimeField(db_index=True)     # date of first message
 
     def __unicode__(self):
         return str(self.id)
@@ -197,6 +197,12 @@ class Message(models.Model):
     def get_removed_dir(self):
         return self.email_list.removed_dir
 
+    def list_by_date_url(self):
+        return reverse('archive_search') + '?email_list={}&index={}'.format(self.email_list.name,self.hashcode.rstrip('='))
+        
+    def list_by_thread_url(self):
+        return reverse('archive_search') + '?email_list={}&gbt=1&index={}'.format(self.email_list.name,self.hashcode.rstrip('='))
+    
     def mark(self,bit):
         """Mark this message using the bit provided, using field spam_score
         """

@@ -40,24 +40,139 @@ def chunks(l, n):
 # --------------------------------------------------
 # View Functions
 # --------------------------------------------------
-def get_index(sqs, msg):
+def find_message_date(sqs, msg):
     """Returns the position message occurs in the SearchQuerySet.  Use the
-    bisection method to locate the record.  Right now this only supports a sqs
-    sorted by date
+    bisection method to locate the record.  Expects query set sorted by
+    date descending.
     """
-    lo = 1
-    hi = sqs.count()
-    while lo < hi:
+    lo = 0
+    hi = sqs.count() - 1
+    if hi == -1:            # abort if queryset is empty
+        return -1
+        
+    while lo <= hi:
         mid = (lo+hi)/2
         midval = sqs[mid]
         if midval.date < msg.date:
             lo = mid+1
-        elif midval.date > msg.date: 
+        elif midval.date > msg.date:
             hi = mid
         else:
+            break
+            
+    if midval.object == msg:
+        return mid
+    if midval.date != msg.date:
+        return -1
+        
+    # we get here if there are messages with the exact same date
+    # find the first message with this date
+    count = sqs.count()
+    pre = mid - 1
+    while pre >= 0 and sqs[pre].date == msg.date:
+        mid = pre
+        pre = pre - 1
+    # search forward
+    while mid < count and sqs[mid].date == msg.date:
+        if sqs[mid].object == msg:
+            return mid
+        mid = mid + 1
+
+    return -1
+
+def find_message_date_reverse(sqs, msg):
+    """Returns the position message occurs in the SearchQuerySet.  Use the
+    bisection method to locate the record.  Expects query set sorted by
+    date descending.
+    """
+    lo = 0
+    hi = sqs.count() - 1
+    if hi == -1:            # abort if queryset is empty
+        return -1
+        
+    while lo <= hi:
+        mid = (lo+hi)/2
+        midval = sqs[mid]
+        if midval.date > msg.date:
+            lo = mid+1
+        elif midval.date < msg.date: 
+            hi = mid
+        else:
+            break
+    
+    if midval.object == msg:
+        return mid
+    if midval.date != msg.date:
+        return -1
+        
+    # we get here if there are messages with the exact same date
+    # find the first message with this date
+    count = sqs.count()
+    pre = mid - 1
+    while pre >= 0 and sqs[pre].date == msg.date:
+        mid = pre
+        pre = pre - 1
+    # search forward
+    while mid < count and sqs[mid].date == msg.date:
+        if sqs[mid].object == msg:
+            return mid
+        mid = mid + 1
+    
+    return -1
+
+def find_message_gbt(sqs,msg):
+    """Returns the position of message (mag) in queryset (sqs)
+    for queries grouped by thread.  Uses binary search to locate the thread,
+    then traverses the thread"""
+    
+    lo = 0
+    hi = sqs.count() - 1
+    if hi == -1:            # abort if queryset is empty
+        return -1
+    if hi == 0:             # simple check if queryset is length of 1
+        if sqs[0].object == msg:
+            return 0
+        else:
+            return -1
+            
+    cdate = msg.thread.date
+    # first locate the thread
+    while lo < hi:
+        mid = (lo+hi)/2
+        midval = sqs[mid]
+        if midval.object.thread.date < cdate:
+            lo = mid+1
+        elif midval.object.thread.date > cdate:
+            hi = mid
+        else:
+            break
+    if midval.object == msg:
+        return mid
+    
+    # traverse thread
+    thread = midval.object.thread
+    if midval.object.date < msg.date:
+        step = 1
+    elif midval.object.date > msg.date:
+        step = -1
+    else:
+        while midval.object.date == msg.date and midval.object.thread == thread:
+            mid = mid - 1
+            midval = sqs[mid]
+            if midval.object == msg:
+                return mid
+        step = 1
+        mid = mid + 1
+        midval = sqs[mid]
+    
+    # next step through thread
+    while midval.object.thread == thread:
+        mid = mid + step
+        midval = sqs[mid]
+        if midval.object == msg:
             return mid
     return -1
-    
+
 def initialize_formsets(query):
     """Initialize advanced search form formsets based on the query.
     Used when the GET of advanced search includes URL parameters, in other words

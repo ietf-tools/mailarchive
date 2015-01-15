@@ -1,4 +1,4 @@
-/* search_adv.js */
+/* search_advanced.js */
 
 /*
 This script uses the JQuery Query String Object plugin

@@ -39,7 +39,7 @@ python -c "import xapian"
 
 Install additional packages
 ---------------------------
-$ pip install MySQL-python lxml six pyquery factory-boy pytest-django datetutil
+$ pip install MySQL-python lxml six pyquery factory-boy pytest-django python-dateutil
 
 
 Settings configuration

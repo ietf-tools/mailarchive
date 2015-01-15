@@ -40,11 +40,11 @@
             <div id="search-filters">
                 <h4>FILTER BY TIME</h4>
                 <ul class="filter-options" tabindex="-1">
-                  <li class="filter-item"><a class="{% selected request 'qdr' '' %}" href="{% append_to_get qdr='' %}">Anytime</a></li>
-                  <li class="filter-item"><a class="{% selected request 'qdr' 'd' %}" href="{% append_to_get qdr='d' %}">Past day</a></li>
-                  <li class="filter-item"><a class="{% selected request 'qdr' 'w' %}" href="{% append_to_get qdr='w' %}">Past week</a></li>
-                  <li class="filter-item"><a class="{% selected request 'qdr' 'm' %}" href="{% append_to_get qdr='m' %}">Past month</a></li>
-                  <li class="filter-item"><a class="{% selected request 'qdr' 'y' %}" href="{% append_to_get qdr='y' %}">Past year</a></li>
+                  <li class="filter-item"><a class="{% selected request 'qdr' '' %}" href="{% query_string '' 'qdr' %}">Anytime</a></li>
+                  <li class="filter-item"><a class="{% selected request 'qdr' 'd' %}" href="{% query_string 'qdr=d' 'index' %}">Past day</a></li>
+                  <li class="filter-item"><a class="{% selected request 'qdr' 'w' %}" href="{% query_string 'qdr=w' 'index' %}">Past week</a></li>
+                  <li class="filter-item"><a class="{% selected request 'qdr' 'm' %}" href="{% query_string 'qdr=m' 'index' %}">Past month</a></li>
+                  <li class="filter-item"><a class="{% selected request 'qdr' 'y' %}" href="{% query_string 'qdr=y' 'index' %}">Past year</a></li>
                 </ul>
                 <div id="filter-box">
                     <h4>FILTER BY LIST</h4>

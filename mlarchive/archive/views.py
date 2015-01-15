@@ -130,14 +130,17 @@ class CustomSearchView(SearchView):
 
     def find_message(self,hash):
         """Returns the position of message identified by hash in self.results.
+        Currently only supports 'grouped by thread' and date sort order.
         """
         try:
             msg = Message.objects.get(hashcode=hash+'=')
         except Message.DoesNotExist:
             raise Http404("No such message!")
-            
+        
         if self.request.GET.get('gbt'):
             return find_message_gbt(self.results,msg)
+        elif self.request.GET.get('so') == 'date':
+            return find_message_date(self.results,msg)
         else:
             return find_message_date_reverse(self.results,msg)
 

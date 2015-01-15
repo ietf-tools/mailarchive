@@ -113,9 +113,15 @@ $(function() {
         $('#id_search_form').submit(function(event) {
             event.preventDefault();
             urlParams['q'] = $('#id_q').val();
+            delete urlParams.index;
             do_search();
         });
 
+        // MODIFY SEARCH
+        $('#modify-search').click(function(event) {
+            delete urlParams.index;
+        });
+        
         // GET URL PARAMETERS
         var match;
         var pl = /\+/g;  // Regex for replacing addition symbol with a space
@@ -280,6 +286,11 @@ $(function() {
             } else {
                 urlParams['gbt'] = '1';
             }
+            // add index to URL to preserve context
+            var path = $('#msg-table tr.row-selected td:nth-child(6)').text();
+            var parts = path.split('/');
+            var hash = parts[parts.length - 1];
+            urlParams['index'] = hash;
             do_search();
         });
         // END TOOLBAR =========================================
@@ -334,6 +345,8 @@ $(function() {
             });
             var value = values.join(',');
             urlParams[name] = value;
+            // remove index URL parameter
+            delete urlParams.index;
             do_search();
         });
         // END FILTERS =========================================
@@ -372,6 +385,11 @@ $(function() {
                 }
             } else {
                 urlParams['so'] = new_so;
+            }
+            
+            // if sorting by other than date remove index URL parameter
+            if(urlParams['so'].replace('-','') != "date"){
+                delete urlParams.index;
             }
             do_search();
         });

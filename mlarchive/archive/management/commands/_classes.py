@@ -815,7 +815,10 @@ class MessageWrapper(object):
         if os.path.exists(path):
             path = get_incr_path(path)
 
+        # convert line endings to crlf
+        output = re.sub("\r(?!\n)|(?<!\r)\n", "\r\n", flatten_message(self.email_message))
+
         # write file
         with open(path,'w') as f:
-            f.write(flatten_message(self.email_message))
+            f.write(output)
         os.chmod(path,0666)

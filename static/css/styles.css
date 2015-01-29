@@ -15,12 +15,12 @@ a img {border:none;}
 :focus {outline:0;}
 
 body, html {
+    font-size: 100%;
     height: 100%;
 }
 
 body {
     font-family: "Lucida Grande","DejaVu Sans","Bitstream Vera Sans",Verdana,Arial,sans-serif;
-    font-size: 100%;
 }
 
 h1 {
@@ -37,68 +37,6 @@ td.hidden {
 
 tr.hidden {
     display: none;
-}
-
-#header {
-    background: #417690;
-    color: white;
-    overflow: hidden;
-}
-
-#header.test {
-    background: #c00000;
-}
-
-#header-text {
-    font-size: 1.5em;
-    padding-left: 1em;
-}
-
-#logo-link {
-    text-decoration: none;
-}
-
-img#logo {
-    vertical-align: middle;
-    padding: 0 10px;
-}
-
-#login {
-    color: white;
-    font-size: 0.85em;
-    position: absolute;
-    right: 10px;
-    top: 8px;
-}
-
-#login a:link, #login a:visited {
-    color: white;
-}
-
-#login a:hover {
-    text-decoration: underline;
-}
-
-#footer {
-    /* background-color: #DDDDDD;
-    background-color: #EEEEFF; */
-    background-color: #FFF;
-    border-top: 1px solid #CCC;
-    bottom: 0;
-    color: #888;
-    font-size: 10px;
-    height: 15px;
-    left: 0;
-    /* margin-top: 8px; */
-    padding: 6px 0;
-    position: fixed;
-    right: 0;
-    text-align: left;
-    z-index: 1;
-}
-
-#footer p {
-    padding-left: 2.5em;
 }
 
 .button-group ul {
@@ -203,8 +141,70 @@ ul.messages li {
 /* ==========================================================================
    Header
    ========================================================================== */
+#header {
+    background: #417690;
+    color: white;
+    overflow: hidden;
+}
+#header.test {
+    background: #4E579D;
+}
+
+#header-text {
+    font-size: 1.5em;
+    padding-left: 1em;
+}
+
 #header-text a {
     color: white;
+}
+
+#logo-link {
+    text-decoration: none;
+}
+
+img#logo {
+    box-sizing: content-box;
+    padding: 0 10px;
+    vertical-align: middle;
+}
+
+#login {
+    color: white;
+    font-size: 0.85em;
+    position: absolute;
+    right: 10px;
+    top: 8px;
+}
+
+#login a:link, #login a:visited {
+    color: white;
+}
+
+#login a:hover {
+    text-decoration: underline;
+}
+
+#footer {
+    /* background-color: #DDDDDD;
+    background-color: #EEEEFF; */
+    background-color: #FFF;
+    border-top: 1px solid #CCC;
+    bottom: 0;
+    color: #888;
+    font-size: 10px;
+    height: 15px;
+    left: 0;
+    /* margin-top: 8px; */
+    padding: 6px 0;
+    position: fixed;
+    right: 0;
+    text-align: left;
+    z-index: 1;
+}
+
+#footer p {
+    padding-left: 2.5em;
 }
 
 #login-container {
@@ -217,12 +217,147 @@ ul.messages li {
 }
 
 /* ==========================================================================
+   Home Page
+   ========================================================================== */
+   
+@font-face {
+  font-family: 'Glyphicons Halflings';
+
+  src: url('/static/bootstrap/fonts/glyphicons-halflings-regular.eot');
+  src: url('/static/bootstrap/fonts/glyphicons-halflings-regular.eot?#iefix') format('embedded-opentype'), url('/static/bootstrap/fonts/glyphicons-halflings-regular.woff') format('woff'), url('/static/bootstrap/fonts/glyphicons-halflings-regular.ttf') format('truetype'), url('/static/bootstrap/fonts/glyphicons-halflings-regular.svg#glyphicons_halflingsregular') format('svg');
+}
+.glyphicon {
+  position: relative;
+  top: 1px;
+  display: inline-block;
+  font-family: 'Glyphicons Halflings';
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.glyphicon-search:before {
+  content: "\e003";
+}
+
+.input-group {
+    display: table;
+}
+
+.form-control {
+    display: block;
+    width: 100%;
+    height: 34px;
+    padding: 6px 12px;
+    font-size: 14px;
+    line-height: 1.42857143;
+    color: #555;
+    background-color: #fff;
+    background-image: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+    -webkit-transition: border-color ease-in-out .15s,-webkit-box-shadow ease-in-out .15s;
+    -o-transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+    transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+}
+.input-group .form-control, .input-group-btn {
+    display: table-cell;
+}
+
+.input-group .form-control:first-child,
+.input-group-addon:first-child,
+.input-group-btn:first-child > .btn,
+.input-group-btn:first-child > .btn-group > .btn,
+.input-group-btn:first-child > .dropdown-toggle,
+.input-group-btn:last-child > .btn:not(:last-child):not(.dropdown-toggle),
+.input-group-btn:last-child > .btn-group:not(:last-child) > .btn {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.input-group-btn:last-child>.btn, .input-group-btn:last-child>.btn-group {
+margin-left: -1px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 6px 12px;
+    margin-bottom: 0;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.42857143;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;
+    -ms-touch-action: manipulation;
+    touch-action: manipulation;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    background-image: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.btn-default {
+    text-shadow: 0 1px 0 #fff;
+    background-image: -webkit-linear-gradient(top,#fff 0,#e0e0e0 100%);
+    background-image: -o-linear-gradient(top,#fff 0,#e0e0e0 100%);
+    background-image: -webkit-gradient(linear,left top,left bottom,from(#fff),to(#e0e0e0));
+    background-image: linear-gradient(to bottom,#fff 0,#e0e0e0 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffffff', endColorstr='#ffe0e0e0', GradientType=0);
+    filter: progid:DXImageTransform.Microsoft.gradient(enabled=false);
+    background-repeat: repeat-x;
+    border-color: #dbdbdb;
+    border-color: #ccc;
+}
+
+.btn:hover,
+.btn:focus,
+.btn.focus {
+  color: #333;
+  text-decoration: none;
+  background-image: none;
+}
+.btn-default:hover,
+.btn-default:focus,
+.btn-default.focus,
+.btn-default:active,
+.btn-default.active,
+.open > .dropdown-toggle.btn-default {
+  color: #333;
+  background-color: #e6e6e6;
+  border-color: #adadad;
+}
+.btn-default:active,
+.btn-default.active,
+.open > .dropdown-toggle.btn-default {
+  background-image: none;
+}
+
+.input-group .form-control:last-child, .input-group-addon:last-child, .input-group-btn:last-child > .btn, .input-group-btn:last-child > .btn-group > .btn, .input-group-btn:last-child > .dropdown-toggle, .input-group-btn:first-child > .btn:not(:first-child), .input-group-btn:first-child > .btn-group:not(:first-child) > .btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* ==========================================================================
    Search
    ========================================================================== */
 
-table#msg-table {
+#msg-table {
     cursor: pointer;
     width: 100%;
+}
+
+#msg-table tr {
+    height: 24px;
 }
 
 #search-container {
@@ -269,6 +404,25 @@ table#msg-table {
     display: inline;
 }
 
+#search-window {
+    display: inline;
+}
+
+#search-bar-export, #search-bar-search {
+    float: right;
+}
+
+/*
+#search-bar-search input,.btn {
+    height: 22px;
+}
+*/
+
+#export-button {
+    margin-right: 0;
+    margin-left: 10px;
+}
+
 input.search_button {
     background-color: #0060A5;
     border-radius: 0 5px 5px 0;
@@ -282,20 +436,20 @@ input.search_button {
     vertical-align: middle;
 }
 
-ul#navigation {
+#navigation {
     list-style-type: none;
     margin: 10px auto;
     width: 300px;
 }
 
-ul#navigation li {
+#navigation li {
     border-right: 1px solid #5b80b2;;
     display: inline;
     padding: 0 10px 0 10px;
     font-size: 0.75em;
 }
 
-ul#navigation li:last-child {
+#navigation li:last-child {
     border-right: none;
 }
 
@@ -367,12 +521,13 @@ ul#navigation li:last-child {
     border-left: 1px solid #CCC;
     border-right: 1px solid #CCC;
     border-top: 1px solid #CCC;
+    box-sizing: border-box;
     font-size: 0.75em;
     left: 0;
     position: absolute;
     right: 0;
     top: 0;
-    height: 24px;
+    height: 25px;
 }
 
 #msg-list-header-table th {
@@ -396,13 +551,14 @@ ul#navigation li:last-child {
 
 #msg-list-controls {
     border: 1px solid #CCC;
+    box-sizing: border-box;
     font-size: 0.75em;
     left: 0;
     padding: 3px 1em 3px 1em;
     position: absolute;
     right: 0;
     bottom: 0;
-    height: 20px;
+    height: 28px;
 }
 
 #splitter-pane {
@@ -528,6 +684,14 @@ input.hidden-submit {
     color: #666;
 }
 
+blockquote {
+    margin: 0;
+    padding: 0 0 0 20px;
+    /* color: #a01e1e; */
+    color: #9F371C;
+    border-left: 3px solid #9F371C;
+}
+
 /* Header sort buttons
    ========================================================================== */
 #radio {
@@ -558,7 +722,7 @@ a.sortbutton:hover {
     border: none !important;
 }
 
-table#msg-list-header-table th {
+#msg-list-header-table th {
     padding: 0;
 }
 
@@ -584,6 +748,7 @@ a.selected {
 
 .filter-options li input {
     margin-left: 0;
+    margin-right: 4px;
 }
 
 #sidebar ul {
@@ -699,7 +864,7 @@ a.selected {
     width: 120px;
 }
 
-ul#email_list_list li {
+#email_list_list li {
     /* background-color: #6699CC; */
     background-color: #87CEFA;
     color: #fff;
@@ -828,21 +993,21 @@ h1.title {
     text-align: center;
 }
 
-div#browse_top h3 {
+#browse_top h3 {
     margin: 1em 0 1em 0;
 }
 
-div#browse_top {
+#browse_top {
     margin: 1em auto 1em;
     width: 960px;
 }
 
-div#browse_top hr {
+#browse_top hr {
     background-color: #F8F8F8;
     color: #F8F8F8;
 }
 
-div#browse_top label {
+#browse_top label {
     display: inline;
     font-weight: normal;
 }
@@ -968,7 +1133,7 @@ div.browse_section h2 {
 /* ==========================================================================
    Admin
    ========================================================================== */
-div#admin_top {
+#admin_top {
     margin: 1em auto 1em;
 }
 #admin_page {

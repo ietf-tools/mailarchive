@@ -28,7 +28,9 @@ urlpatterns += patterns('mlarchive.archive.views',
                                          template='archive/search.html'), name='archive_search'),
 
     # test pages ----------------
-    # (r'^layout/$', TemplateView.as_view(template_name="archive/layout.html")),
+    #(r'^layout/$', TemplateView.as_view(template_name="archive/layout.html")),
+    #(r'^test/$', TemplateView.as_view(template_name="archive/test.html")),
+    #(r'^test-bootstrap/$', TemplateView.as_view(template_name="archive/test-bootstrap.html")),
 )
 
 

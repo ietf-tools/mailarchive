@@ -13,11 +13,22 @@ $(function() {
 {% block content %}
 
 <div id="search-container">
+  
+  <div id="search-input">
   <form id="id_search_form" name="search-form" action="search" method="get">
-    <!-- <input id="id_q" type="text" name="q"> -->
-    {{ form.q }}
-    <input class="search_button" type="submit" value="Search" title="Search" alt="Search">
+      <div>
+        <div class="input-group">
+          <input id="id_q" name="q" type="search" class="form-control" placeholder="Search for..." {% if query %}value="{{ query }}"{% endif %}>
+          <span class="input-group-btn">
+            <button class="btn btn-default" type="submit">
+              <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+            </button>
+          </span>
+        </div><!-- input-group -->
+      </div>
   </form>
+  </div> <!-- search-input -->
+  
   <ul id="navigation">
     <li><a href="{% url "archive_advsearch" %}">Advanced Search</a></li>
     <li><a href="{% url "archive_browse" %}">Browse</a></li>
@@ -25,6 +36,7 @@ $(function() {
         <li><a href="{% url "archive_admin" %}">Admin</a></li>
     {% endif %}
   </ul>
+  
 </div>
 
 {% endblock %}

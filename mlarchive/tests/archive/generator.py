@@ -37,7 +37,7 @@ def test_generator_as_text(client):
     msg = Message.objects.first()
     g = Generator(msg)
     text = g.as_text()
-    assert text == u'Hello,\n\nThis is a test email.  database\n'
+    assert text == u'Hello,\r\n\r\nThis is a test email.  database\r\n'
 
 @pytest.mark.django_db(transaction=True)
 def test_generator_as_html(client):

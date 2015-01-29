@@ -31,6 +31,7 @@ from pytz import timezone
 
 import argparse
 import datetime
+import email
 import glob
 import mailbox
 import re
@@ -91,7 +92,7 @@ def bodies():
     """Call get_body_html() and get_body() for every message in db. Use logging in
     generator_handler methods to gather stats.
     """
-    query = Message.objects.filter(pk__gte=457000)
+    query = Message.objects.all()
     total = Message.objects.count()
     for msg in query:
         try:
@@ -266,11 +267,38 @@ def mmdfs():
                     count += 1
     print "Total: %s" % count
     
-def multimessage():
-    """Scan specified lists for messages with more than one message/rfc822 part"""
-    for msg in Message.objects.filter(email_list__in=mlists):
-        path = msg.get_file_path()
-                
+def message_rfc822():
+    """Scan all lists for message/rfc822"""
+    for elist in EmailList.objects.all().order_by('name'):
+        print "Scanning {}".format(elist.name)
+        
+        for msg in Message.objects.filter(email_list=elist).order_by('date'):
+            message = email.message_from_string(msg.get_body_raw())
+            count = 0
+            for part in message.walk():
+                if part.get_content_type() == 'message/rfc822':
+                    count += 1
+                    payload = part.get_payload()
+                    if len(payload) != 1 or payload[0].get_content_type() != 'text/plain':
+                        print msg.pk,payload,' '.join([ x.get_content_type() for x in payload])
+                        
+            if count > 1:
+                print "{}:{}".format(msg.pk,count)
+
+def multipart():
+    """Scan all lists, accumulate types which are multipart"""
+    types = {}
+    for elist in EmailList.objects.all().order_by('name'):
+    # for elist in EmailList.objects.filter(name='homenet').order_by('name'):
+        print "Scanning {}".format(elist.name)
+        
+        for msg in Message.objects.filter(email_list=elist).order_by('date'):
+            message = email.message_from_string(msg.get_body_raw())
+            for part in message.walk():
+                if part.is_multipart():
+                    types[part.get_content_type()] = types.get(part.get_content_type(),0) + 1
+    
+    print types
 
 def received_date(start):
     """Test receive date parsing.  Start at list named by 'start', use 80companions

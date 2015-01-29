@@ -26,6 +26,8 @@ from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
 
 UNDERSCORE = '_'
+MESSAGE_RFC822_BEGIN = '<blockquote>\n<small>---&nbsp;<i>Begin&nbsp;Message</i>&nbsp;---</small>'
+MESSAGE_RFC822_END = '<small>---&nbsp;<i>End&nbsp;Message</i>&nbsp;---</small>\n</blockquote>'
 
 # --------------------------------------------------
 # Helper Functions
@@ -114,6 +116,8 @@ class Generator:
         payload = part.get_payload(decode=True)
         return decode_safely(payload, charset)
 
+    # multipart handlers ----------------------------------------------------------
+
     def _handle_message_external_body(self,part):
         """Handler for Message/External-body
 
@@ -166,6 +170,43 @@ class Generator:
 
         return None
 
+    def _handle_message_rfc822(self,entity):
+        """Handler for message/rfc822.
+        Insert HTML beginning and ending tags
+        """
+        parts = []
+        if not self.text_only:
+            parts.append(MESSAGE_RFC822_BEGIN)
+        for part in entity.get_payload():
+            parts.extend(self.parse_entity(part))
+        if not self.text_only:
+            parts.append(MESSAGE_RFC822_END)
+        return parts
+
+    def _handle_multipart(self,entity):
+        """Generic multipart handler"""
+        parts = []
+        for part in entity.get_payload():
+            parts.extend(self.parse_entity(part))
+        return parts
+        
+    def _handle_multipart_alternative(self,entity):
+        """Handler for multipart/alternative.
+        NOTE: rather than trying to handle possibly malformed HTML, prefer the
+        text/plain versions for display, which comes first.  Basically return first
+        parsable item.
+        """
+        parts = []
+        contents = entity.get_payload()
+        for x in contents:
+            r = self.parse_entity(x)
+            if r:
+                parts.extend(r)
+                break
+        return parts
+
+    # non-multipart handlers ----------------------------------------------------------
+
     @skip_attachment
     def _handle_text_plain(self,part):
         """Handler for text/plain MIME parts.  Takes a message.Message part"""
@@ -181,10 +222,6 @@ class Generator:
     @skip_attachment
     def _handle_text_html(self,part):
         """Handler for text/HTML MIME parts.  Takes a message.Message part"""
-        #if hasattr(settings,'MARK_HTML') and settings.MARK_HTML != 0 and self.msg.spam_score == 0:
-        #    self.msg.spam_score = settings.MARK_HTML
-        #    self.msg.save()
-
         if settings.DEBUG:
             logger.debug('called: _handle_text_html [{0}, {1}]'.format(self.msg.email_list,self.msg.msgid))
 
@@ -203,12 +240,12 @@ class Generator:
                 return '<< invalid HTML >>'
 
         if self.text_only:
-            # document = lxml.html.document_fromstring(html_text)
-            # raw_text = document.text_content()
             soup = BeautifulSoup(clean,'html5')
             clean = soup.get_text()
 
         return clean
+
+    # end handlers ----------------------------------------------------------
 
     def parse_body(self, request=None):
         """Using internal or external function, convert a MIME email object to a string.
@@ -244,30 +281,11 @@ class Generator:
         """Recursively traverses parts of a MIME email and returns a list of strings
         """
         parts = []
-        # messages with type message/external-body are marked multipart, but we need
-        # to treat them otherwise
-        if entity.is_multipart() and entity.get_content_type() != 'message/external-body':
-            if entity.get_content_type() == 'multipart/alternative':
-                contents = entity.get_payload()
-                # NOTE: rather than trying to handle possibly malformed HTML, prefer the
-                # text/plain versions for display.
-                # --clip
-                # if output is not for indexing start from the most detailed option
-                # if not text_only:
-                #     contents = contents[::-1]
-                # --clip
-                for x in contents:
-                    # only return first readable item
-                    r = self.parse_entity(x)
-                    if r:
-                        parts.extend(r)
-                        break
+        output = self._dispatch(entity)
+        if output:
+            if hasattr(output,'__iter__'):
+                parts.extend(output)
             else:
-                for part in entity.get_payload():
-                    parts.extend(self.parse_entity(part))
-        else:
-            body = self._dispatch(entity)
-            if body:
-                parts.append(body)
+                parts.append(output)
 
         return parts

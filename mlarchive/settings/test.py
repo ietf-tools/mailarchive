@@ -15,12 +15,13 @@ HAYSTACK_CONNECTIONS['default']['PATH'] = HAYSTACK_XAPIAN_PATH
 
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = os.path.join(DATA_ROOT,'archive')
-#LOG_FILE = os.path.join(DATA_ROOT,'log','mlarchive.log')
 LOG_FILE = os.path.join(BASE_DIR,'tests','mlarchive.log')
+IMPORT_LOG_FILE = os.path.join(BASE_DIR,'tests','archive-mail.log')
+
 SERVER_MODE = 'development'
 
 LOGGING['handlers']['watched_file']['filename'] = LOG_FILE
-LOGGING['handlers']['archive-mail_file_handler']['filename'] = os.path.join(BASE_DIR,'tests','archive-mail.log')
+LOGGING['handlers']['archive-mail_file_handler']['filename'] = IMPORT_LOG_FILE
 
 CACHES = {
     'default': {

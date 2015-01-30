@@ -1,3 +1,4 @@
+from django.conf import settings
 from mlarchive.archive.management.commands._classes import *
 from factories import *
 from pprint import pprint
@@ -8,6 +9,11 @@ import glob
 import mailbox
 import pytest
 import pytz
+
+def teardown_module(module):
+    for path in (settings.LOG_FILE,settings.IMPORT_LOG_FILE):
+        if os.path.exists(path):
+            os.remove(path)
 
 @pytest.mark.django_db(transaction=True)
 def test_archive_message(client):

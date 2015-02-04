@@ -1,3 +1,31 @@
+mailarch (1.2.1) ietf; urgency=normal
+
+  * Fixes ticket #1442.  MIME parts message/rfc822 now
+    displayed in <blockquote> tags
+
+  * Add support for settings.REMOTE_BACKUP_COMMAND 
+
+  * Some CSS changes
+
+-- Ryan Cross <rcross@amsl.com>  03 Feb 2015 17:30:00 +0800
+
+mailarch (1.2.0) ietf; urgency=high
+
+  * Fixes ticket #1328.  Add IETF logo to header
+
+  * Fixes ticket #1360.  Message detail page now includes
+    links to message in context (by date, or thread)
+ 
+  * Fixes ticket #1447.  Renamed javascript to avoid being
+    blocked by Adblock Plus (*_adv.js)
+
+  * Fixes ticket #1453.  Group By action now retains context
+
+  * Fixes ticket #1518.  ARchived messages now have CR/LF 
+    line endings to comply with MIME specifications
+
+-- Ryan Cross <rcross@amsl.com>  20 Jan 2015 15:35:00 +0800
+
 mailarch (1.1.3) ietf; urgency=high
 
   * Change mailman interface "tee" script, call-archives.py, to

@@ -160,12 +160,15 @@ ul.messages li {
 }
 
 #logo-link {
+    display: inline-block;
+    height: 39px;
     text-decoration: none;
+    vertical-align: middle;
 }
 
 img#logo {
     box-sizing: content-box;
-    padding: 0 10px;
+    padding: 0 10px 2px;
     vertical-align: middle;
 }
 
@@ -371,7 +374,7 @@ margin-left: -1px;
     font-family: Arial, sans-serif;
     padding: 2px;
     vertical-align: middle;
-    width: 35em;
+    width: 636px;
 }
 
 #browse-header {
@@ -436,10 +439,15 @@ input.search_button {
     vertical-align: middle;
 }
 
+#nav-inner {
+    display: table;
+    margin: 0 auto;
+}
+
 #navigation {
+    display: inline-block;
     list-style-type: none;
     margin: 10px auto;
-    width: 300px;
 }
 
 #navigation li {

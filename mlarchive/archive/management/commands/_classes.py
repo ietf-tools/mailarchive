@@ -8,6 +8,7 @@ import os
 import pytz
 import re
 import string
+import subprocess
 import tempfile
 import uuid
 from collections import deque
@@ -329,14 +330,32 @@ def save_failed_msg(data,listname,error):
     log_msg = "Import Error [{0}, {1}, {2}]".format(os.path.join(path,filename),(error.__class__,error.args),identifier)
     logger.error(log_msg)
 
-    # write file
-    if not os.path.exists(path):
-        os.makedirs(path)
-        os.chmod(path,02777)
-    filepath = os.path.join(path,filename)
-    with open(filepath,'w') as f:
-        f.write(output)
-    os.chmod(filepath,0666)
+    write_file(os.path.join(path,filename),output)
+
+def call_remote_backup(path):
+    """Calls remote program to backup file designated by path"""
+    if hasattr(settings,'REMOTE_BACKUP_COMMAND'):
+        backup_command = settings.REMOTE_BACKUP_COMMAND
+        try:
+            subprocess.check_call([backup_command,path])
+        except (OSError,subprocess.CalledProcessError) as error:
+            logger.error('Error calling remote backup command ({})'.format(error))
+
+def write_file(path,data):
+    """Function to write file to disk.
+    - creates directory if it doesn't exist
+    - saves file
+    - sets mode of file
+    - calls external backup script if defined
+    """
+    directory = os.path.dirname(path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        os.chmod(directory,02777)
+    with open(path,'w') as f:
+        f.write(data)
+    os.chmod(path,0666)
+    call_remote_backup(path)
 
 # --------------------------------------------------
 # Classes
@@ -763,6 +782,7 @@ class MessageWrapper(object):
                     attach.filename = os.path.basename(fp.name)
                     attach.save()
                     os.chmod(fp.name,0666)
+                    call_remote_backup(fp.name)
 
     def save(self, test=False):
         """Ensure message is not duplicate message-id or hash.  Save message to database.
@@ -806,11 +826,6 @@ class MessageWrapper(object):
         else:
             path = os.path.join(settings.ARCHIVE_DIR,self.listname,filename)
 
-        # if directory doesn't exist create it
-        if not os.path.exists(os.path.dirname(path)):
-            os.makedirs(os.path.dirname(path))
-            os.chmod(os.path.dirname(path),02777)
-
         # if the file already exists, append a suffix
         if os.path.exists(path):
             path = get_incr_path(path)
@@ -819,6 +834,4 @@ class MessageWrapper(object):
         output = re.sub("\r(?!\n)|(?<!\r)\n", "\r\n", flatten_message(self.email_message))
 
         # write file
-        with open(path,'w') as f:
-            f.write(output)
-        os.chmod(path,0666)
+        write_file(path,output)

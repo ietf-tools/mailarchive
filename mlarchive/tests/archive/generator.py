@@ -115,3 +115,15 @@ def test_generator_clean_headers():
             ('To','text'))
     output = Generator._clean_headers(data)
     assert output[2][1] == u'Hello Bj\xf6rn'
+
+@pytest.mark.django_db(transaction=True)
+def test_generator_multipart_malformed(client):
+    path = os.path.join(settings.BASE_DIR,'tests','data','mail_multipart_bad.1')
+    with open(path) as f:
+        data = f.read()
+    status = archive_message(data,'test',private=False)
+    assert status == 0
+    msg = Message.objects.first()
+    g = Generator(msg)
+    text = g.as_text()
+    assert isinstance(text, basestring)

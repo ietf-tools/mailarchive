@@ -57,8 +57,8 @@ python-memcached
 lxml 3.3.1
 memcached 1.4.15
 RabbitMQ Server 2.8.7
-Celery v3.1.6
-Django 1.6 (Included)
+Celery v3.1.17
+Django 1.7 (Included)
 Haystack 2.1.1 (Included)
 
 

@@ -354,6 +354,7 @@ def write_file(path,data):
         os.chmod(directory,02777)
     with open(path,'w') as f:
         f.write(data)
+        f.flush()
     os.chmod(path,0666)
     call_remote_backup(path)
 
@@ -517,7 +518,7 @@ class MessageWrapper(object):
     must explicitly call process() or access the archive_message object for the object
     to contain valid data.
     """
-    def __init__(self, email_message, listname, private=False):
+    def __init__(self, email_message, listname, private=False, backup=True):
         self._archive_message = None
         self._date = None
         self.created_id = False

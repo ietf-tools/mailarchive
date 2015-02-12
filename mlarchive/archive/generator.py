@@ -197,6 +197,13 @@ class Generator:
         parsable item.
         """
         parts = []
+        
+        # Corrupt boundaries may cause a mutlipart entity's get_payload() to return
+        # the rest of the message as a string rather than the expected list of MIME
+        # entities
+        if not entity.is_multipart():
+            return self._handle_text_plain(entity)
+
         contents = entity.get_payload()
         for x in contents:
             r = self.parse_entity(x)

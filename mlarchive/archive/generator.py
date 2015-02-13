@@ -186,6 +186,13 @@ class Generator:
     def _handle_multipart(self,entity):
         """Generic multipart handler"""
         parts = []
+        
+        # Corrupt boundaries may cause a mutlipart entity's get_payload() to return
+        # the rest of the message as a string rather than the expected list of MIME
+        # entities
+        if not isinstance(entity.get_payload(), list):
+            return self._handle_text_plain(entity)
+            
         for part in entity.get_payload():
             parts.extend(self.parse_entity(part))
         return parts
@@ -201,12 +208,11 @@ class Generator:
         # Corrupt boundaries may cause a mutlipart entity's get_payload() to return
         # the rest of the message as a string rather than the expected list of MIME
         # entities
-        if not entity.is_multipart():
+        if not isinstance(entity.get_payload(), list):
             return self._handle_text_plain(entity)
 
-        contents = entity.get_payload()
-        for x in contents:
-            r = self.parse_entity(x)
+        for part in entity.get_payload():
+            r = self.parse_entity(part)
             if r:
                 parts.extend(r)
                 break

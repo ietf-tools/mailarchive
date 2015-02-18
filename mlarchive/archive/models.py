@@ -191,8 +191,11 @@ class Message(models.Model):
         if self.from_line:
             return 'From {0}'.format(self.from_line)
         else:
-            return 'From {0} {1}'.format(self.frm_email,
-                                         self.date.strftime('%a %b %d %H:%M:%S %Y'))
+            try:
+                output = 'From {0} {1}'.format(self.frm_email,self.date.strftime('%a %b %d %H:%M:%S %Y'))
+            except UnicodeEncodeError:
+                output = 'From {0} {1}'.format(self.frm_email.encode("ascii","ignore"),self.date.strftime('%a %b %d %H:%M:%S %Y'))
+            return output
 
     def get_removed_dir(self):
         return self.email_list.removed_dir

@@ -1,3 +1,10 @@
+mailarch (1.2.2.p2) ietf; urgency=normal
+
+  * Fixes ticket #1521.  UnicodeEncodeError when
+    performing an export.
+
+-- Ryan Cross <rcross@amsl.com>  17 Feb 2015 16:00:00 +0800
+
 mailarch (1.2.2) ietf; urgency=normal
 
   * Fixes ticket #1600.  Generator as_text() fails

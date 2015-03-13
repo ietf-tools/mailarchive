@@ -41,7 +41,7 @@ DATABASES = {
 DEBUG = False
 TEMPLATE_DEBUG = False
 
-ALLOWED_HOSTS = ['.ietf.org']
+ALLOWED_HOSTS = ['.ietf.org','.amsl.com']
 ADMINS = (
     ('Ryan Cross', 'rcross@amsl.com'),
 )
@@ -200,11 +200,12 @@ HAYSTACK_CONNECTIONS = {
 }
 
 # ARCHIVE SETTINGS
-ARCHIVE_DIR = '/a/mailarch/data/archive'
-CONSOLE_STATS_FILE = '/a/mailarch/data/log/console.json'
+DATA_ROOT = '/a/mailarch/data'
+ARCHIVE_DIR = os.path.join(DATA_ROOT,'archive')
+CONSOLE_STATS_FILE = os.path.join(DATA_ROOT,'log/console.json')
 EXPORT_LIMIT = 50000        # maximum number of messages we will export
 FILTER_CUTOFF = 15000       # maximum results for which we'll provide filter options
-LOG_FILE = '/a/mailarch/data/log/mlarchive.log'
+LOG_FILE = os.path.join(DATA_ROOT,'log/mlarchive.log')
 MAILMAN_DIR = '/usr/lib/mailman'
 SERVER_MODE = 'production'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
@@ -248,4 +249,9 @@ CELERY_HAYSTACK_MAX_RETRIES = 1
 CELERY_HAYSTACK_RETRY_DELAY = 300
 CELERY_HAYSTACK_TRANSACTION_SAFE = False
 
-REMOTE_BACKUP_COMMAND = '/a/mailarch/scripts/remote_backup.sh'
+# Use one or the other: 
+# REMOTE_BACKUP_DIR for local backup directory
+# REMOTE_BACKUP_COMMAND to run external backup command
+
+# REMOTE_BACKUP_COMMAND = '/a/mailarch/scripts/remote_backup.sh'
+# REMOTE_BACKUP_DIR = os.path.join(DATA_ROOT,'archive_backup')

@@ -7,6 +7,7 @@ import mailbox
 import os
 import pytz
 import re
+import shutil
 import string
 import subprocess
 import tempfile
@@ -333,8 +334,24 @@ def save_failed_msg(data,listname,error):
     write_file(os.path.join(path,filename),output)
 
 def call_remote_backup(path):
-    """Calls remote program to backup file designated by path"""
-    if hasattr(settings,'REMOTE_BACKUP_COMMAND'):
+    """If REMOTE_BACKUP_DIR is defined copies the message specified in path to the
+    local backup archive directory, creating subdirectories as needed.  Else checks for
+    REMOTE_BACKUP_COMMAND, and calls this command with path as the first argument"""
+    if hasattr(settings,'REMOTE_BACKUP_DIR'):
+        # strip relative path
+        parts = path.split('/')
+        if parts[-2].startswith('_'):
+            relative_path = os.path.join(*parts[-3:])
+        else:
+            relative_path = os.path.join(*parts[-2:])
+        target_path = os.path.join(settings.REMOTE_BACKUP_DIR,relative_path)
+        directory = os.path.dirname(target_path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+            os.chmod(directory,02777)
+        shutil.copy2(path,target_path)
+
+    elif hasattr(settings,'REMOTE_BACKUP_COMMAND'):
         backup_command = settings.REMOTE_BACKUP_COMMAND
         try:
             subprocess.check_call([backup_command,path])
@@ -356,7 +373,7 @@ def write_file(path,data):
         f.write(data)
         f.flush()
     os.chmod(path,0666)
-    call_remote_backup(path)
+    #call_remote_backup(path)
 
 # --------------------------------------------------
 # Classes
@@ -829,6 +846,8 @@ class MessageWrapper(object):
 
         # if the file already exists, append a suffix
         if os.path.exists(path):
+            log_msg = "Message file already exists [{0}]".format(path)
+            logger.warning(log_msg)
             path = get_incr_path(path)
 
         # convert line endings to crlf

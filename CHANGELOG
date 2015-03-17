@@ -40,6 +40,8 @@ mailarch (1.2.0) ietf; urgency=high
   * Fixes ticket #1518.  ARchived messages now have CR/LF 
     line endings to comply with MIME specifications
 
+  * Fixes ticket #1559.  Use correct Thread date in index.
+
   * Upgrade to Django 1.7
 
 -- Ryan Cross <rcross@amsl.com>  20 Jan 2015 15:35:00 +0800

@@ -4,7 +4,7 @@ from .base import *
 DEBUG=True
 TEMPLATE_DEBUG = DEBUG
 
-DATA_ROOT = '/a/mailarch/data_test'
+DATA_ROOT = '/a/mailarch/data'
 
 CACHES = {
     'default': {

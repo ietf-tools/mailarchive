@@ -255,3 +255,8 @@ CELERY_HAYSTACK_TRANSACTION_SAFE = False
 
 # REMOTE_BACKUP_COMMAND = '/a/mailarch/scripts/remote_backup.sh'
 # REMOTE_BACKUP_DIR = os.path.join(DATA_ROOT,'archive_backup')
+
+# IMAP Interface
+EXPORT_DIR = os.path.join(DATA_ROOT,'export')
+NOTIFY_LIST_CHANGE_COMMAND = '/a/mailarch/scripts/notify_list_change.sh'
+

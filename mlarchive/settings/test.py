@@ -29,3 +29,6 @@ CACHES = {
         'LOCATION': 'test-cache'
     }
 }
+
+# IMAP Interface
+EXPORT_DIR = os.path.join(DATA_ROOT,'export')

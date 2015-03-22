@@ -32,7 +32,6 @@ try:
 except ImportError:
     from mlarchive.utils import check_output
 
-
 def lookup(address):
     '''
     This function takes an email address and looks in Datatracker for an associated
@@ -57,12 +56,13 @@ def process_members(mlist, emails):
     This function takes an EmailList object and a list of emails, from the mailman list_members
     command and creates the appropriate list membership relationships
     '''
-    #mlist.members.clear()
+    members = mlist.members.all()
     for email in emails:
         name = lookup(email)
         if name:
             user, created = User.objects.get_or_create(username=name)
-            mlist.members.add(user)
+            if user not in members:
+                mlist.members.add(user)
 
 def main():
     usage = "usage: %prog"
@@ -86,8 +86,8 @@ def main():
         digest = base64.urlsafe_b64encode(sha.digest())
         if mlist.members_digest != digest:
             process_members(mlist,output.split())
-        mlist.members_digest = digest
-        mlist.save()
+            mlist.members_digest = digest
+            mlist.save()
 
 if __name__ == "__main__":
     main()

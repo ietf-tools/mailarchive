@@ -4,7 +4,8 @@ from .base import *
 # NOTE: DEBUG must be false for long running message imports
 DEBUG=False
 
-DATA_ROOT = '/a/mailarch/data_test'
+DATA_ROOT = '/a/mailarch/data'
+TEST_ROOT = '/a/mailarch/data_test'
 
 CACHES = {
     'default': {
@@ -16,7 +17,7 @@ CACHES = {
 # HAYSTACK SETTINGS
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.BaseSignalProcessor'
 #HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
-HAYSTACK_XAPIAN_PATH = os.path.join(DATA_ROOT,'archive_index')
+HAYSTACK_XAPIAN_PATH = os.path.join(TEST_ROOT,'archive_index')
 HAYSTACK_CONNECTIONS['default']['PATH'] = HAYSTACK_XAPIAN_PATH
 
 # ARCHIVE SETTINGS

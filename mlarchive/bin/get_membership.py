@@ -18,11 +18,12 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production'
 django.setup()
 
 # -------------------------------------------------------------------------------------
+from django.db.models.signals import post_save
 from django.conf import settings
 from django.contrib.auth.models import User
 from ietf.person.models import Email
 from optparse import OptionParser
-from mlarchive.archive.models import EmailList
+from mlarchive.archive.models import EmailList, _list_save_handler, _export_lists
 from subprocess import CalledProcessError
 import hashlib
 import base64
@@ -73,6 +74,11 @@ def main():
 
     cmd = os.path.join(settings.MAILMAN_DIR,'bin/list_members')
 
+    # disconnect the EmailList post_save signal, we don't want to call it multiple
+    # times if many lists memberships have changed
+    post_save.disconnect(_list_save_handler,sender=EmailList)
+    has_changed = False
+    
     for mlist in EmailList.objects.filter(private=True,active=True):
         if not options.quiet:
             print "Processing: %s" % mlist.name
@@ -85,9 +91,13 @@ def main():
         sha = hashlib.sha1(output)
         digest = base64.urlsafe_b64encode(sha.digest())
         if mlist.members_digest != digest:
+            has_changed = True
             process_members(mlist,output.split())
             mlist.members_digest = digest
             mlist.save()
+
+    if has_changed:
+        _export_lists()
 
 if __name__ == "__main__":
     main()

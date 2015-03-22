@@ -336,9 +336,6 @@ def _clear_cache(sender,instance, **kwargs):
     cache.delete('list_info')
 
 @receiver(post_save, sender=EmailList)
-def _emaillist_changed(sender, instance, **kwargs):
+def _list_save_handler(sender, instance, **kwargs):
     _export_lists()
 
-#@receiver(m2m_changed, sender=EmailList.members.through)
-#def _members_changed(sender, instance, **kwargs):
-#    _export_lists()

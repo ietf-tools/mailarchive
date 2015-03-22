@@ -258,5 +258,5 @@ CELERY_HAYSTACK_TRANSACTION_SAFE = False
 
 # IMAP Interface
 EXPORT_DIR = os.path.join(DATA_ROOT,'export')
-NOTIFY_LIST_CHANGE_COMMAND = '/a/mailarch/scripts/notify_list_change.sh'
+NOTIFY_LIST_CHANGE_COMMAND = '/a/mailarch/scripts/call_imap_import.sh'
 

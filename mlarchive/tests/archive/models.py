@@ -14,7 +14,7 @@ def test_message_get_from_line(client,messages):
 @pytest.mark.django_db(transaction=True)
 def test_notify_new_list(client):
     EmailList.objects.create(name='dummy')
-    path = os.path.join(settings.EXPORT_DIR,'email_list.xml')
+    path = os.path.join(settings.EXPORT_DIR,'email_lists.xml')
     assert os.path.exists(path)
     with open(path) as file:
         assert 'dummy' in file.read()

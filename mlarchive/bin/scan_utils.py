@@ -2,15 +2,15 @@
 """
 Utilities for running scans on mailbox files
 """
-
+from __future__ import print_function
 import glob
 import mailbox
 import os
 import re
+import sys
 
 from mlarchive.archive.management.commands import _classes
 
-#FILE_PATTERN = re.compile(r'\d{4}-\d{2}.mail$')
 FILE_PATTERN = re.compile(r'^\d{4}-\d{2}(|.mail)$')
 
 def is_mbox(filename):
@@ -32,6 +32,22 @@ def get_mboxs(listname):
         mb = _classes.get_mb(fil)
         yield mb
 
+def get_messages(path):
+    """An iterator which provides mailbox.mboxMessage objects from all mbox files
+    in the directory "path".
+    """
+    files = [ os.path.join(path,n) for n in os.listdir(path) ]
+    for file in filter(is_mbox, files):
+        try:
+            mb = _classes.get_mb(file)
+        except _classes.UnknownFormat:
+            print("Unknown format: {}".format(path), file=sys.stderr)
+            continue
+            
+        for msg in mb:
+            yield msg
+        mb.close()
+
 def process(names):
     """This is a utility function which takes a list of email list names and returns
     Message objects
@@ -40,7 +56,6 @@ def process(names):
         all = sorted(glob.glob('/a/www/ietf-mail-archive/text/%s/*' % name))
         files = filter(is_mbox, all)
         for fil in files:
-            #mb = mailbox.mbox(fil)
             mb = _classes.get_mb(fil)
             for msg in mb:
                 yield msg

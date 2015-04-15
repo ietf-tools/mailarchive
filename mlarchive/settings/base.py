@@ -258,5 +258,7 @@ CELERY_HAYSTACK_TRANSACTION_SAFE = False
 
 # IMAP Interface
 EXPORT_DIR = os.path.join(DATA_ROOT,'export')
-NOTIFY_LIST_CHANGE_COMMAND = '/a/mailarch/scripts/call_imap_import.sh'
+# NOTIFY_LIST_CHANGE_COMMAND = '/a/mailarch/scripts/call_imap_import.sh'
 
+# new in Django 1.6
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'

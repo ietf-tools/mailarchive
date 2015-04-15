@@ -1,0 +1,74 @@
+#!/usr/bin/python
+'''
+This is a utility script that handles loading multiple list archives.
+
+Note all archives will be loaded as public
+'''
+# Set PYTHONPATH and load environment variables for standalone script -----------------
+# for file living in project/bin/
+import os
+import sys
+path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if not path in sys.path:
+    sys.path.insert(0, path)
+import django
+if 'DJANGO_SETTINGS_MODULE' not in os.environ:
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.noindex'
+django.setup()
+
+# -------------------------------------------------------------------------------------
+
+from django.core.management import call_command
+from StringIO import StringIO
+
+import argparse
+import ast
+import datetime
+import os
+import time
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Import directory of email lists.')
+    parser.add_argument('path')
+    parser.add_argument('-v','--verbose', help='verbose output',action='store_true')
+    parser.add_argument('-t','--test', help='test run',action='store_true')
+    args = parser.parse_args()
+
+    if not os.path.isdir(args.path):
+        parser.error('{} must be a directory'.format(args.path))
+
+    stats = {}
+    start_time = time.time()
+
+    all = [ os.path.join(args.path,x) for x in os.listdir(args.path) ]
+    dirs = filter(os.path.isdir, all)
+    
+    for dir in dirs:
+        print 'Loading: %s' % dir
+        
+        # TODO: add option to load private lists
+        private = False
+
+        # save output from command so we can aggregate statistics
+        content = StringIO()
+        listname = os.path.basename(dir)
+
+        call_command('load', dir, listname=listname, summary=True,
+                     test=args.test, private=private, stdout=content)
+
+        # gather stats from output
+        content.seek(0)
+        output = content.read()
+        results = ast.literal_eval(output)
+        for key,val in results.items():
+            stats[key] = stats.get(key,0) + val
+
+    elapsed_time = int(time.time() - start_time)
+    items = [ '%s:%s' % (k,v) for k,v in stats.items() if k != 'time']
+    items.append('Elapsed Time:%s' % str(datetime.timedelta(seconds=elapsed_time)))
+    items.append('\n')
+    print '\n'.join(items)
+
+if __name__ == "__main__":
+    main()

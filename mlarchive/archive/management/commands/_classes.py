@@ -43,6 +43,7 @@ SEPARATOR_PATTERNS = [ re.compile(r'^Return-[Pp]ath:'),
                        re.compile(r'^From:'),
                        re.compile(r'^Date:'),
                        re.compile(r'^To:'),
+                       re.compile(r'^Path:'),
                        re.compile(r'^20[0-1][0-9]$') ]      # odd one, see forces
 
 HEADER_PATTERN = re.compile(r'^[\041-\071\073-\176]{1,}:')
@@ -490,7 +491,11 @@ class Loader(object):
         """Use MessageWrapper to save a Message to the archive.
         """
         self.stats['count'] += 1
-        mw = MessageWrapper(msg, self.listname, private=self.private)
+        try:
+            mw = MessageWrapper(msg, self.listname, private=self.private)
+        except Exception as e:
+            import sys
+            raise type(e), type(e)(e.message + ' happens at {} with text: {}'.format(self.filename,msg.as_string()[:120])), sys.exc_info()[2]
 
         # filter using Legacy archive
         if self.options.get('firstrun') and mw.date < (datetime.datetime.now() - datetime.timedelta(days=30)) and mw.created_id == False:
@@ -520,7 +525,6 @@ class Loader(object):
                 save_failed_msg(m,self.listname,error)
                 self.stats['errors'] += 1
                 if self.options.get('break'):
-                    #print
                     raise
 
         self._cleanup()

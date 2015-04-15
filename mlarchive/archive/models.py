@@ -291,11 +291,16 @@ def _export_lists():
     # Dump XML
     data = _get_lists_as_xml()
     path = os.path.join(settings.EXPORT_DIR,'email_lists.xml')
-    if not os.path.exists(settings.EXPORT_DIR):
-        os.mkdir(settings.EXPORT_DIR)
-    with open(path,'w') as file:
-        file.write(data)
-    
+    try:
+        if not os.path.exists(settings.EXPORT_DIR):
+            os.mkdir(settings.EXPORT_DIR)
+        with open(path,'w') as file:
+            file.write(data)
+            os.chmod(path,666)
+    except Exception as error:
+        logger.error('Error creating export file: {}'.format(error))
+        return 
+        
     # Call external script
     if hasattr(settings,'NOTIFY_LIST_CHANGE_COMMAND'):
         command = settings.NOTIFY_LIST_CHANGE_COMMAND

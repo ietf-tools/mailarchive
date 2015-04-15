@@ -1,4 +1,12 @@
 
+mailarch (1.2.4) ietf; urgency=normal
+
+  * Improved error handling
+
+  * changes to loader script 
+
+-- Ryan Cross <rcross@amsl.com>  15 Apr 2015 16:00:00 +0800
+
 mailarch (1.2.3) ietf; urgency=normal
 
   * Add IMAP integration

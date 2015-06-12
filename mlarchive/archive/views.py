@@ -11,7 +11,7 @@ from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.forms.formsets import formset_factory
 from django.http import HttpResponseRedirect, HttpResponse, Http404
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from haystack.views import SearchView, FacetedSearchView
 from haystack.query import SearchQuerySet
@@ -233,10 +233,14 @@ def advsearch(request):
         RequestContext(request, {}),
     )
 
-def browse(request):
+def browse(request, list_name=None):
     """Presents a list of Email Lists the user has access to.  There are
     separate sections for private, active and inactive.
     """
+    if list_name:
+        redirect_url = '%s?%s' % (reverse('archive_search'), 'email_list=' + list_name)
+        return redirect(redirect_url)
+        
     form = BrowseForm()
     columns = get_columns(request.user)
 

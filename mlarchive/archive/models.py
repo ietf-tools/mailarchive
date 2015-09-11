@@ -296,7 +296,7 @@ def _export_lists():
             os.mkdir(settings.EXPORT_DIR)
         with open(path,'w') as file:
             file.write(data)
-            os.chmod(path,666)
+            os.chmod(path,0666)
     except Exception as error:
         logger.error('Error creating export file: {}'.format(error))
         return 

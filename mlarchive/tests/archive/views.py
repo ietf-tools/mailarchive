@@ -65,3 +65,14 @@ def test_main(client):
     url = reverse('archive')
     response = client.get(url)
     assert response.status_code == 200
+
+@pytest.mark.django_db(transaction=True)
+def test_search(client):
+    # simple search
+    url = reverse('archive_search') + '?q=database'
+    response = client.get(url)
+    assert response.status_code == 200
+    # search with unicode (pi symbol)
+    url = reverse('archive_search') + '?q=%CF%80'
+    response = client.get(url)
+    assert response.status_code == 200

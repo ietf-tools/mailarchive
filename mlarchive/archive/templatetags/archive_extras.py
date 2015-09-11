@@ -187,7 +187,13 @@ def get_query_string(p, new_params, remove, context):
             p[k]=v
                 
     #return mark_safe('?' + '&amp;'.join([u'%s=%s' % (k, v) for k, v in p.items()]).replace(' ', '%20'))
-    return mark_safe('?' + '&amp;'.join([u'%s=%s' % (urllib.quote_plus(str(k)), urllib.quote_plus(str(v))) for k, v in p.items()]))
+    return mark_safe('?' + '&amp;'.join([u'%s=%s' % (urllib.quote_plus(convert_utf8(k)), urllib.quote_plus(convert_utf8(v))) for k, v in p.items()]))
+
+def convert_utf8(v):
+    if isinstance(v, unicode):
+        return v.encode('utf8')
+    if isinstance(v, str):
+        return v
 
 # Taken from lib/utils.py   
 def string_to_dict(string):

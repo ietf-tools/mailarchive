@@ -144,7 +144,7 @@ $(function() {
         // INFINTE SCROLL
         $("#msg-list").on( "scroll", function() {
             // BOTTOM OF SCROLL
-            if($(this).scrollTop() + $(this).innerHeight() == $(this)[0].scrollHeight) {
+            if($(this).scrollTop() + $(this).innerHeight() > $(this)[0].scrollHeight - 2) {
                 var queryid = $('#msg-list').attr('data-queryid');
                 var request = $.ajax({
                     "type": "GET",

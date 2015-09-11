@@ -1,4 +1,11 @@
 
+mailarch (1.2.5) ietf; urgency=normal
+
+ * Fixes ticket #1754.  Search field doesn't handle
+   non-ascii characters.
+
+ * Fixes ticket #1780.  Message pane doesn't scroll.
+
 mailarch (1.2.4) ietf; urgency=normal
 
   * Improved error handling

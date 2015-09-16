@@ -49,6 +49,9 @@ $(function() {
                 var top = ui.position.top;
                 $("#list-pane").css("height",top-3);
                 $("#view-pane").css("top",top+3);
+            },
+            stop: function(event, ui){
+                var top = ui.position.top;
                 $.cookie("splitter",top);
             }
         });

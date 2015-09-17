@@ -4,7 +4,10 @@ mailarch (1.2.5) ietf; urgency=normal
  * Fixes ticket #1754.  Search field doesn't handle
    non-ascii characters.
 
- * Fixes ticket #1780.  Message pane doesn't scroll.
+ * Fixes ticket #1780.  Message pane doesn't scroll
+   after browser zoom
+
+-- Ryan Cross <rcross@amsl.com>  16 Sep 2015 10:30:00 +0800
 
 mailarch (1.2.4) ietf; urgency=normal
 

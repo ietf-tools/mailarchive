@@ -1,7 +1,6 @@
 from django import template
 from django.utils.safestring import mark_safe
-
-import urllib
+from django.utils.http import urlquote_plus
 
 register = template.Library()
 
@@ -186,17 +185,8 @@ def get_query_string(p, new_params, remove, context):
         except:
             p[k]=v
 
-    #return mark_safe('?' + '&amp;'.join([u'%s=%s' % (k, v) for k, v in p.items()]).replace(' ', '%20'))
-    return mark_safe('?' + '&amp;'.join([u'%s=%s' % (urllib.quote_plus(convert_utf8(k)), urllib.quote_plus(convert_utf8(v))) for k, v in p.items()]))
+    return mark_safe('?' + '&amp;'.join([u'%s=%s' % (urlquote_plus(k), urlquote_plus(v)) for k, v in p.items()]))
 
-def convert_utf8(v):
-    '''Returns a string given various inputs: unicode, string, int'''
-    if isinstance(v, unicode):
-        return v.encode('utf8')
-    if isinstance(v, str):
-        return v
-    if isinstance(v, int):
-        return str(v)
 
 # Taken from lib/utils.py
 def string_to_dict(string):

@@ -150,7 +150,7 @@ class AdminForm(forms.Form):
         email_list = self.cleaned_data['email_list']
         if email_list:
             return [email_list.pk]
-            
+
 class AdvancedSearchForm(FacetedSearchForm):
     start_date = forms.DateField(required=False,
             widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))

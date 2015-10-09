@@ -13,7 +13,6 @@ import subprocess
 import tempfile
 import uuid
 from collections import deque
-from email.header import decode_header
 from email.utils import parsedate_tz, getaddresses, make_msgid
 
 from django.conf import settings
@@ -23,10 +22,30 @@ from dateutil.tz import tzoffset
 from mlarchive.archive.models import Attachment, EmailList, Legacy, Message, Thread
 from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES, UNKNOWN_CONTENT_TYPE
 from mlarchive.utils.decorators import check_datetime
-from mlarchive.utils.encoding import decode_safely
+from mlarchive.utils.encoding import decode_safely, decode_rfc2047_header
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
+
+'''
+Notes on character encoding.
+
+In general we want work with unicode strings.  To do this it's important to do encoding
+and decoding of Unicode at the furthest boundary of the interface.
+
+Standards do not allow for non-ascii data in email headers 2822 (822).  RFC2047 defines
+extensions to allow non-ascii text data in headers through the use of encoded-words.
+Nevertheless, we find non-ascii data in email headers and need to handle this
+consistently.  See scan ##
+
+When parsing an email message Python2 email module returns a byte-string for header
+values
+
+In [23]: x.get('subject')
+Out[23]: 'Voc\xea recebeu um Vivo Torpedo SMS'
+
+'''
+
 
 # --------------------------------------------------
 # Globals
@@ -115,13 +134,6 @@ def clean_spaces(s):
     s = re.sub(r'\s+',' ',s)
     return s
 
-def decode_rfc2047_header(text):
-    try:
-        return ' '.join(decode_safely(s, charset) for s, charset in decode_header(text))
-    except email.header.HeaderParseError as error:
-        logger.error('Decode header failed [{0},{1}]'.format(error.args,text))
-        return ''
-        
 def flatten_message(msg):
     """Returns the message flattened to a string, for use in writing to a file.  NOTE:
     use this instead of message.as_string() to avoid mangling message.
@@ -731,7 +743,7 @@ class MessageWrapper(object):
             normal = decode_safely(header_text)
 
         # encode as UTF8 and compress whitespace
-        normal = normal.encode('utf8')
+        # normal = normal.encode('utf8')        # this is unnecessary
         normal = clean_spaces(normal)
         return normal.rstrip()
 
@@ -822,7 +834,7 @@ class MessageWrapper(object):
 
         # ensure message has been processed
         x = self.archive_message
-        
+
         # write message to disk and then save, post_save signal calls indexer
         # which requires file to be present
         if not test:

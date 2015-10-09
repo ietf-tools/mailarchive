@@ -188,25 +188,24 @@ class Message(models.Model):
     def get_from_line(self):
         """Returns the "From " envelope header from the original mbox file if it
         exists or constructs one.  Useful when exporting in mbox format.
+        NOTE: returns unicode, call to_str() before writing to file.
         """
         if self.from_line:
-            return 'From {0}'.format(self.from_line)
+            return u'From {}'.format(self.from_line)
+        elif self.frm_email:
+            return u'From {} {}'.format(self.frm_email,self.date.strftime('%a %b %d %H:%M:%S %Y'))
         else:
-            try:
-                output = 'From {0} {1}'.format(self.frm_email,self.date.strftime('%a %b %d %H:%M:%S %Y'))
-            except UnicodeEncodeError:
-                output = 'From {0} {1}'.format(self.frm_email.encode("ascii","ignore"),self.date.strftime('%a %b %d %H:%M:%S %Y'))
-            return output
+            return u'From (none) {}'.format(self.date.strftime('%a %b %d %H:%M:%S %Y'))
 
     def get_removed_dir(self):
         return self.email_list.removed_dir
 
     def list_by_date_url(self):
         return reverse('archive_search') + '?email_list={}&index={}'.format(self.email_list.name,self.hashcode.rstrip('='))
-        
+
     def list_by_thread_url(self):
         return reverse('archive_search') + '?email_list={}&gbt=1&index={}'.format(self.email_list.name,self.hashcode.rstrip('='))
-    
+
     def mark(self,bit):
         """Mark this message using the bit provided, using field spam_score
         """
@@ -285,7 +284,7 @@ def _get_lists_as_xml():
         lines.append("  </shared_root>")
     lines.append("</ms_config>")
     return "\n".join(lines)
-    
+
 def _export_lists():
     """Produce XML dump of list memberships and call external program"""
     # Dump XML
@@ -299,8 +298,8 @@ def _export_lists():
             os.chmod(path,0666)
     except Exception as error:
         logger.error('Error creating export file: {}'.format(error))
-        return 
-        
+        return
+
     # Call external script
     if hasattr(settings,'NOTIFY_LIST_CHANGE_COMMAND'):
         command = settings.NOTIFY_LIST_CHANGE_COMMAND
@@ -308,7 +307,7 @@ def _export_lists():
             subprocess.check_call([command,path])
         except (OSError,subprocess.CalledProcessError) as error:
             logger.error('Error calling external command: {} ({})'.format(command,error))
-            
+
 @receiver(pre_delete, sender=Message)
 def _message_remove(sender, instance, **kwargs):
     """When messages are removed, via the admin page, we need to move the message

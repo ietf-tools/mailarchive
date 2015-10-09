@@ -21,7 +21,7 @@ from django.shortcuts import redirect
 
 from mlarchive.archive.forms import RulesForm
 from mlarchive.archive.models import EmailList
-
+from mlarchive.utils.encoding import to_str
 
 contain_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\((?P<value>[^\)]+)\)')
 exact_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\"(?P<value>[^\"]+)\"')
@@ -49,7 +49,7 @@ def find_message_date(sqs, msg):
     hi = sqs.count() - 1
     if hi == -1:            # abort if queryset is empty
         return -1
-        
+
     while lo <= hi:
         mid = (lo+hi)/2
         midval = sqs[mid]
@@ -59,12 +59,12 @@ def find_message_date(sqs, msg):
             hi = mid
         else:
             break
-            
+
     if midval.object == msg:
         return mid
     if midval.date != msg.date:
         return -1
-        
+
     # we get here if there are messages with the exact same date
     # find the first message with this date
     count = sqs.count()
@@ -89,22 +89,22 @@ def find_message_date_reverse(sqs, msg):
     hi = sqs.count() - 1
     if hi == -1:            # abort if queryset is empty
         return -1
-        
+
     while lo <= hi:
         mid = (lo+hi)/2
         midval = sqs[mid]
         if midval.date > msg.date:
             lo = mid+1
-        elif midval.date < msg.date: 
+        elif midval.date < msg.date:
             hi = mid
         else:
             break
-    
+
     if midval.object == msg:
         return mid
     if midval.date != msg.date:
         return -1
-        
+
     # we get here if there are messages with the exact same date
     # find the first message with this date
     count = sqs.count()
@@ -117,14 +117,14 @@ def find_message_date_reverse(sqs, msg):
         if sqs[mid].object == msg:
             return mid
         mid = mid + 1
-    
+
     return -1
 
 def find_message_gbt(sqs,msg):
     """Returns the position of message (mag) in queryset (sqs)
     for queries grouped by thread.  Uses binary search to locate the thread,
     then traverses the thread"""
-    
+
     lo = 0
     hi = sqs.count() - 1
     if hi == -1:            # abort if queryset is empty
@@ -134,7 +134,7 @@ def find_message_gbt(sqs,msg):
             return 0
         else:
             return -1
-            
+
     cdate = msg.thread.date
     # first locate the thread
     while lo < hi:
@@ -148,7 +148,7 @@ def find_message_gbt(sqs,msg):
             break
     if midval.object == msg:
         return mid
-    
+
     # traverse thread
     thread = midval.object.thread
     if midval.object.date < msg.date:
@@ -164,7 +164,7 @@ def find_message_gbt(sqs,msg):
         step = 1
         mid = mid + 1
         midval = sqs[mid]
-    
+
     # next step through thread
     while midval.object.thread == thread:
         mid = mid + step
@@ -303,7 +303,8 @@ def get_export(sqs, type, request):
 
             with open(result.object.get_file_path()) as input:
                 # add envelope header
-                mbox_file.write(result.object.get_from_line() + '\n')
+                from_line = to_str(result.object.get_from_line()) + '\n'
+                mbox_file.write(from_line)
                 mbox_file.write(input.read())
                 mbox_file.write('\n')
 

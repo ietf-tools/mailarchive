@@ -69,24 +69,15 @@ def test_clean_spaces():
     s = 'this     is   a    string   with extra    spaces'
     assert clean_spaces(s) == 'this is a string with extra spaces'
 
-def decode_rfc2047_header():
-    data = [('=?utf-8?b?562U5aSNOiAgQU5DUCBGcmFtZXdvcmsgdXBkYXRl?=',
-            u'\u7b54\u590d:  ANCP Framework update'),
-            ('To: =?iso-8859-1?Q?Ivan_Skytte_J=F8rgensen?= <isj@i1.dk>',
-            u'To: Ivan Skytte J\xf8rgensen <isj@i1.dk>'),
-            ('nothing to convert',u'nothing_to_convert')]
-    for item in data:
-        assert decode_rfc2047_header(item[0]) == item[1]
-
 def test_get_base_subject():
     data = [('[ANCP] =?iso-8859-1?q?R=FCckruf=3A_Welcome_to_the_=22ANCP=22_mail?=\n\t=?iso-8859-1?q?ing_list?=',
-             'R\xc3\xbcckruf: Welcome to the "ANCP" mailing list'),
-            ('Re: [IAB] Presentation at IAB Tech Chat (fwd)','Presentation at IAB Tech Chat'),
-            ('Re: [82companions] [Bulk]  Afternoon North Coast tour','Afternoon North Coast tour'),
-            ('''[cdni-footprint] Fwd: Re: [CDNi] Rough Agenda for today's "CDNI Footprint/Capabilties Design Team Call"''','''Rough Agenda for today's "CDNI Footprint/Capabilties Design Team Call"'''),
-            ('[dccp] [Fwd: Re: [Tsvwg] Fwd: WGLC for draft-ietf-dccp-quickstart-03.txt]','WGLC for draft-ietf-dccp-quickstart-03.txt'),
-            ('[ANCP] Fw: note the boilerplate change','note the boilerplate change'),
-            ('Re: [ANCP] RE: draft-ieft-ancp-framework-00.txt','draft-ieft-ancp-framework-00.txt')]
+             u'R\xfcckruf: Welcome to the "ANCP" mailing list'),
+            ('Re: [IAB] Presentation at IAB Tech Chat (fwd)',u'Presentation at IAB Tech Chat'),
+            ('Re: [82companions] [Bulk]  Afternoon North Coast tour',u'Afternoon North Coast tour'),
+            ('''[cdni-footprint] Fwd: Re: [CDNi] Rough Agenda for today's "CDNI Footprint/Capabilties Design Team Call"''',u'''Rough Agenda for today's "CDNI Footprint/Capabilties Design Team Call"'''),
+            ('[dccp] [Fwd: Re: [Tsvwg] Fwd: WGLC for draft-ietf-dccp-quickstart-03.txt]',u'WGLC for draft-ietf-dccp-quickstart-03.txt'),
+            ('[ANCP] Fw: note the boilerplate change',u'note the boilerplate change'),
+            ('Re: [ANCP] RE: draft-ieft-ancp-framework-00.txt',u'draft-ieft-ancp-framework-00.txt')]
 
     message = email.message_from_string('From: rcross@amsl.com')
     mw = MessageWrapper(message, 'test')
@@ -198,7 +189,7 @@ def test_MessageWrapper_get_addresses():
             'Tom Taylor tom.taylor.stds@gmail.com ancp@ietf.org ancp@ietf.org')]
     for item in data:
         assert MessageWrapper.get_addresses(item[0]) == item[1]
-    
+
 def test_MessageWrapper_get_cc():
     data = '''From: joe@acme.com
 To: larry@acme.com
@@ -211,7 +202,7 @@ This is the message.
     msg = email.message_from_string(data)
     mw = MessageWrapper(msg,'ancp')
     assert mw.get_to() == 'larry@acme.com'
-    
+
 def test_MessageWrapper_get_to():
     data = '''From: joe@acme.com
 To: larry@acme.com
@@ -224,7 +215,7 @@ This is the message.
     msg = email.message_from_string(data)
     mw = MessageWrapper(msg,'ancp')
     assert mw.get_cc() == 'ancp@ietf.org'
-    
+
 # test various exceptions raised
 
 # test that older message added causes update to all tdates in index

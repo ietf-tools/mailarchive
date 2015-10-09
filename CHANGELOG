@@ -1,4 +1,13 @@
 
+mailarch (1.2.6) ietf; urgency=normal
+
+ * Fixes ticket #1521.  Resolve unicode error with export
+   when From line contains non-ascii characters.
+
+ * Improve handling of non-ascii search strings.
+
+-- Ryan Cross <rcross@amsl.com>  09 Oct 2015 10:00:00 +0800
+
 mailarch (1.2.5) ietf; urgency=normal
 
  * Fixes ticket #1754.  Search field doesn't handle

@@ -54,6 +54,20 @@ mlists = ['abfab','alto','aqm','codec','dane','dmarc','dmm','dnsop',
 # Helper Functions
 # ---------------------------------------------------------
 
+def convert_date(date):
+    """Try different patterns to convert string to naive UTC datetime object"""
+    for format in date_formats:
+        try:
+            result = tzparse(date.rstrip(),format)
+            if result:
+                # convert to UTC and make naive
+                utc_tz = timezone('utc')
+                time = utc_tz.normalize(result.astimezone(utc_tz))
+                time = time.replace(tzinfo=None)                # make naive
+                return time
+        except ValueError:
+            pass
+
 def get_date_part(str):
     """Get the date portion of the envelope header.  Based on the observation
     that all date parts start with abbreviated weekday
@@ -71,19 +85,16 @@ def get_date_part(str):
     else:
         return None
 
-def convert_date(date):
-    """Try different patterns to convert string to naive UTC datetime object"""
-    for format in date_formats:
-        try:
-            result = tzparse(date.rstrip(),format)
-            if result:
-                # convert to UTC and make naive
-                utc_tz = timezone('utc')
-                time = utc_tz.normalize(result.astimezone(utc_tz))
-                time = time.replace(tzinfo=None)                # make naive
-                return time
-        except ValueError:
-            pass
+def is_ascii(s):
+    if s == None:
+        return True
+    try:
+        s.decode('ascii')
+    except UnicodeDecodeError:
+        return False
+    return True
+
+
 # ---------------------------------------------------------
 # Scan Functions
 # ---------------------------------------------------------
@@ -118,6 +129,8 @@ def count(listname):
     pprint(years)
 
 def date(start):
+    """Calls get_date for every message in (old) archive.  Use 'start' argument
+    to offset beginning of run"""
     listname = ''
     processing = False
     total = 0
@@ -127,7 +140,7 @@ def date(start):
             processing = True
         else:
             continue
-            
+
         if name != listname:
             listname = name
             print listname
@@ -136,7 +149,7 @@ def date(start):
         except _classes.UnknownFormat:
             print "Unknown format: %s" % path
             continue
-        
+
         for i,msg in enumerate(mb):
             total += 1
             try:
@@ -144,9 +157,9 @@ def date(start):
                 date = mw.get_date()
             except _classes.NoHeaders as error:
                 print "Error: %s,%d (%s)" % (path, i, error.args)
-                
+
     print "Total: %s" % total
-    
+
 def header_date():
     nf = 0
     count = 0
@@ -165,13 +178,13 @@ def header_date():
                 nf += 1
                 #sys.exit(1)
                 continue
-                
+
             result = _classes.parsedate_to_datetime(date)
             if not result:
                 print "Parse Error: %s" % date
                 #sys.exit(1)
     print "Count: %s\nNot Found: %s" % (count,nf)
-    
+
 def envelope_date():
     """Quickly test envelope date parsing on every standard mbox file in archive"""
     #for path in ['/a/www/ietf-mail-archive/text/lemonade/2002-09.mail']:
@@ -218,6 +231,29 @@ def html_only():
                 if msg.get_content_type() == 'text/html':
                     print msg['message-id']
 
+def lookups():
+    """Test the message find routines"""
+    from haystack.query import SearchQuerySet
+    from mlarchive.archive.view_funcs import find_message_date, find_message_date_reverse, find_message_gbt
+
+    for elist in EmailList.objects.all():
+        print "Checking list: {}".format(elist.name)
+        sqs = SearchQuerySet().filter(email_list=elist.pk).order_by('date')
+        print "-date"
+        for m in sqs:
+            if find_message_date(sqs,m.object) == -1:
+                print "Problem with {}:{}".format(elist.name,m.object.msgid)
+        sqs = SearchQuerySet().filter(email_list=elist.pk).order_by('-date')
+        print "-date-reverse"
+        for m in sqs:
+            if find_message_date_reverse(sqs,m.object) == -1:
+                print "Problem with {}:{}".format(elist.name,m.object.msgid)
+        sqs = SearchQuerySet().filter(email_list=elist.pk).order_by('tdate','date')
+        print "-gbt"
+        for m in sqs:
+            if find_message_gbt(sqs,m.object) == -1:
+                print "Problem with {}:{}".format(elist.name,m.object.msgid)
+
 def mailbox_types():
     """Scan all mailbox files and print example of each unique envelope form other
     than typical mbox or mmdf
@@ -250,7 +286,7 @@ def missing_files():
     print '%d of %d missing.' % (total, messages.count())
 
 def mmdfs():
-    """Scan all mailbox files and print first lines of MMDF types, looking for 
+    """Scan all mailbox files and print first lines of MMDF types, looking for
     different styles
     """
     #import binascii
@@ -266,12 +302,12 @@ def mmdfs():
                     print "%s" % path
                     count += 1
     print "Total: %s" % count
-    
+
 def message_rfc822():
     """Scan all lists for message/rfc822"""
     for elist in EmailList.objects.all().order_by('name'):
         print "Scanning {}".format(elist.name)
-        
+
         for msg in Message.objects.filter(email_list=elist).order_by('date'):
             message = email.message_from_string(msg.get_body_raw())
             count = 0
@@ -281,7 +317,7 @@ def message_rfc822():
                     payload = part.get_payload()
                     if len(payload) != 1 or payload[0].get_content_type() != 'text/plain':
                         print msg.pk,payload,' '.join([ x.get_content_type() for x in payload])
-                        
+
             if count > 1:
                 print "{}:{}".format(msg.pk,count)
 
@@ -289,15 +325,14 @@ def multipart():
     """Scan all lists, accumulate types which are multipart"""
     types = {}
     for elist in EmailList.objects.all().order_by('name'):
-    # for elist in EmailList.objects.filter(name='homenet').order_by('name'):
         print "Scanning {}".format(elist.name)
-        
+
         for msg in Message.objects.filter(email_list=elist).order_by('date'):
             message = email.message_from_string(msg.get_body_raw())
             for part in message.walk():
                 if part.is_multipart():
                     types[part.get_content_type()] = types.get(part.get_content_type(),0) + 1
-    
+
     print types
 
 def received_date(start):
@@ -316,7 +351,7 @@ def received_date(start):
             processing = True
         else:
             continue
-            
+
         if name != listname:
             listname = name
             print listname
@@ -325,7 +360,7 @@ def received_date(start):
         except _classes.UnknownFormat:
             print "Unknown format: %s" % path
             continue
-        
+
         for i,msg in enumerate(mb):
             total += 1
             recs = msg.get_all('received')
@@ -343,7 +378,7 @@ def received_date(start):
                 sys.exit(1)
             if not date:
                 print "Total: %s\nnorecs: %s" % (total,norecs)
-                print "Failed: %s:%s:%s" % (path,i,recs) 
+                print "Failed: %s:%s:%s" % (path,i,recs)
                 sys.exit(1)
             elif _classes.is_aware(date):
                 aware += 1
@@ -357,28 +392,28 @@ def subjects(listname):
     for msg in process([listname]):
         print "%s: %s" % (msg.get('date'),msg.get('subject'))
 
-def lookups():
-    """Test the message find routines"""
-    from haystack.query import SearchQuerySet
-    from mlarchive.archive.view_funcs import find_message_date, find_message_date_reverse, find_message_gbt
-    
-    for elist in EmailList.objects.all():
-        print "Checking list: {}".format(elist.name)
-        sqs = SearchQuerySet().filter(email_list=elist.pk).order_by('date')
-        print "-date"
-        for m in sqs:
-            if find_message_date(sqs,m.object) == -1:
-                print "Problem with {}:{}".format(elist.name,m.object.msgid)
-        sqs = SearchQuerySet().filter(email_list=elist.pk).order_by('-date')
-        print "-date-reverse"
-        for m in sqs:
-            if find_message_date_reverse(sqs,m.object) == -1:
-                print "Problem with {}:{}".format(elist.name,m.object.msgid)
-        sqs = SearchQuerySet().filter(email_list=elist.pk).order_by('tdate','date')
-        print "-gbt"
-        for m in sqs:
-            if find_message_gbt(sqs,m.object) == -1:
-                print "Problem with {}:{}".format(elist.name,m.object.msgid)
+def run_messagewrapper_process():
+    """Call MessageWrapper.process() for each message in the (old) archive, to check
+    for errors after changing some underlying code"""
+    for msg in all_messages(['ancp']):
+        '''follow date() pattern, need to know list, etc, during iteration'''
+        pass
+
+def unicode():
+    """Scan all lists looking for non-ascii data in headers to test handling"""
+    for elist in EmailList.objects.all().order_by('name'):
+    # for elist in EmailList.objects.filter(name='homenet').order_by('name'):
+        print "Scanning {}".format(elist.name)
+
+        for msg in Message.objects.filter(email_list=elist).order_by('date'):
+            message = email.message_from_string(msg.get_body_raw())
+
+            for header in ('from','subject'):
+                if not is_ascii(message[header]):
+                    print "Message: {},   {}:{}".format(msg.pk,header,message[header])
+                    return
+
+
 # ---------------------------------------------------------
 # Main
 # ---------------------------------------------------------

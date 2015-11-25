@@ -53,6 +53,9 @@ def process_files(listname,files,args):
 
 def process_message(listname,msgid,number,args):
     global MATCH_COUNT, CREATED_COUNT
+    if args.verbose:
+        print "listname={},msgid={},number={}".format(listname,msgid,number)
+        
     try:
         obj = Legacy.objects.get(msgid=msgid,email_list_id=listname)
         MATCH_COUNT += 1

@@ -36,6 +36,7 @@ import glob
 import mailbox
 import re
 import sys
+import time
 
 date_pattern = re.compile(r'(Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+')
 dupetz_pattern = re.compile(r'[\-\+]\d{4} \([A-Z]+\)$')
@@ -113,6 +114,36 @@ def bodies():
             print '{0} [{1}]'.format(e, msg.pk)
         if msg.pk % 1000 == 0:
             print 'processed {0} of {1}'.format(msg.pk,total)
+
+def bogus_date():
+    """Identify messages with no or incorrect date header.  Scans messages in new
+    archive.  Checks header in message file, not the database, since we want to identify
+    problem messages visible in IMAP"""
+    no_date = 0
+    bogus_date = 0
+    total = Message.objects.count()
+    min_date = datetime.datetime(1982,1,1)
+    max_date = datetime.datetime.today() + datetime.timedelta(days=1)
+    for message in Message.objects.iterator():
+        with open(message.get_file_path()) as fp:
+            msg = email.message_from_file(fp)
+        if not msg.has_key('date'):
+            no_date = no_date + 1
+            print "Missing date header: {}:{}".format(message.email_list.name,message.pk)
+            continue
+
+        date = msg.get('date')
+        dt = _classes.parsedate_to_datetime(date)
+        dt = dt.replace(tzinfo=None)                # force naive
+        if dt < min_date or dt > max_date:
+            bogus_date = bogus_date + 1
+            print "Bogus date: {}:{}, {}".format(message.email_list.name,message.pk,date)
+        
+        if message.pk % 1000 == 0:
+            print 'processed {0} of {1}'.format(message.pk,total)
+
+    print "No Date:{}".format(no_date)
+    print "Bogus Date: {}".format(bogus_date)
 
 def count(listname):
     """Count number of messages in legacy archive for listname"""
@@ -398,6 +429,11 @@ def run_messagewrapper_process():
     for msg in all_messages(['ancp']):
         '''follow date() pattern, need to know list, etc, during iteration'''
         pass
+def test():
+    """Just print count every five seconds to test progress"""
+    for n in range(0,10):
+        time.sleep(5)
+        print n
 
 def unicode():
     """Scan all lists looking for non-ascii data in headers to test handling"""

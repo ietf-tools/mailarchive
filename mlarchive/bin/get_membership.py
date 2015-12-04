@@ -72,22 +72,31 @@ def main():
                       action="store_true", default=False)
     (options, args) = parser.parse_args()
 
-    cmd = os.path.join(settings.MAILMAN_DIR,'bin/list_members')
-
+    list_members_cmd = os.path.join(settings.MAILMAN_DIR,'bin/list_members')
+    list_lists_cmd = os.path.join(settings.MAILMAN_DIR,'bin/list_lists')
+    
     # disconnect the EmailList post_save signal, we don't want to call it multiple
     # times if many lists memberships have changed
     post_save.disconnect(_list_save_handler,sender=EmailList)
     has_changed = False
     
+    known_lists = check_output([list_lists_cmd]).split()
+    assert len(known_lists) > 100       # assert reasonable output
+    
     for mlist in EmailList.objects.filter(private=True,active=True):
+        # skip lists that aren't managed by mailman
+        if mlist.name not in known_lists:
+            continue
+        
         if not options.quiet:
             print "Processing: %s" % mlist.name
-
+            
         try:
-            output = check_output([cmd,mlist.name])
+            output = check_output([list_members_cmd,mlist.name])
         except CalledProcessError:
             # some lists don't exist in mailman
             continue
+            
         sha = hashlib.sha1(output)
         digest = base64.urlsafe_b64encode(sha.digest())
         if mlist.members_digest != digest:

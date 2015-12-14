@@ -113,7 +113,9 @@ Escape character is '^]'.
 stats
 stats items
 quit</pre>
-
+    To flush the queue<br>
+    <pre>flush_all</pre>
+    
     References:<br>
     <a href="http://memcached.org">Memcache Homepage</a><br>
     <a href="http://www.pal-blog.de/entwicklung/perl/memcached-statistics-stats-command.html">Memcached Statistics</a>
@@ -157,6 +159,10 @@ rabbitmqctl start_app</pre>
 
     <br>
     Admin:<br>
+    Config File: /etc/default/celeryd<br>
+    Log File: /var/log/celery/worker1.log<br>
+    <pre class="example">$ celery status
+$ celery report</pre>
     Before you can access the Celery web admin tool, Flower, you need to start a 
     web-server:
     <pre class="example">export PYTHONPATH=/a/mailarch/current
@@ -190,6 +196,7 @@ $ celery worker -A mlarchive.celeryapp:app</pre>
     
     References:<br>
     <a href="http://docs.celeryproject.org/en/latest/userguide/monitoring.html">Celery admin & monitoring</a><br>
-
+    <a href="http://celery.readthedocs.org/en/latest/index.html">Documentation</a><br>
+    
 </div> <!-- admin_page -->
 {% endblock %}

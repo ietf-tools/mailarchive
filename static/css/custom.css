@@ -1,0 +1,15 @@
+.navbar-brand > img {
+    display: inline;
+    margin-top: -5px;
+    padding-right: 1em;
+}
+
+#search-container {
+    margin-top: 150px;
+}
+
+#navigation {
+    display: inline-block;
+    list-style-type: none;
+    margin: 10px auto;
+}

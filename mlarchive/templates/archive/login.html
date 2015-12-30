@@ -12,13 +12,16 @@ $(function() {
 
 {% block content %}
 
-<div id="login-container">
+<div class="row">
+  <div class="col-md-2 col-md-offset-5">
+  <div id="login-container">
   <form action="." method="post">{% csrf_token %}
     {{ form.as_p }}
-    <div class="button-group"><ul><li><input id="login-submit" type="submit" value="Submit" /></li></ul></div>
+    <div class="button-group"><ul><li><input id="login-submit" type="submit" value="Submit" class="btn btn-default"/></li></ul></div>
   </form>
+  </div>
+  </div>
 </div>
-
 
 {% endblock %}
 

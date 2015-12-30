@@ -8,8 +8,28 @@
     margin-top: 150px;
 }
 
+#nav-inner {
+    display: table;
+    margin: 0 auto;
+}
+
 #navigation {
     display: inline-block;
     list-style-type: none;
     margin: 10px auto;
+    padding: 0;
+}
+
+#navigation li {
+    border-right: 1px solid #5b80b2;;
+    display: inline;
+    padding: 0 10px 0 10px;
+}
+
+#navigation li:last-child {
+    border-right: none;
+}
+
+#login-container {
+    margin-top: 60px;
 }

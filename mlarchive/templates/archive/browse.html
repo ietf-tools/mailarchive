@@ -1,8 +1,4 @@
-{% extends "base_960.html" %}
-
-{% block extrahead %}
-<script type="text/javascript" src="{{ STATIC_URL }}js/browse.js"></script>
-{% endblock %}
+{% extends "base.html" %}
 
 {% block title %}Mail Archive{% endblock %}
 
@@ -23,30 +19,38 @@
 <div id="private-lists" class="browse_section">
 {% if columns.private %}
 <h2>Private Lists</h2>
+<div class="col-md-1"></div>
 {% with columns.private as columns %}
     {% include "includes/browse_columns.html" %}
 {% endwith %}
+<div class="col-md-1"></div>
 {% endif %}
 </div>
 
 <div id="active-lists" class="browse_section">
 <h2>Active Lists</h2>
+<div class="col-md-1"></div>
 {% with columns.active as columns %}
     {% include "includes/browse_columns.html" %}
 {% endwith %}
+<div class="col-md-1"></div>
 </div>
 
 <div id="inactive-lists" class="browse_section">
 {% if columns.inactive %}
 <h2>Inactive Lists</h2>
+<div class="col-md-1"></div>
 {% with columns.inactive as columns %}
     {% include "includes/browse_columns.html" %}
 {% endwith %}
+<div class="col-md-1"></div>
 {% endif %}
 </div>
-
 </div> <!-- browse_page -->
 
 {% endblock %}
 
+{% block js %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/browse.js"></script>
+{% endblock %}
 

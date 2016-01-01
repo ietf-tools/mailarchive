@@ -1,3 +1,7 @@
+body {
+    padding-top: 40px;
+}
+
 .navbar-brand > img {
     display: inline;
     margin-top: -5px;
@@ -32,4 +36,30 @@
 
 #login-container {
     margin-top: 60px;
+}
+
+/* ==========================================================================
+   Browse
+   ========================================================================== */
+div.browse_section {
+    margin: 0 auto;
+    clear: both;
+}
+
+ul.browse_list {
+    padding-left: 0;
+}
+
+ul.browse_list li {
+    list-style-type: none;
+    white-space: nowrap;
+}
+
+/* ==========================================================================
+   Advanced Search
+   ========================================================================== */
+a.addParamBtn {}
+
+.date-field {
+    display: none;
 }

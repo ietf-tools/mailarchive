@@ -7,6 +7,8 @@
     <title>{% block title %}{% endblock %}</title>
 
     <!-- <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css"> -->
+    <link href="http://jquery-ui-bootstrap.github.io/jquery-ui-bootstrap/css/custom-theme/jquery-ui-1.10.3.custom.css" rel="stylesheet"/>
+
     <link rel="stylesheet" href="{{ STATIC_URL }}bootstrap3/css/bootstrap.css" type="text/css">
     <link rel="stylesheet" href="{{ STATIC_URL }}bootstrap3/css/bootstrap-theme.css" type="text/css">
     <link rel="stylesheet" href="{{ STATIC_URL }}css/custom.css" type="text/css">
@@ -25,36 +27,37 @@
 
     <nav class="navbar {% if server_mode and server_mode != "production" %}navbar-inverse{% else %}navbar-default{% endif %} navbar-fixed-top">
         <div class="container-fluid">
-            <div class="navbar-header">
-            <a class="navbar-brand" href="/">
-               <img alt="IETF Logo" src="https://www.ietf.org/lib/dt/6.11.0/ietf/images/ietflogo-small-transparent.png">
-               {% if not user.is_authenticated %}
-                  {% if server_mode and server_mode == "production" %}
-                  Datatracker
-                  {% else %}
-                  <b><i>Development mode</i></b>
-                  {% endif %}
-               {% endif %}
-            </a>
+            <div class="navbar-header pull-left">
+                <a class="navbar-brand" href="/">
+                   <img alt="IETF Logo" src="https://www.ietf.org/lib/dt/6.11.0/ietf/images/ietflogo-small-transparent.png">
+                   {% if not user.is_authenticated %}
+                      {% if server_mode and server_mode == "production" %}
+                      Datatracker
+                      {% else %}
+                      <b><i>Development mode</i></b>
+                      {% endif %}
+                   {% endif %}
+                </a>
             </div> <!-- navbar-header -->
+
+            <div class="navbar-header pull-right">
+                <ul class="nav navbar-nav">
+                    <li>
+                    {% if user.is_authenticated %}
+                        <span class="pipe">{{ user }}</span>
+                        <a href="{% url "archive_logout" %}">Sign out</a>
+                    {% else %}
+                        <a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>
+                    {% endif %}
+                    </li>
+                </ul> <!-- login -->
+            </div> <!-- navbar-header -->
+        </div> <!-- container-fluid -->
+    </nav>
 
             <noscript>
                 <p class="navbar-text"><small>Enable Javascript for full functionality.</small></p>
             </noscript>
-            
-            <ul class="nav navbar-nav navbar-right">
-                <li>
-                {% if user.is_authenticated %}
-                    <span class="pipe">{{ user }}</span>
-                    <a href="{% url "archive_logout" %}">Sign out</a>
-                {% else %}
-                    <a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>
-                {% endif %}
-                </li>
-            </ul> <!-- login -->
-        </div> <!-- container-fluid -->
-    </nav>
-
 
         <!-- Django Messages -->
         {% if messages %}
@@ -75,11 +78,11 @@
 
 </div> <!-- END Container -->
 
-    <!-- <script type="text/javascript" src="{{ STATIC_URL }}js/jquery-1.8.0.min.js"></script> -->
+    <script type="text/javascript" src="{{ STATIC_URL }}jquery/jquery-1.11.3.min.js"></script>
     <!-- <script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.10.3.custom.min.js"></script> -->
-    <script src="{{ STATIC_URL }}bootstrap3/js/bootstrap.js"</script>
+    <script src="{{ STATIC_URL }}bootstrap3/js/bootstrap.js"></script>
     <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script> -->
-    <!-- <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script> -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.json-2.3.min.js"></script>
     <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script> -->
     {% block js %}{% endblock %}

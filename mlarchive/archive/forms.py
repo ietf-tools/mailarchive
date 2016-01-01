@@ -156,7 +156,8 @@ class AdvancedSearchForm(FacetedSearchForm):
             widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
     end_date = forms.DateField(required=False,
             widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
-    email_list = forms.CharField(max_length=255,required=False,widget=forms.HiddenInput)
+    #email_list = forms.CharField(max_length=255,required=False,widget=forms.HiddenInput)
+    email_list = forms.ModelMultipleChoiceField(queryset=EmailList.objects)
     subject = forms.CharField(max_length=255,required=False)
     frm = forms.CharField(max_length=255,required=False)
     msgid = forms.CharField(max_length=255,required=False)
@@ -166,7 +167,7 @@ class AdvancedSearchForm(FacetedSearchForm):
     spam_score = forms.CharField(max_length=3,required=False)
     # group and filter fields
     gbt = forms.BooleanField(required=False)                     # group by thread
-    qdr = forms.ChoiceField(choices=TIME_CHOICES,required=False) # qualified date range
+    qdr = forms.ChoiceField(choices=TIME_CHOICES,required=False,label=u'Time') # qualified date range
     f_list = forms.CharField(max_length=255,required=False)
     f_from = forms.CharField(max_length=255,required=False)
 

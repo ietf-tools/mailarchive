@@ -1,5 +1,5 @@
 {% for col in columns %}
-  <div class="browse_column">
+  <div class="browse_column col-md-2">
     <ul class="browse_list">
       {% for item in col %}
         <li><a class="browse-link" href="../search/?email_list={{ item|urlencode }}">{{ item|truncatechars:19 }}</a></li>

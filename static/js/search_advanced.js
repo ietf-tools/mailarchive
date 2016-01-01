@@ -99,14 +99,15 @@ $(function() {
 
     $("#id_qdr").change(function() {
         if($(this).val()=="c") {
-            $("#custom_date").show();
+            $(".date-field").show();
         } else {
             $("#id_start_date").val("");
             $("#id_end_date").val("");
-            $("#custom_date").hide();
+            $(".date-field").hide();
         }
     });
 
-    setup_ajax($("#id_email_list"), $("#email_list_list"), $("#email_list_search"), "arch/ajax/list/");
+    //setup_ajax($("#id_email_list"), $("#email_list_list"), $("#email_list_search"), "arch/ajax/list/");
     init_forms();
+    $("#id_email_list").select2();
 });

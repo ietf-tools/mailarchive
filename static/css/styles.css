@@ -1142,7 +1142,7 @@ div.browse_section h2 {
    Admin
    ========================================================================== */
 #admin_top {
-    margin: 1em auto 1em;
+    margin: 1em auto 0;
 }
 #admin_page {
     width: 960px;
@@ -1153,7 +1153,6 @@ div.browse_section h2 {
 #admin_page h2 {
     background: #417690;
     color: white;
-    margin-top: 2em;
     text-align: center;
 }
 
@@ -1208,7 +1207,16 @@ pre.example {
 
 #result-table {
     table-layout: fixed;
-    width: 960px;
+    width: 100%;
+}
+
+#result-table td {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+#result-table th {
+    line-height: 18px;
 }
 
 th.col1, th.col2 {
@@ -1229,6 +1237,13 @@ th.col3 {
     margin-right: 35px;
     display: inline;
     font-size: 11px;
+}
+#admin-results {
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 200px;
+    border: 1px solid #ccc;
+    position: relative;
 }
 /* ==========================================================================
    Help Page

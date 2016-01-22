@@ -141,6 +141,7 @@ class AdminForm(forms.Form):
     frm = forms.CharField(max_length=255,required=False)
     msgid = forms.CharField(max_length=255,required=False)
     spam = forms.BooleanField(required=False)
+    spam_score = forms.CharField(max_length=6,required=False)
     start_date = forms.DateField(required=False)
     subject = forms.CharField(max_length=255,required=False)
 

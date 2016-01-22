@@ -40,6 +40,7 @@ import time
 
 date_pattern = re.compile(r'(Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+')
 dupetz_pattern = re.compile(r'[\-\+]\d{4} \([A-Z]+\)$')
+from_line_re = re.compile(r'From .* (Sun|Mon|Tue|Wed|Thu|Fri|Sat)( |,)')
 
 date_formats = ["%a %b %d %H:%M:%S %Y",
                 "%a, %d %b %Y %H:%M:%S %Z",
@@ -145,6 +146,19 @@ def bogus_date():
     print "No Date:{}".format(no_date)
     print "Bogus Date: {}".format(bogus_date)
 
+def bogus_mmdf():
+    """Identify mbox files that start out with MMDF header ^A^A^A^A then proceed with
+    normal "From " line separators."""
+    total = 0
+    for path in all_mboxs():
+        with open(path) as f:
+            line1 = f.readline()
+            line2 = f.readline()
+            if line1 == '\x01\x01\x01\x01\n' and from_line_re.match(line2):
+                print path
+
+    print "Total: %d" % total
+
 def count(listname):
     """Count number of messages in legacy archive for listname"""
     total = 0
@@ -233,8 +247,6 @@ def envelope_date():
 
 def envelope_regex():
     """Quickly test envelope regex matching on every standard mbox file in archive"""
-    #for path in ['/a/www/ietf-mail-archive/text/lemonade/2002-09.mail']:
-    # pattern = re.compile(r'From (.*@.* |MAILER-DAEMON ).{24}')
     pattern = re.compile(r'From .* (Sun|Mon|Tue|Wed|Thu|Fri|Sat)( |,)')
 
     for path in all_mboxs():
@@ -313,14 +325,12 @@ def missing_files():
         if not os.path.exists(message.get_file_path()):
             print 'missing: %s:%s:%s' % (message.email_list, message.pk, message.date)
             total += 1
-            #message.delete()
     print '%d of %d missing.' % (total, messages.count())
 
 def mmdfs():
     """Scan all mailbox files and print first lines of MMDF types, looking for
     different styles
     """
-    #import binascii
     count = 0
     for path in all_mboxs():
         try:

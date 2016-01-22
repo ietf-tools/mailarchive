@@ -7,10 +7,29 @@ from django.http import HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 
+from mlarchive.archive import actions
 from mlarchive.archive.utils import jsonapi
 from mlarchive.archive.models import EmailList, Message
-from mlarchive.utils.decorators import check_access
+from mlarchive.utils.decorators import check_access, superuser_only
 
+@superuser_only
+@jsonapi
+def ajax_admin_action(request):
+    """Ajax function to perform action on a message"""
+    if request.method == 'GET':
+        #assert False, request.GET
+        #return
+        action = request.GET.get('action')
+        id = request.GET.get('id')
+        func = getattr(actions, action)
+        #selected = request.POST.getlist('_selected_action')
+        queryset = Message.objects.filter(pk=id)
+        func(request, queryset)
+        return { 'success' : True }
+
+    if request.method == 'POST':
+        assert False, request.POST
+        
 @jsonapi
 def ajax_get_list(request):
     """Ajax function for use with jQuery UI Autocomplete.  Returns list of EmailList

@@ -145,6 +145,16 @@ class Message(models.Model):
         """
         return parseaddr(self.frm)[1].lower()
 
+    @property
+    def frm_realname(self):
+        """This property is the realname portion of the "From" header.
+        """
+        realname = parseaddr(self.frm)[0]
+        if realname:
+            return realname
+        else:
+            return self.frm_email
+        
     def get_absolute_url(self):
         # strip padding, "=", to shorten URL
         return reverse('archive_detail',kwargs={'list_name':self.email_list.name,

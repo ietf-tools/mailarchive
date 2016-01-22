@@ -9,6 +9,7 @@ urlpatterns = patterns('mlarchive.archive.ajax',
     url(r'ajax/list/?$', 'ajax_get_list', name='ajax_get_list'),
     url(r'ajax/msg/?$', 'ajax_get_msg', name='ajax_get_msg'),
     url(r'ajax/messages/?$', 'ajax_messages', name='ajax_messages'),
+    url(r'ajax/admin/action/?$', 'ajax_admin_action', name='ajax_admin_action'),
 )
 
 urlpatterns += patterns('mlarchive.archive.views',

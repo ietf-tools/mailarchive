@@ -10,17 +10,20 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
 
 class EmailListFactory(factory.DjangoModelFactory):
-    FACTORY_FOR = EmailList
+    class Meta:
+        model = EmailList
 
     name = 'test'
 
 class ThreadFactory(factory.DjangoModelFactory):
-    FACTORY_FOR = Thread
+    class Meta:
+        model = Thread
     
     date = datetime.datetime.now()
     
 class MessageFactory(factory.DjangoModelFactory):
-    FACTORY_FOR = Message
+    class Meta:
+        model = Message
 
     date = datetime.datetime.now().replace(second=0,microsecond=0)
     subject = 'This is a test message'
@@ -33,7 +36,8 @@ class MessageFactory(factory.DjangoModelFactory):
     thread = factory.SubFactory(ThreadFactory)
 
 class UserFactory(factory.DjangoModelFactory):
-    FACTORY_FOR = User
+    class Meta:
+        model = User
 
     email = 'admin@admin.com'
     username = 'admin'

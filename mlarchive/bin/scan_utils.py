@@ -26,6 +26,7 @@ def all_mboxs(listnames=None):
         dirs = sorted(glob.glob('/a/www/ietf-mail-archive/text*/*'))
     for dir in dirs:
         all = [ os.path.join(dir,f) for f in os.listdir(dir) ]
+        all = sorted(all)
         files = filter(is_mbox, all)
         for file in files:
             size = os.stat(file).st_size
@@ -59,6 +60,13 @@ def is_mbox(filename):
         return False
     return True
 
+def is_mmdf(filename):
+    """Returns True if file is MMDF type mbox (CTRL-A envelope headers)"""
+    with open(filename) as fp:
+        line = fp.readline()
+        if line == '\x01\x01\x01\x01\n':
+            return True
+    return False
 
 def get_mboxs(listname):
     """Returns mbox objects for listname"""

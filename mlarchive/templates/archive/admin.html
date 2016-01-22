@@ -1,7 +1,7 @@
 {% extends "base_960.html" %}
 
 {% block extrahead %}
-<script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.8.23.custom.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.10.3.custom.min.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/admin.js"></script>
 {% endblock %}
 
@@ -18,7 +18,7 @@
             <table id="admin_search_table">
                 <tr><td>Subject:</td><td>{{ form.subject }}</td><td>Message-ID:</td><td>{{ form.msgid }}</td></tr>
                 <tr><td>From:</td><td>{{ form.frm }}</td><td>List:</td><td>{{ form.email_list }}</td></tr>
-                <tr><td>Date Range:</td><td>{{ form.start_date }} to {{ form.end_date }}</td><td>Spam:</td><td>{{ form.spam }}<input id="id_submit" type="submit" name="submit" value="Search"/></td></tr>
+                <tr><td>Date Range:</td><td>{{ form.start_date }} to {{ form.end_date }}</td><td>Spam / Spam Score:</td><td>{{ form.spam }}&nbsp;{{ form.spam_score }}<input id="id_submit" type="submit" name="submit" value="Search"/></td></tr>
                 <tr><td colspan="4"></td></tr>
             </table>
         </form>
@@ -47,6 +47,7 @@
     </div>
 </div> <!-- admin-controls -->
 
+<div id="admin-results" tabindex="-1">
 <table id="result-table">
     <tr>
         <th class="col1"></th>
@@ -61,9 +62,10 @@
             <td><input type="checkbox" class="action-select" value="{{ item.object.pk }}" name="_selected_action"></td>
             <td>{{ forloop.counter }}</td>
             <td>{{ item.object.subject }}</td>
-            <td>{{ item.object.frm }}</td>
+            <td>{{ item.object.frm_realname }}</td>
             <td>{{ item.object.to }}</td>
             <td class="hidden">{{ item.object.get_absolute_url }}</td>
+            <td class="hidden">{{ item.object.pk }}</td>
           </tr>
         {% endfor %}
     {% else %}
@@ -78,10 +80,12 @@
         {% endif %}
     {% endif %}
 </table>
-
+</div> <!-- admin-results -->
 </form>
 </div>
 
+<div id="admin-view-pane">
+</div>
 
 </div> <!-- admin_page -->
 

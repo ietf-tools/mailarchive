@@ -1,7 +1,8 @@
 #!/usr/bin/python
 '''
-This script will report on and fix various kinds of corruptions identified in the
-original mail archive
+This script will identify various forms of mbox source file corruption.
+Some can be fixed using command line option, --fix, and some are marked via the
+spam_score field.  See the handle_typeN functions below for details.
 '''
 
 # Set PYTHONPATH and load environment variables for standalone script -----------------
@@ -19,6 +20,8 @@ django.setup()
 # -------------------------------------------------------------------------------------
 
 import argparse
+import logging
+import operator
 import re
 import shutil
 from collections import deque
@@ -45,7 +48,7 @@ STATS = {}
 TOTAL_EFCOUNT = 0
 
 def false_positive(line):
-    """Returns True if line matches a type of legitimate line"""
+    """Returns True if line matches a type of legitimate From line"""
     if QUOTED_FROM_PATTERN.match(line):
         return True
     if LEGIT_FROM_PATTERN.match(line):
@@ -83,13 +86,13 @@ def get_from_chunk(line):
 
 def get_listname(path):
     return path.split('/')[-2]
-    
+
 def handle_type1(path,line,args):
     '''
     Type1 is when the file starts with MMDF style envelope lines (^A^A^A^A) and
     switches to normal "From " line separators.
-    
-    Fix splits the file into two pieces ie. 
+
+    Fix splits the file into two pieces ie.
     1998-08 : containing the MMDF style messages
     1998-08.mail : containing the normal mbox style messages
     '''
@@ -114,7 +117,7 @@ def handle_type1(path,line,args):
             outputData = input[line:]
             output.write('\n'.join(outputData))
             output.close()
-            
+
 def handle_type2(path,line,args,last_two):
     '''
     Type2 is when Received "id" lines aren't properly indented
@@ -129,32 +132,38 @@ def handle_type2(path,line,args,last_two):
             print "{}:{}".format(path,line)
             pprint(last_two)
         if args.fix:
+            # these were fixed with sed a command
             pass
 
 def handle_type3(path,index,args):
     '''
-    Type3 is a embedded From line
+    Type3 is an embedded From line.
+    During a period between 2005-2008, there seems to have been a bug with the archive
+    file locking.  Messages were written to the mobx files on top of other messages,
+    corrupting the file which causes issues with message parsing.  This handler
+    will identify instances of this corruption then mark nearby messages in the archive
+    with spam_score = 9 for addressing later.
     '''
     global STATS
     STATS['type3_files'].add(path)
     listname = get_listname(path)
-    
+
     with open(path) as fp:
         lines = fp.readlines()
-    
+
     try:
         start = find_top(lines,index)
     except IndexError:
         print "top not found: {}.{}".format(path,index)
         STATS['type3_errors'] += 1
-    
+        return
+
     # readlines up to but not including top
     with open(path) as fp:
         for x in xrange(start):
-            xline = fp.readline()
+            fp.readline()
         begin_byte = fp.tell()
-        #print "start: {}, xline: {}, begin_byte: {}".format(start,xline,begin_byte)
-    
+
     # use TOC to find message in mailbox
     mb = _classes.get_mb(path)
     mb._generate_toc()
@@ -164,45 +173,43 @@ def handle_type3(path,index,args):
             break
     else:
         print "no match to {}".format(begin_byte)
-        sys.exit(1)
-        
+        return
+
     # match to messages in archive
-    print "toc index: {}".format(toc_index)
+    if args.verbose:
+        print "toc index: {}".format(toc_index)
     mw = _classes.MessageWrapper(mb[toc_index],listname)
     try:
         message = Message.objects.get(email_list__name=listname,
             msgid=mw.archive_message.msgid)
+        mark_messages(message)
     except Message.DoesNotExist:
         print "failed, {}:{}".format(listname,mw.archive_message.msgid)
         STATS['type3_missing'] += 1
-        #sys.exit(1)
-    
-    #print "found message {}".format(message.pk)
-    
-    #from_line = get_from_chunk(lines[index]) + '\n'
-    #if lines[start] != from_line:
-    #    print "lines[start] : {}".format(lines[start])
-    #    print "from_line : {}".format(from_line)
-    #    sys.exit(1)
-    #assert lines[start] == from_line + '\n'
-    #print "START {}:{}".format(start,lines[start])
+
+def mark_messages(message):
+    '''Mark given message and the next few with spam_score'''
+    messages = Message.objects.filter(pk__gte=message.pk,pk__lte=message.pk+2)
+    messages.update(spam_score=9)
+    #sys.exit()
 
 def process_mbox(path,args):
+    global TOTAL_EFCOUNT, STATS
+    
     # skip django-project, too many false positives
     listname = path.split('/')[-2]
     if listname == 'django-project':
         return
-    global TOTAL_EFCOUNT
+    
     efcount = 0
     with open(path) as fp:
         for num,line in enumerate(fp):
             if EMBEDDED_FROM_PATTERN.match(line) and not false_positive(line):
+                STATS['type3_per_list'][listname] = STATS['type3_per_list'].get(listname,0) + 1
                 efcount += 1
                 if args.verbose:
                     print "{}:{}:{}".format(listname,num+1,line)
                 handle_type3(path,num,args)
-    if efcount > 0:
-        print "{}:{}:{}".format(path,'MBOX',efcount)
     TOTAL_EFCOUNT = TOTAL_EFCOUNT + efcount
 
 def process_mmdf(path,args):
@@ -245,9 +252,10 @@ def test():
     '<P><FONT SIZE=2>&gt;From amyk@cnri.reston.va.us Mon Jan 19 23:37:40 2004</FONT>',
     'X-Mailbox-Line: From elwynd@nomadic.n4c.eu Sat Jul 25 12:56:31 2009',
     ]
-    
+
 def main():
     global STATS
+    
     parser = argparse.ArgumentParser(description='Fix corrupt mbox file')
     parser.add_argument('path',nargs="?")     # positional argument
     parser.add_argument('-c','--check',help="check only, dont't import",action='store_true')
@@ -263,11 +271,12 @@ def main():
     STATS['type3_files'] = set()
     STATS['type3_errors'] = 0
     STATS['type3_missing'] = 0
+    STATS['type3_per_list'] = {}
     STATS['type2_per_file'] = {}
     STATS['type2_calls'] = 0
     STATS['unhandled'] = 0
     STATS['uhcount'] = 0
-    
+
     if args.path:
         listnames = [args.path]
     else:
@@ -280,16 +289,19 @@ def main():
             process_mbox(mbox, args)
 
     print "Total Embedded From Lines: {}".format(TOTAL_EFCOUNT)
-    
+
     # print stats
-    exceptions = ['type2_files','type3_files']  # don't print these stats
+    exceptions = ['type2_files','type3_files','type3_per_list']  # don't print these stats
     items = [ '%s:%s' % (k,v) for k,v in STATS.items() if k not in exceptions]
     items.append('\n')
     print '\n'.join(items)
     print
     #print '\n'.join(STATS['type3_files'])
     print "Total: {}".format(len(STATS['type3_files']))
-            
+    out = sorted(STATS['type3_per_list'].items(),key=operator.itemgetter(1))
+    for k,v in out:
+        print "{}:{}".format(k,v)
+
 if __name__ == "__main__":
     main()
 

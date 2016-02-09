@@ -331,7 +331,8 @@ def _message_remove(sender, instance, **kwargs):
         os.mkdir(target)
         os.chmod(target,02777)
     shutil.move(path,target)
-
+    logger.info('message file moved: {} => {}'.format(path,target))
+    
     # TODO
     # if this message was the first in the thread reset
     #if instance == instance.thread.first:

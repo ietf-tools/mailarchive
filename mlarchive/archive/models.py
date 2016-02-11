@@ -33,7 +33,7 @@ logger = getLogger('mlarchive.custom')
 # --------------------------------------------------
 
 class Thread(models.Model):
-    first = models.ForeignKey('Message',related_name='thread_key',blank=True,null=True)  # first message in thread, by date
+    first = models.ForeignKey('Message',on_delete=models.SET_NULL,related_name='thread_key',blank=True,null=True)  # first message in thread, by date
     date = models.DateTimeField(db_index=True)     # date of first message
 
     def __unicode__(self):
@@ -333,10 +333,10 @@ def _message_remove(sender, instance, **kwargs):
     shutil.move(path,target)
     logger.info('message file moved: {} => {}'.format(path,target))
     
-    # TODO
-    # if this message was the first in the thread reset
-    #if instance == instance.thread.first:
-    #   instance.thread.set_first(ignore=instance)
+    # if message is first of many in thread, should reset thread.first before deleting
+    if instance.thread.first == instance and instance.thread.message_set.count() > 1:
+        next_in_thread = instance.thread.message_set.order_by('date')[1]
+        instance.thread.set_first(next_in_thread)
 
 @receiver(post_save, sender=Message)
 def _message_save(sender, instance, **kwargs):

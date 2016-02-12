@@ -652,6 +652,11 @@ class MessageWrapper(object):
             msgid = make_msgid('ARCHIVE')
             self.created_id = True
             self.spam_score = self.spam_score | settings.MARK_BITS['NO_MSGID']
+            # add message-id to email_message headers so it gets to disk file
+            if 'message-id' in self.email_message:
+                self.email_message.replace_header('Message-ID',msgid)
+            else:
+                self.email_message.add_header('Message-ID',msgid)
             #raise GenericWarning('No MessageID (%s)' % self.email_message.get_from())
         return msgid
 

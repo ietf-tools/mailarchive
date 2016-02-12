@@ -14,7 +14,7 @@ if not path in sys.path:
     sys.path.insert(0, path)
 
 import django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.development'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production'
 django.setup()
 
 # -------------------------------------------------------------------------------------
@@ -142,7 +142,7 @@ def handle_type3(path,index,args):
     file locking.  Messages were written to the mobx files on top of other messages,
     corrupting the file which causes issues with message parsing.  This handler
     will identify instances of this corruption then mark nearby messages in the archive
-    with spam_score = 9 for addressing later.
+    with spam_score bit 16 for addressing later.
     '''
     global STATS
     STATS['type3_files'].add(path)
@@ -190,8 +190,9 @@ def handle_type3(path,index,args):
 def mark_messages(message):
     '''Mark given message and the next few with spam_score'''
     messages = Message.objects.filter(pk__gte=message.pk,pk__lte=message.pk+2)
-    messages.update(spam_score=9)
-    #sys.exit()
+    for m in messages:
+        m.spam_score = m.spam_score | 0b00010000
+        m.save()
 
 def process_mbox(path,args):
     global TOTAL_EFCOUNT, STATS

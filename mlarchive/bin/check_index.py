@@ -1,0 +1,62 @@
+#!/usr/bin/python
+'''
+This script will search for index records that have no corresponding db object.
+For best performance set HAYSTACK_ITERATOR_LOAD_PRE_QUERY = 10000
+'''
+
+# Set PYTHONPATH and load environment variables for standalone script -----------------
+# for file living in project/bin/
+import os
+import sys
+path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if not path in sys.path:
+    sys.path.insert(0, path)
+
+import django
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.standalone'
+django.setup()
+
+# -------------------------------------------------------------------------------------
+import argparse
+from celery_haystack.utils import get_update_task
+from django.conf import settings
+from haystack.query import SearchQuerySet
+from mlarchive.archive.models import *
+from mlarchive.archive.forms import get_list_info
+
+import logging
+logpath = os.path.join(settings.DATA_ROOT,'log/check_index.log')
+logging.basicConfig(filename=logpath,level=logging.DEBUG)
+
+def remove_index_entry(id):
+    '''Remove index entry using Celery queued task'''
+    task = get_update_task()
+    task.delay('delete',id)
+
+def main():
+    # parse arguments
+    parser = argparse.ArgumentParser(description='Check index for bad records')
+    parser.add_argument('-f','--fix',help="perform fix",action='store_true')
+    args = parser.parse_args()
+    
+    sqs = SearchQuerySet()
+    count = 0
+    stat = {}
+    for n,sr in enumerate(sqs):
+        if n % 10000 == 0:
+            logging.info(n)
+        if sr.object is None:
+            count = count + 1
+            logging.warning(sr.id + '\n')
+            elist = get_list_info(sr.email_list)
+            stat[elist] = stat.get(elist,0) + 1
+            if args.fix:
+                remove_index_entry(sr.id)
+            # _ = raw_input('Return to continue')
+
+    print count
+    for k,v in stat.items():
+        print "{}:{}".format(k,v)
+    
+if __name__ == "__main__":
+    main()

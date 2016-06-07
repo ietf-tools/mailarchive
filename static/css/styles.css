@@ -222,7 +222,7 @@ img#logo {
 /* ==========================================================================
    Home Page
    ========================================================================== */
-   
+
 @font-face {
   font-family: 'Glyphicons Halflings';
 
@@ -1099,7 +1099,7 @@ div.browse_section h2 {
     text-align: left;
 }
 
-#msg-aside ul li { 
+#msg-aside ul li {
     margin: 1em 0;
 }
 
@@ -1110,7 +1110,7 @@ div.browse_section h2 {
     text-align: center;
 }
 
-#msg-nav ul li { 
+#msg-nav ul li {
     display: inline;
     margin: 0 2em 0 2em;
 }
@@ -1211,6 +1211,9 @@ pre.example {
 }
 
 #result-table td {
+    max-width: 0;
+    min-width: 50px;
+    overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
@@ -1220,7 +1223,7 @@ pre.example {
 }
 
 th.col1, th.col2 {
-    width: 20px;
+    width: 25px;
 }
 
 th.col3 {

@@ -86,17 +86,17 @@ var mailarchAdmin = {
                     mailarchAdmin.scrollGrid(next);
                 }
             break;
-            case arrow.right:
-                event.preventDefault();
-                var row = $('.row-selected', this);
-                mailarchAdmin.doAction(row);
-            break;
-            case arrow.left:
-                event.preventDefault();
-                var row = $('.row-selected', this);
-                //row.hide("slide", {direction:"right"});
-                row.hide();
-            break;
+            //case arrow.right:
+            //    event.preventDefault();
+            //    var row = $('.row-selected', this);
+            //    mailarchAdmin.doAction(row);
+            //break;
+            //case arrow.left:
+            //    event.preventDefault();
+            //    var row = $('.row-selected', this);
+            //    //row.hide("slide", {direction:"right"});
+            //    row.hide();
+            //break;
             case space:
                 var row = $('.row-selected', this);
                 var chkbx = $('.action-select',row);

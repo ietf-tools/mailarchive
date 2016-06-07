@@ -6,17 +6,17 @@ TEMPLATE_DEBUG = DEBUG
 
 DATA_ROOT = '/a/mailarch/data'
 
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'test-cache'
-    }
-}
+#CACHES = {
+#    'default': {
+#        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+#        'LOCATION': 'test-cache'
+#    }
+#}
 
 # HAYSTACK SETTINGS
 # BaseSignalProcessor does not update the index
 # RealtimeSignalProccessor updates the index immediately
-HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.BaseSignalProcessor'
+#HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.BaseSignalProcessor'
 #HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 HAYSTACK_XAPIAN_PATH = os.path.join(DATA_ROOT,'archive_index')
 HAYSTACK_CONNECTIONS['default']['PATH'] = HAYSTACK_XAPIAN_PATH
@@ -29,3 +29,5 @@ SERVER_MODE = 'development'
 
 LOGGING['handlers']['watched_file']['filename'] = LOG_FILE
 LOGGING['handlers']['archive-mail_file_handler']['filename'] = os.path.join(DATA_ROOT,'log','archive-mail.log')
+
+

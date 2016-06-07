@@ -32,3 +32,8 @@ CACHES = {
 
 # IMAP Interface
 EXPORT_DIR = os.path.join(DATA_ROOT,'export')
+
+# Inspectors
+#INSPECTORS = {
+#    'ListIdSpamInspector': {'includes':['mpls']}
+#}

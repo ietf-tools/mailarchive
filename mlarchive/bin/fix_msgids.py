@@ -78,6 +78,9 @@ def main():
             list_dir = os.path.basename(os.path.dirname(file))
             backup_dir = os.path.join(BACKUP_DIR,list_dir)
             ensure_dir(backup_dir)
+            target = os.path.join(backup_dir,os.path.basename(file))
+            if os.path.exists(target):
+                os.remove(target)
             shutil.move(file,backup_dir)
         
             # write new file

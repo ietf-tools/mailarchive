@@ -51,43 +51,50 @@ DEPENDENCIES
 ============
 Python 2.7
 MySQL 5.5
-xapian-core 1.2.12
-python-xapian 1.2.12
+xapian-core 1.2.17
+python-xapian 1.2.17
 python-memcached
 lxml 3.3.1
 memcached 1.4.15
 RabbitMQ Server 2.8.7
-Celery v3.1.17
+Celery v3.1.20
 Django 1.7 (Included)
 Haystack 2.1.1 (Included)
 
 
 Python Packages
 ---------------
-pip install python-dateutil
-pip install pytest-django
-pip install factory-boy
+pip install -r requirements.txt
 
 Prerequisites
 -------------
+0. zypper install xapian-core python-xapian
+
 1. Install and configure memcached 
 zypper install memcached
-chkconfig memcached on
+systemctl enable memcached
+systemctl start memcached
+systemctl status memcached
 
 2. Install and configure RabbitMQ
 zypper install rabbitmq-server
 zypper install rabbitmq-server-plugins
 rabbitmq-plugins enable rabbitmq_management
-chkconfig rabbitmq-server on
+systemctl enable rabbitmq-server
+systemctl start rabbitmq-server
+systemctl status rabbitmq-server
 
 see: http://www.rabbitmq.com/man/rabbitmqctl.1.man.html
 
 3. Install and configure celery
-pip install celery
 cp INSTALL_DIR/celery/celeryd /etc/init.d
 cp INSTALL_DIR/celery/celeryd.conf /etc/default/celeryd
-add unpriviledged user celery, GROUP=celery
-chkconfig celeryd on
+systemctl enable celeryd
+systemctl start celeryd
+systemctl status celeryd
+# celery status
+** NOTE ** Celery will fail to start unless log/mlarchive.log and
+log/archive-mail.log exist and are writable
 
 SETUP:
 The following steps will refer to INSTALL_DIR (ie. /a/mailarch )
@@ -156,6 +163,7 @@ ietfarch-atompub-archive:               "|/a/ietf/scripts/call-archives atompub"
 x) Install Cronscripts
 
 
+*** DEPRECATED ***
 6. Xapian Replication
 On the Server: add the following line to celeryd.conf:
 export XAPIAN_MAX_CHANGESETS=10
@@ -168,7 +176,7 @@ On the Client: periodically run the following
 
 cd /a/mailarch/data
 xapian-replicate -o -h [server hostname] -p 7010 archive_index
-
+*** *** *** ***
 
 TESTING:
 Testing requires an instance of the message Xapian message index.  It must contain an

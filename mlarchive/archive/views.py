@@ -19,7 +19,7 @@ from haystack.query import SearchQuerySet
 from mlarchive.utils.decorators import check_access, superuser_only, pad_id
 from mlarchive.archive import actions
 from mlarchive.archive.query_utils import get_kwargs
-from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export, 
+from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     find_message_date, find_message_date_reverse, find_message_gbt)
 
 from models import *
@@ -65,12 +65,12 @@ class CustomSearchView(SearchView):
         return super(self.__class__,self).build_form(form_kwargs={ 'request' : self.request })
 
     def build_page(self):
-        """Returns tuple of: 
+        """Returns tuple of:
         - subset of results for display
         - queryset offset: the offset of results subset within entire queryset
         - selected offset: the offset of message specified in query arguments within
         results subset
-        
+
         If request arguments include "index", returns slice of results containing
         message named in "index" with appropriate offset within slice, otherwise returns
         first #(results_per_page) messages and offsets=0.
@@ -136,7 +136,7 @@ class CustomSearchView(SearchView):
             msg = Message.objects.get(hashcode=hash+'=')
         except Message.DoesNotExist:
             raise Http404("No such message!")
-        
+
         if self.request.GET.get('gbt'):
             return find_message_gbt(self.results,msg)
         elif self.request.GET.get('so') == 'date':
@@ -173,7 +173,7 @@ class CustomSearchView(SearchView):
 @superuser_only
 def admin(request):
     """Administrator View.  Only accessible by the superuser this view allows
-    the administrator to run queries and perform actions, ie. remove spam, on the 
+    the administrator to run queries and perform actions, ie. remove spam, on the
     results.  Available actions are defined in actions.py
     """
     results = None
@@ -183,7 +183,7 @@ def admin(request):
             if form.is_valid():
                 kwargs = get_kwargs(form.cleaned_data)
                 if kwargs:
-                    results = SearchQuerySet().filter(**kwargs)
+                    results = SearchQuerySet().filter(**kwargs).order_by('id')
         else:
             action = request.POST.get('action')
             func = getattr(actions, action)
@@ -240,7 +240,7 @@ def browse(request, list_name=None):
     if list_name:
         redirect_url = '%s?%s' % (reverse('archive_search'), 'email_list=' + list_name)
         return redirect(redirect_url)
-        
+
     form = BrowseForm()
     columns = get_columns(request.user)
 

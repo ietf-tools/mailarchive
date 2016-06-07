@@ -21,6 +21,7 @@ from dateutil.tz import tzoffset
 
 from mlarchive.archive.models import Attachment, EmailList, Legacy, Message, Thread
 from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES, UNKNOWN_CONTENT_TYPE
+from mlarchive.archive.inspectors import *
 from mlarchive.utils.decorators import check_datetime
 from mlarchive.utils.encoding import decode_safely, decode_rfc2047_header
 
@@ -116,6 +117,10 @@ def archive_message(data,listname,private=False,save_failed=True):
         mw.save()
     except DuplicateMessage as error:
         # if DuplicateMessage it's already been saved to _dupes
+        logger.error('Archive message failed [{0}]'.format(error.args))
+        return 0
+    except SpamMessage as error:
+        # if SpamMessage it's already been saved to _spam
         logger.error('Archive message failed [{0}]'.format(error.args))
         return 0
     except Exception as error:
@@ -827,6 +832,13 @@ class MessageWrapper(object):
         """Ensure message is not duplicate message-id or hash.  Save message to database.
         Save to disk (if not test mode) and process attachments.
         """
+        # check for spam
+        if hasattr(settings, 'INSPECTORS'):
+            for inspector_name in settings.INSPECTORS:
+                inspector_class = eval(inspector_name)
+                inspector = inspector_class(self)
+                inspector.inspect()
+
         # check for duplicate message id, and skip
         if Message.objects.filter(msgid=self.msgid,email_list__name=self.listname):
             self.write_msg(subdir='_dupes')
@@ -838,7 +850,7 @@ class MessageWrapper(object):
             raise CommandError('Duplicate hash, msgid: %s' % self.msgid)
 
         # ensure message has been processed
-        x = self.archive_message
+        _ = self.archive_message
 
         # write message to disk and then save, post_save signal calls indexer
         # which requires file to be present

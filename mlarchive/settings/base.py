@@ -223,6 +223,11 @@ MARK_BITS = { 'NON_ASCII_HEADER':0b0001,
 MARK_HTML = 10
 MARK_LOAD_SPAM = 11
 
+# Inspector configuration
+INSPECTORS = {
+    'ListIdSpamInspector': {'includes':['ietf-dkim']}
+}
+
 # AUTH
 LOGIN_REDIRECT_URL = '/arch/'
 AUTHENTICATION_BACKENDS = (

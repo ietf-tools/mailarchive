@@ -10,7 +10,7 @@ General Instructions for Deployment of a New Release
  1. In order to fetch a new release of the django mail archive code, simply
     check out the appropriate tag from svn::
 
-      svn co http://svn.tools.ietf.org/svn/tools/mailarch/tags/$releasenumber
+      svn co https://tools.ietf.org/svn/tools/mailarch/tags/$releasenumber
 
  2. Don't forget to copy $releasenumber/mlarchive/settings/secrets.json from the
     old release to the new one; otherwise things won't work!

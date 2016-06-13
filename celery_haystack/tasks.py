@@ -1,6 +1,11 @@
+import xapian
+
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
 from django.db.models.loading import get_model
+from haystack.utils import get_identifier
+
+from mlarchive.celeryapp import app
 
 from .conf import settings
 
@@ -182,7 +187,23 @@ class CeleryHaystackUpdateIndex(Task):
         call_command('update_index', *apps, **defaults)
         logger.info("Finishing update index")
 
-from mlarchive.celeryapp import app
+
+class CeleryXapianBatchRemove(Task):
+    """
+    A celery task class used to batch delete index entries.  Takes the argument
+    *documents* a list of documents to be deleted.
+    NOTE: this implementation is specific to the Xapian backend.
+    """
+    def run(self, documents=None):
+        logger = self.get_logger()
+        
+        database = xapian.WritableDatabase(settings.HAYSTACK_XAPIAN_PATH,xapian.DB_OPEN)
+        for document in documents:
+            database.delete_document('Q' + get_identifier(document))
+            document.delete()
+        database.close()
+        logger.info("Called BatchRemove ({} documents)".format(len(documents)))
+
 
 @app.task
 def add(x, y):

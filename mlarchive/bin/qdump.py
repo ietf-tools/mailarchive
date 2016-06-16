@@ -12,7 +12,7 @@ if not path in sys.path:
     sys.path.insert(0, path)
 
 import django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.development'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production'
 django.setup()
 
 # -------------------------------------------------------------------------------------

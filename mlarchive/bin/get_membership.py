@@ -14,12 +14,12 @@ if not path in sys.path:
     sys.path.insert(0, path)
 
 import django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production_datatracker'
 django.setup()
 
 # -------------------------------------------------------------------------------------
-from django.db.models.signals import post_save
 from django.conf import settings
+from django.db.models.signals import post_save
 from django.contrib.auth.models import User
 from ietf.person.models import Email
 from optparse import OptionParser
@@ -27,6 +27,7 @@ from mlarchive.archive.models import EmailList, _list_save_handler, _export_list
 from subprocess import CalledProcessError
 import hashlib
 import base64
+
 
 try:
     from subprocess import check_output

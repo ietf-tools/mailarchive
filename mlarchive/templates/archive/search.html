@@ -2,11 +2,6 @@
 
 {% load archive_extras %}
 
-{% block extrahead %}
-<script type="text/javascript" src="{{ STATIC_URL }}js/jquery.cookie.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}js/jquery.query.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}js/search.js"></script>
-{% endblock %}
 
 {% block title %}Mail Archive{% endblock %}
 
@@ -114,4 +109,10 @@
             <div id="view-pane"></div>
         </div> <!-- msg-panes -->
     </div> <!-- msg-container -->
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery.cookie.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery.query.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/search.js"></script>
 {% endblock %}

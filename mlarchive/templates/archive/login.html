@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load bootstrap3 %}
 
 {% block extrahead %}
 <script type="text/javascript">
@@ -12,16 +13,14 @@ $(function() {
 
 {% block content %}
 
-<div class="row">
-  <div class="col-md-2 col-md-offset-5">
+<div class="corral">
   <div id="login-container">
-  <form action="." method="post">{% csrf_token %}
-    {{ form.as_p }}
-    <div class="button-group"><ul><li><input id="login-submit" type="submit" value="Submit" class="btn btn-default"/></li></ul></div>
-  </form>
-  </div>
-  </div>
-</div>
+    <form action="." method="post">{% csrf_token %}
+        {% bootstrap_form form show_label=False size="large" %}
+        <button id="login-button" type="submit" value="Login" class="btn btn-lg btn-primary">Log In</button>
+    </form>
+  </div>  <!-- login-container -->
+</div> <!-- .corral -->
 
 {% endblock %}
 

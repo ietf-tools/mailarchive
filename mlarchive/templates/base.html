@@ -25,7 +25,7 @@
 <!-- Container -->
 <div id="container">
 
-    <nav class="navbar {% if server_mode and server_mode != "production" %}navbar-inverse{% else %}navbar-default{% endif %} navbar-fixed-top">
+    <header class="navbar {% if server_mode and server_mode != "production" %}navbar-inverse{% else %}navbar-default{% endif %} navbar-fixed-top">
         <div class="container-fluid">
             <div class="navbar-header pull-left">
                 <a class="navbar-brand" href="/">
@@ -40,20 +40,21 @@
                 </a>
             </div> <!-- navbar-header -->
 
+            {% if not request.resolver_match.url_name == "django.contrib.auth.views.login" %}
             <div class="navbar-header pull-right">
-                <ul class="nav navbar-nav">
-                    <li>
-                    {% if user.is_authenticated %}
-                        <span class="pipe">{{ user }}</span>
-                        <a href="{% url "archive_logout" %}">Sign out</a>
-                    {% else %}
-                        <a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>
-                    {% endif %}
-                    </li>
-                </ul> <!-- login -->
+                <div id="login" class="noprint">
+                {% if user.is_authenticated %}
+                    <span class="pipe">{{ user }}</span>
+                    <a href="{% url "archive_logout" %}">Sign out</a>
+                {% else %}
+                    <a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
             </div> <!-- navbar-header -->
         </div> <!-- container-fluid -->
-    </nav>
+    </header>
 
             <noscript>
                 <p class="navbar-text"><small>Enable Javascript for full functionality.</small></p>

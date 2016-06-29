@@ -6,6 +6,7 @@
 {% block extrastyle %}
 <link rel="stylesheet" href="{{ STATIC_URL }}css/select2.css" type="text/css">
 <link rel="stylesheet" href="{{ STATIC_URL }}css/select2-bootstrap.css" type="text/css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.1/css/bootstrap-datepicker.css">
 {% endblock %}
 
 {% block header %}{{ block.super }} - Advanced Search{% endblock %}
@@ -18,7 +19,7 @@
       <form id="rules-form" class="advanced" action="../search" method="get">
 
         <fieldset id="query_parts">
-        <span class="label">Include {{ form.operator }}:</span>
+        <h4>Include:</h4>
         {% for form in query_formset.forms %}
             <div id="query_chunk_{{ forloop.counter0 }}" class="chunk query_chunk form-inline">
             {% if form.non_field_errors %}
@@ -27,16 +28,14 @@
             {% bootstrap_field form.field show_label=False %}
             {% bootstrap_field form.qualifier show_label=False %}
             {% bootstrap_field form.value show_label=False %}
-            <a id="remove_{{ forloop.counter0 }}" class="remove_btn" onclick="false" name="remove_{{ forloop.counter0 }}" href="#">
-                <img title="Remove" src="{{ STATIC_URL }}admin/img/icon_deletelink.gif" alt="Remove">
-            </a>
+            <button class="btn btn-danger btn-remove">Delete</button>
             </div>
         {% endfor %}
         <a id="add_query_part" class="addlink addParamBtn" href="#">Add another</a>
         </fieldset>
 
         <fieldset id="not_parts">
-        <span class="label">but do not include: </span>
+        <h4>but do not include:</h4>
         {% for form in not_formset.forms %}
             <div id="not_chunk_{{ forloop.counter0 }}" class="chunk not_chunk form-inline">
             {% if form.non_field_errors %}
@@ -69,17 +68,14 @@
 
         </fieldset>
 
+        <button class="btn btn-default" type="submit">Search</button>
+        
         <br />
         <hr />
 
         <input id="id_q" type="text" name="q" readonly="readonly" />
         <input id="as" type="hidden" name="as" value="1" />
 
-        <div class="button-group">
-          <ul>
-            <li><button type="submit">Search</button></li>
-          </ul>
-        </div> <!-- button-group -->
       </form>
   </div> <!-- advanced-search-->
 </div>
@@ -89,6 +85,7 @@
 
 {% block js %}
 <script type="text/javascript" src="{{ STATIC_URL }}js/select2.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.1/js/bootstrap-datepicker.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.query.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/search_form.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/search_advanced.js"></script>

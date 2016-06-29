@@ -16,8 +16,8 @@ $(function() {
 <div class="corral">
   <div id="login-container">
     <form action="." method="post">{% csrf_token %}
-        {% bootstrap_form form show_label=False size="large" %}
-        <button id="login-button" type="submit" value="Login" class="btn btn-lg btn-primary">Log In</button>
+        {% bootstrap_form form show_label=False %}
+        <button id="login-button" type="submit" value="Login" class="btn btn-primary">Log In</button>
     </form>
   </div>  <!-- login-container -->
 </div> <!-- .corral -->

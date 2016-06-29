@@ -47,13 +47,13 @@ $(function() {
         // regular query fields'
         var operands=new Array();
         $('.chunk').each(function() {
-            var value = $(this).children('input').val();
+            var value = $(this).find('input').val();
             if(value!=''){
-                if($(this).children('select.qualifier').val()=='exact'){
+                if($(this).find('select.qualifier').val()=='exact'){
                     value.replace('"','');
                 }
                 var obj={
-                    param:$(this).children('select').val(),
+                    param:$(this).find('select.parameter').val(),
                     keyword:value
                 };
                 operands.push(jQuery.substitute(get_pattern($(this)),obj))
@@ -110,7 +110,7 @@ $(function() {
         $('select.parameter').change(build_query);
         $('select.qualifier').change(handle_qualifier);
 
-        $('a.remove_btn').click(function() {
+        $('.btn-remove').click(function() {
             var remove_index = $(this).attr('id').split('_')[1];
             $('div#query_chunk_' + remove_index).remove()
             if ($('.query_chunk').length == 1) {
@@ -147,6 +147,16 @@ $(function() {
             increment_ids($('.not_chunk').last());;
         });
 
+        $("#id_qdr").change(function() {
+            if($(this).val()=="c") {
+                $(".date-field").show();
+            } else {
+                $("#id_start_date").val("");
+                $("#id_end_date").val("");
+                $(".date-field").hide();
+            }
+        });
+    
         if($('.query_chunk').length>1) {
             $('.query_chunk').addClass('removable');
         }
@@ -157,7 +167,10 @@ $(function() {
 
         if(document.location.search.length) {
             build_query();
+            $('#id_qdr').trigger('change');
         }
+
+        $("#id_email_list").select2();
     }
 
     init();

@@ -3,17 +3,13 @@ body {
 }
 
 /* ==========================================================================
-   Login Page
+   Header
    ========================================================================== */
 
 .navbar-brand > img {
     display: inline;
     margin-top: -5px;
     padding-right: 1em;
-}
-
-#search-container {
-    margin-top: 150px;
 }
 
 #nav-inner {
@@ -38,8 +34,6 @@ body {
     border-right: none;
 }
 
-
-
 .pipe {
     border-right: 1px solid #DDD;
     margin-right: 0.5em;
@@ -57,6 +51,12 @@ body {
 
 #login a:hover {
     text-decoration: underline;
+}
+
+@media (max-width: 767px) {
+.login-user {
+    display: none;
+}
 }
 
 /* ==========================================================================
@@ -88,12 +88,64 @@ body {
     width: 100%
 }
 }
+
+/* ==========================================================================
+   Main Page
+   ========================================================================== */
+#search-wrapper {
+    margin: 0 auto;
+    width: 480px;
+}
+
+#search-container {
+    position: relative;
+    margin: 130px auto 0;
+    padding: 30px 10% 10px;
+}
+
+@media (max-width: 767px) {
+#header-text {
+    display: none;
+}
+
+#search-wrapper {
+    width: 100%;
+}
+
+#search-container {
+    margin-top: 30px;
+    padding: 0 10% 10px;
+    width: 100%
+}
+}
+/* ==========================================================================
+   Selectize Bootstrap overrides
+   ========================================================================== */
+.selectize-input {
+    width: 300px;
+}
+
+.form-control.selectize-control {
+    height: 34px;
+}
 /* ==========================================================================
    Browse
    ========================================================================== */
-div.browse_section {
+#browse-top {
+    margin-top: 30px;
+    padding-left: 15px;
+}
+
+.browse_section {
     margin: 0 auto;
     clear: both;
+}
+
+.browse_section h2, .browse_section h3 {
+    background: lightgrey;
+    color: darkgrey;
+    padding: 4px 15px;
+    text-align: center;
 }
 
 ul.browse_list {
@@ -112,4 +164,24 @@ a.addParamBtn {}
 
 .date-field {
     display: none;
+}
+
+#id_qdr {
+    width: 380px;
+}
+
+#xid_start_date {
+    width: 380px;
+}
+
+.advanced #id_q {
+    width: 100%;
+}
+
+.btn-remove {
+    display: none;
+}
+
+.removable .btn-remove {
+    display: inline-block;
 }

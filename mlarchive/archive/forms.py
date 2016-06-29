@@ -33,12 +33,12 @@ QUALIFIER_CHOICES = (('contains','contains'),
                      ('exact','exact'))
                      #('startswith','startswith'))
 
-TIME_CHOICES = (('a','anytime'),
-                ('d','day'),
-                ('w','week'),
-                ('m','month'),
-                ('y','year'),
-                ('c','custom...'))
+TIME_CHOICES = (('a','Any time'),
+                ('d','Past 24 hours'),
+                ('w','Past week'),
+                ('m','Past month'),
+                ('y','Past year'),
+                ('c','Custom range...'))
 
 VALID_SORT_OPTIONS = ('frm','-frm','date','-date','email_list','-email_list',
                       'subject','-subject')
@@ -60,6 +60,7 @@ def profile(func):
 # --------------------------------------------------------
 # Helper Functions
 # --------------------------------------------------------
+
 def get_base_query(querydict,filters=False,string=False):
     """Get the base query by stripping any extra parameters from the query.
 
@@ -133,6 +134,53 @@ def transform(val):
     return val
 
 # --------------------------------------------------------
+# Fields
+# --------------------------------------------------------
+def yyyymmdd_to_strftime_format(fmt):
+    translation_table = sorted([
+        ("yyyy", "%Y"),
+        ("yy", "%y"),
+        ("mm", "%m"),
+        ("m", "%-m"),
+        ("MM", "%B"),
+        ("M", "%b"),
+        ("dd", "%d"),
+        ("d", "%-d"),
+    ], key=lambda t: len(t[0]), reverse=True)
+
+    res = ""
+    remaining = fmt
+    while remaining:
+        for pattern, replacement in translation_table:
+            if remaining.startswith(pattern):
+                res += replacement
+                remaining = remaining[len(pattern):]
+                break
+        else:
+            res += remaining[0]
+            remaining = remaining[1:]
+    return res
+
+
+class DatepickerDateField(forms.DateField):
+    """DateField with some glue for triggering JS Bootstrap datepicker."""
+
+    def __init__(self, date_format, picker_settings={}, *args, **kwargs):
+        strftime_format = yyyymmdd_to_strftime_format(date_format)
+        kwargs["input_formats"] = [strftime_format]
+        kwargs["widget"] = forms.DateInput(format=strftime_format)
+        super(DatepickerDateField, self).__init__(*args, **kwargs)
+
+        self.widget.attrs["data-provide"] = "datepicker"
+        self.widget.attrs["data-date-format"] = date_format
+        if "placeholder" not in self.widget.attrs:
+            self.widget.attrs["placeholder"] = date_format
+        for k, v in picker_settings.iteritems():
+            self.widget.attrs["data-date-%s" % k] = v
+
+# --------------------------------------------------------
+# Forms
+# --------------------------------------------------------
 class AdminForm(forms.Form):
     email_list = forms.ModelChoiceField(EmailList.objects.all(),
                                         empty_label='(All lists)',
@@ -150,14 +198,17 @@ class AdminForm(forms.Form):
         email_list = self.cleaned_data['email_list']
         if email_list:
             return [email_list.pk]
-            
+
+
 class AdvancedSearchForm(FacetedSearchForm):
-    start_date = forms.DateField(required=False,
-            widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
-    end_date = forms.DateField(required=False,
-            widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
+    #start_date = forms.DateField(required=False,
+    #        widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
+    start_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Start date', required=False)
+    #end_date = forms.DateField(required=False,
+    #        widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
+    end_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='End date', required=False)
     #email_list = forms.CharField(max_length=255,required=False,widget=forms.HiddenInput)
-    email_list = forms.ModelMultipleChoiceField(queryset=EmailList.objects)
+    email_list = forms.ModelMultipleChoiceField(queryset=EmailList.objects,required=False)
     subject = forms.CharField(max_length=255,required=False)
     frm = forms.CharField(max_length=255,required=False)
     msgid = forms.CharField(max_length=255,required=False)
@@ -390,10 +441,19 @@ class AdvancedSearchForm(FacetedSearchForm):
 # ---------------------------------------------------------
 
 class BrowseForm(forms.Form):
-    list_name = forms.CharField(max_length=100,required=True,label='List')
+    #list_name = forms.CharField(max_length=100,required=True,label='List')
+    list = forms.ModelChoiceField(queryset=EmailList.objects,label='List')
+    
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request')
+        super(BrowseForm, self).__init__(*args, **kwargs)
+        self.fields['list'].queryset = EmailList.objects.exclude(pk__in=get_noauth(self.request)).order_by('name')
+        self.fields["list"].widget.attrs["placeholder"] = "List name"
+
 
 class FilterForm(forms.Form):
     time = forms.ChoiceField(choices=TIME_CHOICES)
+
 
 class RulesForm(forms.Form):
     field = forms.ChoiceField(choices=FIELD_CHOICES,

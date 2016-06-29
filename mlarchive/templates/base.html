@@ -11,6 +11,9 @@
 
     <link rel="stylesheet" href="{{ STATIC_URL }}bootstrap3/css/bootstrap.css" type="text/css">
     <link rel="stylesheet" href="{{ STATIC_URL }}bootstrap3/css/bootstrap-theme.css" type="text/css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.1/css/selectize.css" type="text/css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.1/css/selectize.bootstrap3.css" type="text/css">
+
     <link rel="stylesheet" href="{{ STATIC_URL }}css/custom.css" type="text/css">
 
     {% block extrastyle %}{% endblock %}
@@ -31,11 +34,13 @@
                 <a class="navbar-brand" href="/">
                    <img alt="IETF Logo" src="https://www.ietf.org/lib/dt/6.11.0/ietf/images/ietflogo-small-transparent.png">
                    {% if not user.is_authenticated %}
+                      <span id="header-text">
                       {% if server_mode and server_mode == "production" %}
                       Datatracker
                       {% else %}
                       <b><i>Development mode</i></b>
                       {% endif %}
+                      </span>
                    {% endif %}
                 </a>
             </div> <!-- navbar-header -->
@@ -44,7 +49,7 @@
             <div class="navbar-header pull-right">
                 <div id="login" class="noprint">
                 {% if user.is_authenticated %}
-                    <span class="pipe">{{ user }}</span>
+                    <span class="login-user pipe">{{ user }}</span>
                     <a href="{% url "archive_logout" %}">Sign out</a>
                 {% else %}
                     <a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>

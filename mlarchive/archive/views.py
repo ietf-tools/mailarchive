@@ -1,6 +1,7 @@
 import json
 import re
 import os
+import urllib
 
 from django.conf import settings
 from django.contrib import messages
@@ -11,7 +12,7 @@ from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.forms.formsets import formset_factory
 from django.http import HttpResponseRedirect, HttpResponse, Http404
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from haystack.views import SearchView, FacetedSearchView
 from haystack.query import SearchQuerySet
@@ -237,8 +238,16 @@ def browse(request):
     """Presents a list of Email Lists the user has access to.  There are
     separate sections for private, active and inactive.
     """
-    form = BrowseForm()
+    
     columns = get_columns(request.user)
+
+    if request.method == "GET" and request.GET.get('list'):
+        form = BrowseForm(request=request,data=request.GET)
+        if form.is_valid():
+            params = [('email_list',form.cleaned_data['list'].name)]
+            return redirect("%s?%s" % (reverse('archive_search'),urllib.urlencode(params)))
+    else:
+        form = BrowseForm(request=request)
 
     return render_to_response('archive/browse.html', {
         'form': form,

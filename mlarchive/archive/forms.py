@@ -182,22 +182,23 @@ class DatepickerDateField(forms.DateField):
 # Forms
 # --------------------------------------------------------
 class AdminForm(forms.Form):
-    email_list = forms.ModelChoiceField(EmailList.objects.all(),
-                                        empty_label='(All lists)',
-                                        required=False)
-    end_date = forms.DateField(required=False)
+    subject = forms.CharField(max_length=255,required=False)
     frm = forms.CharField(max_length=255,required=False)
     msgid = forms.CharField(max_length=255,required=False)
+    start_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Start date', required=False)
+    end_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='End date', required=False)
+    email_list = forms.ModelMultipleChoiceField(
+        queryset=EmailList.objects,
+        required=False)
     spam = forms.BooleanField(required=False)
-    start_date = forms.DateField(required=False)
-    subject = forms.CharField(max_length=255,required=False)
+
 
     def clean_email_list(self):
-        # return a list of IDs even though there's ever only one,
+        # return a list of IDs for use in search query
         # so we match get_kwargs() api
-        email_list = self.cleaned_data['email_list']
+        email_list = self.cleaned_data.get('email_list')
         if email_list:
-            return [email_list.pk]
+            return [ e.pk for e in email_list ]
 
 
 class AdvancedSearchForm(FacetedSearchForm):

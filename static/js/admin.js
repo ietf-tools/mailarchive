@@ -57,6 +57,8 @@ $(function() {
             var url = $(this).find("td:nth-child(6)").html();
             window.open(url);
         });
+        
+        $('#id_email_list').selectize();
     }
 
     /* auto select first item in result list */

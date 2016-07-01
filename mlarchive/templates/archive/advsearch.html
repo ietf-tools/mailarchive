@@ -4,8 +4,6 @@
 {% block title %}Mail Archive{% endblock %}
 
 {% block extrastyle %}
-<link rel="stylesheet" href="{{ STATIC_URL }}css/select2.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/select2-bootstrap.css" type="text/css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.1/css/bootstrap-datepicker.css">
 {% endblock %}
 
@@ -13,12 +11,11 @@
 
 {% block content %}
 
-<div class="container-fluid">
-<div id="adv-search-container">
+<div class="container">
+<div id="adv-search-container" class="col-md-offset-1 col-md-10">
   <div id="adv-search" class="adv-search">
       <form id="rules-form" class="advanced" action="../search" method="get">
-
-        <fieldset id="query_parts">
+        <fieldset class="term-set">
         <h4>Include:</h4>
         {% for form in query_formset.forms %}
             <div id="query_chunk_{{ forloop.counter0 }}" class="chunk query_chunk form-inline">
@@ -28,13 +25,13 @@
             {% bootstrap_field form.field show_label=False %}
             {% bootstrap_field form.qualifier show_label=False %}
             {% bootstrap_field form.value show_label=False %}
-            <button class="btn btn-danger btn-remove">Delete</button>
+            <button class="btn btn-danger btn-remove" type="button">Delete</button>
             </div>
         {% endfor %}
-        <a id="add_query_part" class="addlink addParamBtn" href="#">Add another</a>
+        <a class="addChunk" href="#">Add another</a>
         </fieldset>
 
-        <fieldset id="not_parts">
+        <fieldset class="term-set">
         <h4>but do not include:</h4>
         {% for form in not_formset.forms %}
             <div id="not_chunk_{{ forloop.counter0 }}" class="chunk not_chunk form-inline">
@@ -44,28 +41,20 @@
             {% bootstrap_field form.field show_label=False %}
             {% bootstrap_field form.qualifier show_label=False %}
             {% bootstrap_field form.value show_label=False %}
-            <a id="not_remove_{{ forloop.counter0 }}" class="not_remove_btn" onclick="false" href="#">
-                <img title="Remove" src="{{ STATIC_URL }}admin/img/icon_deletelink.gif" alt="Remove">
-            </a>
+            <button class="btn btn-danger btn-remove" type="button">Delete</button>
             </div>
         {% endfor %}
-        <a id="add_not_part" class="addlink addParamBtn" href="#">Add another</a>
+        <a class="addChunk" href="#">Add another</a>
         </fieldset>
       </form>
 
       <form id="advanced-search-form" class="advanced" action="../search" method="get">
-        <fieldset id="not_parts">
+        <fieldset>
         <span class="label">filter results by:</span>
-                    {% bootstrap_field form.qdr %}
-                    {% bootstrap_field form.start_date form_group_class="form-group date-field" %}
-                    {% bootstrap_field form.end_date form_group_class="form-group date-field" %}
-                    {% bootstrap_field form.email_list %}
-
-            <fieldset id="list-fieldset2" class="list-fieldset">
-              <legend>Lists to Search</legend>
-              <ul id="email_list_list"></ul>
-            </fieldset>
-
+            {% bootstrap_field form.qdr %}
+            {% bootstrap_field form.start_date form_group_class="form-group date-field" %}
+            {% bootstrap_field form.end_date form_group_class="form-group date-field" %}
+            {% bootstrap_field form.email_list show_help=False %}
         </fieldset>
 
         <button class="btn btn-default" type="submit">Search</button>
@@ -75,8 +64,8 @@
 
         <input id="id_q" type="text" name="q" readonly="readonly" />
         <input id="as" type="hidden" name="as" value="1" />
-
       </form>
+      
   </div> <!-- advanced-search-->
 </div>
 </div> <!-- container-fluid -->
@@ -84,9 +73,8 @@
 {% endblock %}
 
 {% block js %}
-<script type="text/javascript" src="{{ STATIC_URL }}js/select2.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.1/js/standalone/selectize.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.1/js/bootstrap-datepicker.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/jquery.query.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}js/search_form.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/search_advanced.js"></script>
 {% endblock %}

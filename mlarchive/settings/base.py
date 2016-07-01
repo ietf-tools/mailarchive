@@ -121,10 +121,11 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.admindocs',
     'bootstrap3',
-    'haystack',
     'celery_haystack',
-    'mlarchive.archive',
+    'haystack',
     'htauth',
+    'mlarchive.archive',
+    'widget_tweaks',
 )
 
 STATIC_URL = '/static/'

@@ -1,6 +1,66 @@
 body {
     padding-top: 40px;
 }
+/* ==========================================================================
+   Selectize Bootstrap overrides
+   ========================================================================== */
+.form-control.selectize-control {
+    height: 34px;
+}
+
+/* Django Messages
+   ========================================================================== */
+
+ul.messages {
+    padding: 0 0 5px 0;
+    margin: 0;
+}
+
+ul.messages li {
+    font-size: 12px;
+    display: block;
+    /* padding: 4px 5px 4px 25px; */
+    padding: 9px 5px 10px 25px;
+    margin: 0 0 3px 0;
+    border-bottom: 1px solid #ddd;
+    color: #666;
+}
+
+.info,
+.success,
+.warning,
+.error,
+.validation {
+    padding: 4px 5px 4px 25px;
+    margin: 0 0 3px 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.info {
+    background: #ffc url(../img/admin/icon_success.gif) 5px .3em no-repeat;
+}
+
+.success {
+    background: #ffc url(../img/admin/icon_success.gif) 5px .3em no-repeat;
+}
+
+.warning {
+    background: #ffc url(../img/admin/icon_alert.gif) 5px .3em no-repeat;
+}
+
+.error {
+    background: #ffc url(../img/admin/icon_error.gif) 5px .3em no-repeat;
+}
+
+/* ==========================================================================
+   Site Wide
+   ========================================================================== */
+.section h2, .section h3 {
+    background: lightgrey;
+    color: darkgrey;
+    padding: 4px 15px;
+    text-align: center;
+}
 
 /* ==========================================================================
    Header
@@ -118,16 +178,7 @@ body {
     width: 100%
 }
 }
-/* ==========================================================================
-   Selectize Bootstrap overrides
-   ========================================================================== */
-.selectize-input {
-    width: 300px;
-}
 
-.form-control.selectize-control {
-    height: 34px;
-}
 /* ==========================================================================
    Browse
    ========================================================================== */
@@ -141,13 +192,6 @@ body {
     clear: both;
 }
 
-.browse_section h2, .browse_section h3 {
-    background: lightgrey;
-    color: darkgrey;
-    padding: 4px 15px;
-    text-align: center;
-}
-
 ul.browse_list {
     padding-left: 0;
 }
@@ -157,25 +201,33 @@ ul.browse_list li {
     white-space: nowrap;
 }
 
+#id_browse_form .selectize-input {
+    width: 300px;
+}
+
 /* ==========================================================================
    Advanced Search
    ========================================================================== */
-a.addParamBtn {}
+
+#adv-search-container {
+    margin-top: 30px;
+}
 
 .date-field {
     display: none;
-}
-
-#id_qdr {
-    width: 380px;
-}
-
-#xid_start_date {
-    width: 380px;
+    margin-left: 15px;
 }
 
 .advanced #id_q {
     width: 100%;
+}
+
+.term-set {
+    margin-bottom: 10px;
+}
+
+.chunk {
+    margin-bottom: 10px;
 }
 
 .btn-remove {
@@ -184,4 +236,31 @@ a.addParamBtn {}
 
 .removable .btn-remove {
     display: inline-block;
+}
+
+/* ==========================================================================
+   Admin
+   ========================================================================== */
+#admin-top {
+    margin-top: 30px;
+}
+
+#admin-top .form-control {
+    width: 100%;
+}
+
+#id_admin_form .row {
+    margin-bottom: 15px;
+}
+
+#id_admin_form .subrow .subrow-left {
+    padding-left: 0;
+}
+
+#id_admin_form .subrow .subrow-right {
+    padding-right: 0;
+}
+
+#result-list .row {
+    margin-bottom: 15px;
 }

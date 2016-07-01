@@ -3,14 +3,6 @@
 
 {% block title %}Mail Archive{% endblock %}
 
-{% block extrastyle %}
-<!-- <link rel="stylesheet" href="{{ STATIC_URL }}css/select2.css" type="text/css"> -->
-<!-- <link rel="stylesheet" href="{{ STATIC_URL }}select2-bootstrap-css/select2-bootstrap.css" type="text/css"> -->
-<!-- <link rel="stylesheet" href="{{ STATIC_URL }}selectize/css/selectize.css" type="text/css"> -->
-<!-- <link rel="stylesheet/less" href="{{ STATIC_URL }}selectize/less/selectize.bootstrap3.less" type="text/css"> -->
-
-{% endblock %}
-
 {% block extrahead %}
 <!-- <script src="http://lesscss.googlecode.com/files/less-1.0.30.min.js"></script> -->
 {% endblock %}
@@ -30,7 +22,7 @@
 </form>
 </div>
 
-<div id="private-lists" class="browse_section">
+<div id="private-lists" class="browse_section section">
 {% if columns.private %}
 <h3 class="col-md-offset-1 col-md-10">Private Lists</h3>
 <div class="col-md-1"></div>
@@ -41,7 +33,7 @@
 {% endif %}
 </div>
 
-<div id="active-lists" class="browse_section">
+<div id="active-lists" class="browse_section section">
 <h3 class="col-md-offset-1 col-md-10">Active Lists</h3>
 
 {% with columns.active as columns %}
@@ -50,7 +42,7 @@
 <div class="col-md-1"></div>
 </div>
 
-<div id="inactive-lists" class="browse_section">
+<div id="inactive-lists" class="browse_section section">
 {% if columns.inactive %}
 <h3 class="col-md-offset-1 col-md-10">Inactive Lists</h3>
 <div class="col-md-1"></div>
@@ -65,7 +57,6 @@
 {% endblock %}
 
 {% block js %}
-<!-- <script type="text/javascript" src="{{ STATIC_URL }}select2/js/select2.min.js"></script> -->
 <!-- <script type="text/javascript" src="{{ STATIC_URL }}selectize/js/standalone/selectize.js"></script> -->
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.1/js/standalone/selectize.js"></script>
 <script type="text/javascript" src="{{ STATIC_URL }}js/browse.js"></script>

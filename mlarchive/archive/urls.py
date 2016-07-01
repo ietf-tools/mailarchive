@@ -6,7 +6,6 @@ from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.views import CustomSearchView
 
 urlpatterns = patterns('mlarchive.archive.ajax',
-    url(r'ajax/list/?$', 'ajax_get_list', name='ajax_get_list'),
     url(r'ajax/msg/?$', 'ajax_get_msg', name='ajax_get_msg'),
     url(r'ajax/messages/?$', 'ajax_messages', name='ajax_messages'),
 )

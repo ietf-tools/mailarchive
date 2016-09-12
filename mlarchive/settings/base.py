@@ -120,10 +120,12 @@ INSTALLED_APPS = (
     #'django.contrib.staticfiles',
     'django.contrib.admin',
     'django.contrib.admindocs',
-    'haystack',
+    'bootstrap3',
     'celery_haystack',
-    'mlarchive.archive',
+    'haystack',
     'htauth',
+    'mlarchive.archive',
+    'widget_tweaks',
 )
 
 STATIC_URL = '/static/'
@@ -225,7 +227,8 @@ MARK_LOAD_SPAM = 11
 
 # Inspector configuration
 INSPECTORS = {
-    'ListIdSpamInspector': {'includes':['ietf-dkim']}
+    'ListIdSpamInspector': {'includes':['ietf-dkim']},
+    'ListIdExistsSpamInspector': {'includes':['webdav']}
 }
 
 # AUTH

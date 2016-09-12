@@ -1,112 +1,184 @@
 /* search_advanced.js */
 
 /*
-This script uses the JQuery Query String Object plugin
-http://archive.plugins.jquery.com/project/query-object
+This script controls the Adavanced Search Form.  It dynamically constructs the search
+query string based on the contents of the various advanced search form widgets.
 */
 
-$(function() {
-    function add_to_list(list, id, label) {
-        list.append('<li><a class="listlink" href="' + id + '">' + label + '<img id="delete-icon" src="/static/admin/img/icon_deletelink.gif" alt="delete"></a></li>');
-        //$('#email_list2').append('<li><a href="' + id + '"><img src="/static/admin/img/icon_deletelink.gif" alt="delete"></a> ' + label + '</li>');
-        $('.list-fieldset').show();
-    }
 
-    function get_string(datastore) {
-        var values = [];
-        for (var i in datastore) {
-            values.push(datastore[i]);
+var advancedSearch = {
+
+    // PRIMARY FUNCTIONS =====================================
+    
+    init : function() {
+        advancedSearch.cacheDom();
+        advancedSearch.bindEvents();
+        advancedSearch.$emailList.selectize();
+        if(document.location.search.length) {
+            advancedSearch.handleReturn();
         }
-        return values.join();
-    }
+    },
+    
+    cacheDom : function() {
+        advancedSearch.$removeButtons = $('.btn-remove');
+        advancedSearch.$addLinks = $('.addChunk');
+        advancedSearch.$qdr = $('#id_qdr');
+        advancedSearch.$rulesForm = $('#rules-form');
+        advancedSearch.$parameters = $('select.parameter');
+        advancedSearch.$qualifiers = $('select.qualifier');
+        advancedSearch.$operands = $('input.operand');
+        advancedSearch.$dateFields = $('.date-field');
+        advancedSearch.$startDate = $('#id_start_date');
+        advancedSearch.$endDate = $('#id_end_date');
+        advancedSearch.$emailList = $('#id_email_list');
+    },
+    
+    bindEvents : function() {
+        advancedSearch.$rulesForm.find('input').first().focus()
+        advancedSearch.$operands.bind('change keyup',advancedSearch.buildQuery);
+        advancedSearch.$parameters.change(advancedSearch.buildQuery);
+        advancedSearch.$qualifiers.change(advancedSearch.handleQualifier);
+        advancedSearch.$removeButtons.click(advancedSearch.removeChunk);
+        advancedSearch.$addLinks.click(advancedSearch.addChunk);
+        advancedSearch.$qdr.change(advancedSearch.qdrChange);
+    },
+    
+    // SECONDARY FUNCTIONS ====================================
+    
+    addChunk : function() {
+        var chunks = $(this).siblings('div');
+        chunks.first().addClass('removable');
+        var cloned = chunks.last().clone(true);
+        cloned.insertAfter(chunks.last());
+        advancedSearch.incrementIds(cloned);
+    },
+        
+    buildQuery : function(ev) {
+        var query_string='';
+        // var op_value=$('#id_operator').val();
 
-    function setup_ajax(field, list, searchfield, url) {
-        var datastore = {};
-        if(field.val() != '') {
-            //datastore = $.evalJSON(field.val())
-            items = field.val().split(',');
-            $.each(items, function(index, value) {
-                datastore[value] = value;
+        // regular query fields'
+        var operands=new Array();
+        $('.chunk').each(function() {
+            var value = $(this).find('input').val();
+            if(value!=''){
+                if($(this).find('select.qualifier').val()=='exact'){
+                    value.replace('"','');
+                }
+                var obj={
+                    param:$(this).find('select.parameter').val(),
+                    keyword:value
+                };
+                operands.push(jQuery.substitute(advancedSearch.getPattern($(this)),obj))
+            }
+        });
+        // query_string += operands.join(' '+op_value+' ');
+        query_string += operands.join(' ');
+
+        $('#id_q').val(query_string);
+    },
+    
+    getPattern : function(el) {
+        var default_pattern='({keyword})';
+        var default_exact_pattern='"{keyword}"';
+        var pattern;
+        if(el.children('select.qualifier').val()=='exact'){
+            pattern=default_exact_pattern;
+        } else {
+            pattern=default_pattern;
+        }
+        if(el.children('select.parameter').val()!=''){
+            pattern='{param}:'+pattern;
+        }
+        if(el.hasClass('not_chunk')){
+            pattern='-'+pattern;
+        }
+        return pattern
+    },
+
+    handleReturn : function() {
+        // setup form when returning with query data
+        $('.term-set').each(function() {
+            if($(this).children('.chunk').length > 1) {
+                $(this).children('.chunk').addClass('removable');
+            }
+        });
+
+        advancedSearch.buildQuery();
+        advancedSearch.$qdr.trigger('change');
+    },
+    
+    handleQualifier : function(ev) {
+        var field_id = $(ev.target).attr('id').replace('qualifier','field');
+        if($(ev.target).val()=='startswith') {
+            $("#" + field_id + " option").each(function() {
+                var prefix = $(this).val().split("__");
+                $(this).val(prefix[0] + "__startswith");
             });
         }
-
-        $.each(datastore, function(k, v) {
-            add_to_list(list, k, v);
-        });
-
-        searchfield.autocomplete({
-            source: url,
-            minLength: 1,
-            select: function( event, ui ) {
-                datastore[ui.item.id] = ui.item.label;
-                field.val(get_string(datastore));
-                searchfield.val('');
-                add_to_list(list, ui.item.id, ui.item.label);
-                return false;
+        else if($(ev.target).val()=='contains') {
+            $("#" + field_id + " option").each(function() {
+                var prefix = $(this).val().split("__");
+                $(this).val(prefix[0]);
+            });
+        }
+        //else if($(ev.target).val()=='exact') {
+        //    $("#" + field_id + " option").each(function() {
+        //       var prefix = $(this).val().split("__");
+        //        $(this).val(prefix[0] + "__exact");
+        //   });
+        //}
+        advancedSearch.buildQuery(ev);
+    },
+    
+    incrementIds : function(el) {
+        var from = $(el).attr('id').split('_')[2];
+        var to = parseInt(from)+1;
+        var old_id = $(el).attr("id");
+        $(el).attr("id", old_id.replace(from, to));
+        el.find('input,select').each(function() {
+            var newName = $(this).attr('name').replace(from,to);
+            var newId = $(this).attr('id').replace(from,to);
+            $(this).attr({'name': newName, 'id': newId});
+            if ( $(this).is('input') ) {
+                $(this).val('');
             }
         });
-
-        list.delegate("a", "click", function() {
-            delete datastore[$(this).attr("href")];
-            field.val(get_string(datastore));
-            $(this).closest("li").remove();
-            if($('#email_list_list li').length==0) {
-                $('.list-fieldset').hide();
-            }
-            return false;
+        el.find('label').each(function() {
+            var newFor = $(this).attr('for').replace(from,to);
+            $(this).attr('for', newFor);
         });
-    }
-
-    function init_forms() {
-        // build query if returning to search form with parameters
-        if(document.location.search.length) {
-            $('#id_qdr').trigger('change');
-        }
-    }
-
-    // hide selected lists div when empty
-    if($('#email_list_list li').length==0) {
-        $('.list-fieldset').hide();
-    }
-
-    // setup inline help messages
-    $(".defaultText").focus(function(srcc) {
-        if ($(this).val() == $(this)[0].title)
-        {
-            $(this).removeClass("defaultTextActive");
-            $(this).val("");
-        }
-    });
-
-    $(".defaultText").blur(function() {
-        if ($(this).val() == "")
-        {
-            $(this).addClass("defaultTextActive");
-            $(this).val($(this)[0].title);
-        }
-    });
-
-    $(".defaultText").blur();
-
-    $("#advanced-search-form").submit(function() {
-        $(".defaultText").each(function() {
-        if($(this).val() == $(this)[0].title) {
-            $(this).val("");
-        }
-        });
-    });
-    // end setup inline help
-
-    $("#id_qdr").change(function() {
-        if($(this).val()=="c") {
-            $("#custom_date").show();
+    },
+    
+    qdrChange : function() {
+        if($(this).val()=='c') {
+            advancedSearch.$dateFields.show();
         } else {
-            $("#id_start_date").val("");
-            $("#id_end_date").val("");
-            $("#custom_date").hide();
+            advancedSearch.$startDate.val('');
+            advancedSearch.$endDate.val('');
+            advancedSearch.$dateFields.hide();
         }
-    });
+    },
 
-    setup_ajax($("#id_email_list"), $("#email_list_list"), $("#email_list_search"), "arch/ajax/list/");
-    init_forms();
+    removeChunk : function() {
+        var chunk = $(this).closest('div');
+        var siblings = chunk.siblings('div');
+        chunk.remove();
+        if (siblings.length == 1) {
+            siblings.removeClass('removable');
+        }
+        advancedSearch.buildQuery();
+    },
+
+}
+
+$(function() {
+    jQuery.substitute = function(str, sub) {
+        return str.replace(/\{(.+?)\}/g, function($0, $1) {
+            return $1 in sub ? sub[$1] : $0;
+        });
+    };
+    
+    advancedSearch.init();
+
 });

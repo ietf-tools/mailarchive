@@ -54,8 +54,8 @@ class Inspector(object):
 
 
 class SpamInspector(Inspector):
-    '''Base spam handling class.  To write a spam filter inherit from this class and
-    implement check_condition().  Filters will be run on all mail unless a 
+    '''Base spam handling class.  To write a spam filter, inherit from this class and
+    implement has_condition().  Filters will be run on all mail unless a 
     settings.INSPECTOR_INLCUDES entry is used'''
 
     def has_condition(self):
@@ -78,4 +78,20 @@ class ListIdSpamInspector(SpamInspector):
         else:
             return True
 
- 
+
+class ListIdExistsSpamInspector(SpamInspector):
+    '''Checks for missing List-Id header.  If so, message is spam (has_condition = True)'''
+    def has_condition(self):
+        listid = self.message_wrapper.email_message.get('List-Id')
+        if listid is None:
+            return True
+        else:
+            return False
+
+
+class SpamStatusSpamInspector(SpamInspector):
+    '''Checks for SpamStatus == Yes'''
+    def has_condition(self):
+        return self.message_wrapper.email_message.get('X-Spam-Status','').startswith('Yes')
+
+        

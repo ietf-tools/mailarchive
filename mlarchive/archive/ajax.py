@@ -30,29 +30,6 @@ def ajax_admin_action(request):
     if request.method == 'POST':
         assert False, request.POST
         
-@jsonapi
-def ajax_get_list(request):
-    """Ajax function for use with jQuery UI Autocomplete.  Returns list of EmailList
-    objects that start with value of "term" GET parameter.
-    """
-    if request.method != 'GET' or not request.GET.has_key('term'):
-        return { 'success' : False, 'error' : 'No term submitted or not GET' }
-    term = request.GET.get('term')
-    user = request.user
-
-    results = EmailList.objects.filter(name__startswith=term)
-    if not user.is_authenticated():
-        results = results.exclude(private=True)
-    else:
-        results = results.filter(Q(private=False)|Q(private=True,members=user))
-
-    if results.count() > 20:
-        results = results[:20]
-    elif results.count() == 0:
-        return { 'success' : False, 'error' : "No results" }
-
-    response = [dict(id=r.id, label = r.name) for r in results]
-    return response
 
 @check_access
 def ajax_get_msg(request, msg):
@@ -61,6 +38,7 @@ def ajax_get_msg(request, msg):
     NOTE: the "msg" argument is Message object added by the check_access decorator
     """
     return HttpResponse(msg.get_body_html(request))
+
 
 def ajax_messages(request):
     """Ajax function to retrieve more messages from queryset.  Expects one of two args:
@@ -87,7 +65,7 @@ def ajax_messages(request):
     if not results:
         return HttpResponse(status=204)     # No Content
 
-    return render_to_response('includes/results_rows.html', {
+    return render_to_response('includes/results_divs.html', {
         'results': results},
         RequestContext(request, {}),
     )

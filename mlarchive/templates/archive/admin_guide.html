@@ -1,5 +1,4 @@
-{% extends "base_960.html" %}
-
+{% extends "base.html" %}
 
 {% block title %}Mail Archive - Admin Guide{% endblock %}
 
@@ -7,8 +6,8 @@
 
 {% block content %}
 
-<div id="admin_page">
-    <ul>
+<div id="admin_page" class="container-fluid">
+    <ul id="topics">
         <li><a href="#add_list">How do I add a new list?</a></li>
         <li><a href="#import">How do I import messages from an archive file?</a></li>
         <li><a href="#delete_message">How do I delete unwanted messages from the archive?</a></li>
@@ -32,7 +31,7 @@
     <h2>How do I import messages from an archive file?</h2>
     <p>The mail archive supports imports from mbox files.  Use the following procedure
     to load messages into the live archive.<br>
-    <pre class="example">cd /a/mailarch/current
+    <pre>cd /a/mailarch/current
 export PYTHONPATH=$PWD
 django-admin.py load [path-to-file] -l [listname] --settings=mlarchive.settings.noindex</pre>
     This will load messages into the database without flooding the index update queue.
@@ -52,15 +51,15 @@ django-admin.py load [path-to-file] -l [listname] --settings=mlarchive.settings.
     <p>If you need to rebuild the index for messages updated within a specific date range,
     first stop the Celery worker from processing new index updates (the updates will safely
     queue in RabbitMQ and be processed when Celery is restarted.
-    <pre class="example">sudo /etc/init.d/celeryd stop</pre>
+    <pre>sudo /etc/init.d/celeryd stop</pre>
     Then use the Haystack update_index command
-    <pre class="example">cd /a/mailarch/current
+    <pre>cd /a/mailarch/current
 export PYTHONPATH=$PWD
 django-admin.py update_index --start='2014-01-14T00:00:00' --end='2014-01-16T23:59:59' --settings=mlarchive.settings.production
 -- or --
 django-admin.py update_index --age=1 --settings=mlarchive.settings.production</pre>
     Then restart Celery
-    <pre class="example">sudo /etc/init.d/celeryd start</pre>
+    <pre>sudo /etc/init.d/celeryd start</pre>
     </p>
 
     <span id="subpoena"></span>
@@ -68,7 +67,7 @@ django-admin.py update_index --age=1 --settings=mlarchive.settings.production</p
     <p>If the subpoena calls for messages from a specific list containing a search term, use the
     standard search interface to export messages from the archive.  In addition you can collect
     messages that aren't in the index (spam, dupes, etc.) in this way:
-    <pre class="example">mkdir /tmp/sub012214
+    <pre>mkdir /tmp/sub012214
 cd /a/mailarch/data/archive/[listname]/
 for fil in `find . -path "./_*/*" ! -path "./_attachments/*" -exec grep -l searchterm {} \;`; do cp $fil /tmp/sub012214/; done;
 cd /tmp
@@ -78,10 +77,10 @@ tar cvf sub012214.tar ./sub012214</pre></p>
     <h2>Xapian Utilities</h2>
     <p>The email archive uses the Xapian search engine library.<br><br>
     To run a database integrity check:
-    <pre class="example">cd /a/mailarch/data
+    <pre>cd /a/mailarch/data
 xapian-check ./archive_index</pre>
     Show index stats
-    <pre class="example">delve ./archive_index/
+    <pre>delve ./archive_index/
 UUID = 2995f642-6fd8-469a-93bb-ac69aea27325
 number of documents = 1473880
 average document length = 2439.13
@@ -90,12 +89,12 @@ document length upper bound = 3258372
 highest document id ever used = 1473883
 has positional information = true</pre>
     Lookup a record in the search index by database primary key
-    <pre class="example">$ delve -t Qarchive.message.[PK] ./archive_index
+    <pre>$ delve -t Qarchive.message.[PK] ./archive_index
 Posting List for term `Qarchive.message.1721161' (termfreq 1, collfreq 1, wdf_max 1): 1716268
 
 $ delve -r 1716268 ./archive_index</pre>
     Command line search tool
-    <pre class="example">quest -d ./archive_index/ searchterm</pre>
+    <pre>quest -d ./archive_index/ searchterm</pre>
     </p>
     <br>
 
@@ -104,9 +103,9 @@ $ delve -r 1716268 ./archive_index</pre>
     <h2>Memcached</h2>
     <p>Memcached is the cache backend for the Email Archive.<br><br>
     Start / Stop memcached
-    <pre class="example">service memcached start|stop|restart</pre>
+    <pre>service memcached start|stop|restart</pre>
     Status from the command line
-    <pre class="example">$ telnet localhost 11211
+    <pre>$ telnet localhost 11211
 Trying 127.0.0.1...
 Connected to localhost.
 Escape character is '^]'.
@@ -125,22 +124,22 @@ quit</pre>
     Rabbitmq is the messaging backend for the Email Archive.  It is used to queue index update requests because the Xapian index only support one writer process.  Celery is the corresponding piece that consumes the index update messages.<br><br>
 
     Start / Stop Rabbitmq server
-    <pre class="example">service rabbitmq-server start|stop|restart
+    <pre>service rabbitmq-server start|stop|restart
 ** NOTE ** stop celery first, or restart after a rabbitmq restart</pre>
 
     Check status of server
-    <pre class="example">rabbitmqctl status</pre>
+    <pre>rabbitmqctl status</pre>
 
     List info for the message queue
-    <pre class="example">rabbitmqctl list_queues
+    <pre>rabbitmqctl list_queues
 rabbitmqctl list_queues name messages messages_ready messages_unacknowledged</pre>
 
     Reset message queue (removes all messages!)
-    <pre class="example">rabbitmqctl stop_app
+    <pre>rabbitmqctl stop_app
 rabbitmqctl reset
 rabbitmqctl start_app</pre>
     List plugins
-    <pre class="example">rabbitmq-plugins list</pre>
+    <pre>rabbitmq-plugins list</pre>
     
     <br>
     Admin:<br>
@@ -155,30 +154,30 @@ rabbitmqctl start_app</pre>
     Celery is the asynchronous task queue used to queue index updates.  It uses RabbitMQ as it's backend<br>
     <br>
     Restart
-    <pre class="example"># /etc/init.d/celeryd restart</pre>
+    <pre># /etc/init.d/celeryd restart</pre>
 
     <br>
     Admin:<br>
     Config File: /etc/default/celeryd<br>
     Log File: /var/log/celery/worker1.log<br>
-    <pre class="example">$ celery status
+    <pre>$ celery status
 $ celery report</pre>
     Before you can access the Celery web admin tool, Flower, you need to start a 
     web-server:
-    <pre class="example">export PYTHONPATH=/a/mailarch/current
+    <pre>export PYTHONPATH=/a/mailarch/current
 export DJANGO_SETTINGS_MODULE=mlarchive.settings.production
 celery -A mlarchive flower</pre>
     <a href="http://{{ request.META.HTTP_HOST }}:5555/">Celery Management</a><br>
     
     <br>
     Troubleshooting: start celery process with -x
-    <pre class="example"># sh -x /etc/init.d/celeryd start
+    <pre># sh -x /etc/init.d/celeryd start
 -- or --
 # C_FAKEFORK=1 sh -x /etc/init.d/celeryd start</pre>
 
     Troubleshooting: ensure perms correct on /a/mailarch/data/log/mlarchive.log<br>
     Troubleshooting: run worker manually to check for errors
-    <pre class="example">> Starting nodes...
+    <pre>> Starting nodes...
 > worker1@ietfa.amsl.com: * Child terminated with errorcode 255
 FAILED
 

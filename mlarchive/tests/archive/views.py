@@ -36,6 +36,7 @@ def test_admin_guide(client):
     response = client.get(url)
     assert response.status_code == 200
 
+@pytest.mark.django_db(transaction=True)
 def test_advsearch(client):
     url = reverse('archive_advsearch')
     response = client.get(url)

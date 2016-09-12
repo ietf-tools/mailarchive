@@ -1,52 +1,63 @@
-{% extends "base_960.html" %}
-
-{% block extrahead %}
-<script type="text/javascript" src="{{ STATIC_URL }}js/browse.js"></script>
-{% endblock %}
+{% extends "base.html" %}
+{% load bootstrap3 %}
 
 {% block title %}Mail Archive{% endblock %}
+
+{% block extrastyle %}
+<link rel="stylesheet" href="{{ STATIC_URL }}selectize/css/selectize.bootstrap3.css" type="text/css">
+{% endblock %}
 
 {% block header %}{{ block.super }} - Browse{% endblock %}
 
 {% block content %}
 
-<div id="browse_page">
+<div id="browse-page">
 
-<div id="browse_top">
-<form id="id_browse_form" name="browse-form" action="." method="post">{% csrf_token %}
-    <label for="id_list_name">Enter list name:</label> <input id="id_list_name" type="text" name="list_name" maxlength="100" />
-    <input type="submit" value="Go" title="Go" alt="Go" name="browse">
-    <span id="browse_help">(or pick from below)</span>
-</form>
-</div>
+    <div id="browse-top" class="col-md-offset-1">
+        <form id="id_browse_form" name="browse-form" class="form-inline" action="." method="get">
+            {% bootstrap_form form layout='inline' show_label=False %}
+            <div class="form-group">
+                <button id="browse-button" type="submit" value="Go" class="btn btn-default">Go</button>
+            </div>
+        </form>
+    </div>
 
-<div id="private-lists" class="browse_section">
-{% if columns.private %}
-<h2>Private Lists</h2>
-{% with columns.private as columns %}
-    {% include "includes/browse_columns.html" %}
-{% endwith %}
-{% endif %}
-</div>
+    <div id="private-lists" class="browse_section section">
+        {% if columns.private %}
+            <h3 class="col-md-offset-1 col-md-10">Private Lists</h3>
+            <div class="col-md-1"></div>
+            {% with columns.private as columns %}
+                {% include "includes/browse_columns.html" %}
+            {% endwith %}
+            <div class="col-md-1"></div>
+        {% endif %}
+    </div> <!-- private-lists -->
 
-<div id="active-lists" class="browse_section">
-<h2>Active Lists</h2>
-{% with columns.active as columns %}
-    {% include "includes/browse_columns.html" %}
-{% endwith %}
-</div>
+    <div id="active-lists" class="browse_section section">
+        <h3 class="col-md-offset-1 col-md-10">Active Lists</h3>
+        {% with columns.active as columns %}
+            {% include "includes/browse_columns.html" %}
+        {% endwith %}
+        <div class="col-md-1"></div>
+    </div> <!-- active-lists -->
 
-<div id="inactive-lists" class="browse_section">
-{% if columns.inactive %}
-<h2>Inactive Lists</h2>
-{% with columns.inactive as columns %}
-    {% include "includes/browse_columns.html" %}
-{% endwith %}
-{% endif %}
-</div>
+    <div id="inactive-lists" class="browse_section section">
+        {% if columns.inactive %}
+            <h3 class="col-md-offset-1 col-md-10">Inactive Lists</h3>
+            <div class="col-md-1"></div>
+            {% with columns.inactive as columns %}
+                {% include "includes/browse_columns.html" %}
+            {% endwith %}
+            <div class="col-md-1"></div>
+        {% endif %}
+    </div> <!-- inactive-lists -->
 
 </div> <!-- browse_page -->
 
 {% endblock %}
 
+{% block js %}
+<script type="text/javascript" src="{{ STATIC_URL }}selectize/js/standalone/selectize.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/browse.js"></script>
+{% endblock %}
 

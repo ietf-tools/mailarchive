@@ -1,21 +1,23 @@
 <!DOCTYPE html>
-<html lang="en-US">
+<html lang="en">
 <head>
-<title>{% block title %}{% endblock %}</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{% endblock %}</title>
 
-<link type="text/css" href="{{ STATIC_URL }}css/smoothness/jquery-ui-1.10.3.custom.css" rel="stylesheet" />
-<link rel="stylesheet" href="{{ STATIC_URL }}css/styles.css" type="text/css">
+    {% block prestyle %}{% endblock %}
 
-<script type="text/javascript" src="{{ STATIC_URL }}js/jquery-1.8.0.min.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}js/jquery-ui-1.10.3.custom.min.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}js/jquery.json-2.3.min.js"></script>
+    <link rel="stylesheet" href="{{ STATIC_URL }}bootstrap3/css/bootstrap.css" type="text/css">
+    <link rel="stylesheet" href="{{ STATIC_URL }}bootstrap3/css/bootstrap-theme.css" type="text/css">
 
-{% block extrastyle %}{% endblock %}
+    {% block extrastyle %}{% endblock %}
 
-{% block extrahead %}{% endblock %}
+    <link rel="stylesheet" href="{{ STATIC_URL }}css/custom.css" type="text/css">
+        
+    {% block extrahead %}{% endblock %}
 
-{% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE" />{% endblock %}
-<meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE" />{% endblock %}
 </head>
 
 <body>
@@ -23,19 +25,42 @@
 <!-- Container -->
 <div id="container">
 
-    <div id="header"{% if server_mode != "production" %} class="test"{% endif %}>
-        <div id="header-text">{% block header %}<a id="logo-link" href="/"><img id="logo" src="{{ STATIC_URL }}/images/ietf-logo-trans-small.png" width="68" height="36" alt="logo">Mail Archive</a>{% endblock %}</div>
-        {% if user %}
-            <div id="login" class="noprint">
-            {% if user.is_authenticated %}
-                <span class="pipe">{{ user }}</span>
-                <a href="{% url "archive_logout" %}">Sign out</a>
-            {% else %}
-                <a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>
-            {% endif %}
+    <header class="navbar {% if server_mode and server_mode != "production" %}navbar-inverse{% else %}navbar-default{% endif %} navbar-fixed-top">
+        <div class="container-fluid">
+            <div class="navbar-header pull-left">
+                <a class="navbar-brand" href="/">
+                   <img alt="IETF Logo" src="https://www.ietf.org/lib/dt/6.11.0/ietf/images/ietflogo-small-transparent.png">
+                   {% if not user.is_authenticated %}
+                      <span id="header-text">
+                      {% if server_mode and server_mode == "production" %}
+                      Datatracker
+                      {% else %}
+                      <b><i>Development mode</i></b>
+                      {% endif %}
+                      </span>
+                   {% endif %}
+                </a>
+            </div> <!-- navbar-header -->
+
+            {% if not request.resolver_match.url_name == "django.contrib.auth.views.login" %}
+            <div class="navbar-header pull-right">
+                <div id="login" class="noprint">
+                {% if user.is_authenticated %}
+                    <span class="login-user pipe">{{ user }}</span>
+                    <a href="{% url "archive_logout" %}">Sign out</a>
+                {% else %}
+                    <a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>
+                {% endif %}
             </div>
-        {% endif %}
-    </div> <!-- header -->
+            {% endif %}
+
+            </div> <!-- navbar-header -->
+        </div> <!-- container-fluid -->
+    </header>
+
+            <noscript>
+                <p class="navbar-text"><small>Enable Javascript for full functionality.</small></p>
+            </noscript>
 
         <!-- Django Messages -->
         {% if messages %}
@@ -53,13 +78,12 @@
     </div>
     <!-- END Content -->
 
-    {% block footer %}
-    <div id="footer">
-        <p>Email Archive v{{ version_num }}</p>
-    </div> <!-- footer -->
-    {% endblock %}
 
 </div> <!-- END Container -->
+
+<script type="text/javascript" src="{{ STATIC_URL }}jquery/jquery-1.12.4.min.js"></script>
+<script src="{{ STATIC_URL }}bootstrap3/js/bootstrap.js"></script>
+{% block js %}{% endblock %}
 
 </body>
 </html>

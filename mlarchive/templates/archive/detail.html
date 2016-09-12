@@ -1,30 +1,33 @@
 {% extends "base.html" %}
 
-{% block extrahead %}
-<script type="text/javascript" src="{{ STATIC_URL }}js/detail.js"></script>
-{% endblock %}
-
 {% block title %}Archive{% endblock %}
 
 {% block content %}
 
-<div id="msg-detail">
-  {{ msg.get_body_html|safe }}
+<div class="container-fluid">
+<div class="row">
+    <div id="msg-aside" class="col-md-4 col-md-push-8">
+      <ul>
+          <li><a class="btn btn-default" href="{{ msg.list_by_date_url }}">View by Date</a></li>
+          <li><a class="btn btn-default" href="{{ msg.list_by_thread_url }}">View by Thread</a></li>
+      </ul>
+    </div> <!-- msg-aside -->
+
+    <div id="msg-detail" class="col-md-8 col-md-pull-4">
+      {{ msg.get_body_html|safe }}
   
-  <div id="msg-nav">
-    <ul>
-      <li><a href="{{ msg.list_by_date_url }}">View by Date</a></li>
-      <li><a href="{{ msg.list_by_thread_url }}">View by Thread</a></li>
-    </ul>
-  </div>
+      <div id="msg-nav">
+        <ul>
+          <li><a class="btn btn-default" href="{{ msg.list_by_date_url }}">View by Date</a></li>
+          <li><a class="btn btn-default" href="{{ msg.list_by_thread_url }}">View by Thread</a></li>
+        </ul>
+      </div> <!-- msg-row -->
+    </div> <!-- msg-detail -->
+</div> <!-- row -->
 </div>
 
-<div id="msg-aside">
-  <ul>
-      <li><a href="{{ msg.list_by_date_url }}">View by Date</a></li>
-      <li><a href="{{ msg.list_by_thread_url }}">View by Thread</a></li>
-  </ul>
-</div>
+{% endblock %}
 
-
+{% block js %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/detail.js"></script>
 {% endblock %}

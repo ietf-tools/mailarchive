@@ -1,3 +1,20 @@
+
+mailarch (1.4.0) ietf; urgency=normal
+
+ * Migrate to Bootstrap Framework.
+
+ * Improves support for mobile devices (Responsive Design)
+   Inlcuding removing the filter column when display is small
+
+ * Allows subjects to fill the column on large displays
+
+ * Provides a link on each row of the results list for 
+   that row's message
+
+ * Reduce the unused space on the display
+
+-- Ryan Cross <rcross@amsl.com>  15 Sep 2016 10:00:00 +0800
+
 mailarch (1.3.1) ietf; urgency=normal
 
  * Add CeleryXapianBatchRemove task and utility script to

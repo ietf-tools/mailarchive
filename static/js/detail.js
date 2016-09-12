@@ -7,6 +7,4 @@ $(function() {
         $('#msg-header').toggle(); 
         $(this).html(($('#toggle').text() == 'Show header') ? 'Hide header' : 'Show header');
     });
-    $('#msg-nav a').button();
-    $('#msg-aside a').button();
 });

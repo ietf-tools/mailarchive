@@ -1,0 +1,14 @@
+{% for result in results %}
+    <div class="xtr">
+        <div class="xtd"><a href="{{ result.object.get_absolute_url }}">{{ result.object.subject }}</a></div>
+        {# <td class="nowrap">{{ result.object.subject|truncatechars:70 }}</td> #}
+        <div class="xtd frm-col">{{ result.object.frm_email|truncatechars:35 }}</div>
+        <div class="xtd date-col">{{ result.object.date|date:"Y-m-d" }}</div>
+        <div class="xtd list-col">{{ result.object.email_list }}</div>
+        <div class="xtd hidden">{{ result.score }}</div>
+        <div class="xtd hidden">{{ result.object.get_absolute_url }}</div>
+        <div class="xtd hidden">{{ result.object.id }}</div>
+    </div>
+{% empty %}
+    <div class="xtr"><div class="xtd">No results found</div></div>
+{% endfor %}

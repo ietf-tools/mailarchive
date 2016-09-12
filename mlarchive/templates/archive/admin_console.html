@@ -1,31 +1,28 @@
-{% extends "base_960.html" %}
-
-{% block extrahead %}
-{% endblock %}
+{% extends "base.html" %}
 
 {% block title %}Mail Archive{% endblock %}
 
 {% block content %}
 
 <div id="admin_page">
-<div id="console-container">
-    <p>Last message uploaded:</p>
-    <p>
+    <div id="console-container">
+        <p>Last message uploaded:</p>
+        <p>
     
-    {% comment %}
-    {% for key, value in cache_data.items %}
-        {{ key }}: {{ value }}
-    {% endfor %}
-    {% endcomment %}
+        {% comment %}
+        {% for key, value in cache_data.items %}
+            {{ key }}: {{ value }}
+        {% endfor %}
+        {% endcomment %}
     
-    </p>
+        </p>
 
-    {{ revision_time }}
-    {{ revision_date }}
-    {{ revision_num }}
-    {{ revision_id }}
-    {{ version_num }}
-</div>
+        {{ revision_time }}
+        {{ revision_date }}
+        {{ revision_num }}
+        {{ revision_id }}
+        {{ version_num }}
+    </div>
 </div> <!-- admin_page -->
 
 {% endblock %}

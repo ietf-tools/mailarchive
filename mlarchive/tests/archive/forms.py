@@ -106,7 +106,7 @@ def test_asf_get_facets(client,messages):
     assert email_list_total == frm_email_total
 
     # ensure facets interact
-    url = reverse('archive_search') + '?email_list=pubone,pubtwo&f_list=pubone'
+    url = reverse('archive_search') + '?email_list=pubone&email_list=pubtwo&f_list=pubone'
     response = client.get(url)
     facets = response.context['facets']
     selected_counts = dict(facets['fields']['email_list'])

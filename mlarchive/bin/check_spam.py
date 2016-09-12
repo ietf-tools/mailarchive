@@ -13,11 +13,12 @@ if not path in sys.path:
     sys.path.insert(0, path)
 
 import django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.development'
+os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.noindex'
 django.setup()
 
 # -------------------------------------------------------------------------------------
 import argparse
+import dateutil.parser
 import email
 
 from celery_haystack.utils import get_update_task
@@ -36,21 +37,30 @@ logging.basicConfig(filename=logpath,level=logging.DEBUG)
 def main():
     # parse arguments
     parser = argparse.ArgumentParser(description='Check archive for spam')
-    parser.add_argument('-i', '--inspector', help="enter the inspector class to use")
+    parser.add_argument('-i', '--inspector', help="enter the inspector class to use", required=True)
     parser.add_argument('-l', '--list', help="enter the email list name to check")
-    parser.add_argument('-r','--remove',help="remove spam.  default is check only",action='store_true')
+    parser.add_argument('-m', '--mark', type=int, help="enter integer to mark message with (field=spam_score)")
+    parser.add_argument('-r', '--remove', help="remove spam.  default is check only",action='store_true')
+    parser.add_argument('-s', '--start', help="enter the date to start check YYYY-MM-DDTHH:MM:SS")
     args = parser.parse_args()
     stat = {}
     
-    if not EmailList.objects.filter(name=args.list).exists():
+    if args.list and not EmailList.objects.filter(name=args.list).exists():
         parser.error('List {} does not exist'.format(args.list))
     
     inspector_class = eval(args.inspector)
     
-    stat['scanned'] = Message.objects.filter(email_list__name=args.list).count()
+    kwargs = {}
+    if args.list:
+        kwargs['email_list__name'] = args.list
+    if args.start:
+        kwargs['date__gte'] = dateutil.parser.parse(args.start)
+        
+    queryset = Message.objects.filter(**kwargs)
+    stat['scanned'] = queryset.count()
     stat['spam'] = 0
     
-    for message in Message.objects.filter(email_list__name=args.list):
+    for message in queryset:
         path = message.get_file_path()
         with open(path) as f:
             msg = email.message_from_file(f)
@@ -60,6 +70,9 @@ def main():
             inspector.inspect()
         except SpamMessage:
             stat['spam'] = stat['spam'] + 1
+            if args.mark:
+                message.spam_score = args.mark
+                message.save()
             if args.remove:
                 message.delete()
 

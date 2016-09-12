@@ -1,10 +1,10 @@
 <div id="msg-body">
-    <h1>{{ msg.subject }}</h1>
-    <p id="msg-info" class="darkgray">
+    <h3>{{ msg.subject }}</h3>
+    <p id="msg-info" class="msg-header">
       <span id="msg-from" class="pipe">{{ msg.frm }}</span>
       <span id="msg-date" class="pipe">{{ msg.date|date:"D, d F  Y H:i" }} UTC</span>
     </p>
-    <div id="msg-header" class="darkgray">
+    <div id="msg-header" class="msg-header">
       <p>
       {% for k,v in headers %}
         {{k}}: {{v}}<br />
@@ -16,17 +16,19 @@
           {{ part|safe }}
       {% endfor %}
     </div>
-    <div id="msg-attachments">
+    <div>
       {% if msg.attachment_set.all %}
-        <ul id="attachments-list">
+        <ul class="attachment-list">
         {% for attachment in msg.attachment_set.all %}
-          <li><span id="attachments-label">Attachment: </span><a href="{{ attachment.get_absolute_url }}">{{ attachment.name }}</a></li>
+          <li><h3><span class="label label-default">Attachment:</span><a href="{{ attachment.get_absolute_url }}"> {{ attachment.name }}</a></h3></li>
         {% endfor %}
         </ul>
       {% endif %}
     </div>
 </div>
 
+{% comment %}
 {% if request %}
 <div id="msg-link"><a class="msg-link" href="https://{{ request.META.HTTP_HOST }}{{ msg.get_absolute_url }}">http://{{ request.META.HTTP_HOST }}{{ msg.get_absolute_url }}</a></div>
 {% endif %}
+{% endcomment %}

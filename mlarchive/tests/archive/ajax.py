@@ -7,30 +7,11 @@ from factories import *
 from pprint import pprint
 from pyquery import PyQuery
 from StringIO import StringIO
-from mlarchive.archive.models import Message
+from mlarchive.archive.models import Message, EmailList
 
 import os
 import shutil
 
-@pytest.mark.django_db(transaction=True)
-def test_ajax_get_list(client):
-    url = '%s?term=p' % reverse('ajax_get_list')
-    response = client.get(url)
-    assert response.content == '{"success": false, "error": "No results"}'
-    publist = EmailListFactory.create(name='public')
-    prilist = EmailListFactory.create(name='private',private=True)
-    alist = EmailListFactory.create(name='ancp')
-
-    # not logged in
-    response = client.get(url)
-    assert response.content == '[{"id": 1, "label": "public"}]'
-
-    # logged in
-    user = UserFactory.create(is_superuser=True)
-    assert client.login(username='admin',password='admin')
-    prilist.members.add(user)
-    response = client.get(url)
-    assert response.content  == '[{"id": 1, "label": "public"}, {"id": 2, "label": "private"}]'
 
 @pytest.mark.django_db(transaction=True)
 def test_ajax_get_msg(client):
@@ -67,19 +48,19 @@ def test_ajax_get_msg(client):
 @pytest.mark.django_db(transaction=True)
 def test_ajax_get_messages(client,messages):
     # run initial query to setup cache
-    url = '%s/?email_list=pubone,pubtwo' % reverse('archive_search')
+    url = '%s/?email_list=pubone&email_list=pubtwo' % reverse('archive_search')
     response = client.get(url)
     assert response.status_code == 200
     assert len(response.context['results']) == 6
     q = PyQuery(response.content)
-    id = q('#msg-list').attr('data-queryid')
+    id = q('.msg-list').attr('data-queryid')
 
     # test successful get_messages call
     url = '%s/?queryid=%s&lastitem=2' % (reverse('ajax_messages'), id)
     response = client.get(url)
     assert response.status_code == 200
     q = PyQuery(response.content)
-    assert len(q('tr')) > 1
+    assert len(q('.xtr')) > 1
 
     # test end of results
     url = '%s/?queryid=%s&lastitem=40' % (reverse('ajax_messages'), id)

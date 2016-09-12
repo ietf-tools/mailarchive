@@ -10,8 +10,9 @@ var mailarchAdmin = {
         mailarchAdmin.$adminResults.focus();
         mailarchAdmin.selectInitialMessage();
         //$(document).keydown(mailarchAdmin.messageNav);
+        $('#id_email_list').selectize();
     },
-
+        
     cacheDom: function() {
         mailarchAdmin.$adminResults = $('#admin-results');
         mailarchAdmin.$resultTableRows = $('#result-table tr');

@@ -1,99 +1,81 @@
-{% extends "base_960.html" %}
-
-{% block extrahead %}
-<script type="text/javascript" src="{{ STATIC_URL }}js/jquery.query.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}js/search_form.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}js/search_advanced.js"></script>
-{% endblock %}
+{% extends "base.html" %}
+{% load bootstrap3 %}
 
 {% block title %}Mail Archive{% endblock %}
+
+{% block extrastyle %}
+<link rel="stylesheet" href="{{ STATIC_URL }}selectize/css/selectize.bootstrap3.css" type="text/css">
+<link rel="stylesheet" href="{{ STATIC_URL }}css/bootstrap-datepicker.min.css" type="text/css">
+{% endblock %}
 
 {% block header %}{{ block.super }} - Advanced Search{% endblock %}
 
 {% block content %}
 
-<div id="adv-search-container">
+<div class="container">
+<div id="adv-search-container" class="col-md-offset-1 col-md-10">
   <div id="adv-search" class="adv-search">
       <form id="rules-form" class="advanced" action="../search" method="get">
-
-        <fieldset id="query_parts">
-        <span class="label">Include {{ form.operator }}:</span>
+        <fieldset class="term-set">
+        <h4>Include:</h4>
         {% for form in query_formset.forms %}
-            <div id="query_chunk_{{ forloop.counter0 }}" class="chunk query_chunk">
+            <div id="query_chunk_{{ forloop.counter0 }}" class="chunk query_chunk form-inline">
             {% if form.non_field_errors %}
               {{ form.non_field_errors }}
             {% endif %}
-            {{ form.field }}
-            {{ form.qualifier }}
-            {{ form.value }}
-            <a id="remove_{{ forloop.counter0 }}" class="remove_btn" onclick="false" name="remove_{{ forloop.counter0 }}" href="#">
-                <img title="Remove" src="{{ STATIC_URL }}admin/img/icon_deletelink.gif" alt="Remove">
-            </a>
+            {% bootstrap_field form.field show_label=False %}
+            {% bootstrap_field form.qualifier show_label=False %}
+            {% bootstrap_field form.value show_label=False %}
+            <button class="btn btn-danger btn-remove" type="button">Delete</button>
             </div>
         {% endfor %}
-        <a id="add_query_part" class="addlink addParamBtn" href="#">Add another</a>
+        <a class="addChunk" href="#">Add another</a>
         </fieldset>
 
-        <fieldset id="not_parts">
-        <span class="label">but do not include: </span>
+        <fieldset class="term-set">
+        <h4>Do not Include:</h4>
         {% for form in not_formset.forms %}
-            <div id="not_chunk_{{ forloop.counter0 }}" class="chunk not_chunk">
+            <div id="not_chunk_{{ forloop.counter0 }}" class="chunk not_chunk form-inline">
             {% if form.non_field_errors %}
               {{ form.non_field_errors }}
             {% endif %}
-            {{ form.field }}
-            {{ form.qualifier }}
-            {{ form.value }}
-            <a id="not_remove_{{ forloop.counter0 }}" class="not_remove_btn" onclick="false" href="#">
-                <img title="Remove" src="{{ STATIC_URL }}admin/img/icon_deletelink.gif" alt="Remove">
-            </a>
+            {% bootstrap_field form.field show_label=False %}
+            {% bootstrap_field form.qualifier show_label=False %}
+            {% bootstrap_field form.value show_label=False %}
+            <button class="btn btn-danger btn-remove" type="button">Delete</button>
             </div>
         {% endfor %}
-        <a id="add_not_part" class="addlink addParamBtn" href="#">Add another</a>
+        <a class="addChunk" href="#">Add another</a>
         </fieldset>
       </form>
 
       <form id="advanced-search-form" class="advanced" action="../search" method="get">
-        <fieldset id="not_parts">
-        <span class="label">filter results by:</span>
-            <table id="advanced-search-table" class="clean">
-                <tr>
-                    <td>Time:</td>
-                    <td>{{ form.qdr }}</td>
-                </tr>
-                <tr id="custom_date">
-                        <td>Start:</td><td>{{ form.start_date }}</td><td>End:</td><td>{{ form.end_date }}</td>
-                </tr>
-                <tr>
-                    <td>List:</td>
-                    <td><input id="email_list_search" class="defaultText" type="text" size="30" title="Start typing name and pick from list"></td>
-                </tr>
-                <!-- <input type="hidden" name="email_list" id="email_list" /> -->
-                {{ form.email_list }}
-            </table>
-
-            <fieldset id="list-fieldset2" class="list-fieldset">
-              <legend>Lists to Search</legend>
-              <ul id="email_list_list"></ul>
-            </fieldset>
-
+        <fieldset>
+        <h4>Filter Results By:</h4>
+            {% bootstrap_field form.qdr show_label=False %}
+            {% bootstrap_field form.start_date form_group_class="form-group date-field" %}
+            {% bootstrap_field form.end_date form_group_class="form-group date-field" %}
+            {% bootstrap_field form.email_list show_help=False show_label=False %}
         </fieldset>
 
+        <button class="btn btn-default" type="submit">Search</button>
+        
         <br />
         <hr />
 
         <input id="id_q" type="text" name="q" readonly="readonly" />
         <input id="as" type="hidden" name="as" value="1" />
-
-        <div class="button-group">
-          <ul>
-            <li><button type="submit">Search</button></li>
-          </ul>
-        </div> <!-- button-group -->
       </form>
+      
   </div> <!-- advanced-search-->
 </div>
+</div> <!-- container -->
 
 {% endblock %}
 
-
+{% block js %}
+<script type="text/javascript" src="{{ STATIC_URL }}js/bootstrap-datepicker.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}selectize/js/standalone/selectize.min.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/jquery.query.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/search_advanced.js"></script>
+{% endblock %}

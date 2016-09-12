@@ -21,10 +21,14 @@ def get_noauth(request):
     noauth = request.session.get('noauth',None)
     if noauth:
         return noauth
-    else:
+    
+    if request.user.is_authenticated():
         request.session['noauth'] = [ str(x.id) for x in EmailList.objects.filter(
             private=True).exclude(members=request.user) ]
-        return request.session['noauth']
+    else:
+        request.session['noauth'] = [ str(x.id) for x in EmailList.objects.filter(
+            private=True) ]
+    return request.session['noauth']
 
 def jsonapi(fn):
     def to_json(request, *args, **kwargs):

@@ -6,7 +6,6 @@ from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.views import CustomSearchView
 
 urlpatterns = patterns('mlarchive.archive.ajax',
-    url(r'ajax/list/?$', 'ajax_get_list', name='ajax_get_list'),
     url(r'ajax/msg/?$', 'ajax_get_msg', name='ajax_get_msg'),
     url(r'ajax/messages/?$', 'ajax_messages', name='ajax_messages'),
     url(r'ajax/admin/action/?$', 'ajax_admin_action', name='ajax_admin_action'),
@@ -30,7 +29,7 @@ urlpatterns += patterns('mlarchive.archive.views',
                                          template='archive/search.html'), name='archive_search'),
 
     # test pages ----------------
-    #(r'^layout/$', TemplateView.as_view(template_name="archive/layout.html")),
+    (r'^layout/$', TemplateView.as_view(template_name="archive/layout.html")),
     #(r'^test/$', TemplateView.as_view(template_name="archive/test.html")),
     #(r'^test-bootstrap/$', TemplateView.as_view(template_name="archive/test-bootstrap.html")),
 )

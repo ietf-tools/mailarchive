@@ -41,7 +41,6 @@ var mailarch = {
         mailarch.$filterOptions = $('input.facetchk[type=checkbox]');
         mailarch.$fromFilterClear = $('#from-filter-clear');
         mailarch.$fromFilterContainer = $('#from-filter-container');
-        //mailarch.$groupButton = $('#group-button');
         mailarch.$threadLink = $('#gbt-link');
         mailarch.$listFilterClear = $('#list-filter-clear');
         mailarch.$listFilterContainer = $('#list-filter-container');
@@ -67,7 +66,6 @@ var mailarch = {
         mailarch.$filterPopups.on('blur', mailarch.closeFilterPopup);
         mailarch.$filterOptions.on('change', mailarch.applyFilter);
         mailarch.$fromFilterClear.on('click', mailarch.clearFromFilter);
-        //mailarch.$groupButton.on('click', mailarch.groupByThread);
         mailarch.$threadLink.on('click', mailarch.groupByThread);
         mailarch.$listFilterClear.on('click', mailarch.clearListFilter);
         mailarch.$modifySearch.on('click', mailarch.removeIndexParam);
@@ -79,7 +77,7 @@ var mailarch = {
         mailarch.$searchForm.on('submit', mailarch.submitSearch);
         mailarch.$sortButtons.on('click', mailarch.performSort);
         mailarch.$window.resize(mailarch.handleResize);
-        if(mailarch.isSmallViewport()) {
+        if(!mailarch.isSmallViewport()) {
             mailarch.$window.on('scroll', mailarch.infiniteScroll);
         }
     },
@@ -168,11 +166,10 @@ var mailarch = {
     handleResize: function() {
         if(mailarch.isSmallViewport()) {
             $('.header').removeAttr('style');
-            //$('.header').attr('style', function(i, style){
-            //    return style.replace(/width[^;]+;?/g, '');
-            //});
+            mailarch.$window.off('scroll', mailarch.infiniteScroll);
         } else {
             mailarch.setHeaderWidths();
+            mailarch.$window.on('scroll', mailarch.infiniteScroll);
         }
     },
     
@@ -214,13 +211,13 @@ var mailarch = {
                     // NOTE: when prepending data scrollTop stays at zero
                     // meaning user loses context, so we need to reposition
                     // scrollTop after prepend.
-                    var lengthBefore = mailarch.$msgTable.find('tr').length;
+                    var lengthBefore = mailarch.$msgTable.find('.xtr').length;
                     mailarch.$msgTableTbody.prepend(data);
-                    var numNewRows = mailarch.$msgTable.find('tr').length - lengthBefore;
+                    var numNewRows = mailarch.$msgTable.find('.xtr').length - lengthBefore;
                     var newOffset = firstItem - numNewRows;
-                    var rowHeight = mailarch.$msgTable.find('tr:eq(0)').height();
                     mailarch.$msgList.data('queryset-offset',newOffset);
-                    mailarch.$msgList.scrollTop(numNewRows * rowHeight);
+                    var oldTop = mailarch.$msgTable.find('.xtr').eq(numNewRows);
+                    mailarch.$msgList.scrollTop(oldTop.position().top);
                 } else if(xhr.status == 204)  {
                     mailarch.$msgList.off( "scroll" );
                 }
@@ -275,10 +272,8 @@ var mailarch = {
             var icon = elem.find(".glyphicon");
             if(so.match("^-")){
                 icon.removeClass().addClass("glyphicon glyphicon-sort-by-attributes-alt sort-active");
-                //icon = "ui-icon-triangle-1-s";
             } else {
                 icon.removeClass().addClass("glyphicon glyphicon-sort-by-attributes sort-active");
-                //icon = "ui-icon-triangle-1-n";
             }
         }
     },
@@ -295,7 +290,6 @@ var mailarch = {
             drag: function(event, ui){
                 var top = ui.position.top;
                 mailarch.$listPane.css("height",top-3);
-                //$(".msg-list").css("height",top-144-20);
                 mailarch.$viewPane.css("top",top+3);
             },
             stop: function(event, ui){
@@ -446,8 +440,7 @@ var mailarch = {
         var offset = mailarch.$msgList.data('selected-offset');
         if(offset > 0){
             var row = mailarch.$msgTable.find('.xtr:eq(' + offset + ')');
-            var height = mailarch.$msgTable.find('.xtr:eq(0)').height();
-            mailarch.$msgList.scrollTop((offset-1)*height);
+            mailarch.$msgList.scrollTop(mailarch.$msgList.scrollTop() + row.position().top);
         } else {
             var row = mailarch.$msgTable.find('.xtbody .xtr:first');
         }
@@ -463,7 +456,6 @@ var mailarch = {
     
     setHeaderWidths: function() {
         // synchronize the message list header table with the scrollable content table
-        // $("#msg-list-header-table").width($(".msg-table").width());
         if (mailarch.isSmallViewport()) {
             return true;
         }

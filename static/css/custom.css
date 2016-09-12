@@ -141,15 +141,15 @@ div:focus {
 }
 
 @media (max-width: 767px) {
-.corral {
-    width: 100%;
-}
+    .corral {
+        width: 100%;
+    }
 
-#login-container {
-    margin-top: 30px;
-    padding: 0 10% 30px;
-    width: 100%
-}
+    #login-container {
+        margin-top: 30px;
+        padding: 0 10% 30px;
+        width: 100%
+    }
 }
 
 /* ==========================================================================
@@ -187,7 +187,6 @@ div:focus {
    ========================================================================== */
 #browse-top {
     margin-top: 30px;
-    /* padding-left: 15px; */
 }
 
 .browse_section {
@@ -489,7 +488,8 @@ table.msg-list-header-table th a.btn {
     white-space: -moz-pre-wrap;
     white-space: -pre-wrap;
     white-space: -o-pre-wrap;
-    word-wrap: break-word;
+    word-wrap: normal;
+    word-break: normal;
 }
 
 #msg-body h3 {
@@ -517,7 +517,7 @@ table.msg-list-header-table th a.btn {
 /* Responsive Styling
    ========================================================================== */
 
-@media (max-width: 768px)
+@media (max-width: 767px)
 {
     #sidebar {
         display: none;
@@ -607,6 +607,9 @@ table.msg-list-header-table th a.btn {
         display: table-row;
     }
     
+    .list-col {
+        float: none;
+    }
     .header a {
         color: black;
         padding: 8px 8px 8px 0;
@@ -653,14 +656,15 @@ table.msg-list-header-table th a.btn {
 }
 
 #msg-aside ul {
-    margin: 0;
+    margin: 15px 0 0 0;
     padding: 0;
     list-style-type: none;
-    text-align: left;
+    text-align: center;
 }
 
 #msg-aside ul li {
-    margin: 1em 0;
+    display: inline;
+    margin: 0 2em;
 }
 
 #msg-nav {
@@ -686,6 +690,18 @@ table.msg-list-header-table th a.btn {
 
 .attachment-list li {
     list-style: none;
+}
+
+@media (min-width: 768px)
+{
+    #msg-aside ul {
+        text-align: left;
+    }
+    
+    #msg-aside ul li {
+        margin: 1em 0;
+        display: block;
+    }
 }
 
 /* ==========================================================================

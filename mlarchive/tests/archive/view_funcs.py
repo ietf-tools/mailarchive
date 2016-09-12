@@ -26,7 +26,7 @@ def test_find_message_date(messages):
     msg = sqs[0].object
     sqs = SearchQuerySet().filter(msgid='bogus')
     assert find_message_date(sqs,msg) == -1
-    
+
 @pytest.mark.django_db(transaction=True)
 def test_find_message_date_reverse(messages):
     sqs = SearchQuerySet().order_by('-date')
@@ -68,6 +68,7 @@ def test_initialize_formsets():
     assert neg.forms[0].initial['field'] == 'text'
     assert neg.forms[0].initial['value'] == 'negvalue'
 
+
 @pytest.mark.django_db(transaction=True)
 def test_get_columns():
     user = UserFactory.build()
@@ -90,6 +91,7 @@ def test_get_export_empty(client):
     #q = PyQuery(response.content)
     #assert len(q('li.error')) == 1
     #assert q('li.error').text() == "No messages to export."
+
 
 #def test_get_export_limit(client,settings):
     # settings.EXPORT_LIMIT = 1

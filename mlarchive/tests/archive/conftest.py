@@ -10,6 +10,7 @@ import pytest
 def load_db():
     pubone = EmailListFactory.create(name='pubone')
     pubtwo = EmailListFactory.create(name='pubtwo')
+    pubthree = EmailListFactory.create(name='pubthree')
     prilist = EmailListFactory.create(name='private',private=True)
     athread = ThreadFactory.create(date=datetime.datetime(2013,1,1))
     bthread = ThreadFactory.create(date=datetime.datetime(2013,2,1))
@@ -35,9 +36,10 @@ def load_db():
                           spam_score=1)
     MessageFactory.create(email_list=pubtwo)
     MessageFactory.create(email_list=pubtwo)
-    #MessageFactory.create(email_list=pubtwo,date=datetime.datetime(2014,7,1))
-    #MessageFactory.create(email_list=pubtwo,date=datetime.datetime(2014,7,1))
-    
+    date = datetime.datetime.now().replace(second=0,microsecond=0)
+    for n in range(21):
+        MessageFactory.create(email_list=pubthree,date=date-datetime.timedelta(days=n))
+
 @pytest.fixture(scope="session")
 def index_resource():
     if not Message.objects.first():

@@ -8,6 +8,7 @@ from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import user_passes_test
 from django.core.cache import cache
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.forms.formsets import formset_factory
@@ -67,10 +68,9 @@ class CustomSearchView(SearchView):
 
     def build_page(self):
         """Returns tuple of:
-        - subset of results for display
-        - queryset offset: the offset of results subset within entire queryset
+        - subset of results for display (page)
         - selected offset: the offset of message specified in query arguments within
-        results subset
+          results subset (page)
 
         If request arguments include "index", returns slice of results containing
         message named in "index" with appropriate offset within slice, otherwise returns
@@ -78,15 +78,32 @@ class CustomSearchView(SearchView):
         """
         buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
         index = self.request.GET.get('index')
+        try:
+            page_no = int(self.request.GET.get('page', 1))
+        except ValueError:
+            page_no = 1
+        # prime slice
+        start_offset = (page_no - 1) * self.results_per_page
+        self.results[start_offset:start_offset + self.results_per_page + 1]
+        paginator = Paginator(self.results, self.results_per_page)
+        try:
+            self.page = paginator.page(page_no)
+        except PageNotAnInteger:
+            self.page = paginator.page(1)
+        except EmptyPage:
+            # If page is out of range (e.g. 9999), deliver last page of results.
+            self.page = paginator.page(paginator.num_pages)
+
         if index:
             position = self.find_message(index)
             if position == -1:
                 raise Http404("No such message!")
-            start = position - buffer if position > buffer else 0
-            selected_offset = position if position < buffer else buffer
-            return (self.results[start:position + self.results_per_page + 1], start, selected_offset)
+            page_no = ( position / self.results_per_page ) + 1
+            selected_offset = position % self.results_per_page
+            self.page = paginator.page(page_no)
+            return (self.page, selected_offset)
         else:
-            return (self.results[:self.results_per_page + 1],0,0)
+            return (self.page, 0)
 
     def extra_context(self):
         """Add variables to template context"""
@@ -134,6 +151,17 @@ class CustomSearchView(SearchView):
         if hasattr(self,'queryid'):
             extra['queryid'] = self.queryid
 
+        # pagination links
+        if self.page and self.page.has_other_pages():
+            if self.page.has_next():
+                new_query = self.request.GET.copy()
+                new_query['page'] = self.page.next_page_number()
+                extra['next_page_url'] = reverse('archive_search') + '?' + new_query.urlencode()
+            if self.page.has_previous():
+                new_query = self.request.GET.copy()
+                new_query['page'] = self.page.previous_page_number()
+                extra['previous_page_url'] = reverse('archive_search') + '?' + new_query.urlencode()
+        
         return extra
 
     def find_message(self,hash):
@@ -156,15 +184,14 @@ class CustomSearchView(SearchView):
         """
         Generates the actual HttpResponse to send back to the user.
         """
-        results, queryset_offset, selected_offset = self.build_page()
-
+        page, selected_offset = self.build_page()
+        
         context = {
             'query': self.query,
             'form': self.form,
-            'results': results,
+            'page': page,
             'count': self.results.count(),
             'suggestion': None,
-            'queryset_offset': queryset_offset,
             'selected_offset': selected_offset,
         }
 

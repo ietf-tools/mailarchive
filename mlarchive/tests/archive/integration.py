@@ -122,3 +122,30 @@ def test_queries_spam_score_field(client,messages):
     results = response.context['results']
     assert len(results) == 1
 
+@pytest.mark.django_db(transaction=True)
+def test_queries_pagination(client,messages):
+    # verify pre-conditions
+    message_count = Message.objects.filter(email_list__name='pubthree').count()
+    assert message_count == 21
+    # test page=2
+    url = reverse('archive_search') + '?email_list=pubthree&page=2'
+    response = client.get(url)
+    assert response.status_code == 200
+    assert len(response.context['results']) == 1
+    
+@pytest.mark.django_db(transaction=True)
+def test_queries_pagination_bogus(client,messages):
+    # verify pre-conditions
+    message_count = Message.objects.filter(email_list__name='pubthree').count()
+    assert message_count == 21
+    # test non integer
+    url = reverse('archive_search') + '?email_list=pubthree&page=bogus'
+    response = client.get(url)
+    assert response.status_code == 200
+    assert len(response.context['results']) == 20   # should get page 1
+    # test page too high
+    url = reverse('archive_search') + '?email_list=pubthree&page=1000'
+    response = client.get(url)
+    assert response.status_code == 200
+    assert len(response.context['results']) == 1    # should get last page
+

@@ -51,6 +51,8 @@ def test_ajax_get_messages(client,messages):
     url = '%s/?email_list=pubone&email_list=pubtwo' % reverse('archive_search')
     response = client.get(url)
     assert response.status_code == 200
+    # for x in response.context['results']:
+    #     print type(x)
     assert len(response.context['results']) == 6
     q = PyQuery(response.content)
     id = q('.msg-list').attr('data-queryid')

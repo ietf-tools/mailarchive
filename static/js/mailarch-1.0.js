@@ -22,11 +22,9 @@ var mailarch = {
         mailarch.cacheDom();
         mailarch.bindEvents();
         mailarch.progressiveFeatures();
-        mailarch.$msgList.focus();
-        mailarch.selectInitialMessage();
+        mailarch.initMessageList();
         mailarch.initFilters();
         mailarch.setLastItem();
-        mailarch.initSplitter();
         mailarch.getURLParams();
         mailarch.initSort();
     },
@@ -35,8 +33,6 @@ var mailarch = {
         mailarch.$browseHeader = $('#browse-header');
         mailarch.$clearSort = $('#clear-sort');
         mailarch.$content = $('#content');
-        mailarch.$exportButton = $('#export-button');
-        mailarch.$exportOptions = $('#export-options');
         mailarch.$filterPopups = $('.filter');
         mailarch.$filterOptions = $('input.facetchk[type=checkbox]');
         mailarch.$fromFilterClear = $('#from-filter-clear');
@@ -166,6 +162,7 @@ var mailarch = {
     handleResize: function() {
         if(mailarch.isSmallViewport()) {
             $('.header').removeAttr('style');
+            $('#list-pane').removeAttr('style');
             mailarch.$window.off('scroll', mailarch.infiniteScroll);
         } else {
             mailarch.setHeaderWidths();
@@ -250,6 +247,14 @@ var mailarch = {
         }
         if ($('input.from-facet[type=checkbox]:checked').length == 0) {
             mailarch.$fromFilterClear.hide();
+        }
+    },
+    
+    initMessageList: function() {
+        if (!mailarch.isSmallViewport()) {
+            mailarch.$msgList.focus();
+            mailarch.initSplitter();
+            mailarch.selectInitialMessage();
         }
     },
     
@@ -434,9 +439,6 @@ var mailarch = {
     
     // auto select first item in result list
     selectInitialMessage: function() {
-        if (mailarch.isSmallViewport()) {
-            return true;
-        }
         var offset = mailarch.$msgList.data('selected-offset');
         if(offset > 0){
             var row = mailarch.$msgTable.find('.xtr:eq(' + offset + ')');
@@ -455,8 +457,8 @@ var mailarch = {
     },
     
     setHeaderWidths: function() {
-        // synchronize the message list header table with the scrollable content table
-        if (mailarch.isSmallViewport()) {
+        // synchronize the message list header columns with the scrollable content table
+        if (mailarch.isSmallViewport() || $('.msg-table .xtd.no-results').length == 1) {
             return true;
         }
         $(".header").each(function (i){

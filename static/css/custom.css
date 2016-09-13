@@ -403,6 +403,12 @@ nav.navbar {
     padding: 8px 1em 8px 1em;
 }
 
+.page-nav {
+    margin: 0;
+    text-align: center;
+    vertical-align: middle;
+}
+
 table.msg-table > thead > tr > th {
     padding: 0 0 0 8px;
 }
@@ -519,25 +525,30 @@ table.msg-list-header-table th a.btn {
 
 @media (max-width: 767px)
 {
-    #sidebar {
+    #sidebar, #splitter-pane, #view-pane, #message-count {
         display: none;
     }
     
     #msg-components {
+        padding: 0 10px;
         width: 100%;
     }
     
-    #splitter-pane {
-        display: none;
-    }
-    
-    #view-pane {
-        display: none;
+    #msg-panes, .msg-list {
+        height: 100%;
     }
     
     #list-pane {
         height: 100%;
         bottom: 0;
+        border: 0;
+        position: static;
+    }
+    
+    #msg-list-controls {
+        border-top: 0;
+        margin: 20px 0;
+        overflow: auto;
     }
 }
 
@@ -565,13 +576,14 @@ table.msg-list-header-table th a.btn {
 
 .header a {
     color: black;
-    padding: 8px 8px 8px 0;
+    /* padding: 8px 8px 8px 0; */
+    padding: 8px;
     display: inline-block;
     width: 100%;
 }
 
 .header:first-child {
-    margin-left: 4px;
+    /* margin-left: 4px; */
 }
 
 @media (min-width: 768px)
@@ -612,13 +624,15 @@ table.msg-list-header-table th a.btn {
     }
     .header a {
         color: black;
-        padding: 8px 8px 8px 0;
+        /* padding: 8px 8px 8px 0; */
+        padding: 8px;
         display: inline-block;
         width: 100%;
     }
     
     .header {
-        padding: 0 0 0 8px;
+        /* padding: 0 0 0 8px; */
+        padding: 0;
         border-top: 0;
         font-weight: bold;
     }
@@ -629,22 +643,6 @@ table.msg-list-header-table th a.btn {
 
     .header a:hover {
         text-decoration: none;
-    }
-}
-
-@media (max-width: 767px)
-{
-    #msg-panes {
-        height: 100%;
-    }
-    
-    #list-pane {
-        border: 0;
-        position: static;
-    }
-    
-    #msg-components {
-        padding: 0 10px;
     }
 }
 
@@ -664,7 +662,7 @@ table.msg-list-header-table th a.btn {
 
 #msg-aside ul li {
     display: inline;
-    margin: 0 2em;
+    margin: 0 12px;
 }
 
 #msg-nav {
@@ -680,7 +678,7 @@ table.msg-list-header-table th a.btn {
 
 #msg-nav ul li {
     display: inline;
-    margin: 0 2em 0 2em;
+    margin: 0 12px;
 }
 
 .attachment-list {

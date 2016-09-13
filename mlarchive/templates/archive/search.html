@@ -106,10 +106,10 @@
             
             <div id="msg-panes">
                 <div id="list-pane">
-                    <div class="xtd header"><a id="sort-button-subject" class="unsorted sortbutton" href="#">Subject<span class="glyphicon glyphicon-sort-by-attributes" aria-hidden="true"></span></a></div>
-                    <div class="xtd header"><a id="sort-button-frm" class="unsorted sortbutton" href="#">From<span class="glyphicon glyphicon-sort-by-attributes" aria-hidden="true"></span></a></div>
-                    <div class="xtd header"><a id="sort-button-date" class="unsorted sortbutton" href="#">Date<span class="glyphicon glyphicon-sort-by-attributes" aria-hidden="true"></span></a></div>
-                    <div class="xtd header"><a id="sort-button-email_list" class="unsorted sortbutton" href="#">List<span class="glyphicon glyphicon-sort-by-attributes" aria-hidden="true"></span></a></div>
+                    <div class="header"><a id="sort-button-subject" class="unsorted sortbutton" href="#">Subject<span class="glyphicon glyphicon-sort-by-attributes" aria-hidden="true"></span></a></div>
+                    <div class="header"><a id="sort-button-frm" class="unsorted sortbutton" href="#">From<span class="glyphicon glyphicon-sort-by-attributes" aria-hidden="true"></span></a></div>
+                    <div class="header"><a id="sort-button-date" class="unsorted sortbutton" href="#">Date<span class="glyphicon glyphicon-sort-by-attributes" aria-hidden="true"></span></a></div>
+                    <div class="header"><a id="sort-button-email_list" class="unsorted sortbutton" href="#">List<span class="glyphicon glyphicon-sort-by-attributes" aria-hidden="true"></span></a></div>
 
                     <div id="msg-list" class="msg-list wrapper" tabindex="-1" data-queryid="{{ queryid }}" data-queryset-offset="{{ page.start_index }}" data-selected-offset="{{ selected_offset }}">
                         <div class="table table-condensed msg-table xtable">
@@ -122,10 +122,12 @@
                     </div> <!-- msg-list -->
 
                     <div id="msg-list-controls">
-                        {{ count }} Messages
-                        {% if page.has_previous %}<a class="btn btn-default visible-xs-inline-block" href="{{ previous_page_url }}">Previous</a>{% endif %}
-                        <span class="current visible-xs-inline-block">{{ page.number }} of {{ page.paginator.num_pages }}</span>
-                        {% if page.has_next %}<a class="btn btn-default visible-xs-inline-block" href="{{ next_page_url }}">Next</a>{% endif %}
+                        <div id="message-count" class="list-control">{{ count }} Messages</div>
+                        <div class="list-control page-nav">
+                            {% if page.has_previous %}<a class="btn btn-default visible-xs-inline-block pull-left" href="{{ previous_page_url }}">Previous</a>{% endif %}
+                            <span class="current-page visible-xs-inline-block">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+                            {% if page.has_next %}<a class="btn btn-default visible-xs-inline-block pull-right" href="{{ next_page_url }}">Next</a>{% endif %}
+                        </div>
                     </div> <!-- msg-list-controls -->
                 </div> <!-- list-pane -->
                 

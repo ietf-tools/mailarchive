@@ -5,7 +5,7 @@
 
 {% block extrastyle %}
 <link rel="stylesheet" href="{% static 'selectize/css/selectize.bootstrap3.css' %}" type="text/css">
-<link rel="stylesheet" href="{% static 'mlarchive/css/bootstrap-datepicker.min.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" type="text/css">
 {% endblock %}
 
 {% block header %}{{ block.super }} - Advanced Search{% endblock %}
@@ -74,8 +74,8 @@
 {% endblock %}
 
 {% block js %}
-<script type="text/javascript" src="{% static 'mlarchive/js/bootstrap-datepicker.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'selectize/js/standalone/selectize.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'mlarchive/js/jquery.query.js' %}"></script>
+<script type="text/javascript" src="{% static 'jquery.query/jquery.query.js' %}"></script>
 <script type="text/javascript" src="{% static 'mlarchive/js/search_advanced.js' %}"></script>
 {% endblock %}

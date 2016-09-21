@@ -11,6 +11,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         super(MySeleniumTests, cls).setUpClass()
         cls.selenium = WebDriver()
         cls.selenium.implicitly_wait(10)
+        cls.selenium.set_window_size(1400,1000)
 
     @classmethod
     def tearDownClass(cls):

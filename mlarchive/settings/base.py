@@ -117,7 +117,7 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    #'django.contrib.staticfiles',
+    'django.contrib.staticfiles',
     'django.contrib.admin',
     'django.contrib.admindocs',
     'bootstrap3',
@@ -129,7 +129,15 @@ INSTALLED_APPS = (
 )
 
 STATIC_URL = '/static/'
-STATIC_DOC_ROOT = BASE_DIR + '../static'
+STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/")
+# STATIC_DOC_ROOT = BASE_DIR + '../static'
+
+# Additional locations of static files (in addition to each app's static/ dir)
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static'),
+    os.path.join(BASE_DIR, 'externals/static'),
+)
+
 
 ###########
 # LOGGING #

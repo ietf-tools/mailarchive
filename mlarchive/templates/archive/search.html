@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
-
-{% load archive_extras widget_tweaks %}
+{% load static archive_extras widget_tweaks %}
 
 {% block title %}Mail Archive Search Results{% endblock %}
 
@@ -141,8 +140,8 @@
 
 {% block js %}
 
-<script type="text/javascript" src="{{ STATIC_URL }}jquery-ui/jquery-ui.min.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}js/jquery.cookie.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}js/jquery.query.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}js/mailarch-1.0.js"></script>
+<script type="text/javascript" src="{% static 'jquery-ui/jquery-ui.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'mlarchive/js/jquery.cookie.js' %}"></script>
+<script type="text/javascript" src="{% static 'mlarchive/js/jquery.query.js' %}"></script>
+<script type="text/javascript" src="{% static 'mlarchive/js/mailarch-1.0.js' %}"></script>
 {% endblock %}

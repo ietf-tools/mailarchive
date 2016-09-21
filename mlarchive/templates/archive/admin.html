@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% load bootstrap3 widget_tweaks %}
+{% load static bootstrap3 widget_tweaks %}
 
 {% block extrastyle %}
-<link rel="stylesheet" href="{{ STATIC_URL }}selectize/css/selectize.bootstrap3.css" type="text/css">
-<link rel="stylesheet" href="{{ STATIC_URL }}css/bootstrap-datepicker.min.css" type="text/css">
+<link rel="stylesheet" href="{% static 'selectize/css/selectize.bootstrap3.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'mlarchive/css/bootstrap-datepicker.min.css' %}" type="text/css">
 {% endblock %}
 
 {% block title %}Mail Archive - Admin{% endblock %}
@@ -112,8 +112,8 @@
 {% endblock %}
 
 {% block js %}
-<script type="text/javascript" src="{{ STATIC_URL }}js/bootstrap-datepicker.min.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}selectize/js/standalone/selectize.min.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}js/admin.js"></script>
+<script type="text/javascript" src="{% static 'mlarchive/js/bootstrap-datepicker.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'selectize/js/standalone/selectize.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'mlarchive/js/admin.js' %}"></script>
 {% endblock %}
 

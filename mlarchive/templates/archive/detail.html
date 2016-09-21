@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Archive{% endblock %}
 
@@ -29,5 +30,5 @@
 {% endblock %}
 
 {% block js %}
-<script type="text/javascript" src="{{ STATIC_URL }}js/detail.js"></script>
+<script type="text/javascript" src="{% static 'mlarchive/js/detail.js' %}"></script>
 {% endblock %}

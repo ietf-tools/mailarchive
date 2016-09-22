@@ -18,8 +18,8 @@ var mailarch = {
     // PRIMARY FUNCTIONS =====================================
     
     init: function() {
-        mailarch.setHeaderWidths();
         mailarch.cacheDom();
+        mailarch.handleResize();
         mailarch.bindEvents();
         mailarch.progressiveFeatures();
         mailarch.initMessageList();
@@ -167,6 +167,14 @@ var mailarch = {
         } else {
             mailarch.setHeaderWidths();
             mailarch.$window.on('scroll', mailarch.infiniteScroll);
+        }
+    },
+    
+    hasOverflow: function (element) {
+        if(element.clientWidth < element.scrollWidth) {
+            return true;
+        } else {
+            return false;
         }
     },
     
@@ -458,12 +466,14 @@ var mailarch = {
     
     setHeaderWidths: function() {
         // synchronize the message list header columns with the scrollable content table
-        if (mailarch.isSmallViewport() || $('.msg-table .xtd.no-results').length == 1) {
-            return true;
+        if ($('.msg-table .xtd.no-results').length == 1 ||
+            mailarch.hasOverflow(mailarch.$msgList[0])) {
+                $('.header').removeAttr('style');
+        } else {
+            $(".header").each(function (i){
+                $(this).width($($(".msg-table .xtr:first .xtd")[i]).width() + 16);
+            });
         }
-        $(".header").each(function (i){
-            $(this).width($($(".msg-table .xtr:first .xtd")[i]).width() + 16);
-        });
     },
     
     setLastItem: function() {

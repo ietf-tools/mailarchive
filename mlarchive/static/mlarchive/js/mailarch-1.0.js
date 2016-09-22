@@ -282,11 +282,11 @@ var mailarch = {
         if(so && so!=true){
             var col = so.replace('-','');
             var elem = $("#sort-button-" + col);
-            var icon = elem.find(".glyphicon");
+            var icon = elem.find(".fa");
             if(so.match("^-")){
-                icon.removeClass().addClass("glyphicon glyphicon-sort-by-attributes-alt sort-active");
+                icon.removeClass().addClass("fa fa-sort-desc sort-active");
             } else {
-                icon.removeClass().addClass("glyphicon glyphicon-sort-by-attributes sort-active");
+                icon.removeClass().addClass("fa fa-sort-asc sort-active");
             }
         }
     },

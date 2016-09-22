@@ -432,15 +432,18 @@ table.msg-list-header-table th a.btn {
     border: 0;
 }
 
-.glyphicon-sort-by-attributes, .glyphicon-sort-by-attributes-alt {
+.fa-sort, .fa-sort-asc, .fa-sort-desc {
     float: right;
     vertical-align: middle;
-    color: lightgrey;
     padding-top: 3px;
 }
 
-.glyphicon.sort-active {
-    color: black;
+.fa-sort {
+    color: lightgrey;
+}
+
+.fa-sort-asc, .fa-sort-desc {
+    color: black
 }
 
 #list-pane {

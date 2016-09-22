@@ -3,6 +3,10 @@
 
 {% block title %}Mail Archive Search Results{% endblock %}
 
+{% block extrahead %}
+<script src="https://use.fontawesome.com/616427ed62.js"></script>
+{% endblock %}
+
 {% block content %}
 
     <div id="msg-container">
@@ -105,10 +109,10 @@
             
             <div id="msg-panes">
                 <div id="list-pane">
-                    <div class="header"><a id="sort-button-subject" class="unsorted sortbutton" href="#">Subject<span class="glyphicon glyphicon-sort-by-attributes" aria-hidden="true"></span></a></div>
-                    <div class="header"><a id="sort-button-frm" class="unsorted sortbutton" href="#">From<span class="glyphicon glyphicon-sort-by-attributes" aria-hidden="true"></span></a></div>
-                    <div class="header"><a id="sort-button-date" class="unsorted sortbutton" href="#">Date<span class="glyphicon glyphicon-sort-by-attributes" aria-hidden="true"></span></a></div>
-                    <div class="header"><a id="sort-button-email_list" class="unsorted sortbutton" href="#">List<span class="glyphicon glyphicon-sort-by-attributes" aria-hidden="true"></span></a></div>
+                    <div class="header"><a id="sort-button-subject" class="unsorted sortbutton" href="#">Subject<i class="fa fa-sort" aria-hidden="true"></i></a></div>
+                    <div class="header"><a id="sort-button-frm" class="unsorted sortbutton" href="#">From<i class="fa fa-sort" aria-hidden="true"></i></a></div>
+                    <div class="header"><a id="sort-button-date" class="unsorted sortbutton" href="#">Date<i class="fa fa-sort" aria-hidden="true"></i></a></div>
+                    <div class="header"><a id="sort-button-email_list" class="unsorted sortbutton" href="#">List<i class="fa fa-sort" aria-hidden="true"></i></a></div>
 
                     <div id="msg-list" class="msg-list wrapper" tabindex="-1" data-queryid="{{ queryid }}" data-queryset-offset="{{ page.start_index }}" data-selected-offset="{{ selected_offset }}">
                         <div class="table table-condensed msg-table xtable">

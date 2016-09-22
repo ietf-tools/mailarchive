@@ -17,6 +17,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         cls.selenium = WebDriver()
         cls.selenium.implicitly_wait(10)
         cls.selenium.set_window_size(1400,1000)
+        cls.selenium.PhantomJS(service_log_path='tests/tmp/ghostdriver.log')
 
     @classmethod
     def tearDownClass(cls):

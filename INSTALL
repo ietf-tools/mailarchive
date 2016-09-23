@@ -18,28 +18,48 @@ General Instructions for Deployment of a New Release
 
       cp $oldreleasenumber/mlarchive/settings/secrets.json $releasenumber/mlarchive/settings/
 
- 3. Change into the directory of the new release and run migrations::
+ 3. Change into the directory of the new release::
 
       cd $releasenumber
-      PYTHONPATH=$PWD django-admin.py migrate --settings=mlarchive.settings.production
+
+    Optionally set up a Python virtual environment::
+
+      virtualenv .              # optional
+      source bin/activate       # optional
+
+ 4. Install requirements (make sure your pip is reasonably fresh first).
+    The following will install required python modules locally if you
+    are using a virtualenv, or globally if you are not::
+
+      pip install -r requirements.txt
+
+ 5. Change into the directory of the new release and run migrations::
+
+      cd $releasenumber
+      export PYTHONPATH=$PWD 
+      django-admin.py migrate --settings=mlarchive.settings.production
+
+ 6. Move static files to the appropriate direcrory::
+
+      django-admin.py collectstatic --settings=mlarchive.settings.production
+
+ 7. Then re-point the 'current' symlink::
+
       cd ..
-
- 4. Then re-point the 'current' symlink::
-
       rm ./current; ln -s $releasenumber current
 
- 5. Restart apache::
+ 8. Restart apache::
 
       sudo /etc/init.d/apache2 restart
 
- 6. It's now also a good idea to go to the mailarchive front page:
+ 9. It's now also a good idea to go to the mailarchive front page:
 
       http://mailarchive.ietf.org/
 
     to check that it's alive and kicking, and displaying the new release
     number at the bottom of the page
 
- 7. If things **aren't** cool, revert the symlink step, re-pointing the
+ 10. If things **aren't** cool, revert the symlink step, re-pointing the
     symlink to the release that was running before the new release, and restart
     apache again to roll back to that.
 

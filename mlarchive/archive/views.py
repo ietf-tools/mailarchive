@@ -139,10 +139,10 @@ class CustomSearchView(SearchView):
         extra['export_maildir'] = reverse('archive_export',kwargs={'type':'maildir'})+ query_string
 
         # modify search link
-        if 'as' not in self.request.GET:
-            extra['modify_search_url'] = reverse('archive') + query_string
-        else:
+        if 'as' in self.request.GET:
             extra['modify_search_url'] = reverse('archive_advsearch') + query_string
+        else:
+            extra['modify_search_url'] = 'javascript:history.back()'
 
         # add custom facets
         if hasattr(self,'myfacets'):

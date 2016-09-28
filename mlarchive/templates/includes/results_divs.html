@@ -1,8 +1,8 @@
 {% for result in results %}
     <div class="xtr">
-        <div class="xtd"><a href="{{ result.object.get_absolute_url }}">{{ result.object.subject }}</a></div>
+        <div class="xtd subj-col"><a href="{{ result.object.get_absolute_url }}">{{ result.object.subject }}</a></div>
         {# <td class="nowrap">{{ result.object.subject|truncatechars:70 }}</td> #}
-        <div class="xtd frm-col">{{ result.object.frm_email|truncatechars:35 }}</div>
+        <div class="xtd from-col">{{ result.object.frm_email|truncatechars:35 }}</div>
         <div class="xtd date-col">{{ result.object.date|date:"Y-m-d" }}</div>
         <div class="xtd list-col">{{ result.object.email_list }}</div>
         <div class="xtd hidden">{{ result.score }}</div>

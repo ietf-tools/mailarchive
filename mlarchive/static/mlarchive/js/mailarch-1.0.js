@@ -18,8 +18,8 @@ var mailarch = {
     // PRIMARY FUNCTIONS =====================================
     
     init: function() {
-        mailarch.setHeaderWidths();
         mailarch.cacheDom();
+        mailarch.handleResize();
         mailarch.bindEvents();
         mailarch.progressiveFeatures();
         mailarch.initMessageList();
@@ -170,6 +170,14 @@ var mailarch = {
         }
     },
     
+    hasOverflow: function (element) {
+        if(element.clientWidth < element.scrollWidth) {
+            return true;
+        } else {
+            return false;
+        }
+    },
+    
     infiniteScroll: function() {
         // BOTTOM OF SCROLL
         if($(this).scrollTop() + $(this).innerHeight() > $(this)[0].scrollHeight - 2) {
@@ -274,11 +282,11 @@ var mailarch = {
         if(so && so!=true){
             var col = so.replace('-','');
             var elem = $("#sort-button-" + col);
-            var icon = elem.find(".glyphicon");
+            var icon = elem.find(".fa");
             if(so.match("^-")){
-                icon.removeClass().addClass("glyphicon glyphicon-sort-by-attributes-alt sort-active");
+                icon.removeClass().addClass("fa fa-sort-desc sort-active");
             } else {
-                icon.removeClass().addClass("glyphicon glyphicon-sort-by-attributes sort-active");
+                icon.removeClass().addClass("fa fa-sort-asc sort-active");
             }
         }
     },
@@ -458,12 +466,14 @@ var mailarch = {
     
     setHeaderWidths: function() {
         // synchronize the message list header columns with the scrollable content table
-        if (mailarch.isSmallViewport() || $('.msg-table .xtd.no-results').length == 1) {
-            return true;
+        if ($('.msg-table .xtd.no-results').length == 1 ||
+            mailarch.hasOverflow(mailarch.$msgList[0])) {
+                $('.header').removeAttr('style');
+        } else {
+            $(".header").each(function (i){
+                $(this).width($($(".msg-table .xtr:first .xtd")[i]).width() + 16);
+            });
         }
-        $(".header").each(function (i){
-            $(this).width($($(".msg-table .xtr:first .xtd")[i]).width() + 16);
-        });
     },
     
     setLastItem: function() {

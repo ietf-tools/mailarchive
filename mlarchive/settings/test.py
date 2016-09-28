@@ -15,8 +15,8 @@ HAYSTACK_CONNECTIONS['default']['PATH'] = HAYSTACK_XAPIAN_PATH
 
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = os.path.join(DATA_ROOT,'archive')
-LOG_FILE = os.path.join(BASE_DIR,'tests','mlarchive.log')
-IMPORT_LOG_FILE = os.path.join(BASE_DIR,'tests','archive-mail.log')
+LOG_FILE = os.path.join(BASE_DIR,'tests/tmp','mlarchive.log')
+IMPORT_LOG_FILE = os.path.join(BASE_DIR,'tests/tmp','archive-mail.log')
 
 SERVER_MODE = 'development'
 

@@ -432,15 +432,18 @@ table.msg-list-header-table th a.btn {
     border: 0;
 }
 
-.glyphicon-sort-by-attributes, .glyphicon-sort-by-attributes-alt {
+.fa-sort, .fa-sort-asc, .fa-sort-desc {
     float: right;
     vertical-align: middle;
-    color: lightgrey;
     padding-top: 3px;
 }
 
-.glyphicon.sort-active {
-    color: black;
+.fa-sort {
+    color: lightgrey;
+}
+
+.fa-sort-asc, .fa-sort-desc {
+    color: black
 }
 
 #list-pane {
@@ -600,7 +603,7 @@ table.msg-list-header-table th a.btn {
     }
     
     .xtd {
-        border-top: 1px solid #dddddd;
+        border-bottom: 1px solid #dddddd;
         display: table-cell;
         padding: 8px;
         line-height: 1.42857143;
@@ -622,6 +625,11 @@ table.msg-list-header-table th a.btn {
     .list-col {
         float: none;
     }
+    
+    .subj-col, .from-col, .date-col {
+        border-right: 1px solid #dddddd;
+    }
+    
     .header a {
         color: black;
         /* padding: 8px 8px 8px 0; */

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> {% load static %}
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -8,12 +8,12 @@
 
     {% block prestyle %}{% endblock %}
 
-    <link rel="stylesheet" href="{{ STATIC_URL }}bootstrap3/css/bootstrap.css" type="text/css">
-    <link rel="stylesheet" href="{{ STATIC_URL }}bootstrap3/css/bootstrap-theme.css" type="text/css">
+    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.css' %}" type="text/css">
+    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap-theme.css' %}" type="text/css">
 
     {% block extrastyle %}{% endblock %}
 
-    <link rel="stylesheet" href="{{ STATIC_URL }}css/custom.css" type="text/css">
+    <link rel="stylesheet" href="{% static 'mlarchive/css/custom.css' %}" type="text/css">
         
     {% block extrahead %}{% endblock %}
 
@@ -58,9 +58,11 @@
         </div> <!-- container-fluid -->
     </header>
 
+            <!-- 
             <noscript>
                 <p class="navbar-text"><small>Enable Javascript for full functionality.</small></p>
             </noscript>
+            -->
 
         <!-- Django Messages -->
         {% if messages %}
@@ -81,8 +83,8 @@
 
 </div> <!-- END Container -->
 
-<script type="text/javascript" src="{{ STATIC_URL }}jquery/jquery-1.12.4.min.js"></script>
-<script src="{{ STATIC_URL }}bootstrap3/js/bootstrap.js"></script>
+<script type="text/javascript" src="{% static 'jquery/jquery-1.12.4.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.js' %}"></script>
 {% block js %}{% endblock %}
 
 </body>

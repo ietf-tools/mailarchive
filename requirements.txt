@@ -2,7 +2,6 @@
 setuptools>=18.5                        # Require this first, to prevent later errors
 #
 bs4			# 4.1.3 was installed
-celery>=3.1.20
 Django>=1.7.10,<1.8
 django-appconf		# 0.6 was installed
 django-bootstrap3>=5.1.1,<7.0.0 # django-bootstrap 7.0 requires django 1.8

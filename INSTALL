@@ -77,14 +77,10 @@ python-memcached
 lxml 3.3.1
 memcached 1.4.15
 RabbitMQ Server 2.8.7
-Celery v3.1.20
+Celery v3.1.23
 Django 1.7 (Included)
 Haystack 2.1.1 (Included)
 
-
-Python Packages
----------------
-pip install -r requirements.txt
 
 Prerequisites
 -------------
@@ -107,6 +103,7 @@ systemctl status rabbitmq-server
 see: http://www.rabbitmq.com/man/rabbitmqctl.1.man.html
 
 3. Install and configure celery
+# pip install celery==3.1.23
 cp INSTALL_DIR/celery/celeryd /etc/init.d
 cp INSTALL_DIR/celery/celeryd.conf /etc/default/celeryd
 systemctl enable celeryd

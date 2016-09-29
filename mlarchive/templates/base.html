@@ -29,7 +29,7 @@
         <div class="container-fluid">
             <div class="navbar-header pull-left">
                 <a class="navbar-brand" href="/">
-                   <img alt="IETF Logo" src="https://www.ietf.org/lib/dt/6.11.0/ietf/images/ietflogo-small-transparent.png">
+                   <img alt="IETF Logo" src="{% static 'mlarchive/images/ietflogo-small-transparent.png' %}">
                    {% if not user.is_authenticated %}
                       <span id="header-text">
                       {% if server_mode and server_mode == "production" %}

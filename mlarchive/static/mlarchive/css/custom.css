@@ -627,7 +627,7 @@ table.msg-list-header-table th a.btn {
     }
     
     .subj-col, .from-col, .date-col {
-        border-right: 1px solid #dddddd;
+        border-right: 1px solid #f6f6f6;
     }
     
     .header a {

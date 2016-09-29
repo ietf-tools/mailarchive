@@ -9,8 +9,6 @@ mailarch (1.4.1) ietf; urgency=normal
 
  * Move external resources around
 
- * Fix several preview bugs
-
 -- Ryan Cross <rcross@amsl.com>  28 Sep 2016 16:30:00 +0800
 
 mailarch (1.4.0) ietf; urgency=normal

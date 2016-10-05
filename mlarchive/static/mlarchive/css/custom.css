@@ -68,6 +68,10 @@ div:focus {
 /* ==========================================================================
    Header
    ========================================================================== */
+.navbar-dev {
+    background-color: #904141;
+    background-image: none;
+}
 
 .navbar-brand > img {
     display: inline;
@@ -295,6 +299,7 @@ ul.browse_list li {
     height: calc(100vh - 44px);
     padding-left: 20px;
     padding-top: 10px;
+    position: relative;
     width: 250px;
 }
 
@@ -351,6 +356,18 @@ a.selected {
 
 .filter-popup ul li.control {
     display: none;
+}
+
+#footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: white;
+}
+
+#footer p {
+    margin: 10px 0 17px;
 }
 
 nav.navbar {

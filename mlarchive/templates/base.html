@@ -25,20 +25,20 @@
 <!-- Container -->
 <div id="container">
 
-    <header class="navbar {% if server_mode and server_mode != "production" %}navbar-inverse{% else %}navbar-default{% endif %} navbar-fixed-top">
+    <header class="navbar navbar-inverse navbar-fixed-top{% if server_mode != 'production' %} navbar-dev{% endif %}">
         <div class="container-fluid">
             <div class="navbar-header pull-left">
                 <a class="navbar-brand" href="/">
                    <img alt="IETF Logo" src="{% static 'mlarchive/images/ietflogo-small-transparent.png' %}">
-                   {% if not user.is_authenticated %}
+
                       <span id="header-text">
                       {% if server_mode and server_mode == "production" %}
-                      Datatracker
+                      Mail Archive
                       {% else %}
                       <b><i>Development mode</i></b>
                       {% endif %}
                       </span>
-                   {% endif %}
+
                 </a>
             </div> <!-- navbar-header -->
 

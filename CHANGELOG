@@ -1,4 +1,12 @@
 
+mailarch (1.4.3) ietf; urgency=normal
+
+ * Fix title in banner
+
+ * Add version footer
+
+-- Ryan Cross <rcross@amsl.com>  05 Oct 2016 16:30:00 +0800
+
 mailarch (1.4.2) ietf; urgency=normal
 
  * Move to Virtualenv implementation

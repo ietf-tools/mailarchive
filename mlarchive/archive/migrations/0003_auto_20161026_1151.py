@@ -68,6 +68,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(clear_threads, reverse_clear_threads),
-        migrations.RunSQL('DELETE FROM archive_thread WHERE id>1;','SHOW TABLES;'),
+        migrations.RunSQL('DELETE FROM archive_thread WHERE id>1;ALTER TABLE archive_thread AUTO_INCREMENT=2;','SHOW TABLES;'),
         migrations.RunPython(compute_threads, reverse_compute_threads),
     ]

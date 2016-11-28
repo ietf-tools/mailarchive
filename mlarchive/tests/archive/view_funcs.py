@@ -4,6 +4,7 @@ from django.contrib.messages.storage.fallback import FallbackStorage
 from django.test.client import RequestFactory
 from factories import *
 from mlarchive.archive.view_funcs import *
+from mlarchive.archive.forms import group_by_thread
 from haystack.query import SearchQuerySet
 
 def test_chunks():
@@ -32,31 +33,34 @@ def test_find_message_date_reverse(messages):
     sqs = SearchQuerySet().order_by('-date')
     #for x in sqs: print x.date,x.object.pk,x.object.date
     last = sqs.count() - 1
-    assert find_message_date_reverse(sqs,sqs[0].object) == 0        # first
-    assert find_message_date_reverse(sqs,sqs[1].object) == 1        # second
-    assert find_message_date_reverse(sqs,sqs[last].object) == last  # last
+    assert find_message_date(sqs,sqs[0].object,reverse=True) == 0        # first
+    assert find_message_date(sqs,sqs[1].object,reverse=True) == 1        # second
+    assert find_message_date(sqs,sqs[last].object,reverse=True) == last  # last
     # queryset of one
-    sqs = SearchQuerySet().filter(msgid=sqs[0].msgid)
-    assert find_message_date(sqs,sqs[0].object) == 0
+    sqs = SearchQuerySet().filter(msgid=sqs[0].msgid).order_by('-date')
+    assert find_message_date(sqs,sqs[0].object,reverse=True) == 0
     # empty queryset
     msg = sqs[0].object
-    sqs = SearchQuerySet().filter(msgid='bogus')
-    assert find_message_date(sqs,msg) == -1
+    sqs = SearchQuerySet().filter(msgid='bogus').order_by('-date')
+    assert find_message_date(sqs,msg,reverse=True) == -1
 
 @pytest.mark.django_db(transaction=True)
 def test_find_message_gbt(messages):
-    sqs = SearchQuerySet().order_by('tdate','date')
+    sqs = SearchQuerySet()
+    sqs = group_by_thread(sqs,None,None,reverse=True)
     last = sqs.count() - 1
-    assert find_message_gbt(sqs,sqs[0].object) == 0        # first
-    assert find_message_gbt(sqs,sqs[1].object) == 1        # second
-    assert find_message_gbt(sqs,sqs[last].object) == last  # last
+    assert find_message_gbt(sqs,sqs[0].object,reverse=True) == 0        # first
+    assert find_message_gbt(sqs,sqs[1].object,reverse=True) == 1        # second
+    assert find_message_gbt(sqs,sqs[last].object,reverse=True) == last  # last
     # queryset of one
     sqs = SearchQuerySet().filter(msgid=sqs[0].msgid)
-    assert find_message_date(sqs,sqs[0].object) == 0
+    sqs = group_by_thread(sqs,None,None,reverse=True)
+    assert find_message_gbt(sqs,sqs[0].object,reverse=True) == 0
     # empty queryset
     msg = sqs[0].object
     sqs = SearchQuerySet().filter(msgid='bogus')
-    assert find_message_date(sqs,msg) == -1
+    sqs = group_by_thread(sqs,None,None,reverse=True)
+    assert find_message_gbt(sqs,msg,reverse=True) == -1
     
 def test_initialize_formsets():
     query = 'text:(value) -text:(negvalue)'

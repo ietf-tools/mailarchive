@@ -112,13 +112,37 @@
             
             <div id="msg-panes">
                 <div id="list-pane">
-                    <div class="header"><a id="sort-button-subject" class="unsorted sortbutton" href="#">Subject<i class="fa fa-sort" aria-hidden="true"></i></a></div>
-                    <div class="header"><a id="sort-button-frm" class="unsorted sortbutton" href="#">From<i class="fa fa-sort" aria-hidden="true"></i></a></div>
-                    <div class="header"><a id="sort-button-date" class="unsorted sortbutton" href="#">Date<i class="fa fa-sort" aria-hidden="true"></i></a></div>
-                    <div class="header"><a id="sort-button-email_list" class="unsorted sortbutton" href="#">List<i class="fa fa-sort" aria-hidden="true"></i></a></div>
+                    {# In thread view, no sorting available #}
+                    {% if thread_sorted %}
+                        <div class="header">
+                            <span>Subject</span>
+                        </div>
+                        <div class="header">
+                            <span>From</span>
+                        </div>
+                        <div class="header">
+                            <span>Date</span>
+                        </div>
+                        <div class="header">
+                            <span>List</span>
+                        </div>
+                    {% else %}
+                        <div class="header sortable">
+                            <a id="sort-button-subject" class="unsorted sortbutton" href="#">Subject<i class="fa fa-sort" aria-hidden="true"></i></a>
+                        </div>
+                        <div class="header sortable">
+                            <a id="sort-button-frm" class="unsorted sortbutton" href="#">From<i class="fa fa-sort" aria-hidden="true"></i></a>
+                        </div>
+                        <div class="header sortable">
+                            <a id="sort-button-date" class="unsorted sortbutton" href="#">Date<i class="fa fa-sort" aria-hidden="true"></i></a>
+                        </div>
+                        <div class="header sortable">
+                            <a id="sort-button-email_list" class="unsorted sortbutton" href="#">List<i class="fa fa-sort" aria-hidden="true"></i></a>
+                        </div>
+                    {% endif %}
 
-                    <div id="msg-list" class="msg-list wrapper" tabindex="-1" data-queryid="{{ queryid }}" data-queryset-offset="{{ page.start_index }}" data-selected-offset="{{ selected_offset }}">
-                        <div class="table table-condensed msg-table xtable">
+                    <div id="msg-list" class="msg-list wrapper" tabindex="-1" data-queryid="{{ queryid }}" data-queryset-offset="{{ page.start_index|add:'-1' }}" data-selected-offset="{{ selected_offset }}">
+                        <div class="table table-condensed msg-table xtable{% if thread_sorted %} thread-sorted{% endif %}">
                             <div class="xtbody">
                                 {% with page as results %}
                                     {% include "includes/results_divs.html" %}

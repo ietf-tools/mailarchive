@@ -1,4 +1,10 @@
 
+mailarch (1.4.4) ietf; urgency=normal
+
+ * Thread sorting and display improvements
+
+-- Ryan Cross <rcross@amsl.com>  28 Nov 2016 16:30:00 +0800
+
 mailarch (1.4.3) ietf; urgency=normal
 
  * Fix title in banner

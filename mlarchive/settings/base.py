@@ -222,6 +222,7 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SEARCH_SCROLL_BUFFER_SIZE = 20  # number of messages to load when scrolling search results
 TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
 USE_EXTERNAL_PROCESSOR = False
+MAX_THREAD_DEPTH = 6
 
 # spam_score bits
 MARK_BITS = { 'NON_ASCII_HEADER':0b0001,

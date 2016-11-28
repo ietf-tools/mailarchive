@@ -1,8 +1,8 @@
 import hashlib
-import operator
 import random
 import time
 from collections import OrderedDict
+from operator import attrgetter
 
 from django import forms
 from django.conf import settings
@@ -111,6 +111,21 @@ def get_list_info(value):
         mapping.update(reversed)
         cache.set('list_info',mapping,86400)
     return mapping.get(value)
+
+
+def group_by_thread(qs, so, sso, reverse=False):
+    """Return a SearchQuerySet grouped by thread, ordered as follows:
+    Top level threads ordered by date descending.  Sub-threads by date
+    ascending"""
+    #new_query = qs._clone()
+    #temp = sorted(qs, key=attrgetter('object.thread_order'))
+    #result = sorted(temp, key=attrgetter('object.thread.date'), reverse=reverse)
+    #new_query._result_cache = result
+
+    new_query = qs.order_by('-tdate','tid','torder')
+
+    return new_query
+
 
 def sort_by_subject(qs, sso, reverse=False):
     new_query = qs._clone()
@@ -398,7 +413,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         gbt = self.cleaned_data.get('gbt')
 
         if gbt:
-            sqs = sqs.order_by('tdate','date')
+            sqs = group_by_thread(sqs, so, sso, reverse=True)
         elif so:
             if so == 'subject':
                 sqs = sort_by_subject(sqs,sso)

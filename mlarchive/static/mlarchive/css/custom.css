@@ -463,6 +463,12 @@ table.msg-list-header-table th a.btn {
     color: black
 }
 
+.fa-arrow-right {
+    float: right;
+    vertical-align: middle;
+    padding-top: 3px;
+}
+
 #list-pane {
     border: 1px solid #D6D6D6;
     height: 200px;
@@ -482,6 +488,30 @@ table.msg-list-header-table th a.btn {
 
 .list-col {
     min-width: 60px;
+}
+
+.xtable.thread-sorted .xtd.depth-1 {
+    padding-left: 2em;
+}
+
+.xtable.thread-sorted .xtd.depth-2 {
+    padding-left: 3em;
+}
+
+.xtable.thread-sorted .xtd.depth-3 {
+    padding-left: 4em;
+}
+
+.xtable.thread-sorted .xtd.depth-4 {
+    padding-left: 5em;
+}
+
+.xtable.thread-sorted .xtd.depth-5 {
+    padding-left: 6em;
+}
+
+.xtable.thread-sorted .xtd.depth-6 {
+    padding-left: 7em;
 }
 
 #splitter-pane {
@@ -596,14 +626,9 @@ table.msg-list-header-table th a.btn {
 
 .header a {
     color: black;
-    /* padding: 8px 8px 8px 0; */
     padding: 8px;
     display: inline-block;
     width: 100%;
-}
-
-.header:first-child {
-    /* margin-left: 4px; */
 }
 
 @media (min-width: 768px)
@@ -616,9 +641,6 @@ table.msg-list-header-table th a.btn {
         display: table-header-group;
     }
     
-    .xthead .xtd {
-    }
-    
     .xtd {
         border-bottom: 1px solid #dddddd;
         display: table-cell;
@@ -626,6 +648,12 @@ table.msg-list-header-table th a.btn {
         line-height: 1.42857143;
         vertical-align: top;
     }
+    
+    /*
+    .xtd a {
+        display: block;
+    }
+    */
     
     .xtbody {
         display: table-row-group;
@@ -639,6 +667,10 @@ table.msg-list-header-table th a.btn {
         display: table-row;
     }
     
+    .xtable.thread-sorted .xtr.thread-border .xtd {
+        border-top: 1px solid #dddddd;
+    }
+
     .list-col {
         float: none;
     }
@@ -647,22 +679,20 @@ table.msg-list-header-table th a.btn {
         border-right: 1px solid #f6f6f6;
     }
     
-    .header a {
+    .header a, .header span {
         color: black;
-        /* padding: 8px 8px 8px 0; */
         padding: 8px;
         display: inline-block;
         width: 100%;
     }
     
     .header {
-        /* padding: 0 0 0 8px; */
         padding: 0;
         border-top: 0;
         font-weight: bold;
     }
 
-    .header:hover {
+    .header.sortable:hover {
         background-color: rgb(238,238,238);
     }
 

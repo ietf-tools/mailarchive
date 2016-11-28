@@ -22,7 +22,7 @@ from mlarchive.utils.decorators import check_access, superuser_only, pad_id
 from mlarchive.archive import actions
 from mlarchive.archive.query_utils import get_kwargs
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
-    find_message_date, find_message_date_reverse, find_message_gbt)
+    find_message_date, find_message_gbt)
 
 from models import *
 from forms import *
@@ -174,11 +174,11 @@ class CustomSearchView(SearchView):
             raise Http404("No such message!")
 
         if self.request.GET.get('gbt'):
-            return find_message_gbt(self.results,msg)
+            return find_message_gbt(self.results,msg,reverse=True)
         elif self.request.GET.get('so') == 'date':
             return find_message_date(self.results,msg)
         else:
-            return find_message_date_reverse(self.results,msg)
+            return find_message_date(self.results,msg,reverse=True)
 
     def create_response(self):
         """

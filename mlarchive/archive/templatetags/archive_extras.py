@@ -1,4 +1,5 @@
 from django import template
+from django.conf import settings
 from django.utils.safestring import mark_safe
 from django.utils.http import urlquote_plus
 
@@ -101,6 +102,18 @@ def get_params(params, exclude):
     url = 'test'
 
     return template.defaultfilters.urlencode(url)
+
+
+@register.filter
+def max_depth(depth):
+    """Returns depth if it is less than MAX_THREAD_DEPTH, otherwise
+    MAX_THREAD_DEPTH
+    """
+    if int(depth) < settings.MAX_THREAD_DEPTH:
+        return depth
+    else:
+        return settings.MAX_THREAD_DEPTH
+
 
 @register.simple_tag
 def selected(request,key,val):

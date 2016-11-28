@@ -22,6 +22,7 @@ from dateutil.tz import tzoffset
 from mlarchive.archive.models import Attachment, EmailList, Legacy, Message, Thread
 from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES, UNKNOWN_CONTENT_TYPE
 from mlarchive.archive.inspectors import *
+from mlarchive.archive.thread import compute_thread
 from mlarchive.utils.decorators import check_datetime
 from mlarchive.utils.encoding import decode_safely, decode_rfc2047_header
 
@@ -857,6 +858,10 @@ class MessageWrapper(object):
         if not test:
             self.write_msg()
         self.archive_message.save()
+
+        # update thread information
+        if self.archive_message.thread.message_set.count() > 1:
+            compute_thread(self.archive_message.thread)
 
         # now that the archive.Message object is created we can process any attachments
         self.process_attachments(test=test)

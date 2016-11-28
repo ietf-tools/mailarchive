@@ -1,3 +1,5 @@
+''' tests.archive.forms.py'''
+
 import pytest
 from django.contrib.auth.models import AnonymousUser
 from django.core.urlresolvers import reverse

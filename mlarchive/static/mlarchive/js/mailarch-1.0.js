@@ -10,10 +10,12 @@ https://github.com/blairmitchelmore/jquery.plugins/blob/master/jquery.query.js
 var mailarch = {
 
     // VARAIBLES =============================================
+    ajaxRequestSent: false,
     lastItem: 0,
     urlParams: {},
     sortDefault: new Array(),
     defaultListPaneHeight: 229,
+    scrollMargin: $('.xtr').height(),
     
     // PRIMARY FUNCTIONS =====================================
     
@@ -46,7 +48,6 @@ var mailarch = {
         mailarch.$msgList = $('.msg-list');
         mailarch.$msgTable = $('.msg-table');
         mailarch.$msgTableTbody = this.$msgTable.find('.xtbody');
-        mailarch.$msgTableRows = this.$msgTable.find('.xtr');
         mailarch.$pageLinks = $('#page-links');
         mailarch.$q = $('#id_q');
         mailarch.$searchButton = $('#search-button');
@@ -140,7 +141,7 @@ var mailarch = {
     },
     
     gotoMessage: function() {
-        var url = $(this).find(".xtd:nth-child(6)").html();
+        var url = $(this).find(".xtd.url-col").html();
         window.open(url);
     },
     
@@ -152,7 +153,7 @@ var mailarch = {
             mailarch.urlParams['gbt'] = '1';
         }
         // add index to URL to preserve context
-        var path = mailarch.$msgTable.find('.xtr.row-selected .xtd:nth-child(6)').text();
+        var path = mailarch.$msgTable.find('.xtr.row-selected .xtd.url-col').text();
         var parts = path.split('/');
         var hash = parts[parts.length - 1];
         mailarch.urlParams['index'] = hash;
@@ -180,14 +181,19 @@ var mailarch = {
     
     infiniteScroll: function() {
         // BOTTOM OF SCROLL
-        if($(this).scrollTop() + $(this).innerHeight() > $(this)[0].scrollHeight - 2) {
+        if($(this).scrollTop() + $(this).innerHeight() > $(this)[0].scrollHeight - mailarch.scrollMargin) {
+            if (mailarch.ajaxRequestSent) {
+                return true;
+            }
             var queryid = mailarch.$msgList.attr('data-queryid');
             var request = $.ajax({
                 "type": "GET",
                 "url": "/arch/ajax/messages/",
                 "data": { "queryid": queryid, "lastitem": mailarch.lastItem }
             });
+            mailarch.ajaxRequestSent = true;
             request.done(function(data, testStatus, xhr) {
+                mailarch.ajaxRequestSent = false;
                 if(xhr.status == 200){
                     mailarch.$msgTableTbody.append(data);
                     mailarch.setLastItem();
@@ -196,6 +202,7 @@ var mailarch = {
                 }
             });
             request.fail(function(xhr, textStatus, errorThrown) {
+                mailarch.ajaxRequestSent = false;
                 if(xhr.status == 404){
                     // server returns a 404 when query has expired from cache
                     window.location.reload();
@@ -330,7 +337,7 @@ var mailarch = {
     
     // given the row of the msg list, load the message text in the mag view pane
     loadMessage: function(row) {
-        var msgId = row.find(".xtd:last").html();
+        var msgId = row.find(".xtd.id-col").html();
         if(/^\d+$/.test(msgId)){
             mailarch.$viewPane.load('/arch/ajax/msg/?id=' + msgId, function() {
                 // NTOE: don't use cached DOM objects here because these change
@@ -459,7 +466,7 @@ var mailarch = {
     },
     
     selectRow: function() {
-        mailarch.$msgTableRows.removeClass('row-selected');
+        mailarch.$msgTable.find('.xtr').removeClass('row-selected');
         $(this).addClass('row-selected');
         mailarch.loadMessage($(this));
     },

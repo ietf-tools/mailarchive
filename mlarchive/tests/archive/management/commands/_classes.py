@@ -1,14 +1,17 @@
-from django.conf import settings
-from mlarchive.archive.management.commands._classes import *
-from factories import *
-from pprint import pprint
-
 import datetime
 import email
 import glob
 import mailbox
 import pytest
 import pytz
+
+
+from django.conf import settings
+from django.core.urlresolvers import reverse
+from mlarchive.archive.management.commands._classes import *
+from factories import EmailListFactory, MessageFactory, ThreadFactory
+from pprint import pprint
+
 
 def teardown_module(module):
     for path in (settings.LOG_FILE,settings.IMPORT_LOG_FILE):
@@ -202,6 +205,39 @@ This is the message.
     msg = email.message_from_string(data)
     mw = MessageWrapper(msg,'ancp')
     assert mw.get_to() == 'larry@acme.com'
+
+@pytest.mark.django_db(transaction=True)
+def test_MessageWrapper_get_thread():
+    '''The same message can get sent to multiple lists.  Ensure
+    get_thread finds the thread from the correct list
+    '''
+    list1 = EmailListFactory.create(name='list1')
+    list2 = EmailListFactory.create(name='list2')
+    thread1 = ThreadFactory.create()
+    thread2 = ThreadFactory.create()
+    message1 = MessageFactory.create(
+        email_list=list1,
+        msgid='001@example.com',
+        thread=thread1,
+        date=datetime.datetime(2016, 1, 1))
+    message2 = MessageFactory.create(
+        email_list=list2,
+        msgid='001@example.com',
+        thread=thread2,
+        date=datetime.datetime(2016, 1, 1))
+    data = '''From: joe@example.com
+To: larry@example.com
+Cc: list1@example.com
+Subject: Re: New document
+References: <001@example.com>
+Message-Id: <002@example.com>
+Date: Mon, 24 Feb 2016 08:04:41 -0800
+
+This is the message.
+'''
+    msg = email.message_from_string(data)
+    mw = MessageWrapper(msg,'list1')
+    assert mw.archive_message.thread == thread1
 
 def test_MessageWrapper_get_to():
     data = '''From: joe@acme.com

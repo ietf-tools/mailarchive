@@ -707,7 +707,7 @@ class MessageWrapper(object):
             msgids = re.findall(MSGID_PATTERN,self.references)
             for msgid in msgids:
                 try:
-                    message = Message.objects.get(msgid=msgid)
+                    message = Message.objects.get(email_list=self.email_list,msgid=msgid)
                     return message.thread
                 except (Message.DoesNotExist, Message.MultipleObjectsReturned):
                     pass
@@ -717,7 +717,7 @@ class MessageWrapper(object):
             msgids = re.findall(MSGID_PATTERN,self.in_reply_to)
             if msgids:
                 try:
-                    message = Message.objects.get(msgid=msgids[0])
+                    message = Message.objects.get(email_list=self.email_list,msgid=msgids[0])
                     return message.thread
                 except (Message.DoesNotExist, Message.MultipleObjectsReturned):
                     pass

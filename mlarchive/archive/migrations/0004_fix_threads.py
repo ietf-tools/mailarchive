@@ -5,9 +5,9 @@ import datetime
 
 from django.db import models, migrations
 
-from mlarchive.archive.thread import get_references, get_in_reply_to
+from mlarchive.archive.thread import get_references, get_in_reply_to, compute_thread
 
-def get_references_or_reply_to_thread(message):
+def get_references_or_reply_to_thread(apps,message):
     Message = apps.get_model("archive", "Message")
     if message.references:
         msgids = get_references(message)
@@ -34,15 +34,17 @@ def fix_threads(apps, schema_editor):
     '''
     Message = apps.get_model("archive", "Message")
     Thread = apps.get_model('archive', 'Thread')
-    # earlier migration took place 12-04, start just before that
+    # start checking messages prior to last migration, 12-4
     abandoned_threads = set()
-    start = datetime.datetime(2016,12,3)
+    modified_threads = set()
+    start = datetime.datetime(2016,11,1)
     messages = Message.objects.filter(date__gte=start)
     for message in messages:
-        thread = get_references_or_reply_to_thread(message)
+        thread = get_references_or_reply_to_thread(apps,message)
         if thread and message.thread != thread:
-            print "ID: {}-{}. {} => {}".format(message.id,message.email_list.name,message.thread,thread)
+            print "ID: {}-{}. {} => {}".format(message.id,message.email_list.name,message.thread.id,thread.id)
             abandoned_threads.add(message.thread)
+            modified_threads.add(thread)
             message.thread = thread
             message.save()
 
@@ -51,6 +53,15 @@ def fix_threads(apps, schema_editor):
         if thread.message_set.count() == 0:
             print "Removing empty thread: {}".format(thread)
             thread.delete()
+
+    # recompute modified threads
+    for thread in modified_threads:
+        print "Recomputing thread: {}".format(thread)
+        compute_thread(thread)
+
+    print "Removed threads: {}".format(len(abandoned_threads))
+    print "Modified threads: {}".format(len(modified_threads))
+
 
 def reverse_fix_threads(apps, schema_editor):
     pass

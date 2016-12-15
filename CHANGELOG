@@ -1,4 +1,10 @@
 
+mailarch (1.5.1) ietf; urgency=high
+
+ * Fix threading of multi-list messages. Includes migration 
+
+-- Ryan Cross <rcross@amsl.com>  15 Dec 2016 13:00:00 +0800
+
 mailarch (1.5.0) ietf; urgency=normal
 
  * Thread sorting and display improvements

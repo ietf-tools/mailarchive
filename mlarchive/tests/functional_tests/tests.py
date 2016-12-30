@@ -89,6 +89,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         self.selenium.get_screenshot_as_file('tests/tmp/mailarch_test.png')
 
         # Press back button
+        #print self.selenium.page_source
         self.selenium.find_element_by_id('modify-search').click()
         WebDriverWait(self.selenium, timeout).until(
             lambda driver: driver.find_element_by_tag_name('body'))

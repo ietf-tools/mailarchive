@@ -52,18 +52,18 @@
         {% if queryid %}
           <li title="Previous in search results">
             {% if previous_in_search %}
-              <a id="previous-in-serach" href="{{ previous_in_search.get_absolute_url }}/?qid={{ queryid }}">
+              <a id="previous-in-search" href="{{ previous_in_search.get_absolute_url }}/?qid={{ queryid }}">
             {% else %}
-              <a id="previous-in-serach" class="disabled">
+              <a id="previous-in-search" class="disabled">
             {% endif %}
             <i class="fa fa-chevron-left" aria-hidden="true"></i></a>
           </li>
           <li title="Return to search"><a id="return-to-search" href="{{ search_url }}">Search</a></li>
           <li title="Next in search results">
             {% if next_in_search %}
-              <a id="next-in-serach" href="{{ next_in_search.get_absolute_url }}/?qid={{ queryid }}">
+              <a id="next-in-search" href="{{ next_in_search.get_absolute_url }}/?qid={{ queryid }}">
             {% else %}
-              <a id="next-in-serach" class="disabled">
+              <a id="next-in-search" class="disabled">
             {% endif %}
             <i class="fa fa-chevron-right" aria-hidden="true"></i></a>
           </li>

@@ -49,9 +49,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         self.selenium.get_screenshot_as_file('tests/tmp/test_message_detail_next_list.png')
         self.assertIn('Archive', self.selenium.title)
         self.assertIn(messages[1].msgid, self.selenium.page_source)
-        # elements = self.selenium.find_elements_by_xpath("//*[contains(text(), '00002@example.com')]")
-        # self.assertEqual(len(elements),1)
-
+        
     @pytest.mark.usefixtures("thread_messages")
     def test_message_detail_previous_list(self):
         '''Test previous message in list button of message detail'''
@@ -75,18 +73,17 @@ class MySeleniumTests(StaticLiveServerTestCase):
     def test_message_detail_next_search(self):
         '''Test next message in search results button of message detail'''
         # perform regular search
-        url = reverse('archive_search') + '?email_list=acme'
+        url = reverse('archive_search') + '?q=anvil'
         url = urlparse.urljoin(self.live_server_url, url)
         self.selenium.get(url)
-        # print self.selenium.page_source
         q = PyQuery(self.selenium.page_source)
         assert len(q('.xtr')) == 4
-
-        # navigate to message detail
-        #self.selenium.find_element_by_link_text('Previous in List').click()
-        elements = self.selenium.find_elements_by_xpath("//div[contains(@class, 'xtr')]/a")
-        print elements
-        self.assertTrue(False)
+        second_row = q('.xtr:nth-child(2)')
+        message_url = second_row.find('.xtd.url-col')
+        next_message_url = message_url.text()
+        
+        # navigate to first message detail
+        elements = self.selenium.find_elements_by_css_selector("a.msg-detail")
         elements[0].click()
 
         # Wait until the response is received
@@ -95,3 +92,10 @@ class MySeleniumTests(StaticLiveServerTestCase):
         
         # click next in search button
         self.selenium.find_element_by_id('next-in-search').click()
+
+        # Wait until the response is received
+        WebDriverWait(self.selenium, timeout).until(
+            lambda driver: driver.find_element_by_tag_name('body'))
+            
+        print self.selenium.current_url
+        self.assertIn(next_message_url, self.selenium.current_url)

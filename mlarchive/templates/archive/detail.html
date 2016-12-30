@@ -3,28 +3,53 @@
 
 {% block title %}Archive{% endblock %}
 
+{% block extrahead %}
+<script src="https://use.fontawesome.com/616427ed62.js"></script>
+{% endblock %}
+
 {% block content %}
 
 <div class="container-fluid">
-<div class="row">
+  {% include "includes/detail_navbar.html" %}
+  <div class="row">
     <div id="msg-aside" class="col-md-4 col-md-push-8">
-      <ul>
-          <li><a class="btn btn-default" href="{{ msg.list_by_date_url }}">View by Date</a></li>
-          <li><a class="btn btn-default" href="{{ msg.list_by_thread_url }}">View by Thread</a></li>
-      </ul>
+      {# {% include "includes/detail_legacy.html" %} #}
     </div> <!-- msg-aside -->
 
     <div id="msg-detail" class="col-md-8 col-md-pull-4">
       {{ msg.get_body_html|safe }}
   
-      <div id="msg-nav">
-        <ul>
-          <li><a class="btn btn-default" href="{{ msg.list_by_date_url }}">View by Date</a></li>
-          <li><a class="btn btn-default" href="{{ msg.list_by_thread_url }}">View by Thread</a></li>
-        </ul>
-      </div> <!-- msg-row -->
+      <div id="related-messages">
+        {% if replies %}
+          <h4>Replies:</h4>
+          <ul>
+          {% for reply in replies %}
+            <li>
+              <a href="{{ reply.get_absolute_url }}">{{ reply.subject }}</a><br>
+              {{ reply.frm }}
+            </li>
+          {% endfor %}
+          </ul>
+        {% endif %}
+        {% if references %}
+          <h4>References:</h4>
+          <ul>
+          {% for ref in references %}
+            <li>
+              <a href="{{ ref.get_absolute_url }}">{{ ref.subject }}</a><br>
+              {{ ref.frm }}
+            </li>
+          {% endfor %}
+          </ul>
+        {% endif %}
+      </div>
     </div> <!-- msg-detail -->
 </div> <!-- row -->
+
+    {% include "includes/detail_buttons.html" %}
+
+    {% include "includes/detail_navbar.html" %}
+
 </div>
 
 {% endblock %}

@@ -241,13 +241,13 @@ def test_get_in_reply_to():
     # test simple
     message = MessageFactory.create(
         email_list=elist,
-        in_reply_to='<001@example.com>')
+        in_reply_to_value='<001@example.com>')
     assert get_in_reply_to(message) == '001@example.com'
     # test extra text
     irt = 'Your message of Mon, 09 Nov 2009 13:23:44 GMT. <002@example.com>'
     message = MessageFactory.create(
         email_list=elist,
-        in_reply_to=irt)
+        in_reply_to_value=irt)
     assert get_in_reply_to(message) == '002@example.com'
 
 
@@ -267,7 +267,7 @@ def test_get_references_or_in_reply_to():
     # test no refs, has in_reply_to
     message = MessageFactory.create(
         email_list=elist,
-        in_reply_to='<001@example.com>')
+        in_reply_to_value='<001@example.com>')
     assert get_references_or_in_reply_to(message) == ['001@example.com']
 
 
@@ -394,7 +394,7 @@ def test_process_in_reply_to():
         email_list=elist,
         msgid='002@example.com',
         date=datetime.datetime(2016, 1, 2),
-        in_reply_to='<001@example.com>')
+        in_reply_to_value='<001@example.com>')
     queryset = Message.objects.all().order_by('date')
     assert queryset.count() == 2
     root_node = process(queryset)

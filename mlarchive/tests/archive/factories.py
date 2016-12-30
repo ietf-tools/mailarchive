@@ -33,7 +33,7 @@ class MessageFactory(factory.DjangoModelFactory):
     subject = 'This is a test message'
     frm = 'john@example.com'
     msgid = factory.Sequence(lambda n: "%03d@example.com" % n)
-    hashcode = factory.Sequence(lambda n: "a%03d" % n)
+    hashcode = factory.Sequence(lambda n: "a%03d=" % n)
     thread = factory.SubFactory(ThreadFactory)
     # email_list = factory.SubFactory(EmailListFactory)
 

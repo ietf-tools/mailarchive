@@ -15,6 +15,7 @@ from django.db import models
 from django.utils.log import getLogger
 
 from mlarchive.archive.generator import Generator
+from mlarchive.archive.thread import parse_message_ids
 
 TXT2HTML = ['/usr/bin/mhonarc', '-single']
 ATTACHMENT_PATTERN = r'<p><strong>Attachment:((?:.|\n)*?)</p>'
@@ -24,9 +25,23 @@ logger = getLogger('mlarchive.custom')
 
 
 # --------------------------------------------------
-# Managers
+# Helper Functions
 # --------------------------------------------------
 
+def get_in_reply_to_message(in_reply_to_value, email_list):
+    '''Returns the in_reply_to message, if it exists'''
+    msgids = parse_message_ids(in_reply_to_value)
+    if not msgids:
+        return None
+    return get_message_prefer_list(msgids[0],email_list)
+
+
+def get_message_prefer_list(msgid, email_list):
+    '''Returns Message (or None) prefers proivded list'''
+    try:
+        return Message.objects.get(msgid=msgid, email_list=email_list)
+    except Message.DoesNotExist:
+        return Message.objects.filter(msgid=msgid).first()
 
 # --------------------------------------------------
 # Models
@@ -102,7 +117,8 @@ class Message(models.Model):
     frm = models.CharField(max_length=255, blank=True)
     from_line = models.CharField(max_length=255, blank=True)
     hashcode = models.CharField(max_length=28, db_index=True)
-    in_reply_to = models.TextField(blank=True, default='')
+    in_reply_to = models.ForeignKey('self',null=True,related_name='replies')
+    in_reply_to_value = models.TextField(blank=True, default='')
     # mapping to MHonArc message number
     legacy_number = models.IntegerField(blank=True, null=True, db_index=True)
     msgid = models.CharField(max_length=255, db_index=True)
@@ -236,6 +252,16 @@ class Message(models.Model):
                 results.append(ref)
         return results
 
+    def get_references_messages(self):
+        """Returns list of messages from Rerefences header"""
+        messages = []
+        for msgid in self.get_references():
+            message = get_message_prefer_list(msgid,self.email_list)
+            if message:
+                messages.append(message)
+        return messages
+
+
     def get_removed_dir(self):
         return self.email_list.removed_dir
 
@@ -256,6 +282,36 @@ class Message(models.Model):
         """
         self.spam_score = self.spam_score | bit
         self.save()
+
+    def next_in_list(self):
+        """Return the next message in the list, ordered by date ascending"""
+        messages = Message.objects
+        messages = messages.filter(email_list=self.email_list,
+            date__gte=self.date)
+        messages = messages.order_by('date','id')
+        messages = messages.exclude(id=self.id)
+        return messages.first()
+
+    def next_in_thread(self):
+        """Return the next message in thread"""
+        messages = self.thread.message_set.filter(thread_order__gt=self.thread_order)
+        messages = messages.order_by('thread_order')
+        return messages.first()
+
+    def previous_in_list(self):
+        """Return the previous message in the list, ordered by date ascending"""
+        messages = Message.objects
+        messages = messages.filter(email_list=self.email_list,
+            date__lte=self.date)
+        messages = messages.order_by('date','id')
+        messages = messages.exclude(id=self.id)
+        return messages.last()
+
+    def previous_in_thread(self):
+        """Return the previous message in thread"""
+        messages = self.thread.message_set.filter(thread_order__lt=self.thread_order)
+        messages = messages.order_by('thread_order')
+        return messages.last()
 
     @property
     def thread_date(self):

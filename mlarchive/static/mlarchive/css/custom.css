@@ -704,6 +704,10 @@ table.msg-list-header-table th a.btn {
 /* ==========================================================================
    Message Detail
    ========================================================================== */
+ul.navbar-nav a.disabled, ul.navbar-nav a.disabled:hover {
+    color: #d6d6d6;
+}
+
 #msg-detail {
     padding-top: 15px;
 }
@@ -745,6 +749,19 @@ table.msg-list-header-table th a.btn {
     list-style: none;
 }
 
+.btn-toolbar.msg-detail-toolbar {
+    display: none;
+}
+
+.msg-detail-toolbar .btn-group {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.msg-detail-toolbar .btn-group a {
+    width: 33%;
+}
+
 @media (min-width: 768px)
 {
     #msg-aside ul {
@@ -757,6 +774,15 @@ table.msg-list-header-table th a.btn {
     }
 }
 
+@media (max-width: 767px) {
+    .navbar-msg-detail {
+        display: none;
+    }
+
+    .btn-toolbar.msg-detail-toolbar {
+        display: block;
+    }
+}
 /* ==========================================================================
    Admin Guide
    ========================================================================== */

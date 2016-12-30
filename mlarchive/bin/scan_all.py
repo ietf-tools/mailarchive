@@ -1,7 +1,9 @@
 #!/usr/bin/python
 """
-Generic scan script.  Define a scan as a function.  Specifiy the function as the
-first command line argument.
+Generic scan script to scan the archive for messages with particular attributes.
+Define a scan as a function.  Specifiy the function as the first command line argument.
+You can pass additional positional arguments on the command line, and specify them
+in the function definition.
 
 usage:
 
@@ -13,11 +15,18 @@ scan_all.py [func name] [optional arguments][
 import os
 import sys
 path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+print path
 if not path in sys.path:
     sys.path.insert(0, path)
 
+if not os.environ.get('DJANGO_SETTINGS_MODULE'):
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.development'
+
+virtualenv_activation = os.path.join(path, "env", "bin", "activate_this.py")
+if os.path.exists(virtualenv_activation):
+    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
+
 import django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.development'
 django.setup()
 
 # -------------------------------------------------------------------------------------
@@ -327,6 +336,26 @@ def missing_files():
             total += 1
     print '%d of %d missing.' % (total, messages.count())
 
+def missing_from_index(start):
+    """Scan messages, starting from updated = start (YYYY-MM-DDTHH:MM:SS),
+    and report any that aren't in the search index"""
+    from dateutil.parser import parse
+    from haystack.query import SearchQuerySet
+    start_date = parse(start)
+    missing = 0
+    messages = Message.objects.filter(updated__gte=start_date)
+    for message in messages:
+        results = SearchQuerySet().filter(msgid=message.msgid)
+        if not results:
+            print "Not found: {},{},{},{}".format(
+                message.pk,
+                message.date,
+                message.email_list.name,
+                message.msgid)
+            missing += 1
+    print "Processed: {}".format(messages.count())
+    print "Missing: {}".format(missing)
+
 def mmdfs():
     """Scan all mailbox files and print first lines of MMDF types, looking for
     different styles
@@ -433,12 +462,25 @@ def subjects(listname):
     for msg in process([listname]):
         print "%s: %s" % (msg.get('date'),msg.get('subject'))
 
+def same_date():
+    """Return messages with the same date of another message in the list"""
+    start = datetime.datetime(2016,1,1)
+    for elist in EmailList.objects.all().order_by('name'):
+        messages = Message.objects.filter(email_list=elist,date__gte=start).order_by('date')
+        previous = messages.first()
+        for message in messages[1:]:
+            if message.date == previous.date:
+                print '{}:{}:{}'.format(message.pk,message.date,message.subject)
+                print '{}:{}:{}'.format(previous.pk,previous.date,previous.subject)
+            previous = message
+
 def run_messagewrapper_process():
     """Call MessageWrapper.process() for each message in the (old) archive, to check
     for errors after changing some underlying code"""
     for msg in all_messages(['ancp']):
         '''follow date() pattern, need to know list, etc, during iteration'''
         pass
+
 def test():
     """Just print count every five seconds to test progress"""
     for n in range(0,10):

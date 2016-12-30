@@ -19,7 +19,8 @@ from django.conf import settings
 from django.core.management.base import CommandError
 from dateutil.tz import tzoffset
 
-from mlarchive.archive.models import Attachment, EmailList, Legacy, Message, Thread
+from mlarchive.archive.models import (Attachment, EmailList, Legacy, Message,
+    Thread, get_in_reply_to_message)
 from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES, UNKNOWN_CONTENT_TYPE
 from mlarchive.archive.inspectors import *
 from mlarchive.archive.thread import compute_thread
@@ -78,6 +79,7 @@ subj_refwd_pattern = r'([Rr][eE]|F[Ww][d]?)\s*' + subj_blob_pattern + r'?:\s'
 subj_leader_pattern = subj_blob_pattern + r'*' + subj_refwd_pattern
 subj_blob_regex = re.compile(r'^' + subj_blob_pattern)
 subj_leader_regex = re.compile(r'^' + subj_leader_pattern)
+
 
 # --------------------------------------------------
 # Custom Exceptions
@@ -587,6 +589,14 @@ class MessageWrapper(object):
         return self._date
     date = property(_get_date)
 
+    def _init_in_reply_to_fields(self):
+        """Initialize self.in_reply_to, self.in_reply_to_value"""
+        assert self.email_list
+        self.in_reply_to_value = self.email_message.get('In-Reply-To','')
+        self.in_reply_to = get_in_reply_to_message(
+            self.in_reply_to_value,
+            self.email_list)
+
     @staticmethod
     def get_addresses(text):
         """Returns a string of realname and email address RFC2822 addresses from a
@@ -713,8 +723,8 @@ class MessageWrapper(object):
                     pass
 
         # try In-Reply-to.  Use first msgid found, typically only one
-        if self.in_reply_to:
-            msgids = re.findall(MSGID_PATTERN,self.in_reply_to)
+        if self.in_reply_to_value:
+            msgids = re.findall(MSGID_PATTERN,self.in_reply_to_value)
             if msgids:
                 try:
                     message = Message.objects.get(email_list=self.email_list,msgid=msgids[0])
@@ -765,7 +775,7 @@ class MessageWrapper(object):
         self.email_list,created = EmailList.objects.get_or_create(
             name=self.listname,defaults={'description':self.listname,'private':self.private})
         self.hashcode = self.get_hash()
-        self.in_reply_to = self.email_message.get('In-Reply-To','')
+        self._init_in_reply_to_fields()
         self.references = self.email_message.get('References','')
         self.subject = self.get_subject()
         self.base_subject = get_base_subject(self.subject)
@@ -774,10 +784,6 @@ class MessageWrapper(object):
         if self.from_line:
             self.from_line = self.from_line[5:].lstrip()    # we only need the unique part
         self.frm = self.normalize(self.email_message.get('From',''))
-        if len(self.frm) > 125:
-            # TODO
-            # makrkbits
-            pass
         self._archive_message = Message(base_subject=self.base_subject,
                              cc=self.get_cc(),
                              date=self.date,
@@ -785,6 +791,7 @@ class MessageWrapper(object):
                              frm = self.frm,
                              from_line = self.from_line,
                              hashcode=self.hashcode,
+                             in_reply_to_value=self.in_reply_to_value,
                              in_reply_to=self.in_reply_to,
                              msgid=self.msgid,
                              references=self.references,

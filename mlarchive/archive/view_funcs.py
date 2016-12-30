@@ -299,3 +299,15 @@ def get_export(sqs, type, request):
     response['Content-Type'] = 'application/x-tar-gz'
     tardata.close()
     return response
+
+
+def get_query_neighbors(query,message):
+    """Returns a tuple previous_message and next_message given a message
+    from the query results"""
+    if message == query[0].object:
+        return None,query[1].object
+    previous = query[0]
+    for n,result in enumerate(query[1:],start=1):
+        if result.object == message:
+            return previous.object,query[n+1].object
+        previous = result

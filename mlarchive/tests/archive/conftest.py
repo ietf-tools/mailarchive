@@ -75,7 +75,7 @@ def index():
     #   remove index
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def thread_messages():
     """Load some threads"""
     content = StringIO()

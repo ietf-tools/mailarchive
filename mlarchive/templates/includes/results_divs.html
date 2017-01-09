@@ -2,7 +2,7 @@
     <div class="xtr{% ifchanged result.object.thread_id %} thread-border{% endifchanged %}">
         <div class="xtd subj-col depth-{{ result.object.thread_depth|max_depth }}">
           {% if no_js %}
-            <a class="msg-detail" href="{{ result.object.get_absolute_url }}{% if not browse_list %}/{{ query_string }}&qid={{ queryid }}{% endif %}">{{ result.subject }}<i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+            <a class="msg-detail" href="{{ result.object.get_absolute_url }}{% if not browse_list %}/{{ query_string }}&qid={{ queryid }}{% endif %}">{{ result.subject }}</a>
           {% else %}
             {{ result.subject }}<a class="msg-detail" href="{{ result.object.get_absolute_url }}{% if not browse_list %}/{{ query_string }}&qid={{ queryid }}{% endif %}"><i class="fa fa-arrow-right" aria-hidden="true"></i></a>
           {% endif %}

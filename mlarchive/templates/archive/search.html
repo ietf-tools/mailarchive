@@ -20,7 +20,7 @@
                   <li class="filter-item"><a class="{% selected request 'qdr' 'm' %}" href="{% query_string 'qdr=m' 'index' %}">Past month</a></li>
                   <li class="filter-item"><a class="{% selected request 'qdr' 'y' %}" href="{% query_string 'qdr=y' 'index' %}">Past year</a></li>
                 </ul>
-                <div id="filter-box" class="js-show">
+                <div id="filter-box" class="js-off">
                     <h4>FILTER BY LIST</h4>
                     <div id="list-filter" class="filter" tabindex="-1">
                         <form id="list-filter">
@@ -162,9 +162,9 @@
                     </div> <!-- msg-list-controls -->
                 </div> <!-- list-pane -->
                 
-                <div id="splitter-pane" class="draggable"></div>
+                <div id="splitter-pane" class="draggable js-off"></div>
                 
-                <div id="view-pane" class="js-show"></div>
+                <div id="view-pane" class="js-off"></div>
             </div> <!-- msg-panes -->
         </div> <!-- msg-components -->
     </div> <!-- msg-container -->

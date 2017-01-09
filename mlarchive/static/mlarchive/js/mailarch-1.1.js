@@ -1,4 +1,4 @@
-/* search.js */
+/* mailarch-1.1.js */
 
 /*
 This script uses the JQuery Query String Object plugin
@@ -176,6 +176,7 @@ var mailarch = {
         } else {
             mailarch.setHeaderWidths();
             mailarch.$window.on('scroll', mailarch.infiniteScroll);
+            mailarch.setSplitter();
         }
     },
     
@@ -327,13 +328,8 @@ var mailarch = {
             }
         });
         
-        // check for saved setting
-        var splitterValue = parseInt($.cookie("splitter"));
-        if(splitterValue) {
-            mailarch.setSplitter(splitterValue);
-        } else {
-            mailarch.setSplitter(mailarch.defaultListPaneHeight);  // optimize for 1024x768
-        }
+        mailarch.setSplitter();
+
     },
     
     isSmallViewport: function() {
@@ -434,15 +430,18 @@ var mailarch = {
         mailarch.$pageCount.addClass('visible-xs-inline-block');
 
         // Use arrow as message detail link instead of subject text
-        mailarch.$msgLinks.each(function(index) {
-            // console.log( index + ": " + $( this ).text() );
-            var text = $( this ).text();
-            $( this ).html('<i class="fa fa-arrow-right" aria-hidden="true"></i>');
-            $( this ).before(text);
-        })
+        if(!mailarch.isSmallViewport()) {
+            mailarch.$msgLinks.each(function(index) {
+                // console.log( index + ": " + $( this ).text() );
+                var text = $( this ).text();
+                $( this ).html('<i class="fa fa-arrow-right" aria-hidden="true"></i>');
+                $( this ).before(text);
+            })
+        }
         
         // Show progressive elements
-        $('.js-show').show();
+        $('.js-off').addClass('js-on').removeClass('js-off');
+
     },
     
     removeIndexParam: function() {
@@ -505,8 +504,12 @@ var mailarch = {
         mailarch.lastItem = mailarch.$msgTable.find('.xtr').length + offset;
     },
     
-    setSplitter: function(top) {
+    setSplitter: function() {
         // set page elements when splitter moves
+        var top = parseInt($.cookie("splitter"));
+        if(!top) {
+            top = mailarch.defaultListPaneHeight;  // optimize for 1024x768
+        }
         mailarch.$listPane.css("height",top);
         mailarch.$viewPane.css("top",top + mailarch.splitterHeight);
         mailarch.$splitterPane.css("top",top);

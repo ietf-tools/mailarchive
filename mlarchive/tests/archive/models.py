@@ -6,6 +6,13 @@ from mlarchive.archive.models import Message, EmailList
 
 
 @pytest.mark.django_db(transaction=True)
+def test_message_get_admin_url(client):
+    elist = EmailListFactory.create()
+    msg = MessageFactory.create(email_list=elist)
+    assert msg.get_admin_url() == '/admin/archive/message/{}/'.format(msg.pk)
+
+
+@pytest.mark.django_db(transaction=True)
 def test_message_get_from_line(client):
     '''Test that non-ascii text doesn't cause errors'''
     elist = EmailListFactory.create()

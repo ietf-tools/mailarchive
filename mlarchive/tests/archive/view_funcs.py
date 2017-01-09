@@ -105,3 +105,19 @@ def test_get_export_empty(client):
 #def test_get_export_mbox(client):
 
 #def test_get_export_maildir(client):
+
+@pytest.mark.django_db(transaction=True)
+def test_get_export_url(messages):
+    get_url = '%s?%s' % (reverse('archive_export',kwargs={'type':'url'}), 'q=database')
+    redirect_url = '%s?%s' % (reverse('archive_search'), 'q=database')
+    factory = RequestFactory()
+    request = factory.get(get_url)
+    setattr(request, 'session', {})
+    messages = FallbackStorage(request)
+    setattr(request, '_messages', messages)
+    response = get_export(SearchQuerySet(),'url',request)
+    assert response.status_code == 200
+    message = Message.objects.first()
+    assert message.get_absolute_url() in response.content
+    #print response.content
+    #assert False

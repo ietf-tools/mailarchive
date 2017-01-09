@@ -101,6 +101,27 @@ def get_cache_key(request):
     m.update(str(request.user))
     return m.hexdigest()
 
+def get_query(request):
+    """Returns the query as a string.  Usually this is just the 'q' parameter.
+    However, in the case of an advanced search with javascript disabled we need
+    to build the query given the query parameters in the request"""
+    if 'q' in request.GET:
+        return request.GET['q']
+    elif 'nojs' in request.META['QUERY_STRING']:
+        query = []
+        not_query = []
+        items = filter(is_nojs_value, request.GET.items())
+        for key,value in items:
+            field = request.GET[key.replace('value','field')]
+            qualifier = request.GET[key.replace('value','qualifier')]
+            if 'query' in key:
+                query.append('{}:({})'.format(field,value))
+            else:
+                not_query.append('-{}:({})'.format(field,value))
+        return ' '.join(query + not_query)
+    else:
+        return ''
+
 def get_list_info(value):
     """Map list name to list id or list id to list name.  This is essentially a cached
     bi-directional dictionary lookup."""
@@ -125,6 +146,14 @@ def group_by_thread(qs, so, sso, reverse=False):
     new_query = qs.order_by('-tdate','tid','torder')
 
     return new_query
+
+
+def is_nojs_value(items):
+    k,v = items
+    if k.startswith('nojs') and k.endswith('value') and v:
+        return True
+    else:
+        return False
 
 
 def sort_by_subject(qs, sso, reverse=False):

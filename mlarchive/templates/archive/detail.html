@@ -18,7 +18,6 @@
 
     <div id="msg-detail" class="col-md-8 col-md-pull-4">
       {{ msg.get_body_html|safe }}
-  
       <div id="related-messages">
         {% if replies %}
           <h4>Replies:</h4>
@@ -41,6 +40,11 @@
             </li>
           {% endfor %}
           </ul>
+        {% endif %}
+      </div>
+      <div>
+        {% if request.user.is_staff %}
+          <a id="admin-link" href="{{ msg.get_admin_url }}">Admin Page</a>
         {% endif %}
       </div>
     </div> <!-- msg-detail -->

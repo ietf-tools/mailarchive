@@ -20,7 +20,7 @@
                   <li class="filter-item"><a class="{% selected request 'qdr' 'm' %}" href="{% query_string 'qdr=m' 'index' %}">Past month</a></li>
                   <li class="filter-item"><a class="{% selected request 'qdr' 'y' %}" href="{% query_string 'qdr=y' 'index' %}">Past year</a></li>
                 </ul>
-                <div id="filter-box">
+                <div id="filter-box" class="js-show">
                     <h4>FILTER BY LIST</h4>
                     <div id="list-filter" class="filter" tabindex="-1">
                         <form id="list-filter">
@@ -37,24 +37,32 @@
                         </ul>
                         </form>
                     </div> <!-- list-filter -->
-                </div> <!-- filter-box -->
-                <h4>FILTER BY FROM</h4>
-                <div id="from-filter" class="filter" tabindex="-1">
-                    <form id="from-filter">
-                    <ul class="filter-options" tabindex="-1">
-                     {% if facets.fields.frm_email %}
-                        {% for email in facets.fields.frm_email %}
-                            <li class="filter-option"><input class="from-facet facetchk" type="checkbox" name="f_from" value="{{ email.0 }}" {% checked request 'f_from' email.0 %}>{{ email.0|truncatechars:18 }} ({{ email.1 }})</li>
-                        {% endfor %}
-                        {% if facets.fields.frm_email|length > 6 %}
-                            <li class="control"><a class="more-link" href="">more...</a></li>
+
+                    <h4>FILTER BY FROM</h4>
+                    <div id="from-filter" class="filter" tabindex="-1">
+                        <form id="from-filter">
+                        <ul class="filter-options" tabindex="-1">
+                         {% if facets.fields.frm_email %}
+                            {% for email in facets.fields.frm_email %}
+                                <li class="filter-option"><input class="from-facet facetchk" type="checkbox" name="f_from" value="{{ email.0 }}" {% checked request 'f_from' email.0 %}>{{ email.0|truncatechars:18 }} ({{ email.1 }})</li>
+                            {% endfor %}
+                            {% if facets.fields.frm_email|length > 6 %}
+                                <li class="control"><a class="more-link" href="">more...</a></li>
+                            {% endif %}
+                            <li class="control"><a id="from-filter-clear" href="">Clear</a></li>
                         {% endif %}
-                        <li class="control"><a id="from-filter-clear" href="">Clear</a></li>
-                    {% endif %}
-                    </ul>
-                    </form>
-                </div> <!-- from-filter -->
+                        </ul>
+                        </form>
+                    </div> <!-- from-filter -->
+                </div> <!-- filter-box -->
             </div> <!-- search-filters -->
+            
+            <div id="message">
+              {% if count > FILTER_CUTOFF %}
+                <p>Refine search to enable filters</p>
+              {% endif %}
+            </div>
+            
             <div id="footer">
                 <p class="small text-center">Email Archive v{{ version_num }}</p>
             </div>
@@ -89,6 +97,7 @@
                                 <ul class="dropdown-menu">
                                     <li><a href="{{ export_mbox }}">Mbox</a></li>
                                     <li><a href="{{ export_maildir }}">Maildir</a></li>
+                                    <li><a href="{{ export_url }}">URLs</a></li>
                                 </ul>
                             </li>
                         </ul> <!-- nav navbar-nav -->
@@ -114,27 +123,21 @@
                     {% if thread_sorted %}
                         <div class="header">
                             <span>Subject</span>
-                        </div>
-                        <div class="header">
+                        </div><div class="header">
                             <span>From</span>
-                        </div>
-                        <div class="header">
+                        </div><div class="header">
                             <span>Date</span>
-                        </div>
-                        <div class="header">
+                        </div><div class="header">
                             <span>List</span>
                         </div>
                     {% else %}
                         <div class="header sortable">
                             <a id="sort-button-subject" class="unsorted sortbutton" href="#">Subject<i class="fa fa-sort" aria-hidden="true"></i></a>
-                        </div>
-                        <div class="header sortable">
+                        </div><div class="header sortable">
                             <a id="sort-button-frm" class="unsorted sortbutton" href="#">From<i class="fa fa-sort" aria-hidden="true"></i></a>
-                        </div>
-                        <div class="header sortable">
+                        </div><div class="header sortable">
                             <a id="sort-button-date" class="unsorted sortbutton" href="#">Date<i class="fa fa-sort" aria-hidden="true"></i></a>
-                        </div>
-                        <div class="header sortable">
+                        </div><div class="header sortable">
                             <a id="sort-button-email_list" class="unsorted sortbutton" href="#">List<i class="fa fa-sort" aria-hidden="true"></i></a>
                         </div>
                     {% endif %}
@@ -152,16 +155,16 @@
                     <div id="msg-list-controls">
                         <div id="message-count" class="list-control">{{ count }} Messages</div>
                         <div class="list-control page-nav">
-                            {% if page.has_previous %}<a class="btn btn-default visible-xs-inline-block pull-left" href="{{ previous_page_url }}">Previous</a>{% endif %}
-                            <span class="current-page visible-xs-inline-block">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
-                            {% if page.has_next %}<a class="btn btn-default visible-xs-inline-block pull-right" href="{{ next_page_url }}">Next</a>{% endif %}
+                            {% if page.has_previous %}<a class="pull-left" href="{{ previous_page_url }}">Previous</a>{% endif %}
+                            <span class="current-page">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+                            {% if page.has_next %}<a class="pull-right" href="{{ next_page_url }}">Next</a>{% endif %}
                         </div>
                     </div> <!-- msg-list-controls -->
                 </div> <!-- list-pane -->
                 
                 <div id="splitter-pane" class="draggable"></div>
                 
-                <div id="view-pane"></div>
+                <div id="view-pane" class="js-show"></div>
             </div> <!-- msg-panes -->
         </div> <!-- msg-components -->
     </div> <!-- msg-container -->
@@ -172,5 +175,6 @@
 <script type="text/javascript" src="{% static 'jquery-ui/jquery-ui.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
 <script type="text/javascript" src="{% static 'jquery.query/jquery.query.js' %}"></script>
-<script type="text/javascript" src="{% static 'mlarchive/js/mailarch-1.0.js' %}"></script>
+<script type="text/javascript" src="{% static 'mlarchive/js/mailarch-1.1.js' %}"></script>
+
 {% endblock %}

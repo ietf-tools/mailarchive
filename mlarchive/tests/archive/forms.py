@@ -59,6 +59,18 @@ def test_get_list_info():
     assert get_list_info(1) == 'ancp'
     assert get_list_info('ancp') == 1
 
+def test_get_query():
+    factory = RequestFactory()
+    # simple query
+    request=factory.get('/arch/search/?q=dummy')
+    assert get_query(request) == 'dummy'
+    # advanced query 
+    request=factory.get('/arch/search/?as=1&nojs-query-0-field=text&nojs-query-0-qualifier=contains&nojs-query-0-value=dummy')
+    assert get_query(request) == 'text:(dummy)'
+    # advanced query with nots
+    request=factory.get('/arch/search/?as=1&nojs-query-0-field=text&nojs-query-0-qualifier=contains&nojs-query-0-value=dummy&nojs-not-0-field=from&nojs-not-0-qualifier=contains&nojs-not-0-value=jones')
+    assert get_query(request) == 'text:(dummy) -from:(jones)'
+    
 @pytest.mark.django_db(transaction=True)
 def test_group_by_thread(messages):
     sqs = SearchQuerySet().filter(email_list=1)

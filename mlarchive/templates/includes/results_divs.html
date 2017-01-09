@@ -1,6 +1,12 @@
 {% load archive_extras %}{% for result in results %}
     <div class="xtr{% ifchanged result.object.thread_id %} thread-border{% endifchanged %}">
-        <div class="xtd subj-col depth-{{ result.object.thread_depth|max_depth }}">{{ result.subject }}<a class="msg-detail" href="{{ result.object.get_absolute_url }}{% if not browse_list %}/{{ query_string }}&qid={{ queryid }}{% endif %}"><i class="fa fa-arrow-right" aria-hidden="true"></i></a></div>
+        <div class="xtd subj-col depth-{{ result.object.thread_depth|max_depth }}">
+          {% if no_js %}
+            <a class="msg-detail" href="{{ result.object.get_absolute_url }}{% if not browse_list %}/{{ query_string }}&qid={{ queryid }}{% endif %}">{{ result.subject }}<i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+          {% else %}
+            {{ result.subject }}<a class="msg-detail" href="{{ result.object.get_absolute_url }}{% if not browse_list %}/{{ query_string }}&qid={{ queryid }}{% endif %}"><i class="fa fa-arrow-right" aria-hidden="true"></i></a>
+          {% endif %}
+        </div>
         <div class="xtd from-col">{{ result.frm_email|truncatechars:35 }}</div>
         <div class="xtd date-col">{{ result.date|date:"Y-m-d" }}</div>
         <div class="xtd list-col">{{ result.object.email_list }}</div>

@@ -48,9 +48,44 @@ def test_browse(client):
     response = client.get(url)
     assert response.status_code == 200
 
-#def test_detail(client):
+@pytest.mark.django_db(transaction=True)
+def test_detail(client):
+    elist = EmailListFactory.create()
+    msg = MessageFactory.create(email_list=elist)
+    url = reverse('archive_detail', kwargs={'list_name':elist.name,'id':msg.hashcode})
+    response = client.get(url)
+    assert response.status_code == 200
+
+@pytest.mark.django_db(transaction=True)
+def test_detail_admin_access(client):
+    '''Test that admin user gets link to admin site,
+    regular user does not'''
+    elist = EmailListFactory.create()
+    msg = MessageFactory.create(email_list=elist)
+    user = UserFactory.create(is_staff=True)
+    url = reverse('archive_detail', kwargs={'list_name':elist.name,'id':msg.hashcode})
+    # not logged in
+    response = client.get(url)
+    assert response.status_code == 200
+    q = PyQuery(response.content)
+    assert len(q('#admin-link')) == 0
+    # priviledged user
+    client.login(username='admin',password='admin')
+    response = client.get(url)
+    assert response.status_code == 200
+    q = PyQuery(response.content)
+    assert len(q('#admin-link')) == 1
 
 #def test_export(client):
+
+@pytest.mark.django_db(transaction=True)
+def test_legacy_message(client):
+    elist = EmailListFactory.create()
+    msg = MessageFactory.create(email_list=elist,legacy_number=1)
+    url = reverse('archive_legacy_message', kwargs={'list_name':elist.name,'id':'00001'})
+    response = client.get(url, follow=True)
+    assert response.status_code == 200
+    assert msg.get_absolute_url() in response.redirect_chain[0][0]
 
 @pytest.mark.django_db(transaction=True)
 def test_logout(client):

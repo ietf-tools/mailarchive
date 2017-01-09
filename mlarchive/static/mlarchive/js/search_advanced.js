@@ -12,6 +12,7 @@ var advancedSearch = {
     
     init : function() {
         advancedSearch.cacheDom();
+        advancedSearch.progressiveFeatures();
         advancedSearch.bindEvents();
         advancedSearch.$emailList.selectize();
         if(document.location.search.length) {
@@ -20,17 +21,18 @@ var advancedSearch = {
     },
     
     cacheDom : function() {
-        advancedSearch.$removeButtons = $('.btn-remove');
         advancedSearch.$addLinks = $('.addChunk');
-        advancedSearch.$qdr = $('#id_qdr');
-        advancedSearch.$rulesForm = $('#rules-form');
-        advancedSearch.$parameters = $('select.parameter');
-        advancedSearch.$qualifiers = $('select.qualifier');
-        advancedSearch.$operands = $('input.operand');
+        advancedSearch.$builtQuery = $('#built-query');
         advancedSearch.$dateFields = $('.date-field');
-        advancedSearch.$startDate = $('#id_start_date');
-        advancedSearch.$endDate = $('#id_end_date');
         advancedSearch.$emailList = $('#id_email_list');
+        advancedSearch.$endDate = $('#id_end_date');
+        advancedSearch.$operands = $('input.operand');
+        advancedSearch.$parameters = $('select.parameter');
+        advancedSearch.$qdr = $('#id_qdr');
+        advancedSearch.$qualifiers = $('select.qualifier');
+        advancedSearch.$removeButtons = $('.btn-remove');
+        advancedSearch.$rulesForm = $('#rules-form');
+        advancedSearch.$startDate = $('#id_start_date');
     },
     
     bindEvents : function() {
@@ -150,6 +152,14 @@ var advancedSearch = {
         });
     },
     
+    progressiveFeatures: function() {
+        // Progressive Javascript setup
+        $('.js-show').show();
+        $('.js-hide').hide();
+        $('.js-hide input, .js-hide select').prop('disabled',true);
+        advancedSearch.$dateFields.hide();
+    },
+
     qdrChange : function() {
         if($(this).val()=='c') {
             advancedSearch.$dateFields.show();

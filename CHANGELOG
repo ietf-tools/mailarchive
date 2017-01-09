@@ -1,4 +1,18 @@
 
+mailarch (1.6.0) ietf; urgency=normal
+
+ * RFC7842 Sections:
+
+ * 2.3 Navigation from message detail
+
+ * 2.4 Message List UI improvements
+
+ * 2.7 Support use without Javascript
+
+ * 2.8 Administrative improvements
+
+-- Ryan Cross <rcross@amsl.com>  09 Jan 2017 13:00:00 +0800
+
 mailarch (1.5.1) ietf; urgency=high
 
  * Fix threading of multi-list messages. Includes migration 

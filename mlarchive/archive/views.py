@@ -22,7 +22,7 @@ from mlarchive.utils.decorators import check_access, superuser_only, pad_id
 from mlarchive.archive import actions
 from mlarchive.archive.query_utils import get_kwargs
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
-    find_message_date, find_message_gbt, get_query_neighbors)
+    find_message_date, find_message_gbt, get_query_neighbors, is_javascript_disabled)
 
 from models import *
 from forms import *
@@ -110,6 +110,9 @@ class CustomSearchView(SearchView):
         extra = super(CustomSearchView, self).extra_context()
         query_string = '?' + self.request.META['QUERY_STRING']
 
+        # settings
+        extra['FILTER_CUTOFF'] = settings.FILTER_CUTOFF
+
         # browse list
         match = re.search(r"^\?email_list=([a-zA-Z0-9\_\-]+)",query_string)
         if match:
@@ -138,12 +141,16 @@ class CustomSearchView(SearchView):
         # export links
         extra['export_mbox'] = reverse('archive_export',kwargs={'type':'mbox'}) + query_string
         extra['export_maildir'] = reverse('archive_export',kwargs={'type':'maildir'})+ query_string
+        extra['export_url'] = reverse('archive_export',kwargs={'type':'url'})+ query_string
 
         # modify search link
         if 'as' in self.request.GET:
             extra['modify_search_url'] = reverse('archive_advsearch') + query_string
         else:
             extra['modify_search_url'] = 'javascript:history.back()'
+        
+        if is_javascript_disabled(self.request):
+            extra['modify_search_url'] = None
 
         # add custom facets
         if hasattr(self,'myfacets'):
@@ -151,6 +158,9 @@ class CustomSearchView(SearchView):
 
         if hasattr(self,'queryid'):
             extra['queryid'] = self.queryid
+
+        # Pregressive Enhancements.  Start with non-javascript functionality
+        extra['no_js'] = True
 
         # pagination links
         if self.page and self.page.has_other_pages():
@@ -252,6 +262,10 @@ def admin_guide(request):
 
 def advsearch(request):
     """Advanced Search View"""
+    NoJSRulesFormset = formset_factory(RulesForm, extra=3)
+    nojs_query_formset = NoJSRulesFormset(prefix='nojs-query')
+    nojs_not_formset = NoJSRulesFormset(prefix='nojs-not')
+
     if request.GET:
         # reverse engineer advanced search form from query string
         form = AdvancedSearchForm(request=request,initial=request.GET)
@@ -265,7 +279,9 @@ def advsearch(request):
     return render_to_response('archive/advsearch.html', {
         'form': form,
         'query_formset': query_formset,
-        'not_formset': not_formset},
+        'not_formset': not_formset,
+        'nojs_query_formset': nojs_query_formset,
+        'nojs_not_formset': nojs_not_formset},
         RequestContext(request, {}),
     )
 
@@ -360,6 +376,14 @@ def export(request, type):
     sqs = form.search()
 
     return get_export(sqs, type, request)
+
+def legacy_message(request, list_name, id):
+    """Redirect to the appropriate message given list name and legacy number"""
+    try:
+        message = Message.objects.get(email_list__name=list_name,legacy_number=int(id))
+    except Message.DoesNotExist:
+        raise Http404("Message not found")
+    return HttpResponseRedirect(message.get_absolute_url())
 
 def logout_view(request):
     """Logout the user"""

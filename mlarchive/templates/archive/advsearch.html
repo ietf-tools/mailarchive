@@ -15,7 +15,7 @@
 <div class="container">
 <div id="adv-search-container" class="col-md-offset-1 col-md-10">
   <div id="adv-search" class="adv-search">
-      <form id="rules-form" class="advanced" action="../search" method="get">
+      <form id="rules-form" class="advanced js-show" action="../search" method="get">
         <fieldset class="term-set">
         <h4>Include:</h4>
         {% for form in query_formset.forms %}
@@ -50,6 +50,38 @@
       </form>
 
       <form id="advanced-search-form" class="advanced" action="../search" method="get">
+        
+        <div class="js-hide">
+            <fieldset class="term-set">
+                <h4>Include:</h4>
+                {% for form in nojs_query_formset.forms %}
+                    <div class="form-inline chunk">
+                    {% if form.non_field_errors %}
+                      {{ form.non_field_errors }}
+                    {% endif %}
+                    {% bootstrap_field form.field show_label=False %}
+                    {% bootstrap_field form.qualifier show_label=False %}
+                    {% bootstrap_field form.value show_label=False %}
+                    </div>
+                {% endfor %}
+            </fieldset>
+
+            <fieldset class="term-set">
+                <h4>Do Not Include:</h4>
+                {% for form in nojs_not_formset.forms %}
+                    <div class="form-inline chunk">
+                    {% if form.non_field_errors %}
+                      {{ form.non_field_errors }}
+                    {% endif %}
+                    {% bootstrap_field form.field show_label=False %}
+                    {% bootstrap_field form.qualifier show_label=False %}
+                    {% bootstrap_field form.value show_label=False %}
+                    </div>
+                {% endfor %}
+            </fieldset>
+            <input id="id_nojs" class="nojs" type="hidden" name="nojs" value="1" />
+        </div> <!-- js-hide -->
+
         <fieldset>
         <h4>Filter Results By:</h4>
             {% bootstrap_field form.qdr show_label=False %}
@@ -60,10 +92,12 @@
 
         <button class="btn btn-default" type="submit">Search</button>
         
-        <br />
-        <hr />
+        <div class="js-show">
+            <br />
+            <hr />
+            <input id="id_q" type="text" name="q" readonly="readonly" />
+        </div>
 
-        <input id="id_q" type="text" name="q" readonly="readonly" />
         <input id="as" type="hidden" name="as" value="1" />
       </form>
       

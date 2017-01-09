@@ -20,18 +20,18 @@ urlpatterns += patterns('mlarchive.archive.views',
     url(r'^browse/$', 'browse', name='archive_browse'),
     url(r'^browse/(?P<list_name>[a-z0-9_\-\+]+)/$', 'browse', name='archive_browse_redirect'),
     #url(r'^browse/(?P<list_name>\w+)/', 'browse_list', name='archive_browse_list'),
-    url(r'^msg/(?P<list_name>[a-z0-9_\-\+]+)/(?P<id>[a-zA-Z0-9_\-]+)(=)?(/)?$', 'detail', name='archive_detail'),
-    url(r'^export/(?P<type>mbox|maildir)/', 'export', name='archive_export'),
+    url(r'^export/(?P<type>mbox|maildir|url)/', 'export', name='archive_export'),
     url(r'^help/$', TemplateView.as_view(template_name="archive/help.html")),
+    url(r'^legacy/msg/(?P<list_name>[a-z0-9_\-\+]+)/(?P<id>[0-9]+)/$', 'legacy_message', name='archive_legacy_message'),
     url(r'^logout/$', 'logout_view', name='archive_logout'),
+    url(r'^msg/(?P<list_name>[a-z0-9_\-\+]+)/(?P<id>[a-zA-Z0-9_\-]+)(=)?(/)?$', 'detail', name='archive_detail'),
     url(r'^search/', search_view_factory(form_class=AdvancedSearchForm,
                                          view_class=CustomSearchView,
                                          template='archive/search.html'), name='archive_search'),
 
     # test pages ----------------
-    (r'^layout/$', TemplateView.as_view(template_name="archive/layout.html")),
+    #(r'^layout/$', TemplateView.as_view(template_name="archive/layout.html")),
     #(r'^test/$', TemplateView.as_view(template_name="archive/test.html")),
-    #(r'^test-bootstrap/$', TemplateView.as_view(template_name="archive/test-bootstrap.html")),
 )
 
 

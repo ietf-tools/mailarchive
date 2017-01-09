@@ -197,6 +197,12 @@ def initialize_formsets(query):
 
     return query_formset, not_formset
 
+def is_javascript_disabled(request):
+    if 'nojs' in request.GET:
+        return True
+    else:
+        return False
+
 def get_columns(user):
     """Returns email lists the user can view, grouped in columns for display.
     columns is a dictionary of lists containing keys: active, inactive, private
@@ -225,7 +231,22 @@ def get_columns(user):
 
     return columns
 
-def get_export(sqs, type, request):
+def get_export(sqs, export_type, request):
+    """Process an export request"""
+    if export_type == 'url':
+        return get_export_url(sqs,export_type,request)
+    else:
+        return get_export_tar(sqs,export_type,request)
+
+def get_export_url(sqs, export_type, request):
+    """Return file containing URLs of all messages in query results"""
+    content = []
+    for result in sqs:
+        url = result.object.get_absolute_url()
+        content.append(request.build_absolute_uri(url))
+    return HttpResponse('\n'.join(content), content_type='text/plain')
+
+def get_export_tar(sqs, type, request):
     """Returns a tar archive of messages
 
     sqs is SearchQuerySet object, the result of a search, and type is a string

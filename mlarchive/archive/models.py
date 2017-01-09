@@ -187,6 +187,9 @@ class Message(models.Model):
             'list_name': self.email_list.name,
             'id': self.hashcode.rstrip('=')})
 
+    def get_admin_url(self):
+        return reverse('admin:archive_message_change',args=(self.pk,))
+
     def get_attachment_path(self):
         path = self.email_list.attachments_dir
         if not os.path.exists(path):

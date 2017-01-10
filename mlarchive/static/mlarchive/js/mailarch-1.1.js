@@ -315,7 +315,7 @@ var mailarch = {
         mailarch.$splitterPane.draggable({
             axis:"y",
             //containment:"parent",
-            containment: [0,200,0,$(document).height()-100],
+            containment: [0,200,0,$(window).height()-100],
             drag: function(event, ui){
                 var top = ui.position.top;
                 mailarch.$listPane.css("height",top);
@@ -324,7 +324,7 @@ var mailarch = {
             stop: function(event, ui){
                 var top = ui.position.top;
                 $.cookie("splitter",top);
-                mailarch.checkMessageListScrollBar();
+                // mailarch.checkMessageListScrollBar();
             }
         });
         

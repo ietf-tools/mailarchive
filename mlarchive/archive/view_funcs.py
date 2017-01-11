@@ -345,7 +345,10 @@ def get_query_neighbors(query,message):
     previous = query[0]
     for n,result in enumerate(query[1:],start=1):
         if result.object == message:
-            return previous.object,query[n+1].object
+            try:
+                return previous.object,query[n+1].object
+            except IndexError:
+                return previous.object,None
         previous = result
 
 

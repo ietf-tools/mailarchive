@@ -346,7 +346,6 @@ var mailarch = {
         if(/^\d+$/.test(msgId)){
             mailarch.$viewPane.load('/arch/ajax/msg/?id=' + msgId, function() {
                 // NTOE: don't use cached DOM objects here because these change
-                $('#msg-header').hide()
                 $('#msg-date').after('<a id="toggle" href="#">Show header</a>');
                 $('#toggle').click(function(ev) {
                     $('#msg-header').toggle();

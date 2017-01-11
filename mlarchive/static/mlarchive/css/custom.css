@@ -564,6 +564,10 @@ table.msg-list-header-table th a.btn {
     top: 205px;
 }
 
+#msg-header {
+    display: none;
+}
+
 .msg-header {
     color: #808080;
     margin: 0 0 20px;

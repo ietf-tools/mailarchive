@@ -44,7 +44,7 @@
                         <ul class="filter-options" tabindex="-1">
                          {% if facets.fields.frm_email %}
                             {% for email in facets.fields.frm_email %}
-                                <li class="filter-option"><input class="from-facet facetchk" type="checkbox" name="f_from" value="{{ email.0 }}" {% checked request 'f_from' email.0 %}><span class="truncated">{{ email.0|truncatechars:24 }}</span><span class="full">{{ email.0|truncatechars:50 }}</span> ({{ email.1 }})</li>
+                                <li class="filter-option"><input class="from-facet facetchk" type="checkbox" name="f_from" value="{{ email.0 }}" {% checked request 'f_from' email.0 %}><span class="truncated">{{ email.0|truncatechars:24 }}</span><span class="full">{{ email.0|truncatechars:48 }}</span> ({{ email.1 }})</li>
                             {% endfor %}
                             {% if facets.fields.frm_email|length > 6 %}
                                 <li class="control"><a class="more-link" href="">more...</a></li>

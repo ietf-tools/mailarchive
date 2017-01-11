@@ -10,6 +10,7 @@ from django.template import RequestContext
 from mlarchive.archive import actions
 from mlarchive.archive.utils import jsonapi
 from mlarchive.archive.models import EmailList, Message
+from mlarchive.archive.view_funcs import get_browse_list
 from mlarchive.utils.decorators import check_access, superuser_only
 
 @superuser_only
@@ -50,6 +51,7 @@ def ajax_messages(request):
     lastitem = int(request.GET.get('lastitem',0))
     firstitem = int(request.GET.get('firstitem',0))
     query = cache.get(queryid)
+    browse_list = get_browse_list(request)
 
     if query:
         if lastitem:
@@ -66,7 +68,9 @@ def ajax_messages(request):
         return HttpResponse(status=204)     # No Content
 
     return render_to_response('includes/results_divs.html', {
-        'results': results},
+        'results': results,
+        'queryid': queryid,
+        'browse_list': browse_list},
         RequestContext(request, {}),
     )
 

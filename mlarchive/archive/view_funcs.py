@@ -203,6 +203,21 @@ def is_javascript_disabled(request):
     else:
         return False
 
+
+def get_browse_list(request):
+    """Return the list name if this query is a browse list query"""
+    query_string = get_query_string(request)
+    match = re.search(r"^\?email_list=([a-zA-Z0-9\_\-]+)",query_string)
+    if match:
+        try:
+            browse_list = EmailList.objects.get(name=match.group(1))
+        except EmailList.DoesNotExist:
+            browse_list = None
+    else:
+        browse_list = None
+    return browse_list
+
+
 def get_columns(user):
     """Returns email lists the user can view, grouped in columns for display.
     columns is a dictionary of lists containing keys: active, inactive, private
@@ -332,3 +347,8 @@ def get_query_neighbors(query,message):
         if result.object == message:
             return previous.object,query[n+1].object
         previous = result
+
+
+def get_query_string(request):
+    """Returns the query string from the request, including '?' """
+    return '?' + request.META['QUERY_STRING']

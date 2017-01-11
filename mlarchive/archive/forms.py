@@ -459,6 +459,7 @@ class AdvancedSearchForm(FacetedSearchForm):
 
         # save query in cache with random id for security
         queryid = '%032x' % random.getrandbits(128)
+        sqs.query_string = self.request.META['QUERY_STRING']
         cache.set(queryid,sqs,7200)           # 2 hours
         sqs.queryid = queryid
 

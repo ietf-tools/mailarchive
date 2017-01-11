@@ -22,7 +22,8 @@ from mlarchive.utils.decorators import check_access, superuser_only, pad_id
 from mlarchive.archive import actions
 from mlarchive.archive.query_utils import get_kwargs
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
-    find_message_date, find_message_gbt, get_query_neighbors, is_javascript_disabled)
+    find_message_date, find_message_gbt, get_query_neighbors, is_javascript_disabled,
+    get_query_string, get_browse_list)
 
 from models import *
 from forms import *
@@ -108,21 +109,11 @@ class CustomSearchView(SearchView):
     def extra_context(self):
         """Add variables to template context"""
         extra = super(CustomSearchView, self).extra_context()
-        query_string = '?' + self.request.META['QUERY_STRING']
+        query_string = get_query_string(self.request)
 
         # settings
         extra['FILTER_CUTOFF'] = settings.FILTER_CUTOFF
-
-        # browse list
-        match = re.search(r"^\?email_list=([a-zA-Z0-9\_\-]+)",query_string)
-        if match:
-            try:
-                browse_list = EmailList.objects.get(name=match.group(1))
-            except EmailList.DoesNotExist:
-                browse_list = None
-        else:
-            browse_list = None
-        extra['browse_list'] = browse_list
+        extra['browse_list'] = get_browse_list(self.request)
         extra['query_string'] = query_string
 
         # thread sort
@@ -335,12 +326,11 @@ def detail(request, list_name, id, msg):
     """
     if 'qid' in request.GET and cache.get(request.GET['qid']):
         queryid = request.GET['qid']
+        sqs = cache.get(queryid)
         previous_in_search, next_in_search = get_query_neighbors(
-            query = cache.get(queryid),
+            query = sqs,
             message = msg)
-        query_dict = request.GET.copy()
-        query_dict.pop('qid')
-        search_url = reverse('archive_search') + '?' + query_dict.urlencode()
+        search_url = reverse('archive_search') + '?' + sqs.query_string
 
     else:
         previous_in_search = None

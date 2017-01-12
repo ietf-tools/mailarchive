@@ -612,16 +612,18 @@ table.msg-list-header-table th a.btn {
     float: left;    
 }
 
-.page-nav {
-    float: right;
-}
-
-.page-nav a {
-    padding: 0 8px;
-}
-
 /* Responsive Styling
    ========================================================================== */
+@media (min-width: 768px)
+{
+    .page-nav {
+        float: right;
+    }
+
+    .page-nav a {
+        padding: 0 8px;
+    }
+}
 
 @media (max-width: 767px)
 {

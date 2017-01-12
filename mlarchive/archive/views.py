@@ -150,7 +150,7 @@ class CustomSearchView(SearchView):
         if hasattr(self,'queryid'):
             extra['queryid'] = self.queryid
 
-        # Pregressive Enhancements.  Start with non-javascript functionality
+        # Progressive Enhancements.  Start with non-javascript functionality
         extra['no_js'] = True
 
         # pagination links
@@ -158,10 +158,14 @@ class CustomSearchView(SearchView):
             if self.page.has_next():
                 new_query = self.request.GET.copy()
                 new_query['page'] = self.page.next_page_number()
+                if 'index' in new_query:
+                    new_query.pop('index')
                 extra['next_page_url'] = reverse('archive_search') + '?' + new_query.urlencode()
             if self.page.has_previous():
                 new_query = self.request.GET.copy()
                 new_query['page'] = self.page.previous_page_number()
+                if 'index' in new_query:
+                    new_query.pop('index')
                 extra['previous_page_url'] = reverse('archive_search') + '?' + new_query.urlencode()
         
         return extra

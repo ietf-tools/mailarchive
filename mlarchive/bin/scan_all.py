@@ -7,7 +7,7 @@ in the function definition.
 
 usage:
 
-scan_all.py [func name] [optional arguments][
+scan_all.py [func name] [optional arguments]
 
 """
 # Set PYTHONPATH and load environment variables for standalone script -----------------
@@ -16,11 +16,18 @@ import os
 import sys
 path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 print path
+
+# Virtualenv support
+virtualenv_activation = os.path.join(path, "bin", "activate_this.py")
+if os.path.exists(virtualenv_activation):
+    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
+    
 if not path in sys.path:
     sys.path.insert(0, path)
 
 if not os.environ.get('DJANGO_SETTINGS_MODULE'):
     os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.development'
+print "DJANGO_SETTINGS_MODULE={}".format(os.environ['DJANGO_SETTINGS_MODULE'])
 
 virtualenv_activation = os.path.join(path, "env", "bin", "activate_this.py")
 if os.path.exists(virtualenv_activation):
@@ -30,14 +37,6 @@ import django
 django.setup()
 
 # -------------------------------------------------------------------------------------
-
-from mlarchive.archive.models import *
-from mlarchive.bin.scan_utils import *
-from mlarchive.archive.management.commands import _classes
-from tzparse import tzparse
-from pprint import pprint
-from pytz import timezone
-
 import argparse
 import datetime
 import email
@@ -46,6 +45,17 @@ import mailbox
 import re
 import sys
 import time
+from dateutil.parser import parse
+
+from haystack.query import SearchQuerySet
+from mlarchive.archive.models import *
+from mlarchive.archive.thread import compute_thread
+from mlarchive.bin.scan_utils import *
+from mlarchive.archive.management.commands import _classes
+from tzparse import tzparse
+from pprint import pprint
+from pytz import timezone
+
 
 date_pattern = re.compile(r'(Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+')
 dupetz_pattern = re.compile(r'[\-\+]\d{4} \([A-Z]+\)$')
@@ -182,6 +192,30 @@ def count(listname):
     print "Total: %d" % total
     pprint(years)
 
+def check_thread_order(start,fix=False):
+    """Compare message.thread_order in DB with index.  If fix==True save
+    the database object, causing the index to get updated to match DB.
+    
+    Example: ./scan_all.py --fix check_thread_order 2017-01-15T00:00:00
+    """
+    print "start: {}    fix: {}".format(start,fix)
+    start_date = parse(start)
+    threads = Thread.objects.filter(date__gte=start_date)
+    print "Checking {} threads.".format(threads.count())
+    total = 0
+    for thread in threads:
+        sqs = SearchQuerySet().filter(tid=thread.id).order_by('torder')
+        for result in sqs:
+            if result.torder != result.object.thread_order:
+                if fix:
+                    # compute_thread(thread)
+                    result.object.save()
+                    continue
+                else:
+                    total += 1
+                    print "Mismatch: pk={} index_order={} db_order={}".format(result.object.pk,result.torder,result.object.thread_order)
+    print "Total: {}".format(total)
+
 def date(start):
     """Calls get_date for every message in (old) archive.  Use 'start' argument
     to offset beginning of run"""
@@ -285,7 +319,6 @@ def html_only():
 
 def lookups():
     """Test the message find routines"""
-    from haystack.query import SearchQuerySet
     from mlarchive.archive.view_funcs import find_message_date, find_message_date_reverse, find_message_gbt
 
     for elist in EmailList.objects.all():
@@ -339,8 +372,6 @@ def missing_files():
 def missing_from_index(start):
     """Scan messages, starting from updated = start (YYYY-MM-DDTHH:MM:SS),
     and report any that aren't in the search index"""
-    from dateutil.parser import parse
-    from haystack.query import SearchQuerySet
     start_date = parse(start)
     missing = 0
     messages = Message.objects.filter(updated__gte=start_date)
@@ -508,14 +539,25 @@ def unicode():
 
 def main():
     parser = argparse.ArgumentParser(description='Run an archive scan.')
+    parser.add_argument('-f','--fix',help="perform fix",action='store_true')
     parser.add_argument('function')
-    parser.add_argument('extras', nargs='*')
+    parser.add_argument('extras', nargs=argparse.REMAINDER)
     args = vars(parser.parse_args())
+    print args
     if args['function'] in globals():
         func = globals()[args['function']]
-        func(*args['extras'])
+        kwargs = _get_kwargs(args)
+        func(*args['extras'],**kwargs)
     else:
         raise argparse.ArgumentTypeError('no scan function: %s' % args['function'])
+
+def _get_kwargs(args):
+    """Get keyword arguments to pass to function"""
+    kwargs = args.copy()
+    kwargs.pop('function')
+    if 'extras' in kwargs:
+        kwargs.pop('extras')
+    return kwargs
 
 if __name__ == "__main__":
     main()

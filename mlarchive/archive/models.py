@@ -330,7 +330,7 @@ class Message(models.Model):
             date__lt=self.thread.date,
             first__email_list=self.email_list).order_by('date').last()
         if previous_thread:
-            return previous_thread.message_set.order_by('thread_order').last()
+            return previous_thread.message_set.order_by('thread_order').first()
         else:
             return None
 
@@ -474,7 +474,7 @@ def _message_remove(sender, instance, **kwargs):
 def _message_save(sender, instance, **kwargs):
     """When messages are saved, udpate thread info
     """
-    if instance.date < instance.thread.date:
+    if not instance.thread.first or instance.date < instance.thread.date:
         instance.thread.set_first(instance)
 
 

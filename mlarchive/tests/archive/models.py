@@ -135,7 +135,7 @@ def test_message_previous_in_list(client):
     assert message2.previous_in_list() == message1
 
 @pytest.mark.django_db(transaction=True)
-def test_message_previous_in_thread(client):
+def test_message_previous_in_thread_same_thread(client):
     '''Test that message.next_in_thread returns the next message in the
     thread'''
     elist = EmailListFactory.create()
@@ -152,6 +152,32 @@ def test_message_previous_in_thread(client):
         date=datetime.datetime(2016, 1, 2))
     assert Message.objects.count() == 2
     assert message2.previous_in_thread() == message1
+
+@pytest.mark.django_db(transaction=True)
+def test_message_previous_in_thread_different_thread(client):
+    '''Test that message.next_in_thread returns the next message in the
+    thread'''
+    elist = EmailListFactory.create()
+    thread1 = ThreadFactory.create(date=datetime.datetime(2016, 1, 1))
+    thread2 = ThreadFactory.create(date=datetime.datetime(2016, 1, 10))
+    message1 = MessageFactory.create(
+        email_list=elist,
+        thread=thread1,
+        thread_order=1,
+        date=datetime.datetime(2016, 1, 1))
+    message2 = MessageFactory.create(
+        email_list=elist,
+        thread=thread1,
+        thread_order=2,
+        date=datetime.datetime(2016, 1, 2))
+    message3 = MessageFactory.create(
+        email_list=elist,
+        thread=thread2,
+        thread_order=1,
+        date=datetime.datetime(2016, 1, 10))
+    assert Message.objects.count() == 3
+    assert thread1.first == message1
+    assert message3.previous_in_thread() == message1
 
 @pytest.mark.django_db(transaction=True)
 def test_notify_new_list(client, tmpdir, settings):

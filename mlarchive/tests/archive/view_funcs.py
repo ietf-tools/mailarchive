@@ -52,15 +52,24 @@ def test_find_message_gbt(messages):
     assert find_message_gbt(sqs,sqs[0].object,reverse=True) == 0        # first
     assert find_message_gbt(sqs,sqs[1].object,reverse=True) == 1        # second
     assert find_message_gbt(sqs,sqs[last].object,reverse=True) == last  # last
+    
     # queryset of one
     sqs = SearchQuerySet().filter(msgid=sqs[0].msgid)
     sqs = group_by_thread(sqs,None,None,reverse=True)
     assert find_message_gbt(sqs,sqs[0].object,reverse=True) == 0
+    
     # empty queryset
     msg = sqs[0].object
     sqs = SearchQuerySet().filter(msgid='bogus')
     sqs = group_by_thread(sqs,None,None,reverse=True)
     assert find_message_gbt(sqs,msg,reverse=True) == -1
+    
+    # queryset contains only one thread, msg before midpoint but has date > midpoint
+    # as can happen with hierarchical display
+    sqs = SearchQuerySet().filter(subject='New Topic')
+    sqs = group_by_thread(sqs,None,None,reverse=True)
+    msg = sqs[1].object
+    assert find_message_gbt(sqs,msg,reverse=True) == 1
     
 def test_initialize_formsets():
     query = 'text:(value) -text:(negvalue)'

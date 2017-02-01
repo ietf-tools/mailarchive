@@ -42,9 +42,40 @@ def load_db():
         MessageFactory.create(email_list=pubthree, date=date - datetime.timedelta(days=n))
 
     # add thread view messages
+    # NOTE: thread_order 1 has later date
     acme = EmailListFactory.create(name='acme')
-
-
+    cthread = ThreadFactory.create(date=datetime.datetime(2017, 1, 1))
+    MessageFactory.create(email_list=acme,
+                          thread=cthread,
+                          subject='New Topic',
+                          thread_order=0,
+                          date=datetime.datetime(2017, 1, 1))
+    MessageFactory.create(email_list=acme,
+                          thread=cthread,
+                          subject='Re: New Topic',
+                          thread_order=5,
+                          date=datetime.datetime(2017, 1, 2))
+    MessageFactory.create(email_list=acme,
+                          thread=cthread,
+                          subject='Re: New Topic',
+                          thread_order=2,
+                          date=datetime.datetime(2017, 1, 3))
+    MessageFactory.create(email_list=acme,
+                          thread=cthread,
+                          subject='Re: New Topic',
+                          thread_order=3,
+                          date=datetime.datetime(2017, 1, 4))
+    MessageFactory.create(email_list=acme,
+                          thread=cthread,
+                          subject='Re: New Topic',
+                          thread_order=4,
+                          date=datetime.datetime(2017, 1, 5))
+    MessageFactory.create(email_list=acme,
+                          thread=cthread,
+                          subject='Re: New Topic',
+                          thread_order=1,
+                          date=datetime.datetime(2017, 1, 6))
+                          
 @pytest.fixture(scope="session")
 def index_resource():
     if not Message.objects.first():

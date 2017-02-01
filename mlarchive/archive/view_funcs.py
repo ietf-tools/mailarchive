@@ -94,9 +94,10 @@ def find_message_gbt(sqs,msg, reverse=False):
     reverse=True: threads ordered descending
     reverse=False: threads ordered ascending
     """
-
+    last_index = sqs.count() - 1
+    
     lo = 0
-    hi = sqs.count() - 1
+    hi = last_index
     if hi == -1:            # abort if queryset is empty
         return -1
     if hi == 0:             # simple check if queryset is length of 1
@@ -134,14 +135,14 @@ def find_message_gbt(sqs,msg, reverse=False):
 
     # try searching in the most likely direction
     starting_point = mid
-    while sqs[mid].object.thread.date == thread_date:
+    while 0 <= mid <= last_index and sqs[mid].object.thread.date == thread_date:
         if sqs[mid].object == msg:
             return mid
         mid = mid + step
 
     # didn't find. try the other direction
     mid = starting_point
-    while sqs[mid].object.thread.date == thread_date:
+    while 0 <= mid <= last_index and sqs[mid].object.thread.date == thread_date:
         if sqs[mid].object == msg:
             return mid
         mid = mid - step

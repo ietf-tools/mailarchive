@@ -79,33 +79,46 @@ def test_handle_text_html_secure(client,messages):
     assert output.lower().find('<style') == -1
 
 @pytest.mark.django_db(transaction=True)
-def test_handle_message_external_body_a(client,messages):
+def test_handle_message_external_body_type_a(client,messages):
     path = os.path.join(settings.BASE_DIR,'tests','data','mail_external_body.1')
     with open(path) as f:
         msg = email.message_from_file(f)
     # we're passing some message to Generator but using the email from tests/data
-    g = Generator(Message.objects.first())
-    g.text_only = False
+    generator = Generator(Message.objects.first())
+    generator.text_only = False
     for part in msg.walk():
         if part.get_content_type() == 'message/external-body':
             break
-    output = g._handle_message_external_body(part)
+    output = generator._handle_message_external_body(part)
     q = PyQuery(output)
     href = q('a').attr('href')
     assert href == 'ftp://ftp.ietf.org/internet-drafts/draft-ietf-ancp-framework-06.txt'
 
 @pytest.mark.django_db(transaction=True)
-def test_handle_message_external_body_b(client,messages):
+def test_handle_message_external_body_type_a_invalid(client,messages):
+    path = os.path.join(settings.BASE_DIR,'tests','data','mail_external_body_invalid.1')
+    with open(path) as f:
+        msg = email.message_from_file(f)
+    # we're passing some message to Generator but using the email from tests/data
+    generator = Generator(Message.objects.first())
+    generator.text_only = False
+    for part in msg.walk():
+        if part.get_content_type() == 'message/external-body':
+            break
+    assert generator._handle_message_external_body(part) == None
+
+@pytest.mark.django_db(transaction=True)
+def test_handle_message_external_body_type_b(client,messages):
     path = os.path.join(settings.BASE_DIR,'tests','data','mail_external_body.2')
     with open(path) as f:
         msg = email.message_from_file(f)
     # we're passing some message to Generator but using the email from tests/data
-    g = Generator(Message.objects.first())
-    g.text_only = False
+    generator = Generator(Message.objects.first())
+    generator.text_only = False
     for part in msg.walk():
         if part.get_content_type() == 'message/external-body':
             break
-    output = g._handle_message_external_body(part)
+    output = generator._handle_message_external_body(part)
     assert output.find('[InternetShortcut]') != -1
 
 def test_generator_clean_headers():

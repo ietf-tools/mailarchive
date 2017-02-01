@@ -158,16 +158,16 @@ class Generator:
         # handle A format
         if part.get_param('access-type') == 'anon-ftp':
             rawsite = part.get_param('site')
-            site = collapse_rfc2231_value(rawsite)
             rawdir = part.get_param('directory')
             rawname = part.get_param('name')
-            if rawdir and rawname:
-                directory = collapse_rfc2231_value(rawdir)
-                name = collapse_rfc2231_value(rawname)
-                link = 'ftp://%s/%s/%s' % (site,directory,name)
-                html = '<div><a rel="nofollow" href="%s">&lt;%s&gt;</a></div>' % (link,link)
-                return html
-
+            if None in (rawsite,rawdir,rawname):
+                return None
+            site = collapse_rfc2231_value(rawsite)
+            directory = collapse_rfc2231_value(rawdir)
+            name = collapse_rfc2231_value(rawname)
+            link = 'ftp://%s/%s/%s' % (site,directory,name)
+            html = '<div><a rel="nofollow" href="%s">&lt;%s&gt;</a></div>' % (link,link)
+            return html
         return None
 
     def _handle_message_rfc822(self,entity):

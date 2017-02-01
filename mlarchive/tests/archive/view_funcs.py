@@ -46,7 +46,7 @@ def test_find_message_date_reverse(messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_find_message_gbt(messages):
-    sqs = SearchQuerySet()
+    sqs = SearchQuerySet().filter(subject='New Topic')
     sqs = group_by_thread(sqs,None,None,reverse=True)
     last = sqs.count() - 1
     assert find_message_gbt(sqs,sqs[0].object,reverse=True) == 0        # first

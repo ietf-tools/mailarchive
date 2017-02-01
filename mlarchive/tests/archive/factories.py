@@ -22,7 +22,7 @@ class ThreadFactory(factory.DjangoModelFactory):
     class Meta:
         model = Thread
 
-    date = datetime.datetime.now()
+    date = datetime.datetime.now().replace(second=0, microsecond=0)
 
 
 class MessageFactory(factory.DjangoModelFactory):

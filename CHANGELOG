@@ -1,7 +1,19 @@
 
 mailarch (1.6.1) ietf; urgency=normal
 
- * RFC7842 Sections:
+ * Resolve issue with archive 0007_populate_in_reply_to migration
+
+ * Fixes #2157.  Error when missing parameters from message_external_body
+
+ * Fixes #2181.  From the first message in a thread, Previous 
+   in thread link should return first message of previous thread.
+
+ * Fixes #2156.  Index out of range in find_message_gbt()
+
+ * Fixes #2182.  Add new scan_all function, check_thread_order,
+   to detect and fix discrepancies between DB and Xapian index thread_order.
+
+ * Added virtualenv support
 
 -- Ryan Cross <rcross@amsl.com>  02 Feb 2017 10:00:00 +0800
 

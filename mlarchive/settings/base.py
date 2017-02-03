@@ -3,7 +3,9 @@
 import django.conf.global_settings as DEFAULT_SETTINGS
 import os
 import json
+
 from django.core.exceptions import ImproperlyConfigured
+from mlarchive import __version__
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -128,9 +130,8 @@ INSTALLED_APPS = (
     'widget_tweaks',
 )
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/")
-# STATIC_DOC_ROOT = BASE_DIR + '../static'
+STATIC_URL = '/static/%s/' % __version__
+STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/%s/" % __version__)
 
 # Additional locations of static files (in addition to each app's static/ dir)
 STATICFILES_DIRS = (

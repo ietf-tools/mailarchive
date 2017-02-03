@@ -1,13 +1,8 @@
 #!/usr/bin/python
 
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.staging'
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='staging')
 # -------------------------------------------------------------------------------------
 
 from django.conf import settings

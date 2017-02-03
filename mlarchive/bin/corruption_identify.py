@@ -5,23 +5,15 @@ Some can be fixed using command line option, --fix, and some are marked via the
 spam_score field.  See the handle_typeN functions below for details.
 '''
 
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
-
-import django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production'
-django.setup()
-
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='production')
 # -------------------------------------------------------------------------------------
 
 import argparse
 import logging
 import operator
+import os
 import re
 import shutil
 from collections import deque

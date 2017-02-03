@@ -4,28 +4,24 @@ Script to scan through a maildir directory find messages with unsupported date
 header, see regex, and replace with proper format.  Original date header is saved
 as X-Date, and original file is saved in a backup directory.
 """
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production'
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='production')
 # -------------------------------------------------------------------------------------
 
 from django.conf import settings
 from mlarchive.archive.management.commands import _classes
-#from mlarchive.bin.scan_utils import get_messages
 
 import argparse
 import email
 import datetime
 import logging
+import os
 import pytz
 import re
 import shutil
 import subprocess
+import sys
 from StringIO import StringIO
 from dateutil.parser import parse
 
@@ -43,8 +39,7 @@ BACKUP_DIR = '/a/mailarch/data/backup/'
 def ensure_dir(path):
     if not os.path.exists(path):
         os.makedirs(path)
-        #os.chmod(path,02777)
-
+        
 def convert_date(msg):
     '''Convert unsupported date string to standard email date string'''
     mw = _classes.MessageWrapper(msg,'mylist')

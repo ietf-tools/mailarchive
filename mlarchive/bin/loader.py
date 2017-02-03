@@ -4,18 +4,9 @@ This is a utility script that handles loading multiple list archives.
 
 Note all archives will be loaded as public
 '''
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
-import django
-if 'DJANGO_SETTINGS_MODULE' not in os.environ:
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.noindex'
-django.setup()
-
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='noindex')
 # -------------------------------------------------------------------------------------
 
 from django.core.management import call_command

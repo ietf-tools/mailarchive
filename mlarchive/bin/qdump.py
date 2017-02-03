@@ -3,21 +3,14 @@
 Quick dump of subject lines, listid_true.txt and listid_false.txt
 '''
 
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
-
-import django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production'
-django.setup()
-
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='production')
 # -------------------------------------------------------------------------------------
+
 import argparse
 import email
+import os
 
 from celery_haystack.utils import get_update_task
 from django.conf import settings

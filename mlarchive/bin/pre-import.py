@@ -6,14 +6,9 @@ to filter out messages that aren't in the web archives, as a way to leverage all
 work that was done purging spam from the web archives.  The Leagcy table will also be used
 for redirecting requests to the old archive to the new one.
 '''
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production'
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='production')
 # -------------------------------------------------------------------------------------
 
 from mlarchive.archive.models import *
@@ -21,6 +16,7 @@ from email.utils import parseaddr
 import HTMLParser
 import glob
 import mailbox
+import os
 import re
 import warnings
 

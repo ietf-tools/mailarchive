@@ -4,20 +4,15 @@ This script checks all active private lists memberships, if membership has chang
 last time it was run, the list membership db table is updated.  This script can be run
 periodically by cron.
 '''
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
 import os
 import sys
 sys.path.insert(0, '/a/www/ietf-datatracker/web')
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
 
-import django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production_datatracker'
-django.setup()
-
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='production_datatracker')
 # -------------------------------------------------------------------------------------
+
 from django.conf import settings
 from django.db.models.signals import post_save
 from django.contrib.auth.models import User

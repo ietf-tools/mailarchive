@@ -4,18 +4,9 @@ This script scans the MHonArc web archive, and creates a record in Legacy for ea
 Based on pre-import.py, with changes for partial runs.  The Leagcy table will also be used
 for redirecting requests to the old archive to the new one.
 '''
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
-
-import django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.development'
-django.setup()
-
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='production')
 # -------------------------------------------------------------------------------------
 
 from mlarchive.archive.models import *
@@ -24,6 +15,7 @@ import argparse
 import HTMLParser
 import glob
 import mailbox
+import os
 import re
 import warnings
 

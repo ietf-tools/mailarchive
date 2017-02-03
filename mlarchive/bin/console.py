@@ -3,18 +3,9 @@
 Script to gather some archive statistics and save them in a file for use on the console page.
 '''
 
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
-
-import django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production'
-django.setup()
-
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='production')
 # -------------------------------------------------------------------------------------
 
 import datetime

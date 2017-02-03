@@ -4,20 +4,13 @@ This script will search for index records that have no corresponding db object.
 For best performance set HAYSTACK_ITERATOR_LOAD_PRE_QUERY = 10000
 '''
 
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
-
-import django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.standalone'
-django.setup()
-
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='production')
 # -------------------------------------------------------------------------------------
+
 import argparse
+import os
 from celery_haystack.utils import get_update_task
 from django.conf import settings
 from haystack.query import SearchQuerySet

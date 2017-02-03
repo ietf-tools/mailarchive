@@ -3,25 +3,18 @@
 Script to scan through a maildir directory (or entire archive) find messages with
 no Date header, and add one.
 """
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
-
-import django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.development'
-django.setup()
-
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='production')
 # -------------------------------------------------------------------------------------
 
 import argparse
 import email
 import logging
 import operator
+import os
 import shutil
+import sys
 import time
 
 from django.conf import settings

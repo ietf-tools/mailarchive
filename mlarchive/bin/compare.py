@@ -3,27 +3,15 @@
 Compare legacy archive with new archive and report descrepencies
 '''
 
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
-
-virtualenv_activation = os.path.join(path, "bin", "activate_this.py")
-if os.path.exists(virtualenv_activation):
-    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
-
-import django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production'
-django.setup()
-
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='production')
 # -------------------------------------------------------------------------------------
 
 import argparse
 import datetime
 import mailbox
+import os
 
 from dateutil.parser import *
 from mlarchive.bin.scan_utils import all_mboxs

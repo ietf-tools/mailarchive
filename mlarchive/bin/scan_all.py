@@ -10,38 +10,17 @@ usage:
 scan_all.py [func name] [optional arguments]
 
 """
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-print path
-
-# Virtualenv support
-virtualenv_activation = os.path.join(path, "bin", "activate_this.py")
-if os.path.exists(virtualenv_activation):
-    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
-    
-if not path in sys.path:
-    sys.path.insert(0, path)
-
-if not os.environ.get('DJANGO_SETTINGS_MODULE'):
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.development'
-print "DJANGO_SETTINGS_MODULE={}".format(os.environ['DJANGO_SETTINGS_MODULE'])
-
-virtualenv_activation = os.path.join(path, "env", "bin", "activate_this.py")
-if os.path.exists(virtualenv_activation):
-    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
-
-import django
-django.setup()
-
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='production')
 # -------------------------------------------------------------------------------------
+
 import argparse
 import datetime
 import email
 import glob
 import mailbox
+import os
 import re
 import sys
 import time
@@ -56,6 +35,7 @@ from tzparse import tzparse
 from pprint import pprint
 from pytz import timezone
 
+print "DJANGO_SETTINGS_MODULE={}".format(os.environ['DJANGO_SETTINGS_MODULE'])
 
 date_pattern = re.compile(r'(Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+')
 dupetz_pattern = re.compile(r'[\-\+]\d{4} \([A-Z]+\)$')

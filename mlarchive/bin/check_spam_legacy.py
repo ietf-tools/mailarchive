@@ -2,26 +2,22 @@
 """
 Script to scan through archive of mbox files and produce a spam report.
 """
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production'
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='production')
 # -------------------------------------------------------------------------------------
-
-from django.conf import settings
-#from mlarchive.archive.management.commands import _classes
-from mlarchive.bin.scan_utils import get_messages
 
 import argparse
 import email
 import logging
+import os
 import shutil
 import subprocess
+import sys
 from StringIO import StringIO
+
+from django.conf import settings
+from mlarchive.bin.scan_utils import get_messages
 
 progname = sys.argv[0]
 
@@ -39,7 +35,6 @@ def main():
     parser = argparse.ArgumentParser(description='Scan archive for spam.')
     parser.add_argument('path')
     parser.add_argument('-v','--verbose', help='verbose output',action='store_true')
-    #parser.add_argument('-c','--check',help="check only, dont't import",action='store_true')
     args = parser.parse_args()
 
     if not os.path.isdir(args.path):

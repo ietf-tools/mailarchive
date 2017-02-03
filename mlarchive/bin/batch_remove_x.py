@@ -12,21 +12,13 @@ be run in production when queue is in normal operation.
 References:
 https://trac.xapian.org/wiki/FAQ/UniqueIds
 '''
-
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
-
-import django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.noindex'
-django.setup()
-
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='noindex')
 # -------------------------------------------------------------------------------------
+
 import argparse
+import os
 import xapian
 
 from django.conf import settings

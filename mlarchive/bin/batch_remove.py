@@ -14,26 +14,18 @@ this is a long running script and so should be called from cron if necessary.
 References:
 https://trac.xapian.org/wiki/FAQ/UniqueIds
 '''
-
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
-
-import django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production'
-django.setup()
-
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='production')
 # -------------------------------------------------------------------------------------
+
 import argparse
 import base64
 import json
-import xapian
+import os
 import time
 import urllib2
+import xapian
 
 from django.conf import settings
 from celery_haystack.tasks import CeleryXapianBatchRemove

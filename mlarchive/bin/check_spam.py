@@ -4,22 +4,15 @@ This script will scan messages in the archive, identify spam and remove it (move
 to the _spam directory)
 '''
 
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
-
-import django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.noindex'
-django.setup()
-
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='production')
 # -------------------------------------------------------------------------------------
+
 import argparse
 import dateutil.parser
 import email
+import os
 
 from celery_haystack.utils import get_update_task
 from django.conf import settings

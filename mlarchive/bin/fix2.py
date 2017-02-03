@@ -5,14 +5,9 @@ Fix unindented Received lines.
 Based on a short survey we are assuming Received lines immediately follow
 envelope.  We use the "From:" header to signify done reading Received lines.
 '''
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-if not path in sys.path:
-    sys.path.insert(0, path)
-os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production'
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='production')
 # -------------------------------------------------------------------------------------
 
 from mlarchive.archive.models import *
@@ -28,7 +23,6 @@ def main():
     with open('/a/home/rcross/tmp/fix2.txt') as f:
         files = f.read().splitlines()
 
-    #files = ('/a/www/ietf-mail-archive/text/policy/1999-04.mail',)
     for file in files:
         with open(file) as f:
             count = 0

@@ -24,14 +24,13 @@ General Instructions for Deployment of a New Release
 
     Optionally set up a Python virtual environment::
 
-      virtualenv --system-site-packages .         # optional
-      source bin/activate                         # optional
+      virtualenv --system-site-packages .
+      source bin/activate               
 
  4. Install requirements (make sure your pip is reasonably fresh first).
     The following will install required python modules locally if you
     are using a virtualenv, or globally if you are not::
 
-      pip install -U setuptools
       pip install -I -r requirements.txt
 
  5. Change into the directory of the new release and run migrations::

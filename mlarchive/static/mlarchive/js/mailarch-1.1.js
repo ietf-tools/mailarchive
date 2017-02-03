@@ -11,6 +11,8 @@ var mailarch = {
 
     // VARAIBLES =============================================
     ajaxRequestSent: false,
+    bottomMargin: 17,
+    showPreview: true,
     lastItem: 0,
     urlParams: {},
     sortDefault: new Array(),
@@ -55,6 +57,8 @@ var mailarch = {
         mailarch.$searchForm = $('#id_search_form');
         mailarch.$sortButtons = $('a.sortbutton');
         mailarch.$splitterPane = $('#splitter-pane');
+        mailarch.$togglePreviewLink = $('#toggle-preview a');
+        mailarch.$togglePreviewIcon = $('#toggle-preview a i');
         mailarch.$viewPane = $('#view-pane');
         mailarch.$window = $(window);
     },
@@ -74,6 +78,7 @@ var mailarch = {
         mailarch.$msgTable.on('dblclick','.xtr', mailarch.gotoMessage);
         mailarch.$searchForm.on('submit', mailarch.submitSearch);
         mailarch.$sortButtons.on('click', mailarch.performSort);
+        mailarch.$togglePreviewLink.on('click', mailarch.togglePreview);
         mailarch.$window.resize(mailarch.handleResize);
         if(!mailarch.isSmallViewport()) {
             mailarch.$window.on('scroll', mailarch.infiniteScroll);
@@ -125,10 +130,22 @@ var mailarch = {
     
     doSearch: function() {
         // reload page after changing some query parameters
-        delete mailarch.urlParams.page
+        delete mailarch.urlParams.page;
         location.search = $.param(mailarch.urlParams);
     },
     
+    getListPaneHeight: function() {
+        return $(window).height() - mailarch.$listPane.offset().top - mailarch.bottomMargin;
+    },
+
+    getSplitterTop: function() {
+        var top = parseInt($.cookie("splitter"));
+        if(!top) {
+            top = mailarch.defaultListPaneHeight;  // optimize for 1024x768
+        }
+        return top;
+    },
+
     getURLParams: function() {
         var match;
         var pl = /\+/g;  // Regex for replacing addition symbol with a space
@@ -176,7 +193,7 @@ var mailarch = {
         } else {
             mailarch.setHeaderWidths();
             mailarch.$window.on('scroll', mailarch.infiniteScroll);
-            mailarch.setSplitter();
+            mailarch.setPaneHeights();
         }
     },
     
@@ -328,7 +345,7 @@ var mailarch = {
             }
         });
         
-        mailarch.setSplitter();
+        mailarch.setPaneHeights();
 
     },
     
@@ -503,15 +520,15 @@ var mailarch = {
         mailarch.lastItem = mailarch.$msgTable.find('.xtr').length + offset;
     },
     
-    setSplitter: function() {
-        // set page elements when splitter moves
-        var top = parseInt($.cookie("splitter"));
-        if(!top) {
-            top = mailarch.defaultListPaneHeight;  // optimize for 1024x768
+    setPaneHeights: function() {
+        if(mailarch.showPreview) {
+            var top = mailarch.getSplitterTop();
+            mailarch.$listPane.css("height",top);
+            mailarch.$viewPane.css("top",top + mailarch.splitterHeight);
+            mailarch.$splitterPane.css("top",top);
+        } else {
+            mailarch.$listPane.css("height",mailarch.getListPaneHeight());
         }
-        mailarch.$listPane.css("height",top);
-        mailarch.$viewPane.css("top",top + mailarch.splitterHeight);
-        mailarch.$splitterPane.css("top",top);
     },
     
     showFilterPopup: function(event) {
@@ -526,6 +543,26 @@ var mailarch = {
         mailarch.urlParams['q'] = mailarch.$q.val();
         delete mailarch.urlParams.index;
         mailarch.doSearch();
+    },
+    
+    togglePreview: function(event) {
+        // toggle arrow icon
+        mailarch.showPreview = !mailarch.showPreview;
+        mailarch.$togglePreviewIcon.toggleClass("fa-chevron-down", mailarch.showPreview);
+        mailarch.$togglePreviewIcon.toggleClass("fa-chevron-up", !mailarch.showPreview);
+
+        if(!mailarch.showPreview) {
+            var height = mailarch.getListPaneHeight();
+            mailarch.$viewPane.hide();
+            mailarch.$splitterPane.hide();
+            mailarch.$listPane.animate({height:height});
+        } else {
+            var height = mailarch.getSplitterTop();
+            mailarch.$listPane.animate({height:height},function() {
+                mailarch.$viewPane.show();
+                mailarch.$splitterPane.show();
+            });
+        }
     }
 }
 

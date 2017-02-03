@@ -613,7 +613,15 @@ table.msg-list-header-table th a.btn {
 }
 
 #message-count {
-    float: left;    
+    float: left;
+}
+
+#toggle-preview {
+    float: right;
+}
+
+#toggle-preview i {
+    color: lightgrey;
 }
 
 /* Responsive Styling
@@ -631,7 +639,7 @@ table.msg-list-header-table th a.btn {
 
 @media (max-width: 767px)
 {
-    #sidebar, #splitter-pane, #view-pane, #message-count {
+    #sidebar, #splitter-pane, #view-pane, #message-count, #toggle-preview {
         display: none;
     }
     

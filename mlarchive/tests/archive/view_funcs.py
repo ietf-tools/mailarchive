@@ -130,3 +130,20 @@ def test_get_export_url(messages):
     assert message.get_absolute_url() in response.content
     #print response.content
     #assert False
+
+@pytest.mark.django_db(transaction=True)
+def test_get_query_neighbors(messages):
+    # typical
+    sqs = SearchQuerySet().filter(subject='New Topic').order_by('date')
+    before, after = get_query_neighbors(sqs,sqs[3].object)
+    assert before == sqs[2].object
+    assert after == sqs[4].object
+    # first message
+    before, after = get_query_neighbors(sqs,sqs[0].object)
+    assert before == None
+    assert after == sqs[1].object
+    # one message in result set
+    sqs = SearchQuerySet().filter(msgid=sqs[0].msgid)
+    before, after = get_query_neighbors(sqs,sqs[0].object)
+    assert before == None
+    assert after == None

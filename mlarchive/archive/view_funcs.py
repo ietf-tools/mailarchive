@@ -338,20 +338,35 @@ def get_export_tar(sqs, type, request):
     return response
 
 
+def get_message_index(query,message):
+    """Returns the index of message in SearchQuerySetmessage, -1 if not found"""
+    for n,result in enumerate(query):
+        if result.object == message:
+            return n
+    return -1
+
+def get_message_before(query,index):
+    """Returns message of SearchQuerySet before index or None"""
+    try:
+        return query[index-1].object
+    except (IndexError, AssertionError):
+        return None
+
+def get_message_after(query,index):
+    """Returns next message of SearchQuerySet after index or None"""
+    try:
+        return query[index+1].object
+    except IndexError:
+        return None
+
 def get_query_neighbors(query,message):
     """Returns a tuple previous_message and next_message given a message
     from the query results"""
-    if message == query[0].object:
-        return None,query[1].object
-    previous = query[0]
-    for n,result in enumerate(query[1:],start=1):
-        if result.object == message:
-            try:
-                return previous.object,query[n+1].object
-            except IndexError:
-                return previous.object,None
-        previous = result
-
+    index = get_message_index(query,message)
+    if index == -1:
+        return None,None
+    else:
+        return get_message_before(query,index),get_message_after(query,index)
 
 def get_query_string(request):
     """Returns the query string from the request, including '?' """

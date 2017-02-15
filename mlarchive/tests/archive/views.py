@@ -3,7 +3,23 @@ from django.contrib.auth import SESSION_KEY
 from django.core.urlresolvers import reverse
 from factories import *
 from mlarchive.archive.models import *
+from mlarchive.archive.management.commands import _classes
 from pyquery import PyQuery
+
+# --------------------------------------------------
+# Helper Functions
+# --------------------------------------------------
+
+def load_message(filename,listname='public'):
+    """Loads a message given path"""
+    path = os.path.join(settings.BASE_DIR,'tests','data',filename)
+    with open(path) as f:
+        data = f.read()
+    _classes.archive_message(data,listname)
+
+# --------------------------------------------------
+# Tests
+# --------------------------------------------------
 
 @pytest.mark.django_db(transaction=True)
 def test_admin(client):
@@ -56,6 +72,20 @@ def test_detail(client):
     response = client.get(url)
     assert response.status_code == 200
 
+@pytest.mark.django_db(transaction=True)
+def test_detail_content_link(client):
+    listname = 'public'
+    load_message('mail_with_url.1',listname=listname)
+    msg = Message.objects.first()
+    url = reverse('archive_detail', kwargs={'list_name':listname,'id':msg.hashcode})
+    response = client.get(url)
+    assert response.status_code == 200
+    print response.content
+    print Message.objects.count()
+    print msg.date
+    q = PyQuery(response.content)
+    assert len(q('a[href="http://www.example.com"]')) == 1
+    
 @pytest.mark.django_db(transaction=True)
 def test_detail_admin_access(client):
     '''Test that admin user gets link to admin site,

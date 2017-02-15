@@ -542,6 +542,8 @@ def _get_kwargs(args):
     kwargs.pop('function')
     if 'extras' in kwargs:
         kwargs.pop('extras')
+    if args['fix'] == False:
+        kwargs.pop('fix')
     return kwargs
 
 if __name__ == "__main__":

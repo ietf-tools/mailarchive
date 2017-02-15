@@ -13,7 +13,7 @@
     </div>
     <div id="msg-payload">
       {% for part in parts %}
-          {{ part|safe }}
+          {{ part|safe|urlize }}
       {% endfor %}
     </div>
     <div>

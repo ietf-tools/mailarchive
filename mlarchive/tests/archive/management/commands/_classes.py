@@ -177,11 +177,26 @@ def test_parsedate_to_datetime():
     assert isinstance(result,datetime.datetime)
     # TODO: assert we have the correct timezone
 
+def test_subject_is_reply():
+    assert subject_is_reply('This is a test') == False
+    assert subject_is_reply('Re: This is a test') == True
+    assert subject_is_reply('RE: This is a test') == True
+    assert subject_is_reply('Re: [list] This is a test') == True
+    assert subject_is_reply('Fwd: This is a test')  == True
+    assert subject_is_reply('[Fwd: This is a test]') == True
+    assert subject_is_reply('This is a test (fwd)') == True
+    assert subject_is_reply('[list] Fwd: Re: This is a test') == True
+    assert subject_is_reply('[public] [Fwd: Re: [list] Fwd: This is a test]') == True
+
 #def test_save_failed_msg
 
 #def test_BetterMbox
 
 #def test_Loader()
+
+# --------------------------------------------------
+# MessageWrapper
+# --------------------------------------------------
 
 def test_MessageWrapper_get_addresses():
     data = [('ancp@ietf.org',                               # simple
@@ -238,6 +253,47 @@ This is the message.
     msg = email.message_from_string(data)
     mw = MessageWrapper(msg,'list1')
     assert mw.archive_message.thread == thread1
+
+@pytest.mark.django_db(transaction=True)
+def test_MessageWrapper_get_thread_subject():
+    '''Test subject based threading'''
+    elist = EmailListFactory.create(name='public')
+    thread = ThreadFactory.create()
+    message = MessageFactory.create(
+        email_list=elist,
+        msgid='001@example.com',
+        subject='[public] New Members',
+        base_subject='New Members',
+        thread=thread,
+        date=datetime.datetime(2016, 1, 1))
+    data = '''From: joe@example.com
+To: larry@example.com
+Subject: Re: [public] New Members
+Message-Id: <002@example.com>
+Date: Mon, 24 Feb 2016 08:04:41 -0800
+
+This is the message.
+'''
+    msg = email.message_from_string(data)
+    mw = MessageWrapper(msg,'public')
+    assert mw.archive_message.thread == thread
+
+@pytest.mark.django_db(transaction=True)
+def test_MessageWrapper_get_thread_from_header():
+    elist = EmailListFactory()
+    message = MessageFactory.create(email_list=elist)
+    data = '''From: joe@example.com
+To: larry@example.com
+Subject: Hello
+References: <{msgid}>
+Date: Mon, 24 Feb 2014 08:04:41 -0800
+
+This is the message.
+'''.format(msgid=message.msgid)
+    msg = email.message_from_string(data)
+    mw = MessageWrapper(msg,'public')
+    mw.process()
+    assert mw.get_thread_from_header(mw.references) == message.thread
 
 def test_MessageWrapper_get_to():
     data = '''From: joe@acme.com

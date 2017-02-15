@@ -172,6 +172,11 @@ def count(listname):
     print "Total: %d" % total
     pprint(years)
 
+def check_thread_first(**kwargs):
+    """Check for threads that don't have 'first' message"""
+    threads = Thread.objects.filter(first__isnull=True)
+    print "Threads without first message: {}".format(threads.count())
+
 def check_thread_order(start,fix=False):
     """Compare message.thread_order in DB with index.  If fix==True save
     the database object, causing the index to get updated to match DB.

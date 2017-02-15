@@ -309,7 +309,7 @@ def display_thread(parent):
         if container.message:
             print '{indent}{subject} {date}'.format(
                 indent=' ' * container.depth,
-                subject=container.message.subject,
+                subject=get_ascii(container.message.subject),
                 date=container.message.date.strftime("%Y-%m-%d %H:%M"))
         else:
             if container.parent is None:
@@ -426,6 +426,11 @@ def gather_subjects(root_node):
         prev = container
         container = rest
         rest = None if rest is None else rest.next
+
+
+def get_ascii(value):
+    '''Returns ascii of value'''
+    return value.encode('ascii',errors='replace')
 
 
 def get_in_reply_to(message):

@@ -86,7 +86,6 @@ def test_message_get_references(client):
     expected = ['000@example.com', '001@example.com', '002@example.com']
     assert msg.get_references() == expected
 
-
 @pytest.mark.django_db(transaction=True)
 def test_message_next_in_list(client):
     '''Test that message.next_in_list returns the next message in the

@@ -23,7 +23,7 @@ from mlarchive.archive.models import (Attachment, EmailList, Legacy, Message,
     Thread, get_in_reply_to_message)
 from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES, UNKNOWN_CONTENT_TYPE
 from mlarchive.archive.inspectors import *
-from mlarchive.archive.thread import compute_thread
+from mlarchive.archive.thread import compute_thread, parse_message_ids
 from mlarchive.utils.decorators import check_datetime
 from mlarchive.utils.encoding import decode_safely, decode_rfc2047_header
 
@@ -79,7 +79,6 @@ subj_refwd_pattern = r'([Rr][eE]|F[Ww][d]?)\s*' + subj_blob_pattern + r'?:\s'
 subj_leader_pattern = subj_blob_pattern + r'*' + subj_refwd_pattern
 subj_blob_regex = re.compile(r'^' + subj_blob_pattern)
 subj_leader_regex = re.compile(r'^' + subj_leader_pattern)
-
 
 # --------------------------------------------------
 # Custom Exceptions
@@ -378,6 +377,23 @@ def call_remote_backup(path):
             subprocess.check_call([backup_command,path])
         except (OSError,subprocess.CalledProcessError) as error:
             logger.error('Error calling remote backup command ({})'.format(error))
+
+def subject_is_reply(text):
+    """Returns True if the subject line indicates a reply (or forward) to a message"""
+    if subj_leader_regex.match(text):
+        return True
+    # remove blob(s)
+    m = subj_blob_regex.match(text)
+    if m:
+        temp = subj_blob_regex.sub('',text)
+        if temp:
+            text = temp
+    if text.startswith('[Fwd:'):
+        return True
+    if text.endswith('(fwd)'):
+        return True
+    
+    return False
 
 def write_file(path,data):
     """Function to write file to disk.
@@ -694,54 +710,37 @@ class MessageWrapper(object):
         return self.get_addresses(to)
 
     def get_thread(self):
-        """This is a simplified version of the Zawinski threading algorithm.
-        The process is:
-        1) If there are References, lookup the first message-id in the list and return
-           it's thread.  If the message isn't found try the next message-id, repeat.
-           According to RFC1036 the references list is ordered oldest first.  To start
-           searching from the nearest thread sibling reverse the list.
-        2) If 'In-Reply-To-' is set, look up that message and return it's thread id.
-        3) If the subject line has a "Re:" prefix look for the message matching
-           base-subject and return it's thread
-        4) If none of the above, return a new thread id
-
-        Messages must be loaded in chronological order for this to work properly.
+        """This is a simplified version of the Zawinski threading algorithm used to 
+        thread incoming messages.
 
         Referecnces:
         - http://www.jwz.org/doc/threading.html
         - http://tools.ietf.org/html/rfc5256
         """
-
-        # try References
-        if self.references:
-            msgids = re.findall(MSGID_PATTERN,self.references)
-            for msgid in msgids:
-                try:
-                    message = Message.objects.get(email_list=self.email_list,msgid=msgid)
-                    return message.thread
-                except (Message.DoesNotExist, Message.MultipleObjectsReturned):
-                    pass
-
-        # try In-Reply-to.  Use first msgid found, typically only one
-        if self.in_reply_to_value:
-            msgids = re.findall(MSGID_PATTERN,self.in_reply_to_value)
-            if msgids:
-                try:
-                    message = Message.objects.get(email_list=self.email_list,msgid=msgids[0])
-                    return message.thread
-                except (Message.DoesNotExist, Message.MultipleObjectsReturned):
-                    pass
+        for header in (self.references, self.in_reply_to_value):
+            thread = self.get_thread_from_header(header)
+            if thread:
+                return thread
 
         # check subject
-        if self.subject != self.base_subject:
+        if subject_is_reply(self.subject):
             messages = Message.objects.filter(email_list=self.email_list,
                                               date__lt=self.date,
-                                              subject=self.base_subject).order_by('-date')
+                                              base_subject=self.base_subject).order_by('-date')
             if messages:
                 return messages[0].thread
 
         # return a new thread
         return Thread.objects.create(date=self.date)
+
+    def get_thread_from_header(self, value):
+        """Returns the thread given text containing message ids"""
+        for msgid in parse_message_ids(value):
+            try:
+                message = Message.objects.get(email_list=self.email_list,msgid=msgid)
+                return message.thread
+            except (Message.DoesNotExist, Message.MultipleObjectsReturned):
+                pass
 
     def normalize(self, header_text):
         """This function takes some header_text as a string.

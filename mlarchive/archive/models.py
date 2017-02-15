@@ -264,7 +264,6 @@ class Message(models.Model):
                 messages.append(message)
         return messages
 
-
     def get_removed_dir(self):
         return self.email_list.removed_dir
 

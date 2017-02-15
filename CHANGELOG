@@ -1,4 +1,17 @@
 
+mailarch (1.6.2) ietf; urgency=normal
+
+ * Fixes #2189.  Fix issue with subject based threading.
+
+ * Fixes #2163.  Add version to static file path.
+
+ * Fixes #2190.  Add way to minimize message view pane
+
+ * Fixes #2195.  When only one message in search results,
+   clicking message detail link results in 500 error.
+
+-- Ryan Cross <rcross@amsl.com>  15 Feb 2017 10:00:00 +0800
+
 mailarch (1.6.1) ietf; urgency=normal
 
  * Resolve issue with archive 0007_populate_in_reply_to migration

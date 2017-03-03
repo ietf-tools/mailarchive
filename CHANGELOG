@@ -1,4 +1,13 @@
 
+mailarch (1.7.0) ietf; urgency=normal
+
+ * Changes to use realname in search results From column.
+   Also expanded xapian_backend error messages.
+
+ * Fixes #2143.  Present URLs in message body as links
+
+-- Ryan Cross <rcross@amsl.com>  03 Mar 2017 12:00:00 +0800
+
 mailarch (1.6.2) ietf; urgency=normal
 
  * Fixes #2189.  Fix issue with subject based threading.

@@ -2,7 +2,7 @@
     <tr>
         <td><a href="{{ result.object.get_absolute_url }}">{{ result.object.subject }}</a></td>
         {# <td class="nowrap">{{ result.object.subject|truncatechars:70 }}</td> #}
-        <td>{{ result.object.frm_email|truncatechars:35 }}</td>
+        <td>{{ result.object.frm_name|truncatechars:35 }}</td>
         <td class="date-col">{{ result.object.date|date:"Y-m-d" }}</td>
         <td class="list-col">{{ result.object.email_list }}</td>
         <td class="hidden">{{ result.score }}</td>

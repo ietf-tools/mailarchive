@@ -88,8 +88,8 @@ def test_sort_by_subject(messages):
 
 def test_transform():
     assert transform('invalid') == ''
-    assert transform('frm') == 'frm_email'
-    assert transform('-frm') == '-frm_email'
+    assert transform('frm') == 'frm_name'
+    assert transform('-frm') == '-frm_name'
 
 @pytest.mark.django_db(transaction=True)
 def test_asf_get_facets(client,messages):
@@ -103,7 +103,7 @@ def test_asf_get_facets(client,messages):
     sqs = SearchQuerySet()
     facets = form.get_facets(sqs)
     assert 'email_list' in facets['fields']
-    assert 'frm_email' in facets['fields']
+    assert 'frm_name' in facets['fields']
 
     # high-level test
     url = reverse('archive_search') + '?email_list=pubone'
@@ -112,20 +112,20 @@ def test_asf_get_facets(client,messages):
 
     # ensure expected fields exist
     assert 'email_list' in facets['fields']
-    assert 'frm_email' in facets['fields']
+    assert 'frm_name' in facets['fields']
 
     # ensure facet totals are equal
     email_list_total = sum([ c for x,c in facets['fields']['email_list'] ])
-    frm_email_total = sum([ c for x,c in facets['fields']['frm_email'] ])
-    assert email_list_total == frm_email_total
+    frm_name_total = sum([ c for x,c in facets['fields']['frm_name'] ])
+    assert email_list_total == frm_name_total
 
     # ensure facets interact
     url = reverse('archive_search') + '?email_list=pubone&email_list=pubtwo&f_list=pubone'
     response = client.get(url)
     facets = response.context['facets']
     selected_counts = dict(facets['fields']['email_list'])
-    frm_email_total = sum([ c for x,c in facets['fields']['frm_email'] ])
-    assert selected_counts['pubone'] == frm_email_total
+    frm_name_total = sum([ c for x,c in facets['fields']['frm_name'] ])
+    assert selected_counts['pubone'] == frm_name_total
 
     # test that facets are sorted
 

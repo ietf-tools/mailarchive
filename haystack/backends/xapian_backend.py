@@ -274,8 +274,8 @@ class XapianSearchBackend(BaseSearchBackend):
                 # AMS custom: silently capture xapian.InvalidArgumentError, when garbage is > 245 chars
                 try:
                     database.replace_document(document_id, document)
-                except xapian.InvalidArgumentError:
-                    sys.stderr.write('Replace failed.\n')
+                except xapian.InvalidArgumentError as e:
+                    sys.stderr.write('Replace failed ({}) {}.\n'.format(document_id,e))
                     pass
 
         except UnicodeDecodeError:

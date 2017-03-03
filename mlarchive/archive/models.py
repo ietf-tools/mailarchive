@@ -160,26 +160,22 @@ class Message(models.Model):
         return body
 
     @property
-    def friendly_frm(self):
-        pass
-
-    @property
     def frm_email(self):
         """This property is the email portion of the "From" header all lowercase
-        (the realname is stripped).  It is used in faceting search results as
-        well as display.
+        (the realname is stripped).
         """
         return parseaddr(self.frm)[1].lower()
 
     @property
-    def frm_realname(self):
-        """This property is the realname portion of the "From" header.
+    def frm_name(self):
+        """This property is the realname portion of the "From" header if it exists.
+        Otherwise returns the local-part of the email address
         """
-        realname = parseaddr(self.frm)[0]
+        realname, email = parseaddr(self.frm)
         if realname:
             return realname
         else:
-            return self.frm_email
+            return email.split('@')[0]
 
     def get_absolute_url(self):
         # strip padding, "=", to shorten URL

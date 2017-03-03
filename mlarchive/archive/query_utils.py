@@ -43,10 +43,7 @@ def get_kwargs(data):
     if data.get('email_list'):
         kwargs['email_list__in'] = data['email_list']
     if data.get('frm'):
-        if '@' in data['frm']:
-            kwargs['frm_email'] = data['frm']
-        else:
-            kwargs['frm__icontains'] = data['frm']
+        kwargs['frm__icontains'] = data['frm']
     if data.get('qdr') and data['qdr'] not in ('a','c'):
         kwargs['date__gte'] = get_qdr_time(data['qdr'])
     if data.get('subject'):

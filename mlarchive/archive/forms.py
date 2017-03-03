@@ -174,7 +174,7 @@ def transform(val):
     if val not in VALID_SORT_OPTIONS:
         return ''
     if val in ('frm','-frm'):
-        val = val + '_email'    # use just email portion of from
+        val = val + '_name'    # use just email portion of from
     return val
 
 # --------------------------------------------------------
@@ -300,7 +300,7 @@ class AdvancedSearchForm(FacetedSearchForm):
 
         if 0 < count < settings.FILTER_CUTOFF:
             clone = sqs._clone()
-            sqs = clone.facet('email_list').facet('frm_email')
+            sqs = clone.facet('email_list').facet('frm_name')
 
             # if query contains no filters compute simple facet counts
             filters = self.get_filter_params(self.request.GET)
@@ -311,14 +311,14 @@ class AdvancedSearchForm(FacetedSearchForm):
             elif filters == ['f_list']:
                 base = sqs.facet_counts()
                 filtered = sqs.filter(email_list__in=self.f_list).facet_counts()
-                # swap out frm_email counts
-                base['fields']['frm_email'] = filtered['fields']['frm_email']
+                # swap out frm_name counts
+                base['fields']['frm_name'] = filtered['fields']['frm_name']
                 facets = base
 
             # if f_from run base and filtered
             elif filters == ['f_from']:
                 base = sqs.facet_counts()
-                filtered = sqs.filter(frm_email__in=self.f_from).facet_counts()
+                filtered = sqs.filter(frm_name__in=self.f_from).facet_counts()
                 # swap out email_list counts
                 base['fields']['email_list'] = filtered['fields']['email_list']
                 facets = base
@@ -326,11 +326,11 @@ class AdvancedSearchForm(FacetedSearchForm):
             # if both f_list and f_from run each filter independently
             else:
                 copy = sqs._clone()
-                frm_count = sqs.filter(frm_email__in=self.f_from).facet_counts()
+                frm_count = sqs.filter(frm_name__in=self.f_from).facet_counts()
                 list_count = copy.filter(email_list__in=self.f_list).facet_counts()
                 facets = {'fields': {},'dates': {},'queries': {}}
                 facets['fields']['email_list'] = frm_count['fields']['email_list']
-                facets['fields']['frm_email'] = list_count['fields']['frm_email']
+                facets['fields']['frm_name'] = list_count['fields']['frm_name']
 
             # map email_list id to name for use in template
             if facets['fields']['email_list']:
@@ -427,7 +427,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         if self.f_list:
             sqs = sqs.filter(email_list__in=self.f_list)
         if self.f_from:
-            sqs = sqs.filter(frm_email__in=self.f_from)
+            sqs = sqs.filter(frm_name__in=self.f_from)
 
         # Populate all all SearchResult.object with efficient db query
         # when called via urls.py / search_view_factory default load_all=True

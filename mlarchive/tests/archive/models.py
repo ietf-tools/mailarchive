@@ -6,11 +6,22 @@ from mlarchive.archive.models import Message, EmailList
 
 
 @pytest.mark.django_db(transaction=True)
+def test_message_frm_name(client):
+    elist = EmailListFactory.create()
+    msg = MessageFactory.create(email_list=elist,frm='John Smith <jsmith@example.com')
+    assert msg.frm_name == 'John Smith'
+
+@pytest.mark.django_db(transaction=True)
+def test_message_frm_name_no_realname(client):
+    elist = EmailListFactory.create()
+    msg = MessageFactory.create(email_list=elist,frm='jsmith@example.com')
+    assert msg.frm_name == 'jsmith'
+
+@pytest.mark.django_db(transaction=True)
 def test_message_get_admin_url(client):
     elist = EmailListFactory.create()
     msg = MessageFactory.create(email_list=elist)
     assert msg.get_admin_url() == '/admin/archive/message/{}/'.format(msg.pk)
-
 
 @pytest.mark.django_db(transaction=True)
 def test_message_get_from_line(client):
@@ -25,7 +36,6 @@ def test_message_get_from_line(client):
     msg.from_line = u'studypsychologyonline\xe2\xa0@rethod.xyz'
     msg.save()
     assert msg.get_from_line()
-
 
 @pytest.mark.django_db(transaction=True)
 def test_message_get_references(client):

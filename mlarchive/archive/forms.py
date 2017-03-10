@@ -206,7 +206,7 @@ def yyyymmdd_to_strftime_format(fmt):
     return res
 
 
-class DatepickerDateField(forms.DateField):
+class DatepickerDateField(forms.DateTimeField):
     """DateField with some glue for triggering JS Bootstrap datepicker."""
 
     def __init__(self, date_format, picker_settings={}, *args, **kwargs):

@@ -480,14 +480,30 @@ def subjects(listname):
     for msg in process([listname]):
         print "%s: %s" % (msg.get('date'),msg.get('subject'))
 
-def subject_terms():
+def subject_non_english():
+    """Scans for subject lines containing non latin1 characters"""
+    count = 0
+    for email_list in EmailList.objects.order_by('name'):
+        messages = Message.objects.filter(email_list=email_list)
+        print "{} ({})".format(email_list.name, messages.count())
+        for msg in messages:
+            try:
+                subject = msg.subject.encode('latin1')
+            except UnicodeEncodeError:
+                count += 1
+                print "Non latin1 subject {} {} {}".format(msg.pk, msg.msgid,msg.subject)
+    print "Total: {}".format(count)
+
+def subject_term_length():
     """Scans for subject terms over Xapian term limit"""
     count = 0
     for email_list in EmailList.objects.order_by('name'):
         messages = Message.objects.filter(email_list=email_list)
         print "{} ({})".format(email_list.name, messages.count())
         for msg in messages:
-            for word in msg.subject.split():
+            # xapian encodes to utf8
+            subject = msg.subject.encode('utf8')
+            for word in subject.split():
                 if len(word) > MAX_TERM_LENGTH:
                     count += 1
                     print "Term too long {} {}".format(msg.pk, msg.msgid)

@@ -1,6 +1,8 @@
 
 mailarch (1.7.0) ietf; urgency=normal
 
+ * Upgrade to Django 1.8, Xapian 1.4.3, Haystack 2.6.0
+
  * Changes to use realname in search results From column.
    Also expanded xapian_backend error messages.
 

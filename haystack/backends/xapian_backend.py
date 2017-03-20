@@ -338,8 +338,9 @@ class XapianSearchBackend(BaseSearchBackend):
                 """
                 termpos = _add_text(termpos, text, weight, prefix=prefix)
                 termpos = _add_text(termpos, text, weight, prefix='')
-                termpos = _add_literal_text(termpos, text, weight, prefix=prefix)
-                termpos = _add_literal_text(termpos, text, weight, prefix='')
+                # AMS custom: _add_literal_text results in many MAX TERM LIMIT errors 
+                # termpos = _add_literal_text(termpos, text, weight, prefix=prefix)
+                # termpos = _add_literal_text(termpos, text, weight, prefix='')
                 return termpos
 
             def _get_ngram_lengths(value):
@@ -490,11 +491,15 @@ class XapianSearchBackend(BaseSearchBackend):
                 try:
                     database.replace_document(document_id, document)
                 except xapian.InvalidArgumentError as e:
-                    sys.stderr.write('Replace failed ({}) {}.\n'.format(document_id,e))
+                    import traceback
+                    sys.stderr.write('Replace failed ({}).\n'.format(document_id))
+                    traceback.print_exc(file=sys.stdout)
                     pass
 
-        except UnicodeDecodeError:
-            sys.stderr.write('Chunk failed {} {}.\n'.format(obj.pk,field))
+        except UnicodeDecodeError as e:
+            import traceback
+            sys.stderr.write('Chunk failed {} {} {}.\n'.format(obj.pk,e,field))
+            traceback.print_exc(file=sys.stdout)
             # pass
 
         finally:

@@ -2,7 +2,6 @@ import datetime
 import re
 import shutil
 import time
-from optparse import make_option
 
 from django.core.management.base import BaseCommand, CommandError
 
@@ -55,34 +54,30 @@ def isfile(path):
 # --------------------------------------------------
 
 class Command(BaseCommand):
-    args = 'SOURCE'
     help = 'Imports message(s) into the archive'
 
-    option_list = BaseCommand.option_list + (
-        make_option('-b', '--break', action='store_true', dest='break', default=False,
-            help='break on error'),
-        make_option('-d', '--dry-run', action='store_true', dest='dryrun', default=False,
+    def add_arguments(self, parser):
+        parser.add_argument('source')
+        parser.add_argument('-b', '--break',action='store_true', dest='break', default=False,
+            help='break on error')
+        parser.add_argument('-d', '--dry-run', action='store_true', dest='dryrun', default=False,
             help='perform a trial run with no messages saved to db or disk'),
-        make_option('-f', '--format', dest='format',
+        parser.add_argument('-f', '--format', dest='format',
             help='mailbox format.  accepted values: mbox,mmdf (default is mbox)'),
-        make_option('-l', '--listname', dest='listname',
+        parser.add_argument('-l', '--listname', dest='listname',
             help='specify the name of the email list'),
-        make_option('-p', '--private', action='store_true', dest='private', default=False,
+        parser.add_argument('-p', '--private', action='store_true', dest='private', default=False,
             help='private list (default is public)'),
-        make_option('-s', '--summary', action='store_true', dest='summary', default=False,
+        parser.add_argument('-s', '--summary', action='store_true', dest='summary', default=False,
             help="summarize statistics, for use with aggregator"),
-        make_option('-t', '--test', action='store_true', dest='test', default=False,
+        parser.add_argument('-t', '--test', action='store_true', dest='test', default=False,
             help="test mode.  write database but don't store message files"),
-        make_option('--firstrun', action='store_true', dest='firstrun', default=False,
+        parser.add_argument('--firstrun', action='store_true', dest='firstrun', default=False,
             help='only use this on the initial import of the archive'),
-        )
 
     def handle(self, *args, **options):
         stats = {}
-        # validate options
-        if len(args) == 0:
-            raise CommandError('source file or directory required')
-        source = args[0]
+        source = options['source']
         if options.get('firstrun') and Legacy.objects.all().count() == 0:
             raise CommandError('firstrun specified but the legacy archive table is empty')
 

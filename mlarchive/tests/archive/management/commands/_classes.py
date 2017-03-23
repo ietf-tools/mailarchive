@@ -4,6 +4,7 @@ import glob
 import mailbox
 import pytest
 import pytz
+import shutil
 
 
 from django.conf import settings
@@ -53,8 +54,8 @@ This is a test email.  With no headers
 '''
     # remove any existing failed messages
     publist = EmailListFactory.create(name='public')
-    if os.path.exists(publist.failed_dir):              # ensure failed directory empty
-        assert not os.listdir(publist.failed_dir)
+    shutil.rmtree(publist.failed_dir,ignore_errors=True)
+
     status = archive_message(data,'public',private=False)
     assert status == 1
     assert Message.objects.all().count() == 0

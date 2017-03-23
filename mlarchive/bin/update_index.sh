@@ -11,6 +11,7 @@
 if [[ ! -n $(find /a/mailarch/data/archive_index -mtime -2) ]]
 then
   cd /a/mailarch/current/
+  source bin/activate
   export PYTHONPATH=$PWD
   django-admin.py update_index --age=192 --batch-size=10000 --settings=mlarchive.settings.production
 fi

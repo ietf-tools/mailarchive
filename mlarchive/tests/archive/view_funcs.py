@@ -21,10 +21,10 @@ def test_find_message_date(messages):
     assert find_message_date(sqs,sqs[1].object) == 1        # second
     assert find_message_date(sqs,sqs[last].object) == last  # last
     # queryset of one
-    sqs = SearchQuerySet().filter(msgid=sqs[0].msgid)
-    assert find_message_date(sqs,sqs[0].object) == 0
-    # empty queryset
     msg = sqs[0].object
+    sqs = SearchQuerySet().filter(msgid=msg.msgid)
+    assert find_message_date(sqs,msg) == 0
+    # empty queryset
     sqs = SearchQuerySet().filter(msgid='bogus')
     assert find_message_date(sqs,msg) == -1
 

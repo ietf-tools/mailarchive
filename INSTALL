@@ -70,16 +70,16 @@ Installing from Scratch
 DEPENDENCIES
 ============
 Python 2.7
-MySQL 5.5
-xapian-core 1.2.17
-python-xapian 1.2.17
+MySQL 5.6
+xapian-core 1.4.3
+python-xapian 1.4.3
 python-memcached
 lxml 3.3.1
 memcached 1.4.15
-RabbitMQ Server 2.8.7
+RabbitMQ Server 3.5.8
 Celery v3.1.23
-Django 1.7 (Included)
-Haystack 2.1.1 (Included)
+Django 1.8 
+Haystack 2.6.0 (Included)
 
 
 Prerequisites

@@ -41,6 +41,8 @@ date_pattern = re.compile(r'(Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+')
 dupetz_pattern = re.compile(r'[\-\+]\d{4} \([A-Z]+\)$')
 from_line_re = re.compile(r'From .* (Sun|Mon|Tue|Wed|Thu|Fri|Sat)( |,)')
 
+MAX_TERM_LENGTH = 245
+
 date_formats = ["%a %b %d %H:%M:%S %Y",
                 "%a, %d %b %Y %H:%M:%S %Z",
                 "%a %b %d %H:%M:%S %Y %Z"]
@@ -477,6 +479,35 @@ def subjects(listname):
     """Return subject line of all messages for listname"""
     for msg in process([listname]):
         print "%s: %s" % (msg.get('date'),msg.get('subject'))
+
+def subject_non_english():
+    """Scans for subject lines containing non latin1 characters"""
+    count = 0
+    for email_list in EmailList.objects.order_by('name'):
+        messages = Message.objects.filter(email_list=email_list)
+        print "{} ({})".format(email_list.name, messages.count())
+        for msg in messages:
+            try:
+                subject = msg.subject.encode('latin1')
+            except UnicodeEncodeError:
+                count += 1
+                print "Non latin1 subject {} {} {}".format(msg.pk, msg.msgid,msg.subject)
+    print "Total: {}".format(count)
+
+def subject_term_length():
+    """Scans for subject terms over Xapian term limit"""
+    count = 0
+    for email_list in EmailList.objects.order_by('name'):
+        messages = Message.objects.filter(email_list=email_list)
+        print "{} ({})".format(email_list.name, messages.count())
+        for msg in messages:
+            # xapian encodes to utf8
+            subject = msg.subject.encode('utf8')
+            for word in subject.split():
+                if len(word) > MAX_TERM_LENGTH:
+                    count += 1
+                    print "Term too long {} {}".format(msg.pk, msg.msgid)
+    print "Total: {}".format(count)
 
 def same_date():
     """Return messages with the same date of another message in the list"""

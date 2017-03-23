@@ -186,10 +186,7 @@ class CustomSearchView(SearchView):
         else:
             return find_message_date(self.results,msg,reverse=True)
 
-    def create_response(self):
-        """
-        Generates the actual HttpResponse to send back to the user.
-        """
+    def get_context(self):
         page, selected_offset = self.build_page()
         
         context = {
@@ -205,7 +202,8 @@ class CustomSearchView(SearchView):
             context['suggestion'] = self.form.get_suggestion()
 
         context.update(self.extra_context())
-        return render_to_response(self.template, context, context_instance=self.context_class(self.request))
+
+        return context
 
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS

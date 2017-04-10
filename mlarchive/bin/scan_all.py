@@ -174,10 +174,28 @@ def count(listname):
     print "Total: %d" % total
     pprint(years)
 
-def check_thread_first(**kwargs):
-    """Check for threads that don't have 'first' message"""
+def check_thread_first(fix=False):
+    """Check for threads that don't have 'first' message.
+
+    Example: ./scan_all.py --fix check_thread_first
+    """
     threads = Thread.objects.filter(first__isnull=True)
     print "Threads without first message: {}".format(threads.count())
+    empty = 0
+    for thread in threads:
+        if thread.message_set.count() == 0:
+            empty += 1
+            if fix:
+                thread.delete()
+        else:
+            if fix:
+                first = thread.message_set.order_by('date').first()
+                thread.first = first
+                thread.save()
+    print "{} empty threads".format(empty)
+    if fix:
+        threads = Thread.objects.filter(first__isnull=True)
+        print "{} remaining threads without first message".format(threads.count())
 
 def check_thread_order(start,fix=False):
     """Compare message.thread_order in DB with index.  If fix==True save

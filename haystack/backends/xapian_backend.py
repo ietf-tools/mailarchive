@@ -544,7 +544,14 @@ class XapianSearchBackend(BaseSearchBackend):
             # it's much quicker to remove the contents of the `self.path`
             # folder than it is to remove each document one at a time.
             if os.path.exists(self.path):
-                shutil.rmtree(self.path)
+                # AMS custom: handle stub file
+                if os.path.isfile(self.path):
+                    with open(self.path) as file:
+                        line = file.readline()
+                    path = line.split()[1]
+                    shutil.rmtree(path)
+                else:
+                    shutil.rmtree(self.path)
         else:
             database = self._database(writable=True)
             for model in models:

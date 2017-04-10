@@ -202,7 +202,7 @@ LOGGING = {
 HAYSTACK_DEFAULT_OPERATOR = 'AND'
 HAYSTACK_SIGNAL_PROCESSOR = 'celery_haystack.signals.CelerySignalProcessor'
 
-HAYSTACK_XAPIAN_PATH = '/a/mailarch/data/archive_index'
+HAYSTACK_XAPIAN_PATH = '/a/mailarch/data/xapian.stub'
 HAYSTACK_CONNECTIONS = {
     'default': {
         'ENGINE': 'haystack.backends.xapian_backend.XapianEngine',

@@ -10,7 +10,7 @@ del DATABASES['ietf']
 
 # HAYSTACK SETTINGS
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
-HAYSTACK_XAPIAN_PATH = os.path.join(DATA_ROOT,'archive_index')
+HAYSTACK_XAPIAN_PATH = os.path.join(DATA_ROOT,'xapian.stub')
 HAYSTACK_CONNECTIONS['default']['PATH'] = HAYSTACK_XAPIAN_PATH
 
 # ARCHIVE SETTINGS

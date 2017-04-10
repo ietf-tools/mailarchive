@@ -440,6 +440,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         so = transform(self.cleaned_data.get('so'))
         sso = transform(self.cleaned_data.get('sso'))
         gbt = self.cleaned_data.get('gbt')
+        sort_values = [ v for v in (so,sso) if v ]
 
         if gbt:
             sqs = group_by_thread(sqs, so, sso, reverse=True)
@@ -449,7 +450,7 @@ class AdvancedSearchForm(FacetedSearchForm):
             elif so == '-subject':
                 sqs = sort_by_subject(sqs,sso,reverse=True)
             else:
-                sqs = sqs.order_by(so,sso)
+                sqs = sqs.order_by(*sort_values)
         else:
             sqs = sqs.order_by(DEFAULT_SORT)
 

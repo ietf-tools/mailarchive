@@ -80,6 +80,14 @@ def test_odd_queries(client):
     assert response.status_code == 200
 
 @pytest.mark.django_db(transaction=True)
+def test_queries_sort_from(client,messages):
+    url = reverse('archive_search') + '?email_list=pubthree&so=frm'
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert results[0].object.frm <= results[1].object.frm
+
+@pytest.mark.django_db(transaction=True)
 def test_queries_to_field(client,messages):
     url = reverse('archive_search') + '?q=to:to@amsl.com'
     response = client.get(url)

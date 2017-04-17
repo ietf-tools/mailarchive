@@ -1,10 +1,15 @@
+import random
+import re
 from datetime import datetime, timedelta
 
 from django.conf import settings
+from django.core.cache import cache
 from haystack.query import SQ
 
 from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
+
+VALID_QUERYID_RE = re.compile(r'^[a-f0-9]{32}$')
 
 # --------------------------------------------------
 # Functions handle URL parameters
@@ -55,3 +60,19 @@ def get_kwargs(data):
         kwargs['spam_score__in'] = bits
     return kwargs
 
+def clean_queryid(query_id):
+    if VALID_QUERYID_RE.match(query_id):
+        return query_id
+    else:
+        return None
+
+def get_cached_query(request):
+    if 'qid' in request.GET:
+        queryid = clean_queryid(request.GET['qid'])
+        if queryid:
+            return (queryid, cache.get(queryid))
+
+    return (None, None)
+
+def generate_queryid():
+    return '%032x' % random.getrandbits(128)

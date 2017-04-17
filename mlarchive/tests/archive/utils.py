@@ -1,6 +1,6 @@
 import pytest
-from django.test.client import RequestFactory
 from factories import *
+from django.test.client import RequestFactory
 from mlarchive.archive.utils import get_noauth
 
 @pytest.mark.django_db(transaction=True)

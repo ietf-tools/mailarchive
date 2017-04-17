@@ -20,7 +20,7 @@ from haystack.query import SearchQuerySet
 
 from mlarchive.utils.decorators import check_access, superuser_only, pad_id
 from mlarchive.archive import actions
-from mlarchive.archive.query_utils import get_kwargs
+from mlarchive.archive.query_utils import get_kwargs, get_cached_query
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     find_message_date, find_message_gbt, get_query_neighbors, is_javascript_disabled,
     get_query_string, get_browse_list)
@@ -326,14 +326,10 @@ def detail(request, list_name, id, msg):
     """Displays the requested message.
     NOTE: the "msg" argument is a Message object added by the check_access decorator
     """
-    if 'qid' in request.GET and cache.get(request.GET['qid']):
-        queryid = request.GET['qid']
-        sqs = cache.get(queryid)
-        previous_in_search, next_in_search = get_query_neighbors(
-            query = sqs,
-            message = msg)
+    queryid, sqs = get_cached_query(request)
+    if sqs:
+        previous_in_search, next_in_search = get_query_neighbors(query = sqs,message = msg)
         search_url = reverse('archive_search') + '?' + sqs.query_string
-
     else:
         previous_in_search = None
         next_in_search = None

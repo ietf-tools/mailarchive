@@ -80,6 +80,14 @@ def test_odd_queries(client):
     assert response.status_code == 200
 
 @pytest.mark.django_db(transaction=True)
+def test_queries_bad_qid(client,messages):
+    'Test malicious query'
+    message = Message.objects.first()
+    url = message.get_absolute_url() + "/%3fqid%3ddf6d7ccfedface723ffb184a6f52bab3'+order+by+1+--+;"
+    response = client.get(url)
+    assert response.status_code == 404
+
+@pytest.mark.django_db(transaction=True)
 def test_queries_sort_from(client,messages):
     url = reverse('archive_search') + '?email_list=pubthree&so=frm'
     response = client.get(url)

@@ -1,5 +1,4 @@
 import hashlib
-import random
 import time
 from collections import OrderedDict
 from operator import attrgetter
@@ -14,7 +13,7 @@ from haystack.forms import SearchForm, FacetedSearchForm
 from haystack.query import SearchQuerySet
 import xapian
 
-from mlarchive.archive.query_utils import get_kwargs
+from mlarchive.archive.query_utils import get_kwargs, generate_queryid
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
 
@@ -459,7 +458,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         sqs.myfacets = facets
 
         # save query in cache with random id for security
-        queryid = '%032x' % random.getrandbits(128)
+        queryid = generate_queryid()
         sqs.query_string = self.request.META['QUERY_STRING']
         cache.set(queryid,sqs,7200)           # 2 hours
         sqs.queryid = queryid

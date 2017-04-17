@@ -10,6 +10,7 @@ from django.template import RequestContext
 from mlarchive.archive import actions
 from mlarchive.archive.utils import jsonapi
 from mlarchive.archive.models import EmailList, Message
+from mlarchive.archive.query_utils import get_cached_query
 from mlarchive.archive.view_funcs import get_browse_list
 from mlarchive.utils.decorators import check_access, superuser_only
 
@@ -47,10 +48,9 @@ def ajax_messages(request):
     firstitem: return set of messages before firstitem
     """
     buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
-    queryid = request.GET.get('queryid')
     lastitem = int(request.GET.get('lastitem',0))
     firstitem = int(request.GET.get('firstitem',0))
-    query = cache.get(queryid)
+    queryid, query = get_cached_query(request)
     browse_list = get_browse_list(request)
 
     if query:

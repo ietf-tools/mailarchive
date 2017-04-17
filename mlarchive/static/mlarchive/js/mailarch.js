@@ -215,7 +215,7 @@ var mailarch = {
             var request = $.ajax({
                 "type": "GET",
                 "url": "/arch/ajax/messages/",
-                "data": { "queryid": queryid, "lastitem": mailarch.lastItem }
+                "data": { "qid": queryid, "lastitem": mailarch.lastItem }
             });
             mailarch.ajaxRequestSent = true;
             request.done(function(data, testStatus, xhr) {
@@ -242,7 +242,7 @@ var mailarch = {
             var request = $.ajax({
                 "type": "GET",
                 "url": "/arch/ajax/messages/",
-                "data": { "queryid": queryid, "firstitem": firstItem }
+                "data": { "qid": queryid, "firstitem": firstItem }
             });
             request.done(function(data, testStatus, xhr) {
                 if(xhr.status == 200){

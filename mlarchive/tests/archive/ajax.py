@@ -57,21 +57,24 @@ def test_ajax_get_messages(client,messages):
     q = PyQuery(response.content)
     id = q('.msg-list').attr('data-queryid')
 
+    print id,
+    print cache.get(id)
+
     # test successful get_messages call
-    url = '%s/?queryid=%s&lastitem=2' % (reverse('ajax_messages'), id)
+    url = '%s/?qid=%s&lastitem=2' % (reverse('ajax_messages'), id)
     response = client.get(url)
     assert response.status_code == 200
     q = PyQuery(response.content)
     assert len(q('.xtr')) > 1
 
     # test end of results
-    url = '%s/?queryid=%s&lastitem=40' % (reverse('ajax_messages'), id)
+    url = '%s/?qid=%s&lastitem=40' % (reverse('ajax_messages'), id)
     response = client.get(url)
     assert response.status_code == 204
 
     # test expired cache
     cache.delete(id)
-    url = '%s/?queryid=%s&lastitem=20' % (reverse('ajax_messages'), id)
+    url = '%s/?qid=%s&lastitem=20' % (reverse('ajax_messages'), id)
     response = client.get(url)
     assert response.status_code == 404
 

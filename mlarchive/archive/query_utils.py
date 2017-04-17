@@ -10,6 +10,7 @@ from django.utils.log import getLogger
 logger = getLogger('mlarchive.custom')
 
 VALID_QUERYID_RE = re.compile(r'^[a-f0-9]{32}$')
+FILTER_SET = set(['f_list','f_from'])
 
 # --------------------------------------------------
 # Functions handle URL parameters
@@ -76,3 +77,7 @@ def get_cached_query(request):
 
 def generate_queryid():
     return '%032x' % random.getrandbits(128)
+
+def get_filter_params(query):
+    """Return list of filter parameters that appear in the query"""
+    return [ k for k,v in query.items() if k in FILTER_SET and v ]

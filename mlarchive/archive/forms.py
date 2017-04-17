@@ -13,7 +13,7 @@ from haystack.forms import SearchForm, FacetedSearchForm
 from haystack.query import SearchQuerySet
 import xapian
 
-from mlarchive.archive.query_utils import get_kwargs, generate_queryid
+from mlarchive.archive.query_utils import get_kwargs, generate_queryid, get_filter_params
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
 
@@ -25,8 +25,6 @@ FIELD_CHOICES = (('text','Subject and Body'),
                  ('from','From'),
                  ('to','To'),
                  ('msgid','Message-ID'))
-
-FILTER_SET = set(['f_list','f_from'])
 
 QUALIFIER_CHOICES = (('contains','contains'),
                      ('exact','exact'))
@@ -302,7 +300,7 @@ class AdvancedSearchForm(FacetedSearchForm):
             sqs = clone.facet('email_list').facet('frm_name')
 
             # if query contains no filters compute simple facet counts
-            filters = self.get_filter_params(self.request.GET)
+            filters = get_filter_params(self.request.GET)
             if not filters:
                 facets = sqs.facet_counts()
 
@@ -346,10 +344,6 @@ class AdvancedSearchForm(FacetedSearchForm):
         # save in cache
         cache.set(cache_key,facets)
         return facets
-
-    def get_filter_params(self, query):
-        """Get filter parameters that appear in the QueryDict"""
-        return list(FILTER_SET & set(query.keys()))
 
     # use custom parser-----------------------------------------
     '''

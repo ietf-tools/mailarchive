@@ -1,4 +1,13 @@
 
+mailarch (1.7.1) ietf; urgency=normal
+
+ * Fixes #2273.  Error when query contains empty filter
+   parameter
+
+ * Fixes #2279.  Malicious query causes Memcache error
+
+-- Ryan Cross <rcross@amsl.com>  17 Apr 2017 14:00:00 +0800
+
 mailarch (1.7.0) ietf; urgency=normal
 
  * Upgrade to Django 1.8, Xapian 1.4.3, Haystack 2.6.0

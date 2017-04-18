@@ -78,7 +78,7 @@ lxml 3.3.1
 memcached 1.4.15
 RabbitMQ Server 3.5.8
 Celery v3.1.23
-Django 1.8 
+Django 1.9 
 Haystack 2.6.0 (Included)
 
 

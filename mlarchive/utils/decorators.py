@@ -6,8 +6,8 @@ from mlarchive.archive.models import Message
 
 import datetime
 
-from django.utils.log import getLogger
-logger = getLogger('mlarchive.custom')
+import logging
+logger = logging.getLogger('mlarchive.custom')
 
 
 def check_access(func):

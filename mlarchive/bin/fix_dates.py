@@ -27,10 +27,10 @@ from dateutil.parser import parse
 
 progname = sys.argv[0]
 
-from django.utils.log import getLogger
-import logging.config
+import logging
+#import logging.config
 logging.config.dictConfig(settings.LOGGING)
-logger = getLogger('mlarchive.custom')
+logger = logging.getLogger('mlarchive.custom')
 
 # SAMPLE BAD DATE: Mon Aug 21 20:45:35 2006
 DATE_PATTERN = re.compile(r'^(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+([a-zA-Z]{3})\s+(\d{1,2})\s+(\d{2}:\d{2}:\d{2})\s+(\d{4})')

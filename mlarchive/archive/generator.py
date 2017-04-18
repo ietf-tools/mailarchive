@@ -22,8 +22,8 @@ from lxml.html.clean import Cleaner
 
 from mlarchive.utils.encoding import decode_safely
 
-from django.utils.log import getLogger
-logger = getLogger('mlarchive.custom')
+import logging
+logger = logging.getLogger('mlarchive.custom')
 
 UNDERSCORE = '_'
 MESSAGE_RFC822_BEGIN = '<blockquote>\n<small>---&nbsp;<i>Begin&nbsp;Message</i>&nbsp;---</small>'

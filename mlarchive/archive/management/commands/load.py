@@ -8,8 +8,8 @@ from django.core.management.base import BaseCommand, CommandError
 from mlarchive.archive.models import *
 from mlarchive.archive.management.commands import _classes
 
-from django.utils.log import getLogger
-logger = getLogger('mlarchive.custom')
+import logging
+logger = logging.getLogger('mlarchive.custom')
 
 # --------------------------------------------------
 # Helper Functions

@@ -21,7 +21,7 @@ def test_message_frm_name_no_realname(client):
 def test_message_get_admin_url(client):
     elist = EmailListFactory.create()
     msg = MessageFactory.create(email_list=elist)
-    assert msg.get_admin_url() == '/admin/archive/message/{}/'.format(msg.pk)
+    assert msg.get_admin_url() == '/admin/archive/message/{}/change/'.format(msg.pk)
 
 @pytest.mark.django_db(transaction=True)
 def test_message_get_from_line(client):

@@ -6,8 +6,8 @@ These take a request object and queryset of objects to act on.
 from django.contrib import messages
 from django.shortcuts import redirect
 
-from django.utils.log import getLogger
-logger = getLogger('mlarchive.custom')
+import logging
+logger = logging.getLogger('mlarchive.custom')
 
 def remove_selected(request, queryset):
     """Remove selected messages from the database and index.

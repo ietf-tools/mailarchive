@@ -15,8 +15,8 @@ import sys
 import re
 from mlarchive.archive.models import Message
 
-from django.utils.log import getLogger
-logger = getLogger('mlarchive.custom')
+import logging
+logger = logging.getLogger('mlarchive.custom')
 
 EMBEDDED_FROM_PATTERN = re.compile(r'.+(From\s[^ ]* (Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+)')
 

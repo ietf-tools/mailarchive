@@ -15,8 +15,8 @@ from optparse import OptionParser
 
 import mlarchive.archive.management.commands._classes as _classes
 
-from django.utils.log import getLogger
-logger = getLogger('archive-mail')
+import logging
+logger = logging.getLogger('archive-mail')
 
 def main():
     logger.info('called with arguments: %s' % sys.argv)

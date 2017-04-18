@@ -1,5 +1,6 @@
 from email.utils import parseaddr
 from collections import OrderedDict
+import logging
 import os
 import re
 import shutil
@@ -12,7 +13,7 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.urlresolvers import reverse
 from django.db import models
-from django.utils.log import getLogger
+
 
 from mlarchive.archive.generator import Generator
 from mlarchive.archive.thread import parse_message_ids
@@ -21,7 +22,7 @@ TXT2HTML = ['/usr/bin/mhonarc', '-single']
 ATTACHMENT_PATTERN = r'<p><strong>Attachment:((?:.|\n)*?)</p>'
 REFERENCE_RE = re.compile(r'<(.*?)>')
 
-logger = getLogger('mlarchive.custom')
+logger = logging.getLogger('mlarchive.custom')
 
 
 # --------------------------------------------------

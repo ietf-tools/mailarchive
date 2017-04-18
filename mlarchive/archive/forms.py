@@ -17,8 +17,8 @@ from mlarchive.archive.query_utils import get_kwargs, generate_queryid, get_filt
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
 
-from django.utils.log import getLogger
-logger = getLogger('mlarchive.custom')
+import logging
+logger = logging.getLogger('mlarchive.custom')
 
 FIELD_CHOICES = (('text','Subject and Body'),
                  ('subject','Subject'),

@@ -31,10 +31,10 @@ import subprocess
 
 progname = sys.argv[0]
 
-from django.utils.log import getLogger
-import logging.config
+import logging
+#import logging.config
 logging.config.dictConfig(settings.LOGGING)
-logger = getLogger('mlarchive.custom')
+logger = logging.getLogger('mlarchive.custom')
 
 def ensure_dir(path):
     if not os.path.exists(path):

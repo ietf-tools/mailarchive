@@ -6,8 +6,8 @@ from django.conf import settings
 from django.core.cache import cache
 from haystack.query import SQ
 
-from django.utils.log import getLogger
-logger = getLogger('mlarchive.custom')
+import logging
+logger = logging.getLogger('mlarchive.custom')
 
 VALID_QUERYID_RE = re.compile(r'^[a-f0-9]{32}$')
 FILTER_SET = set(['f_list','f_from'])

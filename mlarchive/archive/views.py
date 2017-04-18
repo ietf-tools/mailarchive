@@ -28,8 +28,8 @@ from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_
 from models import *
 from forms import *
 
-from django.utils.log import getLogger
-logger = getLogger('mlarchive.custom')
+import logging
+logger = logging.getLogger('mlarchive.custom')
 
 # --------------------------------------------------
 # Classes

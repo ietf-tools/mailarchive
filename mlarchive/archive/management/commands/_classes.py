@@ -27,8 +27,8 @@ from mlarchive.archive.thread import compute_thread, parse_message_ids
 from mlarchive.utils.decorators import check_datetime
 from mlarchive.utils.encoding import decode_safely, decode_rfc2047_header
 
-from django.utils.log import getLogger
-logger = getLogger('mlarchive.custom')
+import logging
+logger = logging.getLogger('mlarchive.custom')
 
 '''
 Notes on character encoding.

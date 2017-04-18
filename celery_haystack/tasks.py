@@ -1,8 +1,8 @@
 import xapian
 
+from django.apps import apps
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
-from django.db.models.loading import get_model
 from haystack.utils import get_identifier
 
 from mlarchive.celeryapp import app
@@ -58,7 +58,7 @@ class CeleryHaystackSignalHandler(Task):
         bits = object_path.split('.')
         app_name = '.'.join(bits[:-1])
         classname = bits[-1]
-        model_class = get_model(app_name, classname)
+        model_class = apps.get_model(app_name, classname)
 
         if model_class is None:
             raise ImproperlyConfigured("Could not load model '%s'." %

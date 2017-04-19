@@ -2,7 +2,6 @@
 from .base import *
 
 DEBUG=True
-TEMPLATE_DEBUG = DEBUG
 
 DATA_ROOT = '/a/mailarch/data'
 

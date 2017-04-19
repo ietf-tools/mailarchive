@@ -41,7 +41,6 @@ DATABASES = {
 }
 
 DEBUG = False
-TEMPLATE_DEBUG = False
 
 ALLOWED_HOSTS = ['.ietf.org','.amsl.com']
 ADMINS = (
@@ -116,21 +115,13 @@ TEMPLATES = [
     },
 ]
 
-#TEMPLATE_LOADERS = (
-#    'django.template.loaders.filesystem.Loader',
-#    'django.template.loaders.app_directories.Loader',
-#)
-
-#TEMPLATE_CONTEXT_PROCESSORS = DEFAULT_SETTINGS.TEMPLATE_CONTEXT_PROCESSORS + (
-#)
-
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-)
+]
 
 ROOT_URLCONF = 'mlarchive.urls'
 

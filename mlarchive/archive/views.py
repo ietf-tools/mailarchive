@@ -13,8 +13,7 @@ from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.forms.formsets import formset_factory
 from django.http import HttpResponseRedirect, HttpResponse, Http404, QueryDict
-from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404, redirect
 from haystack.views import SearchView, FacetedSearchView
 from haystack.query import SearchQuerySet
 
@@ -233,25 +232,19 @@ def admin(request):
     else:
         form = AdminForm()
 
-    return render_to_response('archive/admin.html', {
+    return render(request, 'archive/admin.html', {
         'results': results,
-        'form': form},
-        RequestContext(request, {}),
-    )
+        'form': form,
+    })
 
 @superuser_only
 def admin_console(request):
     form = None
-    return render_to_response('archive/admin_console.html', {
-        'form': form},
-        RequestContext(request, {}),
-    )
+    return render(request, 'archive/admin_console.html', {'form': form})
 
 @superuser_only
 def admin_guide(request):
-    return render_to_response('archive/admin_guide.html', {},
-        RequestContext(request, {}),
-    )
+    return render(request, 'archive/admin_guide.html', {})
 
 def advsearch(request):
     """Advanced Search View"""
@@ -269,14 +262,13 @@ def advsearch(request):
         query_formset = RulesFormset(prefix='query')
         not_formset = RulesFormset(prefix='not')
 
-    return render_to_response('archive/advsearch.html', {
+    return render(request, 'archive/advsearch.html', {
         'form': form,
         'query_formset': query_formset,
         'not_formset': not_formset,
         'nojs_query_formset': nojs_query_formset,
-        'nojs_not_formset': nojs_not_formset},
-        RequestContext(request, {}),
-    )
+        'nojs_not_formset': nojs_not_formset,
+    })
 
 def browse(request, list_name=None):
     """Presents a list of Email Lists the user has access to.  There are
@@ -297,11 +289,10 @@ def browse(request, list_name=None):
     else:
         form = BrowseForm(request=request)
 
-    return render_to_response('archive/browse.html', {
+    return render(request, 'archive/browse.html', {
         'form': form,
-        'columns': columns},
-        RequestContext(request, {}),
-    )
+        'columns': columns,
+    })
 
 # TODO if we use this, need access decorator
 def browse_list(request, list_name):
@@ -314,11 +305,10 @@ def browse_list(request, list_name):
         order = '-date'
     msgs = Message.objects.filter(email_list=list_obj).order_by(order)
 
-    return render_to_response('archive/browse_list.html', {
+    return render(request, 'archive/browse_list.html', {
         'list_obj': list_obj,
-        'msgs': msgs},
-        RequestContext(request, {}),
-    )
+        'msgs': msgs,
+    })
 
 @pad_id
 @check_access
@@ -336,7 +326,7 @@ def detail(request, list_name, id, msg):
         queryid = None
         search_url = None
 
-    return render_to_response('archive/detail.html', {
+    return render(request, 'archive/detail.html', {
         'msg':msg,
         # cache items for use in template
         'next_in_list':msg.next_in_list(),
@@ -348,9 +338,8 @@ def detail(request, list_name, id, msg):
         'queryid':queryid,
         'replies':msg.replies.all(),
         'references':msg.get_references_messages(),
-        'search_url':search_url},
-        RequestContext(request, {}),
-    )
+        'search_url':search_url,
+    })
 
 def export(request, type):
     """Takes a search query string and builds a gzipped tar archive of the messages
@@ -391,8 +380,5 @@ def main(request):
         except OSError:
             pass
 
-    return render_to_response('archive/main.html', {
-        'form': form},
-        RequestContext(request, {}),
-    )
+    return render(request, 'archive/main.html', {'form': form})
 

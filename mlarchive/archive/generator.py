@@ -253,7 +253,7 @@ class Generator:
                 return '<< invalid HTML >>'
 
         if self.text_only:
-            soup = BeautifulSoup(clean,'html5')
+            soup = BeautifulSoup(clean,'html5lib')
             clean = soup.get_text()
 
         return clean

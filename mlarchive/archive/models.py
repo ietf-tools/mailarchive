@@ -114,11 +114,11 @@ class Message(models.Model):
     base_subject = models.CharField(max_length=512, blank=True)
     cc = models.TextField(blank=True, default='')
     date = models.DateTimeField(db_index=True)
-    email_list = models.ForeignKey(EmailList, db_index=True)
+    email_list = models.ForeignKey(EmailList, db_index=True, on_delete=models.PROTECT)
     frm = models.CharField(max_length=255, blank=True)
     from_line = models.CharField(max_length=255, blank=True)
     hashcode = models.CharField(max_length=28, db_index=True)
-    in_reply_to = models.ForeignKey('self',null=True,related_name='replies')
+    in_reply_to = models.ForeignKey('self', null=True, related_name='replies', on_delete=models.SET_NULL)
     in_reply_to_value = models.TextField(blank=True, default='')
     # mapping to MHonArc message number
     legacy_number = models.IntegerField(blank=True, null=True, db_index=True)
@@ -126,7 +126,7 @@ class Message(models.Model):
     references = models.TextField(blank=True, default='')
     spam_score = models.IntegerField(default=0)             # > 0 = spam
     subject = models.CharField(max_length=512, blank=True)
-    thread = models.ForeignKey(Thread)
+    thread = models.ForeignKey(Thread, on_delete=models.PROTECT)
     thread_depth = models.IntegerField(default=0)
     thread_order = models.IntegerField(default=0)
     to = models.TextField(blank=True, default='')
@@ -352,7 +352,7 @@ class Attachment(models.Model):
     error = models.CharField(max_length=255, blank=True)
     description = models.CharField(max_length=255)
     filename = models.CharField(max_length=255)
-    message = models.ForeignKey(Message)
+    message = models.ForeignKey(Message, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
 
     def __unicode__(self):

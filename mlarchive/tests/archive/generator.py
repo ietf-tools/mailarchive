@@ -2,8 +2,8 @@ import email
 import pytest
 import sys
 
-from django.core.urlresolvers import reverse
 from django.test.client import RequestFactory
+from django.urls import reverse
 from factories import *
 from mlarchive.archive.generator import *
 from mlarchive.archive.management.commands._classes import archive_message

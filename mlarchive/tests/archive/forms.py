@@ -2,9 +2,9 @@
 
 import pytest
 from django.contrib.auth.models import AnonymousUser
-from django.core.urlresolvers import reverse
 from django.http import HttpRequest, QueryDict
 from django.test.client import RequestFactory
+from django.urls import reverse
 from factories import *
 from haystack.query import SearchQuerySet
 from mlarchive.archive.forms import *

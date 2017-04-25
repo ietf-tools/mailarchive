@@ -2,7 +2,7 @@ import pytest
 from django.conf import settings
 from django.core.cache import cache
 from django.core.management import call_command
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from factories import *
 from pprint import pprint
 from pyquery import PyQuery

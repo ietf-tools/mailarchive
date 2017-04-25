@@ -1,7 +1,7 @@
 import pytest
 import sys
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from factories import *
 from mlarchive.archive.models import *
 from pyquery import PyQuery

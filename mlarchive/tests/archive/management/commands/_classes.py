@@ -8,7 +8,7 @@ import shutil
 
 
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from mlarchive.archive.management.commands._classes import *
 from factories import EmailListFactory, MessageFactory, ThreadFactory
 from pprint import pprint

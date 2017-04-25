@@ -2,7 +2,7 @@ import pytest
 import urlparse
 
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from selenium.webdriver.phantomjs.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 

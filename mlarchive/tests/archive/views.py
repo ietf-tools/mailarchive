@@ -1,6 +1,6 @@
 import pytest
 from django.contrib.auth import SESSION_KEY
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from factories import *
 from mlarchive.archive.models import *
 from mlarchive.archive.management.commands import _classes

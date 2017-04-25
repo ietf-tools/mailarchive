@@ -9,11 +9,11 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import user_passes_test
 from django.core.cache import cache
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.forms.formsets import formset_factory
 from django.http import HttpResponseRedirect, HttpResponse, Http404, QueryDict
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from haystack.views import SearchView, FacetedSearchView
 from haystack.query import SearchQuerySet
 

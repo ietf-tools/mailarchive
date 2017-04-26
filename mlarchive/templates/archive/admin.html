@@ -15,7 +15,7 @@
 <div id="admin-page">
     <div id="admin-top">
         <div id="admin_search_form">
-            <form id="id_admin_form" name="admin-search-form" class="form-inline" action="." method="post">{% csrf_token %}
+            <form id="id_admin_form" name="admin-search-form" class="form-inline" action="." method="get">
                 <div class="row">
                     <div class="col-md-4 col-md-offset-2">
                         {% render_field form.subject class="form-control" placeholder="Subject" %}

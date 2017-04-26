@@ -13,7 +13,7 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.db import models
 from django.urls import reverse
-
+from django.utils.http import urlencode
 
 from mlarchive.archive.generator import Generator
 from mlarchive.archive.thread import parse_message_ids
@@ -185,7 +185,7 @@ class Message(models.Model):
             'id': self.hashcode.rstrip('=')})
 
     def get_admin_url(self):
-        return reverse('admin:archive_message_change',args=(self.pk,))
+        return reverse('archive_admin') + '?' + urlencode(dict(msgid=self.msgid))
 
     def get_attachment_path(self):
         path = self.email_list.attachments_dir

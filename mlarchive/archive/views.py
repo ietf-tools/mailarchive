@@ -216,19 +216,18 @@ def admin(request):
     """
     results = None
     if request.method == 'POST':
-        if 'action' not in request.POST:
-            form = AdminForm(request.POST)
-            if form.is_valid():
-                kwargs = get_kwargs(form.cleaned_data)
-                if kwargs:
-                    results = SearchQuerySet().filter(**kwargs).order_by('id')
-        else:
-            action = request.POST.get('action')
-            func = getattr(actions, action)
-            selected = request.POST.getlist('_selected_action')
-            queryset = Message.objects.filter(pk__in=selected)
-            return func(request, queryset)
+        action = request.POST.get('action')
+        func = getattr(actions, action)
+        selected = request.POST.getlist('_selected_action')
+        queryset = Message.objects.filter(pk__in=selected)
+        return func(request, queryset)
 
+    elif request.method == 'GET' and request.GET:
+        form = AdminForm(request.GET)
+        if form.is_valid():
+            kwargs = get_kwargs(form.cleaned_data)
+            if kwargs:
+                results = SearchQuerySet().filter(**kwargs).order_by('id')
     else:
         form = AdminForm()
 

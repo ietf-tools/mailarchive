@@ -33,6 +33,61 @@ def test_admin(client):
     assert response.status_code == 200
 
 @pytest.mark.django_db(transaction=True)
+def test_admin_search_msgid(client, messages):
+    msg = Message.objects.first()
+    user = UserFactory.create(is_superuser=True)
+    assert client.login(username='admin',password='admin')
+    url = reverse('archive_admin') + '?msgid=' + msg.msgid
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert msg in [ r.object for r in results ]
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_search_subject(client,messages):
+    msg = Message.objects.first()
+    user = UserFactory.create(is_superuser=True)
+    assert client.login(username='admin',password='admin')
+    url = reverse('archive_admin') + '?subject=' + msg.subject.split()[0]
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert msg in [ r.object for r in results ]
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_search_date(client,messages):
+    msg = Message.objects.first()
+    user = UserFactory.create(is_superuser=True)
+    assert client.login(username='admin',password='admin')
+    url = reverse('archive_admin') + '?start_date=' + msg.date.strftime("%Y-%m-%d")
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert msg in [ r.object for r in results ]
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_search_list(client,messages):
+    msg = Message.objects.first()
+    user = UserFactory.create(is_superuser=True)
+    assert client.login(username='admin',password='admin')
+    url = reverse('archive_admin') + '?email_list=' + str(msg.email_list.pk)
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert msg in [ r.object for r in results ]
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_search_from(client,messages):
+    msg = Message.objects.first()
+    user = UserFactory.create(is_superuser=True)
+    assert client.login(username='admin',password='admin')
+    url = reverse('archive_admin') + '?frm=' + msg.frm
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert msg in [ r.object for r in results ]
+
+@pytest.mark.django_db(transaction=True)
 def test_admin_console(client):
     url = reverse('archive_admin_console')
     response = client.get(url)
@@ -74,15 +129,13 @@ def test_detail(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_detail_content_link(client):
+    '''Test that url in message content appears as a link'''
     listname = 'public'
     load_message('mail_with_url.1',listname=listname)
     msg = Message.objects.first()
     url = reverse('archive_detail', kwargs={'list_name':listname,'id':msg.hashcode})
     response = client.get(url)
     assert response.status_code == 200
-    print response.content
-    print Message.objects.count()
-    print msg.date
     q = PyQuery(response.content)
     assert len(q('a[href="http://www.example.com"]')) == 1
     

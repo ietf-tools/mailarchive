@@ -1,4 +1,4 @@
-/* mailarch-1.1.js */
+/* mailarch.js */
 
 /*
 This script uses the JQuery Query String Object plugin
@@ -357,16 +357,16 @@ var mailarch = {
         }
     },
     
-    // given the row of the msg list, load the message text in the mag view pane
+    // given the row of the msg list, load the message text in the msg view pane
     loadMessage: function(row) {
         var msgId = row.find(".xtd.id-col").html();
         if(/^\d+$/.test(msgId)){
             mailarch.$viewPane.load('/arch/ajax/msg/?id=' + msgId, function() {
                 // NTOE: don't use cached DOM objects here because these change
-                $('#msg-date').after('<a id="toggle" href="#">Show header</a>');
-                $('#toggle').click(function(ev) {
+                $('#msg-date').after('<a id="toggle-msg-header" class="toggle" href="#">Show header</a>');
+                $('#toggle-msg-header').click(function(ev) {
                     $('#msg-header').toggle();
-                    $(this).html(($('#toggle').text() == 'Show header') ? 'Hide header' : 'Show header');
+                    $(this).html(($('#toggle-msg-header').text() == 'Show header') ? 'Hide header' : 'Show header');
                 });
                 mailarch.$viewPane.scrollTop(0);    // should this be msg-body?
             });

@@ -41,12 +41,19 @@
           {% endfor %}
           </ul>
         {% endif %}
+      </div> <!-- related-messages -->
+
+      <div id="nav-outer">
+        <div id="nav-inner">
+        <ul id="navigation">
+          <li><a id="toggle-nav" class="toggle js-off" href="#">Hide Navigation Bar</a></li>
+          {% if request.user.is_staff %}
+            <li><a id="admin-link" href="{{ msg.get_admin_url }}">Admin Page</a></li>
+          {% endif %}
+        </ul>
+        </div>
       </div>
-      <div>
-        {% if request.user.is_staff %}
-          <a id="admin-link" href="{{ msg.get_admin_url }}">Admin Page</a>
-        {% endif %}
-      </div>
+
     </div> <!-- msg-detail -->
 </div> <!-- row -->
 
@@ -59,5 +66,6 @@
 {% endblock %}
 
 {% block js %}
+<script type="text/javascript" src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
 <script type="text/javascript" src="{% static 'mlarchive/js/detail.js' %}"></script>
 {% endblock %}

@@ -31,7 +31,7 @@ class MessageFactory(factory.DjangoModelFactory):
 
     date = datetime.datetime.now().replace(second=0, microsecond=0)
     subject = 'This is a test message'
-    frm = 'john@example.com'
+    frm = 'John Smith <john@example.com>'
     msgid = factory.Sequence(lambda n: "%03d@example.com" % n)
     hashcode = factory.Sequence(lambda n: "a%03d=" % n)
     thread = factory.SubFactory(ThreadFactory)

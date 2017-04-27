@@ -99,3 +99,54 @@ class MySeleniumTests(StaticLiveServerTestCase):
             
         print self.selenium.current_url
         self.assertIn(next_message_url, self.selenium.current_url)
+
+    @pytest.mark.usefixtures("thread_messages")
+    def test_message_detail_toggle_nav(self):
+        '''Test toggle navigation bar feature of message detail'''
+        message = Message.objects.first()
+        url = urlparse.urljoin(self.live_server_url, message.get_absolute_url())
+        self.selenium.get(url)
+        
+        # navbar is there
+        element = self.selenium.find_element_by_class_name('navbar-msg-detail')
+        assert element.is_displayed()
+
+        # click hide
+        self.selenium.find_element_by_link_text('Hide Navigation Bar').click()
+        
+        # navbar is gone
+        element = self.selenium.find_element_by_class_name('navbar-msg-detail')
+        assert not element.is_displayed()
+
+        # click to show
+        self.selenium.find_element_by_link_text('Show Navigation Bar').click()
+
+        # navbar is there
+        element = self.selenium.find_element_by_class_name('navbar-msg-detail')
+        assert element.is_displayed()
+
+    @pytest.mark.usefixtures("thread_messages")
+    def test_message_detail_toggle_msg_header(self):
+        '''Test toggle message header feature of message detail'''
+        message = Message.objects.first()
+        url = urlparse.urljoin(self.live_server_url, message.get_absolute_url())
+        self.selenium.get(url)
+        
+        # header is hidden
+        element = self.selenium.find_element_by_id('msg-header')
+        assert not element.is_displayed()
+
+        # click show
+        self.selenium.find_element_by_link_text('Show header').click()
+        
+        # header is visible
+        self.selenium.get_screenshot_as_file('tests/tmp/test_message_detail_toggle_msg_header.png')
+        element = self.selenium.find_element_by_id('msg-header')
+        assert element.is_displayed()
+
+        # click to hide
+        self.selenium.find_element_by_link_text('Hide header').click()
+
+        # header is hidden
+        element = self.selenium.find_element_by_id('msg-header')
+        assert not element.is_displayed()

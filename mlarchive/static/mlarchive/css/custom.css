@@ -138,6 +138,16 @@ div:focus {
     text-decoration: underline;
 }
 
+a.toggle:active, a.toggle:focus {
+    color: #337ab7;
+    text-decoration: none;
+}
+
+a.toggle:hover {
+    color: #23527c;
+    text-decoration: underline;
+}
+
 @media (max-width: 767px) {
     .login-user {
         display: none;

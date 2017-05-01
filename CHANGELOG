@@ -1,4 +1,10 @@
 
+mailarch (1.10.2) ietf; urgency=normal
+
+ * Add django-debug-toolbar to requirements.txt
+
+-- Ryan Cross <rcross@amsl.com>  01 May 2017 15:00:00 +0800
+
 mailarch (1.10.1) ietf; urgency=normal
 
  * Add thread links (references and replies) to bottom of message

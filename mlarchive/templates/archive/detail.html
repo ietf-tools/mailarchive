@@ -18,30 +18,7 @@
 
     <div id="msg-detail" class="col-md-8 col-md-pull-4">
       {{ msg.get_body_html|safe }}
-      <div id="related-messages">
-        {% if replies %}
-          <h4>Replies:</h4>
-          <ul>
-          {% for reply in replies %}
-            <li>
-              <a href="{{ reply.get_absolute_url }}">{{ reply.subject }}</a><br>
-              {{ reply.frm }}
-            </li>
-          {% endfor %}
-          </ul>
-        {% endif %}
-        {% if references %}
-          <h4>References:</h4>
-          <ul>
-          {% for ref in references %}
-            <li>
-              <a href="{{ ref.get_absolute_url }}">{{ ref.subject }}</a><br>
-              {{ ref.frm }}
-            </li>
-          {% endfor %}
-          </ul>
-        {% endif %}
-      </div> <!-- related-messages -->
+      {% include "includes/message_thread.html" %}
 
       <div id="nav-outer">
         <div id="nav-inner">

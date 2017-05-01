@@ -77,7 +77,7 @@ def main():
     has_changed = False
     
     known_lists = check_output([list_lists_cmd]).split()
-    assert len(known_lists) > 100       # assert reasonable output
+    #assert len(known_lists) > 100       # assert reasonable output
     
     for mlist in EmailList.objects.filter(private=True,active=True):
         # skip lists that aren't managed by mailman

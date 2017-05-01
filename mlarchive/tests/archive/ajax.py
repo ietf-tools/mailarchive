@@ -42,9 +42,22 @@ def test_ajax_get_msg(client):
     assert client.login(username='admin',password='admin')
     url = '%s/?id=%s' % (reverse('ajax_get_msg'), primsg.pk)
     response = client.get(url)
-    print response
     assert response.status_code == 200
 
+@pytest.mark.django_db(transaction=True)
+def test_ajax_get_msg_thread_links(client, thread_messages):
+    msg = Message.objects.get(msgid='00002@example.com')
+    url = '%s/?id=%s' % (reverse('ajax_get_msg'), msg.pk)
+    response = client.get(url)
+    assert response.status_code == 200
+    
+    q = PyQuery(response.content)
+    assert q('#message-thread').length == 1
+    assert len(response.context['references']) == 1
+    assert q('.thread-ref-link').length == 1
+    assert len(response.context['replies']) == 1
+    assert q('.thread-reply-link').length == 1
+    
 @pytest.mark.django_db(transaction=True)
 def test_ajax_get_messages(client,messages):
     # run initial query to setup cache

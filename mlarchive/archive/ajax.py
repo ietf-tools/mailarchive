@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
+from django.template.loader import render_to_string
 
 from mlarchive.archive import actions
 from mlarchive.archive.utils import jsonapi
@@ -39,7 +40,12 @@ def ajax_get_msg(request, msg):
     is the ID of the message.  Return an HTMLized message body via get_body_html().
     NOTE: the "msg" argument is Message object added by the check_access decorator
     """
-    return HttpResponse(msg.get_body_html(request))
+    msg_body = msg.get_body_html(request)
+    msg_thread = render_to_string('includes/message_thread.html', {
+        'replies':msg.replies.all(),
+        'references':msg.get_references_messages()
+    })
+    return HttpResponse(msg_body + msg_thread)
 
 
 def ajax_messages(request):

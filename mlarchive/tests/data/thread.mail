@@ -28,7 +28,7 @@ Can you send me some literature on the new anvil?
 
 From harry@example.com  Fri Jul 15 08:00:00 2016
 References:
-In-Reply-To: 
+In-Reply-To:
 Content-Type: text/plain; charset="utf-8"
 Message-Id: <00003@example.com>
 From: Harry <harry@example.com>
@@ -42,7 +42,7 @@ I really like the new anvil!
 
 From person@example.com  Fri Jul 22 08:00:00 2016
 References: <00001@example.com> <00002@example.com>
-In-Reply-To: 
+In-Reply-To: <00002@example.com>
 Content-Type: text/plain; charset="utf-8"
 Message-Id: <00004@example.com>
 From: Person <person@example.com>

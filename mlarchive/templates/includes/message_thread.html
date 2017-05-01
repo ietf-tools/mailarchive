@@ -1,0 +1,24 @@
+      <div id="message-thread">
+        {% if replies %}
+          <h4>Replies:</h4>
+          <ul>
+          {% for reply in replies %}
+            <li>
+              <a class="thread-reply-link" href="{{ reply.get_absolute_url }}">{{ reply.subject }}</a><br>
+              {{ reply.frm }}
+            </li>
+          {% endfor %}
+          </ul>
+        {% endif %}
+        {% if references %}
+          <h4>References:</h4>
+          <ul>
+          {% for ref in references %}
+            <li>
+              <a class="thread-ref-link" href="{{ ref.get_absolute_url }}">{{ ref.subject }}</a><br>
+              {{ ref.frm }}
+            </li>
+          {% endfor %}
+          </ul>
+        {% endif %}
+      </div> <!-- message-thread -->

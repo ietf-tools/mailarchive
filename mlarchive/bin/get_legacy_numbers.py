@@ -3,6 +3,11 @@
 This script scans the MHonArc web archive, and creates a record in Legacy for each message
 Based on pre-import.py, with changes for partial runs.  The Leagcy table will also be used
 for redirecting requests to the old archive to the new one.
+
+Example:
+
+get_legacy_numbers.py testlist
+
 '''
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup

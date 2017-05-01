@@ -125,7 +125,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'mlarchive.urls'
 
-INSTALLED_APPS = (
+INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -139,7 +139,7 @@ INSTALLED_APPS = (
     'htauth',
     'mlarchive.archive',
     'widget_tweaks',
-)
+]
 
 STATIC_URL = '/static/%s/' % __version__
 STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/%s/" % __version__)

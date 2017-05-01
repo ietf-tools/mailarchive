@@ -1,4 +1,18 @@
 
+mailarch (1.10.1) ietf; urgency=normal
+
+ * Add thread links (references and replies) to bottom of message
+   in message pane of split-pane view.  RFC 7842 section 2.2.3
+
+ * Add option to hide navigation bar in message detail view.
+   RFC 7842 section 2.3.4
+
+ * Fix admin link on message detail page.  RFC 7842 section 2.8.1
+
+ * Fix Django 2.0 deprecation warnings.
+
+-- Ryan Cross <rcross@amsl.com>  01 May 2017 15:00:00 +0800
+
 mailarch (1.10.0) ietf; urgency=normal
 
  * Upgrade to Django 1.11.

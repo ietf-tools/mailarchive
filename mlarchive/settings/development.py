@@ -12,6 +12,12 @@ DATA_ROOT = '/a/mailarch/data'
 #    }
 #}
 
+# DJANGO DEBUG TOOLBAR SETTINGS
+INSTALLED_APPS.append('debug_toolbar')
+MIDDLEWARE.insert(0,'debug_toolbar.middleware.DebugToolbarMiddleware')
+INTERNAL_IPS = ['2601:602:9c02:e2b0:7833:2db6:87df:3abb']
+DEBUG_TOOLBAR_CONFIG = {'INSERT_BEFORE':'</div> <!-- msg-body -->'}
+
 # HAYSTACK SETTINGS
 # BaseSignalProcessor does not update the index
 # RealtimeSignalProccessor updates the index immediately

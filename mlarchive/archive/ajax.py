@@ -39,6 +39,7 @@ def ajax_get_msg(request, msg):
     """Ajax method to retrieve message details.  One URL parameter expected, "id" which
     is the ID of the message.  Return an HTMLized message body via get_body_html().
     NOTE: the "msg" argument is Message object added by the check_access decorator
+    NOTE: msg_thread changes avg response time from ~100ms to ~200ms
     """
     msg_body = msg.get_body_html(request)
     msg_thread = render_to_string('includes/message_thread.html', {

@@ -29,13 +29,13 @@
 
     <span id="import"></span>
     <h2>How do I import messages from an archive file?</h2>
-    <p>The mail archive supports imports from mbox files.  Use the following procedure
-    to load messages into the live archive.<br>
+    <p>The mail archive supports imports from mbox files (or directories of files).  Use the following procedure to load messages into the live archive.<br>
     <pre>cd /a/mailarch/current
+source bin/activate
 export PYTHONPATH=$PWD
-django-admin.py load [path-to-file] -l [listname] --settings=mlarchive.settings.noindex</pre>
+django-admin.py load [path-to-file/dir] -l [listname] --settings=mlarchive.settings.noindex</pre>
     This will load messages into the database without flooding the index update queue.
-    Next follow the instructions for rebuilding the index below.
+    It may take some minutes to run, depending on how many messages are being imported.  It will print some statistics on completion.  Next follow the instructions for rebuilding the index below.
     </p>
 
     <span id="delete_message"></span>
@@ -54,6 +54,7 @@ django-admin.py load [path-to-file] -l [listname] --settings=mlarchive.settings.
     <pre>sudo /etc/init.d/celeryd stop</pre>
     Then use the Haystack update_index command
     <pre>cd /a/mailarch/current
+source bin/activate
 export PYTHONPATH=$PWD
 django-admin.py update_index --start='2014-01-14T00:00:00' --end='2014-01-16T23:59:59' --settings=mlarchive.settings.production
 -- or --
@@ -80,7 +81,7 @@ tar cvf sub012214.tar ./sub012214</pre></p>
     <pre>cd /a/mailarch/data
 xapian-check ./archive_index</pre>
     Show index stats
-    <pre>delve ./archive_index/
+    <pre>xapian-delve ./archive_index/
 UUID = 2995f642-6fd8-469a-93bb-ac69aea27325
 number of documents = 1473880
 average document length = 2439.13
@@ -89,10 +90,10 @@ document length upper bound = 3258372
 highest document id ever used = 1473883
 has positional information = true</pre>
     Lookup a record in the search index by database primary key
-    <pre>$ delve -t Qarchive.message.[PK] ./archive_index
+    <pre>$ xapian-delve -t Qarchive.message.[PK] ./archive_index
 Posting List for term `Qarchive.message.1721161' (termfreq 1, collfreq 1, wdf_max 1): 1716268
 
-$ delve -r 1716268 ./archive_index</pre>
+$ xapian-delve -r 1716268 ./archive_index</pre>
     Command line search tool
     <pre>quest -d ./archive_index/ searchterm</pre>
     </p>

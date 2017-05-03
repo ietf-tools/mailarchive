@@ -18,6 +18,8 @@ MIDDLEWARE.insert(0,'debug_toolbar.middleware.DebugToolbarMiddleware')
 INTERNAL_IPS = get_secret('INTERNAL_IPS')
 DEBUG_TOOLBAR_CONFIG = {'INSERT_BEFORE':'</div> <!-- msg-body -->'}
 
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 3500
+
 # HAYSTACK SETTINGS
 # BaseSignalProcessor does not update the index
 # RealtimeSignalProccessor updates the index immediately

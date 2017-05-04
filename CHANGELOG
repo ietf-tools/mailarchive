@@ -1,4 +1,16 @@
 
+mailarch (1.10.3) ietf; urgency=normal
+
+ * Upgrade to Celery 4.0
+
+ * Update admin guide for virtualenv commands and current 
+   Xapian commands.  Fixes #2270
+
+ * Add migration script to support redirection of legacy archive URLs.
+   RFC 7842 section 2.8.3
+
+-- Ryan Cross <rcross@amsl.com>  04 May 2017 15:00:00 +0800
+
 mailarch (1.10.2) ietf; urgency=normal
 
  * Add django-debug-toolbar to requirements.txt

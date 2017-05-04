@@ -269,7 +269,7 @@ CACHES = {
 }
 
 # Celery Settings
-BROKER_URL = 'amqp://'
+CELERY_BROKER_URL = 'amqp://'
 #CELERY_RESULT_BACKEND = 'amqp://'
 CELERY_TIMEZONE = 'America/Los_Angeles'
 CELERY_ENABLE_UTC = True

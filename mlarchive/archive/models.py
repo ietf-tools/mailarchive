@@ -382,67 +382,6 @@ class Legacy(models.Model):
 # Signal Handlers
 # --------------------------------------------------
 
-
-def _get_lists():
-    """ Returns a dictionary with list names (mailboxes) as keys. The value at
-        each key is a list of usernames with read acces to the mailing list.
-        If the list of usernames is empty, then any user is allowed to read
-        the mailing list. """
-
-    result = OrderedDict()
-    for mail_list in EmailList.objects.all().order_by('name'):
-        result[mail_list.name] = mail_list.members.values_list(
-            'username', flat=True)
-    return result
-
-
-def _get_lists_as_xml():
-    """ Provides the results of get_lists as an xml document."""
-    lines = []
-    lines.append("<ms_config>")
-    for elist, members in _get_lists().items():
-        lines.append(
-            "  <shared_root name='%s' path='/var/isode/ms/shared/%s'>" %
-            (elist, elist))
-        if members:
-            lines.append("    <user name='anonymous' access='none'/>")
-            for member in members:
-                lines.append(
-                    "    <user name='%s' access='read,write'/>" % member)
-        else:
-            lines.append("    <user name='anonymous' access='read'/>")
-            lines.append("    <group name='anyone' access='read,write'/>")
-        lines.append("  </shared_root>")
-    lines.append("</ms_config>")
-    return "\n".join(lines)
-
-
-def _export_lists():
-    """Produce XML dump of list memberships and call external program"""
-    # Dump XML
-    data = _get_lists_as_xml()
-    path = os.path.join(settings.EXPORT_DIR, 'email_lists.xml')
-    try:
-        if not os.path.exists(settings.EXPORT_DIR):
-            os.mkdir(settings.EXPORT_DIR)
-        with open(path, 'w') as file:
-            file.write(data)
-            os.chmod(path, 0666)
-    except Exception as error:
-        logger.error('Error creating export file: {}'.format(error))
-        return
-
-    # Call external script
-    if hasattr(settings, 'NOTIFY_LIST_CHANGE_COMMAND'):
-        command = settings.NOTIFY_LIST_CHANGE_COMMAND
-        try:
-            subprocess.check_call([command, path])
-        except (OSError, subprocess.CalledProcessError) as error:
-            logger.error(
-                'Error calling external command: {} ({})'.format(
-                    command, error))
-
-
 @receiver(pre_delete, sender=Message)
 def _message_remove(sender, instance, **kwargs):
     """When messages are removed, via the admin page, we need to move the message
@@ -485,3 +424,47 @@ def _clear_cache(sender, instance, **kwargs):
 def _list_save_handler(sender, instance, **kwargs):
     _export_lists()
 
+
+def _export_lists():
+    """Produce XML dump of list memberships and call external program"""
+    # Dump XML
+    data = _get_lists_as_xml()
+    path = os.path.join(settings.EXPORT_DIR, 'email_lists.xml')
+    try:
+        if not os.path.exists(settings.EXPORT_DIR):
+            os.mkdir(settings.EXPORT_DIR)
+        with open(path, 'w') as file:
+            file.write(data)
+            os.chmod(path, 0666)
+    except Exception as error:
+        logger.error('Error creating export file: {}'.format(error))
+        return
+
+    # Call external script
+    if hasattr(settings, 'NOTIFY_LIST_CHANGE_COMMAND'):
+        command = settings.NOTIFY_LIST_CHANGE_COMMAND
+        try:
+            subprocess.check_call([command, path])
+        except (OSError, subprocess.CalledProcessError) as error:
+            logger.error(
+                'Error calling external command: {} ({})'.format(
+                    command, error))
+
+
+def _get_lists_as_xml():
+    """ Provides the results of get_lists as an xml document."""
+    lines = []
+    lines.append("<ms_config>")
+
+    for elist in EmailList.objects.all().order_by('name'):
+        lines.append("  <shared_root name='{name}' path='/var/isode/ms/shared/{name}'>".format(name=elist.name))
+        if elist.private:
+            lines.append("    <user name='anonymous' access='none'/>")
+            for member in elist.members.all():
+                lines.append("    <user name='{name}' access='read,write'/>".format(name=member.username))
+        else:
+            lines.append("    <user name='anonymous' access='read'/>")
+            lines.append("    <group name='anyone' access='read,write'/>")
+        lines.append("  </shared_root>")
+    lines.append("</ms_config>")
+    return "\n".join(lines)

@@ -45,8 +45,7 @@ def lookup(address):
     except AttributeError:
         return None
 
-    # TODO: use Django 1.5 Custom User to support username max_length = 64
-    return username[:30]
+    return username
 
 def process_members(mlist, emails):
     '''

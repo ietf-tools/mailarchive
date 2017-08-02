@@ -448,10 +448,10 @@ var mailarch = {
         // Use arrow as message detail link instead of subject text
         if(!mailarch.isSmallViewport()) {
             mailarch.$msgLinks.each(function(index) {
-                // console.log( index + ": " + $( this ).text() );
-                var text = $( this ).text();
+                //console.log( index + ": " + $( this ).html() );
+                var html = $( this ).html();
                 $( this ).html('<i class="fa fa-arrow-right" aria-hidden="true"></i>');
-                $( this ).before(text);
+                $( this ).before(html);
             })
         }
         

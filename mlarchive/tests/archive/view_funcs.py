@@ -1,10 +1,14 @@
 import datetime
+import email
+import glob
+import mailbox
 import pytest
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.test.client import RequestFactory
 from factories import *
 from mlarchive.archive.view_funcs import *
 from mlarchive.archive.forms import group_by_thread
+from mlarchive.archive.models import EmailList
 from haystack.query import SearchQuerySet
 
 def test_chunks():
@@ -106,14 +110,83 @@ def test_get_export_empty(client):
     #assert q('li.error').text() == "No messages to export."
 
 
-#def test_get_export_limit(client,settings):
-    # settings.EXPORT_LIMIT = 1
-    # load two mesages
-    # build dummy sqs
+@pytest.mark.django_db(transaction=True)
+def test_get_export_limit(client,messages,settings):
+    settings.EXPORT_LIMIT = 1
+    get_url = '%s?%s' % (reverse('archive_export',kwargs={'type':'url'}), 'q=database')
+    redirect_url = '%s?%s' % (reverse('archive_search'), 'q=database')
+    factory = RequestFactory()
+    request = factory.get(get_url)
+    setattr(request, 'session', {})
+    messages = FallbackStorage(request)
+    setattr(request, '_messages', messages)
+    response = get_export(SearchQuerySet(),'mbox',request)
+    assert response.status_code == 302
 
-#def test_get_export_mbox(client):
 
-#def test_get_export_maildir(client):
+@pytest.mark.django_db(transaction=True)
+def test_get_export_anonymous_limit(client,thread_messages,settings):
+    settings.ANONYMOUS_EXPORT_LIMIT = 1
+    url = '%s?%s' % (reverse('archive_export',kwargs={'type':'mbox'}), 'q=anvil')
+    user = UserFactory.create(is_superuser=True)
+    response = client.get(url)
+    assert response.status_code == 302
+    assert client.login(username='admin',password='admin')
+    response = client.get(url)
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db(transaction=True)
+def test_get_export_mbox(client,thread_messages,tmpdir):
+    get_url = '%s?%s' % (reverse('archive_export',kwargs={'type':'mbox'}), 'q=database')
+    # build request object
+    factory = RequestFactory()
+    request = factory.get(get_url)
+    setattr(request, 'session', {})
+    messages = FallbackStorage(request)
+    setattr(request, '_messages', messages)
+    elist = EmailList.objects.get(name='acme')
+    sqs = SearchQuerySet().filter(email_list=elist.pk)
+
+    # validate response is valid tarball with mbox file, with 4 messages
+    response = get_export(sqs,'mbox',request)
+    assert response.status_code == 200
+    assert response.has_header('content-disposition')
+    tar = tarfile.open(mode= "r:gz", fileobj = StringIO(response.content))
+    assert len(tar.getmembers()) == 1
+    path = tmpdir.mkdir('sub').strpath
+    tar.extractall(path)
+    mboxs = glob.glob(os.path.join(path,'*','acme','*.mbox'))
+    mbox = mailbox.mbox(mboxs[0])
+    assert len(mbox) == 4
+
+
+@pytest.mark.django_db(transaction=True)
+def test_get_export_maildir(client,thread_messages,tmpdir):
+    get_url = '%s?%s' % (reverse('archive_export',kwargs={'type':'maildir'}), 'q=database')
+    # build request object
+    factory = RequestFactory()
+    request = factory.get(get_url)
+    setattr(request, 'session', {})
+    messages = FallbackStorage(request)
+    setattr(request, '_messages', messages)
+    elist = EmailList.objects.get(name='acme')
+    sqs = SearchQuerySet().filter(email_list=elist.pk)
+
+    # validate response is valid tarball with maildir directory and 4 messages
+    response = get_export(sqs,'maildir',request)
+    assert response.status_code == 200
+    assert response.has_header('content-disposition')
+    tar = tarfile.open(mode= "r:gz", fileobj = StringIO(response.content))
+    assert len(tar.getmembers()) == 4
+    path = tmpdir.mkdir('sub').strpath
+    tar.extractall(path)
+    files = glob.glob(os.path.join(path,'*','acme','*'))
+    assert len(files) == 4
+    with open(files[0]) as fp:
+        msg = email.message_from_file(fp)
+    assert msg['message-id'] == '<00001@example.com>'
+
 
 @pytest.mark.django_db(transaction=True)
 def test_get_export_url(messages):
@@ -128,8 +201,7 @@ def test_get_export_url(messages):
     assert response.status_code == 200
     message = Message.objects.first()
     assert message.get_absolute_url() in response.content
-    #print response.content
-    #assert False
+
 
 @pytest.mark.django_db(transaction=True)
 def test_get_query_neighbors(messages):

@@ -43,34 +43,34 @@ def load_db():
 
     # add thread view messages
     # NOTE: thread_order 1 has later date
-    acme = EmailListFactory.create(name='acme')
+    apple = EmailListFactory.create(name='apple')
     cthread = ThreadFactory.create(date=datetime.datetime(2017, 1, 1))
-    MessageFactory.create(email_list=acme,
+    MessageFactory.create(email_list=apple,
                           thread=cthread,
                           subject='New Topic',
                           thread_order=0,
                           date=datetime.datetime(2017, 1, 1))
-    MessageFactory.create(email_list=acme,
+    MessageFactory.create(email_list=apple,
                           thread=cthread,
                           subject='Re: New Topic',
                           thread_order=5,
                           date=datetime.datetime(2017, 1, 2))
-    MessageFactory.create(email_list=acme,
+    MessageFactory.create(email_list=apple,
                           thread=cthread,
                           subject='Re: New Topic',
                           thread_order=2,
                           date=datetime.datetime(2017, 1, 3))
-    MessageFactory.create(email_list=acme,
+    MessageFactory.create(email_list=apple,
                           thread=cthread,
                           subject='Re: New Topic',
                           thread_order=3,
                           date=datetime.datetime(2017, 1, 4))
-    MessageFactory.create(email_list=acme,
+    MessageFactory.create(email_list=apple,
                           thread=cthread,
                           subject='Re: New Topic',
                           thread_order=4,
                           date=datetime.datetime(2017, 1, 5))
-    MessageFactory.create(email_list=acme,
+    MessageFactory.create(email_list=apple,
                           thread=cthread,
                           subject='Re: New Topic',
                           thread_order=1,

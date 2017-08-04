@@ -129,6 +129,7 @@ class CustomSearchView(SearchView):
             extra['view_thread_url'] = reverse('archive_search') + '?' + new_query.urlencode()
 
         # export links
+        extra['anonymous_export_limit'] = settings.ANONYMOUS_EXPORT_LIMIT
         extra['export_mbox'] = reverse('archive_export',kwargs={'type':'mbox'}) + query_string
         extra['export_maildir'] = reverse('archive_export',kwargs={'type':'maildir'})+ query_string
         extra['export_url'] = reverse('archive_export',kwargs={'type':'url'})+ query_string

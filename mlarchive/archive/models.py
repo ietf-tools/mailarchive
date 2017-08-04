@@ -426,7 +426,8 @@ def _list_save_handler(sender, instance, **kwargs):
 
 
 def _export_lists():
-    """Produce XML dump of list memberships and call external program"""
+    """Write XML dump of list / memberships and call external program"""
+    
     # Dump XML
     data = _get_lists_as_xml()
     path = os.path.join(settings.EXPORT_DIR, 'email_lists.xml')
@@ -452,7 +453,7 @@ def _export_lists():
 
 
 def _get_lists_as_xml():
-    """ Provides the results of get_lists as an xml document."""
+    """Returns string: XML of lists / membership for IMAP"""
     lines = []
     lines.append("<ms_config>")
 

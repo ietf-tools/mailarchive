@@ -93,7 +93,11 @@
                         
                         <ul class="nav navbar-nav navbar-right">
                             <li class="dropdown">
+                                {% if not user.is_authenticated and count > anonymous_export_limit %}
+                                <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" title="Login to enable large exports">Export <span class="caret"></span></a>
+                                {% else %}
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Export <span class="caret"></span></a>
+                                {% endif %}
                                 <ul class="dropdown-menu">
                                     <li><a href="{{ export_mbox }}">Mbox</a></li>
                                     <li><a href="{{ export_maildir }}">Maildir</a></li>

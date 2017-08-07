@@ -3,12 +3,11 @@ import email
 import glob
 import mailbox
 import pytest
-from django.contrib.messages.storage.fallback import FallbackStorage
-from django.test.client import RequestFactory
 from factories import *
 from mlarchive.archive.view_funcs import *
 from mlarchive.archive.forms import group_by_thread
 from mlarchive.archive.models import EmailList
+from mlarchive.utils.test_utils import get_request
 from haystack.query import SearchQuerySet
 
 def test_chunks():
@@ -95,13 +94,9 @@ def test_get_columns():
     assert len(columns['active']) == 1
 
 def test_get_export_empty(client):
-    get_url = '%s?%s' % (reverse('archive_export',kwargs={'type':'mbox'}), 'q=database')
+    url = '%s?%s' % (reverse('archive_export',kwargs={'type':'mbox'}), 'q=database')
     redirect_url = '%s?%s' % (reverse('archive_search'), 'q=database')
-    factory = RequestFactory()
-    request = factory.get(get_url)
-    setattr(request, 'session', {})
-    messages = FallbackStorage(request)
-    setattr(request, '_messages', messages)
+    request = get_request(url=url)
     response = get_export(SearchQuerySet().none(),'mbox',request)
     #response = client.get(url, follow=True)
     assert response.status_code == 302
@@ -113,13 +108,9 @@ def test_get_export_empty(client):
 @pytest.mark.django_db(transaction=True)
 def test_get_export_limit(client,messages,settings):
     settings.EXPORT_LIMIT = 1
-    get_url = '%s?%s' % (reverse('archive_export',kwargs={'type':'url'}), 'q=database')
+    url = '%s?%s' % (reverse('archive_export',kwargs={'type':'url'}), 'q=database')
     redirect_url = '%s?%s' % (reverse('archive_search'), 'q=database')
-    factory = RequestFactory()
-    request = factory.get(get_url)
-    setattr(request, 'session', {})
-    messages = FallbackStorage(request)
-    setattr(request, '_messages', messages)
+    request = get_request(url=url)
     response = get_export(SearchQuerySet(),'mbox',request)
     assert response.status_code == 302
 
@@ -138,13 +129,8 @@ def test_get_export_anonymous_limit(client,thread_messages,settings):
 
 @pytest.mark.django_db(transaction=True)
 def test_get_export_mbox(client,thread_messages,tmpdir):
-    get_url = '%s?%s' % (reverse('archive_export',kwargs={'type':'mbox'}), 'q=database')
-    # build request object
-    factory = RequestFactory()
-    request = factory.get(get_url)
-    setattr(request, 'session', {})
-    messages = FallbackStorage(request)
-    setattr(request, '_messages', messages)
+    url = '%s?%s' % (reverse('archive_export',kwargs={'type':'mbox'}), 'q=database')
+    request = get_request(url=url)
     elist = EmailList.objects.get(name='acme')
     sqs = SearchQuerySet().filter(email_list=elist.pk)
 
@@ -163,13 +149,8 @@ def test_get_export_mbox(client,thread_messages,tmpdir):
 
 @pytest.mark.django_db(transaction=True)
 def test_get_export_maildir(client,thread_messages,tmpdir):
-    get_url = '%s?%s' % (reverse('archive_export',kwargs={'type':'maildir'}), 'q=database')
-    # build request object
-    factory = RequestFactory()
-    request = factory.get(get_url)
-    setattr(request, 'session', {})
-    messages = FallbackStorage(request)
-    setattr(request, '_messages', messages)
+    url = '%s?%s' % (reverse('archive_export',kwargs={'type':'maildir'}), 'q=database')
+    request = get_request(url=url)
     elist = EmailList.objects.get(name='acme')
     sqs = SearchQuerySet().filter(email_list=elist.pk)
 
@@ -190,13 +171,9 @@ def test_get_export_maildir(client,thread_messages,tmpdir):
 
 @pytest.mark.django_db(transaction=True)
 def test_get_export_url(messages):
-    get_url = '%s?%s' % (reverse('archive_export',kwargs={'type':'url'}), 'q=database')
+    url = '%s?%s' % (reverse('archive_export',kwargs={'type':'url'}), 'q=database')
     redirect_url = '%s?%s' % (reverse('archive_search'), 'q=database')
-    factory = RequestFactory()
-    request = factory.get(get_url)
-    setattr(request, 'session', {})
-    messages = FallbackStorage(request)
-    setattr(request, '_messages', messages)
+    request = get_request(url=url)
     response = get_export(SearchQuerySet(),'url',request)
     assert response.status_code == 200
     message = Message.objects.first()

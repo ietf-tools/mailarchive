@@ -20,12 +20,9 @@ from mlarchive.utils.decorators import check_access, superuser_only
 def ajax_admin_action(request):
     """Ajax function to perform action on a message"""
     if request.method == 'GET':
-        #assert False, request.GET
-        #return
         action = request.GET.get('action')
         id = request.GET.get('id')
         func = getattr(actions, action)
-        #selected = request.POST.getlist('_selected_action')
         queryset = Message.objects.filter(pk=id)
         func(request, queryset)
         return { 'success' : True }

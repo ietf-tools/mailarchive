@@ -1,8 +1,8 @@
 import pytest
 
-from django.contrib.messages.storage.fallback import FallbackStorage
 from factories import *
 from mlarchive.archive.actions import *
+from mlarchive.utils.test_utils import get_request
 from django.http import HttpRequest
 
 @pytest.mark.django_db(transaction=True)
@@ -27,16 +27,10 @@ def test_remove_selected(client):
 
     query = Message.objects.all()
     assert query.count() == 1
-    request = HttpRequest()
-    setattr(request, 'session', {})
-    setattr(request, 'user', user)
-    messages = FallbackStorage(request)
-    setattr(request, '_messages', messages)
+    request = get_request(user=user)
     result = remove_selected(request, query)
 
     assert result.status_code == 302
-    #print result.content
-    #assert result.content.find('1 Message Removed') != -1
     assert os.path.exists(target)
     assert not os.path.exists(path)
     assert Message.objects.count() == 0
@@ -51,10 +45,7 @@ def test_not_spam(client):
 
     query = Message.objects.all()
     assert query.count() == 1
-    request = HttpRequest()
-    setattr(request, 'session', 'session')
-    messages = FallbackStorage(request)
-    setattr(request, '_messages', messages)
+    request = get_request(user=user)
     result = not_spam(request, query)
 
     msg = Message.objects.first()

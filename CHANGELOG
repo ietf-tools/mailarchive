@@ -1,4 +1,18 @@
 
+mailarch (1.10.4) ietf; urgency=normal
+
+ * Change bin/get_membership.py to not truncate usernames.  Fixes #1562
+
+ * Fix issue where bracket enclosed draft name is missing from subject line.  Fixes #2342
+
+ * Limit the allowed export size for non authenticated users.  Fixes #2344
+
+ * Fix issue with IMAP export where private lists with no subscribers marked public.  Fixes #2294
+
+ * Fix get_membership settings for Django 1.10 changes.  Fixes #2290
+
+-- Ryan Cross <rcross@amsl.com>  07 Aug 2017 11:00:00 +0800
+
 mailarch (1.10.3) ietf; urgency=normal
 
  * Upgrade to Celery 4.0

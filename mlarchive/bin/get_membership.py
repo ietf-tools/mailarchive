@@ -19,15 +19,10 @@ from django.contrib.auth.models import User
 from ietf.person.models import Email
 from optparse import OptionParser
 from mlarchive.archive.models import EmailList, _list_save_handler, _export_lists
-from subprocess import CalledProcessError
+from subprocess import CalledProcessError, check_output
 import hashlib
 import base64
 
-
-try:
-    from subprocess import check_output
-except ImportError:
-    from mlarchive.utils import check_output
 
 def lookup(address):
     '''

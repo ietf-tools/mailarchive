@@ -106,26 +106,33 @@ def test_get_export_empty(client):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_get_export_limit(client,messages,settings):
+def test_get_export_limit_mbox(client,messages,settings):
     settings.EXPORT_LIMIT = 1
-    url = '%s?%s' % (reverse('archive_export',kwargs={'type':'url'}), 'q=database')
+    url = '%s?%s' % (reverse('archive_export',kwargs={'type':'mbox'}), 'q=database')
     redirect_url = '%s?%s' % (reverse('archive_search'), 'q=database')
     request = get_request(url=url)
     response = get_export(SearchQuerySet(),'mbox',request)
     assert response.status_code == 302
 
+@pytest.mark.django_db(transaction=True)
+def test_get_export_limit_url(client,messages,settings):
+    settings.EXPORT_LIMIT = 1
+    url = '%s?%s' % (reverse('archive_export',kwargs={'type':'url'}), 'q=database')
+    redirect_url = '%s?%s' % (reverse('archive_search'), 'q=database')
+    request = get_request(url=url)
+    response = get_export(SearchQuerySet(),'url',request)
+    assert response.status_code == 302
 
 @pytest.mark.django_db(transaction=True)
 def test_get_export_anonymous_limit(client,thread_messages,settings):
     settings.ANONYMOUS_EXPORT_LIMIT = 1
-    url = '%s?%s' % (reverse('archive_export',kwargs={'type':'mbox'}), 'q=anvil')
     user = UserFactory.create(is_superuser=True)
+    url = '%s?%s' % (reverse('archive_export',kwargs={'type':'mbox'}), 'q=anvil')
     response = client.get(url)
     assert response.status_code == 302
     assert client.login(username='admin',password='admin')
     response = client.get(url)
     assert response.status_code == 200
-
 
 @pytest.mark.django_db(transaction=True)
 def test_get_export_mbox(client,thread_messages,tmpdir):

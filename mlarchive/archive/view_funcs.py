@@ -249,6 +249,17 @@ def get_columns(user):
 
 def get_export(sqs, export_type, request):
     """Process an export request"""
+
+    # don't allow export of huge querysets and skip empty querysets
+    count = sqs.count()
+    redirect_url = '%s?%s' % (reverse('archive_search'), request.META['QUERY_STRING'])
+    if (count > settings.EXPORT_LIMIT) or (count > settings.ANONYMOUS_EXPORT_LIMIT and not request.user.is_authenticated()):
+        messages.error(request,'Too many messages to export.')
+        return redirect(redirect_url)
+    elif count == 0:
+        messages.error(request,'No messages to export.')
+        return redirect(redirect_url)
+
     if export_type == 'url':
         return get_export_url(sqs,export_type,request)
     else:
@@ -262,7 +273,7 @@ def get_export_url(sqs, export_type, request):
         content.append(request.build_absolute_uri(url))
     return HttpResponse('\n'.join(content), content_type='text/plain')
 
-def get_export_tar(sqs, type, request):
+def get_export_tar(sqs, export_type, request):
     """Returns a tar archive of messages
 
     sqs is SearchQuerySet object, the result of a search, and type is a string
@@ -270,63 +281,15 @@ def get_export_tar(sqs, type, request):
     to the appropriate mail box type, in a zipped tarfile.  The function returns the
     tarfile, with seek(0) to reset for reading, and the filename as a string.
     """
-    # don't allow export of huge querysets and skip empty querysets
-    count = sqs.count()
-    redirect_url = '%s?%s' % (reverse('archive_search'), request.META['QUERY_STRING'])
-    if (count > settings.EXPORT_LIMIT) or (count > settings.ANONYMOUS_EXPORT_LIMIT and not request.user.is_authenticated()):
-        messages.error(request,'Too many messages to export.')
-        return redirect(redirect_url)
-    elif count == 0:
-        messages.error(request,'No messages to export.')
-        return redirect(redirect_url)
-
     tardata = StringIO()
     tar = tarfile.open(fileobj=tardata, mode='w:gz')
-
-    # make filename
-    chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + '_'
-    rand = ''.join(random.choice(chars) for x in range(5))
-    now = datetime.datetime.now()
-    basename = '%s%s_%s' % (type,now.strftime('%m%d'),rand)
+    basename = get_random_basename(prefix=export_type)
     filename = basename + '.tar.gz'
 
-    if type == 'maildir':
-        for result in sqs:
-            arcname = os.path.join(basename,result.object.email_list.name,result.object.hashcode)
-            tar.add(result.object.get_file_path(),arcname=arcname)
-    elif type == 'mbox':
-        # there are various problems adding non-file objects (ie. StringIO) to tar files
-        # therefore the mbox files are first built on disk
-        mbox_date = sqs[0].object.date.strftime('%Y-%m')
-        mbox_list = sqs[0].object.email_list.name
-        fd, temp_path = tempfile.mkstemp()
-        mbox_file = os.fdopen(fd,'w')
-        for result in sqs:
-            date = result.object.date.strftime('%Y-%m')
-            mlist = result.object.email_list.name
-            if date != mbox_date or mlist != mbox_list:
-                mbox_file.close()
-                tar.add(temp_path,arcname=os.path.join(basename,
-                                                       mbox_list,
-                                                       mbox_date + '.mbox'))
-                os.remove(temp_path)
-                fd, temp_path = tempfile.mkstemp()
-                mbox_file = os.fdopen(fd,'w')
-                mbox_date = date
-                mbox_list = mlist
-
-            with open(result.object.get_file_path()) as input:
-                # add envelope header
-                from_line = to_str(result.object.get_from_line()) + '\n'
-                mbox_file.write(from_line)
-                mbox_file.write(input.read())
-                mbox_file.write('\n')
-
-        mbox_file.close()
-        tar.add(temp_path,arcname=os.path.join(basename,
-                                               mbox_list,
-                                               mbox_date + '.mbox'))
-        os.remove(temp_path)
+    if export_type == 'maildir':
+        tar = build_maildir_tar(sqs,tar,basename)
+    elif export_type == 'mbox':
+        tar = build_mbox_tar(sqs,tar,basename)
 
     tar.close()
     tardata.seek(0)
@@ -337,6 +300,60 @@ def get_export_tar(sqs, type, request):
     tardata.close()
     return response
 
+def get_random_basename(prefix):
+    """Returns a string [prefix][date]_[random characters]"""
+    chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + '_'
+    rand = ''.join(random.choice(chars) for x in range(5))
+    now = datetime.datetime.now()
+    return '{prefix}{date}_{random}'.format(
+        prefix=prefix,
+        date=now.strftime('%m%d'),
+        random=rand
+    )
+
+def build_maildir_tar(sqs, tar, basename):
+    """Returns tar file with messages from SearchQuerySet in maildir format"""
+    for result in sqs:
+        arcname = os.path.join(basename,result.object.email_list.name,result.object.hashcode)
+        tar.add(result.object.get_file_path(),arcname=arcname)
+    return tar
+
+def build_mbox_tar(sqs, tar, basename):
+    """Returns tar file with messages from SearchQuerySet in mmox format.
+    There are various problems adding non-file objects (ie. StringIO) to tar files
+    therefore the mbox files are first built on disk
+    """
+    mbox_date = sqs[0].object.date.strftime('%Y-%m')
+    mbox_list = sqs[0].object.email_list.name
+    fd, temp_path = tempfile.mkstemp()
+    mbox_file = os.fdopen(fd,'w')
+    for result in sqs:
+        date = result.object.date.strftime('%Y-%m')
+        mlist = result.object.email_list.name
+        if date != mbox_date or mlist != mbox_list:
+            mbox_file.close()
+            tar.add(temp_path,arcname=os.path.join(basename,
+                                                   mbox_list,
+                                                   mbox_date + '.mbox'))
+            os.remove(temp_path)
+            fd, temp_path = tempfile.mkstemp()
+            mbox_file = os.fdopen(fd,'w')
+            mbox_date = date
+            mbox_list = mlist
+
+        with open(result.object.get_file_path()) as input:
+            # add envelope header
+            from_line = to_str(result.object.get_from_line()) + '\n'
+            mbox_file.write(from_line)
+            mbox_file.write(input.read())
+            mbox_file.write('\n')
+
+    mbox_file.close()
+    tar.add(temp_path,arcname=os.path.join(basename,
+                                           mbox_list,
+                                           mbox_date + '.mbox'))
+    os.remove(temp_path)
+    return tar
 
 def get_message_index(query,message):
     """Returns the index of message in SearchQuerySetmessage, -1 if not found"""

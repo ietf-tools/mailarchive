@@ -10,7 +10,7 @@ var mailarchAdmin = {
         mailarchAdmin.$adminResults.focus();
         mailarchAdmin.selectInitialMessage();
         //$(document).keydown(mailarchAdmin.messageNav);
-        $('#id_email_list').selectize();
+        $('#id_email_list').selectize({maxOptions:2000});
     },
         
     cacheDom: function() {

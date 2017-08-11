@@ -218,7 +218,7 @@ class AdminForm(forms.Form):
     start_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Start date', required=False)
     end_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='End date', required=False)
     email_list = forms.ModelMultipleChoiceField(
-        queryset=EmailList.objects,
+        queryset=EmailList.objects.all().order_by('name'),
         required=False)
     spam = forms.BooleanField(required=False)
     spam_score = forms.CharField(max_length=6,required=False)

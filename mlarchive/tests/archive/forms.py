@@ -78,13 +78,13 @@ def test_group_by_thread(messages):
     print '{}'.format([ (x.pk,x.tdate,x.date) for x in sqs ])
     assert [ x.pk for x in sqs ] == [1,4,2,3]       # assert grouped by thread order
 
-@pytest.mark.django_db(transaction=True)
-def test_sort_by_subject(messages):
-    sqs = SearchQuerySet().filter(email_list=1)
-    sqs = sort_by_subject(sqs,None,reverse=True)
-    assert [ x.pk for x in sqs ] == [3,4,2,1]
-    sqs = sort_by_subject(sqs,None,reverse=False)
-    assert [ x.pk for x in sqs ] == [1,2,4,3]
+#@pytest.mark.django_db(transaction=True)
+#def test_sort_by_subject(messages):
+#    sqs = SearchQuerySet().filter(email_list=1)
+#    sqs = sort_by_subject(sqs,None,reverse=True)
+#    assert [ x.pk for x in sqs ] == [3,4,2,1]
+#    sqs = sort_by_subject(sqs,None,reverse=False)
+#    assert [ x.pk for x in sqs ] == [1,2,4,3]
 
 def test_transform():
     assert transform('invalid') == ''

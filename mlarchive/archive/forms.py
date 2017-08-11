@@ -153,17 +153,6 @@ def is_nojs_value(items):
         return False
 
 
-def sort_by_subject(qs, sso, reverse=False):
-    new_query = qs._clone()
-
-    # build sorted list of SearchResult objects
-    result = sorted(new_query, key=lambda x: x.object.base_subject,reverse=reverse)
-
-    # swap in sorted list
-    new_query._result_cache = result
-
-    return new_query
-
 def transform(val):
     """This function takes a sort parameter and validates and transforms it for use
     in an order_by clause.
@@ -438,24 +427,20 @@ class AdvancedSearchForm(FacetedSearchForm):
         if gbt:
             sqs = group_by_thread(sqs, so, sso, reverse=True)
         elif so:
-            if so == 'subject':
-                sqs = sort_by_subject(sqs,sso)
-            elif so == '-subject':
-                sqs = sort_by_subject(sqs,sso,reverse=True)
-            else:
-                sqs = sqs.order_by(*sort_values)
+            sqs = sqs.order_by(*sort_values)
         else:
             sqs = sqs.order_by(DEFAULT_SORT)
-
-        # insert facets just before returning query, so they don't get overridden
-        # sqs.query.run()                     # force run of query
-        sqs.myfacets = facets
 
         # save query in cache with random id for security
         queryid = generate_queryid()
         sqs.query_string = self.request.META['QUERY_STRING']
-        cache.set(queryid,sqs,7200)           # 2 hours
         sqs.queryid = queryid
+        # logger.info('Queryid:%s' % queryid)
+        cache.set(queryid,sqs,7200)           # 2 hours
+
+
+        # insert facets just before returning query, so they don't get overridden
+        sqs.myfacets = facets
 
         return sqs
 

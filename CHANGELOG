@@ -1,4 +1,18 @@
 
+mailarch (1.10.5) ietf; urgency=normal
+
+ * Fix ordering of email lists in admin form.  Fixes #1594
+
+ * Fix sort by subject malfunction.  Fixes #1520
+
+ * Remove check_output from utils/__init__.py.  Fixes #1632
+
+ * Extend export limits to URL exports.  Fixes #2351
+
+ * Create script to do daily checks of index.  Fixes #2168
+
+-- Ryan Cross <rcross@amsl.com>  14 Aug 2017 13:00:00 +0800
+
 mailarch (1.10.4) ietf; urgency=normal
 
  * Change bin/get_membership.py to not truncate usernames.  Fixes #1562

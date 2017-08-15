@@ -12,7 +12,7 @@ def load_db():
     pubone = EmailListFactory.create(name='pubone')
     pubtwo = EmailListFactory.create(name='pubtwo')
     pubthree = EmailListFactory.create(name='pubthree')
-    EmailListFactory.create(name='private', private=True)
+    private = EmailListFactory.create(name='private', private=True)
     athread = ThreadFactory.create(date=datetime.datetime(2013, 1, 1))
     bthread = ThreadFactory.create(date=datetime.datetime(2013, 2, 1))
     MessageFactory.create(email_list=pubone,
@@ -75,7 +75,8 @@ def load_db():
                           subject='Re: New Topic',
                           thread_order=1,
                           date=datetime.datetime(2017, 1, 6))
-                          
+    MessageFactory.create(email_list=private)
+    
 @pytest.fixture(scope="session")
 def index_resource():
     if not Message.objects.first():

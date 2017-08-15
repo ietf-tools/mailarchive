@@ -1,9 +1,8 @@
 import pytest
-import xml.etree.ElementTree as ET
 
 import os
 from factories import *
-from mlarchive.archive.models import Message, EmailList, _get_lists_as_xml
+from mlarchive.archive.models import Message, EmailList
 
 
 @pytest.mark.django_db(transaction=True)
@@ -190,32 +189,3 @@ def test_message_previous_in_thread_different_thread(client):
     assert thread1.first == message1
     assert message3.previous_in_thread() == message1
 
-@pytest.mark.django_db(transaction=True)
-def test_notify_new_list(client, tmpdir, settings):
-    settings.EXPORT_DIR = str(tmpdir)
-    EmailList.objects.create(name='dummy')
-    path = os.path.join(settings.EXPORT_DIR, 'email_lists.xml')
-    assert os.path.exists(path)
-    with open(path) as file:
-        assert 'dummy' in file.read()
-
-@pytest.mark.django_db(transaction=True)
-def test_get_lists_as_xml(client):
-    private = EmailListFactory.create(name='private',private=True)
-    public = EmailListFactory.create(name='public',private=False)
-    user = UserFactory.create(username='test')
-    private.members.add(user)
-    xml = _get_lists_as_xml()
-    root = ET.fromstring(xml)
-
-    print xml
-
-    public_anonymous = root.find("shared_root/[@name='public']").find("user/[@name='anonymous']")
-    assert public_anonymous.attrib['access'] == 'read'
-
-    private_anonymous = root.find("shared_root/[@name='private']").find("user/[@name='anonymous']")
-    assert private_anonymous.attrib['access'] == 'none'
-    
-    private_test = root.find("shared_root/[@name='private']").find("user/[@name='test']")
-    assert private_test.attrib['access'] == 'read,write'
-    

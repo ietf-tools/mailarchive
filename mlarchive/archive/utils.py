@@ -14,7 +14,7 @@ from mlarchive.archive.models import EmailList
 # --------------------------------------------------
 
 def get_noauth(request):
-    """This function takes a request object and returns a list of private email list names
+    """This function takes a request object and returns a list of private email list IDs
     (as string) the user does NOT have access to, for use in an exclude().  The list is
     stored in the request session to minimize database hits.
     """
@@ -22,7 +22,9 @@ def get_noauth(request):
     if noauth:
         return noauth
     
-    if request.user.is_authenticated():
+    if request.user.is_superuser:
+        request.session['noauth'] = []
+    elif request.user.is_authenticated:
         request.session['noauth'] = [ str(x.id) for x in EmailList.objects.filter(
             private=True).exclude(members=request.user) ]
     else:

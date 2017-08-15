@@ -391,15 +391,7 @@ class AdvancedSearchForm(FacetedSearchForm):
             sqs = sqs.filter(**self.kwargs)
 
         # private lists -------------------------------------------
-        if self.request.user.is_authenticated():
-            if not self.request.user.is_superuser:
-                # exclude those lists the user is not authorized for
-                sqs = sqs.exclude(email_list__in=get_noauth(self.request))
-        else:
-            # exclude all private lists
-            # TODO cache this query, see Low Level Cache API
-            private_lists = [ str(x.id) for x in EmailList.objects.filter(private=True) ]
-            sqs = sqs.exclude(email_list__in=private_lists)
+        sqs = sqs.exclude(email_list__in=get_noauth(self.request))
 
         # faceting ------------------------------------------------
         # call this before running sorts or applying filters to queryset

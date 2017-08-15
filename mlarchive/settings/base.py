@@ -137,7 +137,7 @@ INSTALLED_APPS = [
     'celery_haystack',
     'haystack',
     'htauth',
-    'mlarchive.archive',
+    'mlarchive.archive.apps.ArchiveConfig',
     'widget_tweaks',
 ]
 

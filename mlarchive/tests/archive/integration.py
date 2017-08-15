@@ -49,23 +49,55 @@ def test_auth_browse(client):
     q = PyQuery(response.content)
     assert len(q('#private-lists li')) == 1
 
-def test_not_logged_search(client):
-    'Test that a not logged in user does not see private lists in search results'
-    # check results and filters
-    pass
+@pytest.mark.django_db(transaction=True)
+def test_not_logged_search(client,messages):
+    '''Test that a not logged in user does not see private lists in search results'''
+    url = reverse('archive_search') + '?email_list=private'
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert len(results) == 0
 
-def test_unauthorized_ajax_request(client):
-    'Test that'
-    pass
+@pytest.mark.django_db(transaction=True)
+def test_unauth_search(client,messages):
+    """Test that a logged in user does not see results from private lists they aren't a member of"""
+    user = UserFactory.create(username='dummy')
+    assert client.login(username='dummy',password='admin')
+    url = reverse('archive_search') + '?email_list=private'
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert len(results) == 0
 
+@pytest.mark.django_db(transaction=True)
 def test_admin_access(client):
-    'Test that only superusers see admin link and have access to admin pages'
-    pass
+    '''Test that only superusers see admin link and have access to admin pages'''
+    url = reverse('archive')
+    # anonymous user
+    response = client.get(url)
+    assert response.status_code == 200
+    q = PyQuery(response.content)
+    assert len(q('a[href="/arch/admin"]')) == 0
+    # admin user
+    user = UserFactory.create(is_superuser=True)
+    assert client.login(username='admin',password='admin')
+    response = client.get(url)
+    assert response.status_code == 200
+    q = PyQuery(response.content)
+    assert len(q('a[href="/arch/admin/"]')) == 1
 
+@pytest.mark.django_db(transaction=True)
 def test_console_access(client):
-    'Test that only superusers have access to console page'
-    url = reverse('archive_browse')
-    pass
+    '''Test that only superusers have access to console page'''
+    url = reverse('archive_admin_console')
+    # anonymous user
+    response = client.get(url)
+    assert response.status_code == 403
+    # admin user
+    user = UserFactory.create(is_superuser=True)
+    assert client.login(username='admin',password='admin')
+    response = client.get(url)
+    assert response.status_code == 200
 
 # --------------------------------------------------
 # Queries

@@ -20,7 +20,7 @@ def check_access(func):
     """
     def wrapper(request, *args, **kwargs):
         # if passed as a URL parameter id is a record id (more common)
-        if request.GET.has_key('id'):
+        if request.GET.get('id','').isdigit():
             msg = get_object_or_404(Message,id=request.GET['id'])
         # if passed as a function argument id is a hashcode (less common)
         elif 'id' in kwargs:

@@ -78,6 +78,14 @@ def test_admin_search_list(client,messages):
     results = response.context['results']
     assert msg in [ r.object for r in results ]
 
+@pytest.mark.django_db(transaction=True)
+def test_admin_no_action(client,messages):
+    user = UserFactory.create(is_superuser=True)
+    assert client.login(username='admin',password='admin')
+    url = reverse('archive_admin')
+    response = client.post(url,{'select-across':0,'index':0})
+    assert response.status_code == 200
+
 """
 @pytest.mark.django_db(transaction=True)
 def test_admin_search_from(client,messages):

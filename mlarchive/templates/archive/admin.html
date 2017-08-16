@@ -62,6 +62,7 @@
             </div>
             <div class="col-md-4">
                 <label class="sr-only" for="action-select">Action</label>
+                {{ action_form.action.errors }}
                 <select id="action-select" name="action" class="form-control" placeholder="Select action">
                     <option value="" selected="selected" disabled>Select Action</option>
                     <option value="remove_selected">Remove selected messages</option>

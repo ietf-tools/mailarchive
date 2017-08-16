@@ -231,6 +231,10 @@ class AdminForm(forms.Form):
             return [ e.pk for e in email_list ]
 
 
+class AdminActionForm(forms.Form):
+    action = forms.CharField(max_length=255)
+
+
 class AdvancedSearchForm(FacetedSearchForm):
     #start_date = forms.DateField(required=False,
     #        widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))

@@ -208,7 +208,6 @@ class CustomSearchView(SearchView):
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
-#@user_passes_test(lambda u: u.is_superuser)
 @superuser_only
 def admin(request):
     """Administrator View.  Only accessible by the superuser this view allows
@@ -216,31 +215,34 @@ def admin(request):
     results.  Available actions are defined in actions.py
     """
     results = None
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        func = getattr(actions, action)
-        selected = request.POST.getlist('_selected_action')
-        queryset = Message.objects.filter(pk__in=selected)
-        return func(request, queryset)
+    form = AdminForm()
+    action_form = AdminActionForm()
 
+    if request.method == 'POST':
+        action_form = AdminActionForm(request.POST)
+        if action_form.is_valid():
+            action = action_form.cleaned_data['action']      
+            func = getattr(actions, action)
+            selected = request.POST.getlist('_selected_action')
+            queryset = Message.objects.filter(pk__in=selected)
+            return func(request, queryset)
+    
     elif request.method == 'GET' and request.GET:
         form = AdminForm(request.GET)
         if form.is_valid():
             kwargs = get_kwargs(form.cleaned_data)
             if kwargs:
                 results = SearchQuerySet().filter(**kwargs).order_by('id')
-    else:
-        form = AdminForm()
 
     return render(request, 'archive/admin.html', {
         'results': results,
         'form': form,
+        'action_form': action_form,
     })
 
 @superuser_only
 def admin_console(request):
-    form = None
-    return render(request, 'archive/admin_console.html', {'form': form})
+    return render(request, 'archive/admin_console.html', {'form': None})
 
 @superuser_only
 def admin_guide(request):

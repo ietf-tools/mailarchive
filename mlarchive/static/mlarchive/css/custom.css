@@ -65,6 +65,16 @@ div:focus {
     outline: 0;
 }
 
+.errorlist {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.errorlist li {
+    background: #FF8080 url(../img/admin/icon_alert.gif) no-repeat scroll 5px 0.3em;
+    border: 1px solid #FF8080;
+}
+
 /* Progressive Enhancement Styling
    ========================================================================== */
 .js-show {

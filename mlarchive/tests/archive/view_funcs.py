@@ -181,9 +181,10 @@ def test_get_export_url(messages):
     url = '%s?%s' % (reverse('archive_export',kwargs={'type':'url'}), 'q=database')
     redirect_url = '%s?%s' % (reverse('archive_search'), 'q=database')
     request = get_request(url=url)
-    response = get_export(SearchQuerySet(),'url',request)
+    sqs = SearchQuerySet().filter(email_list=1)
+    response = get_export(sqs,'url',request)
     assert response.status_code == 200
-    message = Message.objects.first()
+    message = Message.objects.filter(email_list__pk=1).first()
     assert message.get_absolute_url() in response.content
 
 

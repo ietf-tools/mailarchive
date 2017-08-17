@@ -200,7 +200,7 @@ class Generator:
     def _handle_multipart_alternative(self,entity):
         """Handler for multipart/alternative.
         NOTE: rather than trying to handle possibly malformed HTML, prefer the
-        text/plain versions for display, which comes first.  Basically return first
+        text/* versions for display, which comes first.  Basically return first
         parsable item.
         """
         parts = []
@@ -209,7 +209,7 @@ class Generator:
         # the rest of the message as a string rather than the expected list of MIME
         # entities
         if not isinstance(entity.get_payload(), list):
-            return self._handle_text_plain(entity)
+            return self._handle_text(entity)
 
         for part in entity.get_payload():
             r = self.parse_entity(part)
@@ -221,10 +221,12 @@ class Generator:
     # non-multipart handlers ----------------------------------------------------------
 
     @skip_attachment
-    def _handle_text_plain(self,part):
-        """Handler for text/plain MIME parts.  Takes a message.Message part"""
+    def _handle_text(self,part):
+        """Fallback handler for text/* MIME parts.  Takes a message.Message part
+        Used by text/plain, text/enriched, etc
+        """
         if settings.DEBUG:
-            logger.debug('called: _handle_text_plain [{0}]'.format(self.msg.msgid))
+            logger.debug('called: _handle_text [{0}]'.format(self.msg.msgid))
 
         payload = self._get_decoded_payload(part)
         if self.text_only:

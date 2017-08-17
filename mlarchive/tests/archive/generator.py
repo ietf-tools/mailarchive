@@ -78,6 +78,21 @@ def test_handle_text_html_secure(client,messages):
     assert output.lower().find('<head') == -1
     assert output.lower().find('<style') == -1
 
+#@pytest.mark.django_db(transaction=True)
+#def test_handle_text_plain(client,messages):
+
+@pytest.mark.django_db(transaction=True)
+def test_handle_text_enriched(client):
+    path = os.path.join(settings.BASE_DIR,'tests','data','mail_text_enriched.1')
+    with open(path) as f:
+        data = f.read()
+    status = archive_message(data,'test',private=False)
+    assert status == 0
+    msg = Message.objects.first()
+    g = Generator(msg)
+    output = g.as_text()
+    assert 'This is a test email' in output
+
 @pytest.mark.django_db(transaction=True)
 def test_handle_message_external_body_type_a(client,messages):
     path = os.path.join(settings.BASE_DIR,'tests','data','mail_external_body.1')

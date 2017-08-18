@@ -9,6 +9,9 @@ usage:
 
 scan_all.py [func name] [optional arguments]
 
+examples:
+./scan_all.py find_mime text/x-perl-script
+
 """
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
@@ -252,6 +255,17 @@ def date(start):
                 print "Error: %s,%d (%s)" % (path, i, error.args)
 
     print "Total: %s" % total
+
+def find_mime(mime_type):
+    """Searches the archive for specified MIME type, lowercase"""
+    print "mime_type: {}".format(mime_type)
+    for elist in EmailList.objects.filter(name='wgchairs').order_by('name'):
+        print "Scanning {}".format(elist.name)
+        for msg in Message.objects.filter(email_list=elist).order_by('date'):
+            message = email.message_from_string(msg.get_body_raw())
+            for part in message.walk():
+                if part.get_content_type() == mime_type:
+                    print "MSG:{}".format(msg.pk)
 
 def header_date():
     nf = 0

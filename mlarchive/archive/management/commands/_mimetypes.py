@@ -212,6 +212,7 @@ CONTENT_TYPES = {
     'text/setext':('stx','Setext document'),
     'text/sgml':('sgml','SGML document'),
     'text/tab-separated-values':('tsv','Tab separated values'),
+    'text/x-perl-script':('pl','Perl script'),
     'text/x-speech':('talk','Speech document'),
     'text/x-vcard':('vcf','Vcard'),
 

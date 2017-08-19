@@ -259,7 +259,7 @@ def date(start):
 def find_mime(mime_type):
     """Searches the archive for specified MIME type, lowercase"""
     print "mime_type: {}".format(mime_type)
-    for elist in EmailList.objects.filter(name='wgchairs').order_by('name'):
+    for elist in EmailList.objects.all().order_by('name'):
         print "Scanning {}".format(elist.name)
         for msg in Message.objects.filter(email_list=elist).order_by('date'):
             message = email.message_from_string(msg.get_body_raw())

@@ -1,4 +1,18 @@
 
+mailarch (1.10.6) ietf; urgency=normal
+
+ * Add support for attachment MIME type text/x-perl-script.  Fixes #1924
+
+ * Implememt text/* MIME type fallback handler in generator.py.  Fixes #1863
+
+ * Fix issue when not choosing action on admin page.  Fixes #1713
+
+ * Fix error when empty id passed to ajax/msg.  Fxies #2179
+
+ * Fix private lists in browse dropdown.  Fixes #1595.  Also moved signals from models.py to signals.py.
+
+-- Ryan Cross <rcross@amsl.com>  22 Aug 2017 11:00:00 +0800
+
 mailarch (1.10.5) ietf; urgency=normal
 
  * Fix ordering of email lists in admin form.  Fixes #1594

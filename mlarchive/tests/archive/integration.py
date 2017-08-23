@@ -197,3 +197,17 @@ def test_queries_pagination_bogus(client,messages):
     assert response.status_code == 200
     assert len(response.context['results']) == 1    # should get last page
 
+@pytest.mark.django_db(transaction=True)
+def test_queries_range(client,messages):
+    '''Test valid range operator'''
+    url = reverse('archive_search') + '?q=date%3A2000..2014'
+    response = client.get(url)
+    assert response.status_code == 200
+    assert len(response.context['results']) == 3
+
+@pytest.mark.django_db(transaction=True)
+def test_queries_two_periods(client,messages):
+    '''Test that range operator (two periods) doesn't cause error'''
+    url = reverse('archive_search') + '?q=spec...)'
+    response = client.get(url)
+    assert response.status_code == 200

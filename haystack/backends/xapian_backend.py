@@ -89,6 +89,59 @@ class InvalidIndexError(HaystackError):
     pass
 
 
+class XHRangeProcessor(xapian.RangeProcessor):
+    """
+    A Processor to construct ranges of values
+    """
+    def __init__(self, backend):
+        self.backend = backend
+        xapian.RangeProcessor.__init__(self)
+
+    def __call__(self, begin, end):
+        """
+        Construct a query for value range processing.
+        `begin` -- a string in the format '<field_name>:[low_range]'
+        If 'low_range' is omitted, assume the smallest possible value.
+        `end` -- a string in the the format '[high_range|*]'. If '*', assume
+        the highest possible value.
+        Return a xapian.Query(OP_VALUE_RANGE, slot, begin, end)
+        """
+        colon = begin.find(':')
+        field_name = begin[:colon]
+        begin = begin[colon + 1:len(begin)]
+        for field_dict in self.backend.schema:
+            if field_dict['field_name'] == field_name:
+                field_type = field_dict['type']
+
+                if not begin:
+                    if field_type == 'text':
+                        begin = 'a'  # TODO: A better way of getting a min text value?
+                    elif field_type == 'integer':
+                        begin = -sys.maxsize - 1
+                    elif field_type == 'float':
+                        begin = float('-inf')
+                    elif field_type == 'date' or field_type == 'datetime':
+                        begin = '00010101000000'
+                elif end == '*':
+                    if field_type == 'text':
+                        end = 'z' * 100  # TODO: A better way of getting a max text value?
+                    elif field_type == 'integer':
+                        end = sys.maxsize
+                    elif field_type == 'float':
+                        end = float('inf')
+                    elif field_type == 'date' or field_type == 'datetime':
+                        end = '99990101000000'
+
+                if field_type == 'float':
+                    begin = _term_to_xapian_value(float(begin), field_type)
+                    end = _term_to_xapian_value(float(end), field_type)
+                elif field_type == 'integer':
+                    begin = _term_to_xapian_value(int(begin), field_type)
+                    end = _term_to_xapian_value(int(end), field_type)
+                return xapian.Query(xapian.Query.OP_VALUE_RANGE, field_dict['column'], str(begin), str(end))
+        
+        return xapian.Query()   # empty query
+
 class XHValueRangeProcessor(xapian.ValueRangeProcessor):
     """
     A Processor to construct ranges of values
@@ -866,8 +919,8 @@ class XapianSearchBackend(BaseSearchBackend):
         # still use intuitive "from:" field specifier
         qp.add_prefix('from', TERM_PREFIXES['field'] + 'FRM')
 
-        vrp = XHValueRangeProcessor(self)
-        qp.add_valuerangeprocessor(vrp)
+        rp = XHRangeProcessor(self)
+        qp.add_rangeprocessor(rp)
 
         return qp.parse_query(query_string, self.flags)
 

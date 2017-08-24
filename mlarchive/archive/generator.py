@@ -191,7 +191,7 @@ class Generator:
         # the rest of the message as a string rather than the expected list of MIME
         # entities
         if not isinstance(entity.get_payload(), list):
-            return self._handle_text_plain(entity)
+            return self._handle_text(entity)
             
         for part in entity.get_payload():
             parts.extend(self.parse_entity(part))

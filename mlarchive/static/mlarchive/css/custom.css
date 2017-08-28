@@ -135,8 +135,19 @@ div:focus {
     padding-right: 0.8em;
 }
 
+#nav-help {
+    color: white;
+    display: inline-block;
+    margin-right: 15px;
+}
+
+#nav-help a:link, #nav-help a:visited {
+    color: white;
+}
+
 #login {
     color: white;
+    display: inline-block;
     margin: 12px 5px;
 }
 
@@ -325,6 +336,14 @@ ul.browse_list li {
 
 #result-list .row {
     margin-bottom: 15px;
+}
+
+/* ==========================================================================
+   Help
+   ========================================================================== */
+#help_page {
+    margin-left: 10%;
+    margin-right: 10%;
 }
 
 /* ==========================================================================

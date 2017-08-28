@@ -176,6 +176,11 @@ def test_detail_admin_access(client):
 
 #def test_export(client):
 
+def test_help(client):
+    url = reverse('archive_help')
+    response = client.get(url)
+    assert response.status_code == 200
+
 @pytest.mark.django_db(transaction=True)
 def test_legacy_message(client):
     elist = EmailListFactory.create()

@@ -7,45 +7,29 @@
 
 {% block content %}
 
-<div id="admin_page">
+<div id="help_page">
 
-<h2>Email Archive Help</h2>
-Narrow your search results by using search operators.  Supported operators are:
+<h1>Search Query Syntax</h1>
+<h3>Terms</h3>
+<p>Terms are searched for in the message subject line and message body.</p>
 
-<table id="help_table">
-    <tr>
-        <td>Search for an exact word or phrase.<br>"search"</td><td>Use quotes to search for an exact word or phrase in a message.</td>
-    </tr>
-    <tr>
-        <td>Exclude a word<br>-exclude</td><td>Use a dash to exclude a word from the search</td>
-    </tr>
-    <tr>
-        <td>Search a specific header field<br><br>frm:<br>to:<br>subject:<br>msgid:</td><td>Use the header field followed by a colon.  Do not put spaces between the field identifier and search term</td>
-    </tr>
-    <tr>
-        <td>Search for either word<br>OR</td><td>Use a capital "OR" to include messages with either word</td>
-    </tr>
-    <tr>
-        <td>Search both words<br>AND</td><td>Use a capital "AND" to include messages with both words</td>
-    </tr>
-    <tr>
-        <td>Wildcard<br>*</td><td>Use an asterisk to perform a wildcard search</td>
-    </tr>
-</table>
+<h3>Operators</h3>
+<p>By default terms are combined with the logical AND operator. For example, a search for 'ipv6 collision' returns documents containing both 'ipv6' and 'collision'. Use OR to find documents containing either term, 'ipv6 OR collision'.</p>
 
+<h3>Exclude Terms</h3>
+<p>Use a '-' to exclude a term from the search.  For example 'android -phone'.</p>
 
-<h1>Search Tips</h1>
+<h3>Phrases</h3>
+<p>Use double quotes to find documents containing an exact phrase.</p>
 
-<p><strong>Advanced Search:</strong> non keyword fields act as a filter on the keyword search</p>
+<h3>Fields</h3>
+<p>Search specific fields of the email header by prefixing the search term with [field]:.  Supported fields are: from, to, subject, and msgid.  For example: "from:joe@example.com".</p>
 
-<p><strong>Simple search:</strong> input and Advanced Search keywords search message subject and body</p>
+<h3>Wildcard</h3>
+<p>Trailing wildcards are supported.  ie. "wildc*" will match "wildcard", "wildcat".</p>
 
-<p><strong>Punctuation characters</strong> are treated as word separators when indexing.  Therefore they are excluded
-from search queries.  For example a search for "http://www.ietf.org" is translated to "http" and
-"www" and "ietf" and "org", returning any documents containing all these terms.  To improve results
-you can quote the URL, which will return documents where these terms are adjacent to each other.</p>
-
-<p>Supported Query Syntax:<a href="http://xapian.org/docs/queryparser.html">http://xapian.org/docs/queryparser.html</a></p>
+<h3>More...</h3>
+<p>The mail archive uses the Xapian Search Engine.  The complete Xapian query syntax is described here: <a href="http://xapian.org/docs/queryparser.html">http://xapian.org/docs/queryparser.html</a>.  While most of this query syntax is supported by the mail archive, full support is not gauranteed.</p>
 
 </div> <!-- admin_page -->
 

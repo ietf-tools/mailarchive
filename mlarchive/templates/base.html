@@ -14,7 +14,8 @@
     {% block extrastyle %}{% endblock %}
 
     <link rel="stylesheet" href="{% static 'mlarchive/css/custom.css' %}" type="text/css">
-        
+    
+    <script src="https://use.fontawesome.com/616427ed62.js"></script>
     {% block extrahead %}{% endblock %}
 
     {% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE" />{% endblock %}
@@ -44,6 +45,11 @@
 
             {% if not request.resolver_match.url_name == "django.contrib.auth.views.login" %}
             <div class="navbar-header pull-right">
+                {% if not request.resolver_match.url_name == "archive_help" %}
+                <div id="nav-help">
+                    <a href="{% url "archive_help" %}">Help</a>
+                </div>
+                {% endif %}
                 <div id="login" class="noprint">
                 {% if user.is_authenticated %}
                     <span class="login-user pipe">{{ user }}</span>
@@ -51,7 +57,7 @@
                 {% else %}
                     <a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>
                 {% endif %}
-            </div>
+                </div>
             {% endif %}
 
             </div> <!-- navbar-header -->

@@ -1,4 +1,12 @@
 
+mailarch (1.10.7) ietf; urgency=normal
+
+ * Fix issue where range operator (two periods) in query causes error.  Fixes #2159
+
+ * Add migration to set on_delete FK param
+
+-- Ryan Cross <rcross@amsl.com>  28 Aug 2017 14:00:00 +0800
+
 mailarch (1.10.6) ietf; urgency=normal
 
  * Add support for attachment MIME type text/x-perl-script.  Fixes #1924

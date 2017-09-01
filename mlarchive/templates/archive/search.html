@@ -66,6 +66,14 @@
 
         <div id="msg-components">
         
+            <nav id="toolbar-left" class="navbar navbar-default">
+                <div class="container-fluid">
+                    <ul class="nav navbar-nav navbar-left">
+                        <li id="toggle-filters"><a href="#"><i class="fa fa-chevron-left toggle-pane" aria-hidden="true"></i></a></li>
+                    </ul>
+                </div>
+            </nav>
+
             <nav id="toolbar" class="navbar navbar-default">
                 <div class="container-fluid">
                     <div class="navbar-header">
@@ -159,7 +167,7 @@
                             <span class="current-page">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
                             {% if page.has_next %}<a class="pull-right" href="{{ next_page_url }}">Next</a>{% endif %}
                         </div>
-                        <div id="toggle-preview"><a href="#"><i class="fa fa-chevron-down" aria-hidden="true"></i></a></div>
+                        <div id="toggle-preview"><a href="#"><i class="fa fa-chevron-down toggle-pane" aria-hidden="true"></i></a></div>
                     </div> <!-- msg-list-controls -->
                 </div> <!-- list-pane -->
                 

@@ -369,6 +369,10 @@ a.selected {
     text-decoration: underline;
 }
 
+i.toggle-pane {
+    color: lightgrey;
+}
+
 #search-filters h4 {
     margin-top: 25px;
 }
@@ -443,7 +447,7 @@ nav.navbar {
 }
 
 .navbar-form #id_q {
-    width: calc(100vw - 720px);
+    width: calc(100vw - 760px);
 }
 
 .navbar-collapse.in .navbar-form #id_q {
@@ -455,6 +459,19 @@ nav.navbar {
     width: calc(100% - 250px);
     padding: 0 20px;
     position: relative;
+}
+
+#msg-components.x-full-width {
+    width: 100%;
+}
+
+#toolbar-left {
+    float: left;
+}
+
+#toolbar-left .container-fluid {
+    padding-left: 0;
+    padding-right: 0;
 }
 
 #toolbar .collapse, #toolbar .container-fluid {
@@ -659,10 +676,6 @@ table.msg-list-header-table th a.btn {
     float: right;
 }
 
-#toggle-preview i {
-    color: lightgrey;
-}
-
 /* Responsive Styling
    ========================================================================== */
 @media (min-width: 768px)
@@ -674,11 +687,17 @@ table.msg-list-header-table th a.btn {
     .page-nav a {
         padding: 0 8px;
     }
+
+    #toolbar {
+        height: 42px;
+        margin-left: 46px;
+    }
 }
+
 
 @media (max-width: 767px)
 {
-    #sidebar, #splitter-pane, #view-pane, #message-count, #toggle-preview {
+    #sidebar, #splitter-pane, #view-pane, #message-count, #toggle-preview, #toolbar-left {
         display: none;
     }
     
@@ -747,7 +766,7 @@ table.msg-list-header-table th a.btn {
     .xtd {
         border-bottom: 1px solid #dddddd;
         display: table-cell;
-        padding: 8px;
+        padding: 6px 8px;
         line-height: 1.42857143;
         vertical-align: top;
     }

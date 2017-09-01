@@ -12,6 +12,7 @@ var mailarch = {
     // VARAIBLES =============================================
     ajaxRequestSent: false,
     bottomMargin: 17,
+    showFilters: true,
     showPreview: true,
     lastItem: 0,
     urlParams: {},
@@ -28,6 +29,7 @@ var mailarch = {
         mailarch.bindEvents();
         mailarch.initMessageList();
         mailarch.initFilters();
+        mailarch.initPanels();
         mailarch.setLastItem();
         mailarch.getURLParams();
         mailarch.initSort();
@@ -55,8 +57,11 @@ var mailarch = {
         mailarch.$q = $('#id_q');
         mailarch.$searchButton = $('#search-button');
         mailarch.$searchForm = $('#id_search_form');
+        mailarch.$sidebar = $('#sidebar');
         mailarch.$sortButtons = $('a.sortbutton');
         mailarch.$splitterPane = $('#splitter-pane');
+        mailarch.$toggleFiltersLink = $('#toggle-filters a');
+        mailarch.$toggleFiltersIcon = $('#toggle-filters a i');
         mailarch.$togglePreviewLink = $('#toggle-preview a');
         mailarch.$togglePreviewIcon = $('#toggle-preview a i');
         mailarch.$viewPane = $('#view-pane');
@@ -78,6 +83,7 @@ var mailarch = {
         mailarch.$msgTable.on('dblclick','.xtr', mailarch.gotoMessage);
         mailarch.$searchForm.on('submit', mailarch.submitSearch);
         mailarch.$sortButtons.on('click', mailarch.performSort);
+        mailarch.$toggleFiltersLink.on('click', mailarch.toggleFilters)
         mailarch.$togglePreviewLink.on('click', mailarch.togglePreview);
         mailarch.$window.resize(mailarch.handleResize);
         if(!mailarch.isSmallViewport()) {
@@ -299,6 +305,17 @@ var mailarch = {
         }
     },
     
+    initPanels: function() {
+        var showfilters = $.cookie("showfilters");
+        if (showfilters == 'false') {
+            mailarch.toggleFilters();
+        }
+        var showpreview = $.cookie("showpreview");
+        if (showpreview == 'false') {
+            mailarch.togglePreview(false);   // don't animate
+        }
+    },
+
     initSort: function() {
         mailarch.sortDefault['date'] = '-date';
         mailarch.sortDefault['email_list'] = 'email_list';
@@ -545,7 +562,26 @@ var mailarch = {
         mailarch.doSearch();
     },
     
-    togglePreview: function(event) {
+    toggleFilters: function() {
+        // toggle arrow icon
+        event.preventDefault();
+        mailarch.showFilters = !mailarch.showFilters;
+        mailarch.$toggleFiltersIcon.toggleClass("fa-chevron-left", mailarch.showFilters);
+        mailarch.$toggleFiltersIcon.toggleClass("fa-chevron-right", !mailarch.showFilters);
+        if(!mailarch.showFilters) {
+            mailarch.$sidebar.addClass('hidden');
+            $('#msg-components').addClass('x-full-width')
+            mailarch.setHeaderWidths();
+            $.cookie('showfilters','false');
+        } else {
+            mailarch.$sidebar.removeClass('hidden');
+            $('#msg-components').removeClass('x-full-width')
+            mailarch.setHeaderWidths();
+            $.cookie('showfilters','true');
+        }
+    },
+
+    togglePreview: function(doAnimation) {
         // toggle arrow icon
         mailarch.showPreview = !mailarch.showPreview;
         mailarch.$togglePreviewIcon.toggleClass("fa-chevron-down", mailarch.showPreview);
@@ -555,13 +591,19 @@ var mailarch = {
             var height = mailarch.getListPaneHeight();
             mailarch.$viewPane.hide();
             mailarch.$splitterPane.hide();
-            mailarch.$listPane.animate({height:height});
+            if (doAnimation == false){
+                mailarch.$listPane.height(height);
+            } else {
+                mailarch.$listPane.animate({height:height});
+            }
+            $.cookie('showpreview','false');
         } else {
             var height = mailarch.getSplitterTop();
             mailarch.$listPane.animate({height:height},function() {
                 mailarch.$viewPane.show();
                 mailarch.$splitterPane.show();
             });
+            $.cookie('showpreview','true');
         }
     }
 }

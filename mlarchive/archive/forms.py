@@ -235,6 +235,17 @@ class AdminActionForm(forms.Form):
     action = forms.CharField(max_length=255)
 
 
+class LowerCaseModelMultipleChoiceField(forms.ModelMultipleChoiceField):
+    def prepare_value(self, value):
+        value = self.to_python(value)
+        return super(LowerCaseModelMultipleChoiceField, self).prepare_value(value)
+
+    def to_python(self, value):
+        if not value:
+            return []
+        lower = [ v.lower() for v in value if isinstance(v, basestring)]
+        return list(self._check_values(lower))
+
 class AdvancedSearchForm(FacetedSearchForm):
     #start_date = forms.DateField(required=False,
     #        widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
@@ -243,7 +254,7 @@ class AdvancedSearchForm(FacetedSearchForm):
     #        widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
     end_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='End date', required=False)
     #email_list = forms.CharField(max_length=255,required=False,widget=forms.HiddenInput)
-    email_list = forms.ModelMultipleChoiceField(queryset=EmailList.objects,to_field_name='name',required=False)
+    email_list = LowerCaseModelMultipleChoiceField(queryset=EmailList.objects,to_field_name='name',required=False)
     subject = forms.CharField(max_length=255,required=False)
     frm = forms.CharField(max_length=255,required=False)
     msgid = forms.CharField(max_length=255,required=False)
@@ -261,7 +272,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         self.request = kwargs.pop('request')
         super(self.__class__, self).__init__(*args, **kwargs)
         self.fields["email_list"].widget.attrs["placeholder"] = "List names"
-        
+
     def get_facets(self, sqs):
         """Get facets for the SearchQuerySet
 

@@ -154,6 +154,14 @@ def test_asf_search_email_list(client,messages):
     assert len(results) == 4
 
 @pytest.mark.django_db(transaction=True)
+def test_asf_search_email_list_uppercase(client,messages):
+    url = reverse('archive_search') + '?email_list=Pubone'
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert len(results) == 4
+
+@pytest.mark.django_db(transaction=True)
 def test_asf_search_date(client,messages):
     url = reverse('archive_search') + '?email_list=pubone&start_date=2014-01-01'
     response = client.get(url)

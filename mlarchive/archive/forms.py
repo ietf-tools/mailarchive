@@ -237,14 +237,12 @@ class AdminActionForm(forms.Form):
 
 class LowerCaseModelMultipleChoiceField(forms.ModelMultipleChoiceField):
     def prepare_value(self, value):
-        value = self.to_python(value)
-        return super(LowerCaseModelMultipleChoiceField, self).prepare_value(value)
-
-    def to_python(self, value):
         if not value:
             return []
-        lower = [ v.lower() for v in value if isinstance(v, basestring)]
-        return list(self._check_values(lower))
+        if hasattr(value, '__iter__') and isinstance(value[0], basestring):
+            value = [ v.lower() for v in value if isinstance(v, basestring) ]
+        return super(LowerCaseModelMultipleChoiceField, self).prepare_value(value)
+
 
 class AdvancedSearchForm(FacetedSearchForm):
     #start_date = forms.DateField(required=False,

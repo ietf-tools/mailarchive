@@ -13,7 +13,8 @@ from haystack.forms import SearchForm, FacetedSearchForm
 from haystack.query import SearchQuerySet
 import xapian
 
-from mlarchive.archive.query_utils import get_kwargs, generate_queryid, get_filter_params
+from mlarchive.archive.query_utils import (get_kwargs, generate_queryid, get_filter_params,
+    get_query, get_base_query)
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
 
@@ -40,9 +41,6 @@ TIME_CHOICES = (('a','Any time'),
 VALID_SORT_OPTIONS = ('frm','-frm','date','-date','email_list','-email_list',
                       'subject','-subject')
 
-EXTRA_PARAMS = ('so', 'sso', 'page', 'gbt')
-ALL_PARAMS = ('f_list','f_from', 'so', 'sso', 'page', 'gbt')
-
 DEFAULT_SORT = getattr(settings, 'ARCHIVE_DEFAULT_SORT', '-date')
 
 def profile(func):
@@ -58,30 +56,6 @@ def profile(func):
 # Helper Functions
 # --------------------------------------------------------
 
-def get_base_query(querydict,filters=False,string=False):
-    """Get the base query by stripping any extra parameters from the query.
-
-    Expects a QueryDict object, ie. request.GET.  Returns a copy of the querydict
-    with parameters removed, or the query as a string if string=True.  Optional boolean
-    "filters".  If filters=True leave filter parameters intact. For use with calculating
-    base facets.
-
-    NOTE: the base query string we are using as a key is urlencoded.  Another option is to
-    save the query unquoted using urlib.unquote_plus()
-    """
-    if filters:
-        params = EXTRA_PARAMS
-    else:
-        params = ALL_PARAMS
-    copy = querydict.copy()
-    for key in querydict:
-        if key in params:
-            copy.pop(key)
-    if string:
-        return copy.urlencode()
-    else:
-        return copy
-
 def get_cache_key(request):
     """Returns a hash key that identifies a unique query.  First we strip all URL
     parameters that do not modify the result set, ie. sort order.  We order the
@@ -89,35 +63,13 @@ def get_cache_key(request):
     users will have access to different private lists and therefor have different
     results sets.
     """
-    # strip parameters that don't modify query result set
-    base_query = get_base_query(request.GET,filters=True)
-    # order for consistency
+    base_query = get_base_query(request.GET)
     ordered = OrderedDict(sorted(base_query.items()))
     m = hashlib.md5()
     m.update(urlencode(ordered))
     m.update(str(request.user))
     return m.hexdigest()
 
-def get_query(request):
-    """Returns the query as a string.  Usually this is just the 'q' parameter.
-    However, in the case of an advanced search with javascript disabled we need
-    to build the query given the query parameters in the request"""
-    if 'q' in request.GET:
-        return request.GET['q']
-    elif 'nojs' in request.META['QUERY_STRING']:
-        query = []
-        not_query = []
-        items = filter(is_nojs_value, request.GET.items())
-        for key,value in items:
-            field = request.GET[key.replace('value','field')]
-            qualifier = request.GET[key.replace('value','qualifier')]
-            if 'query' in key:
-                query.append('{}:({})'.format(field,value))
-            else:
-                not_query.append('-{}:({})'.format(field,value))
-        return ' '.join(query + not_query)
-    else:
-        return ''
 
 def get_list_info(value):
     """Map list name to list id or list id to list name.  This is essentially a cached
@@ -135,26 +87,11 @@ def group_by_thread(qs, so, sso, reverse=False):
     """Return a SearchQuerySet grouped by thread, ordered as follows:
     Top level threads ordered by date descending.  Sub-threads by date
     ascending"""
-    #new_query = qs._clone()
-    #temp = sorted(qs, key=attrgetter('object.thread_order'))
-    #result = sorted(temp, key=attrgetter('object.thread.date'), reverse=reverse)
-    #new_query._result_cache = result
-
-    new_query = qs.order_by('-tdate','tid','torder')
-
-    return new_query
+    return qs.order_by('-tdate','tid','torder')
 
 
-def is_nojs_value(items):
-    k,v = items
-    if k.startswith('nojs') and k.endswith('value') and v:
-        return True
-    else:
-        return False
-
-
-def transform(val):
-    """This function takes a sort parameter and validates and transforms it for use
+def map_sort_option(val):
+    """This function takes a sort parameter and validates and mapss it for use
     in an order_by clause.
     """
     if val not in VALID_SORT_OPTIONS:
@@ -347,24 +284,13 @@ class AdvancedSearchForm(FacetedSearchForm):
         cache.set(cache_key,facets)
         return facets
 
-    # use custom parser-----------------------------------------
-    '''
-    def process_query(self):
-        if self.q:
-            query = parse(self.q)
-            logger.info('Query:%s' % query)
-            sqs = self.searchqueryset.filter(query)
-        else:
-            sqs = self.searchqueryset
-        return sqs
-    '''
+
+    def get_query(self):
+        return get_query(self.request)
+
     def process_query(self):
         """Use Xapians builtin query parser"""
         if self.q:
-            #qp = xapian.QueryParser()
-            #qp.set_default_op(xapian.Query.OP_AND)
-            #qp.add_prefix('from','XFRM')
-            #query = qp.parse_query(self.q)
             logger.info('Query:%s' % self.q)
             self.searchqueryset.query.raw_search(self.q)
         return self.searchqueryset
@@ -378,19 +304,9 @@ class AdvancedSearchForm(FacetedSearchForm):
             # TODO: messages.warning(self.request, 'invalid search parameters')
             return self.no_query_found()
 
-        '''
-        Original search function.  By using backend directly we could take advantage
-        of Xapian's impressive query parsing.  However the resulting QuerySet does
-        not support chaining so it's not going to work for us.
-
-        sqs = self.searchqueryset.auto_query(self.cleaned_data['q'])
-        backend = XapianSearchBackend('default',PATH=settings.HAYSTACK_XAPIAN_PATH)
-        query = backend.parse_query(self.cleaned_data['q'])
-        sqs = self.searchqueryset.raw_search(query)
-        '''
         self.f_list = self.cleaned_data['f_list']
         self.f_from = self.cleaned_data['f_from']
-        self.q = self.cleaned_data.get('q')
+        self.q = get_query(self.request)
         self.kwargs = get_kwargs(self.cleaned_data)
 
         # return empty queryset if no parameters passed
@@ -424,8 +340,8 @@ class AdvancedSearchForm(FacetedSearchForm):
         # grouping and sorting  -----------------------------------
         # perform this step last because other operations, if they clone the
         # SearchQuerySet, cause the query to be re-run which loses custom sort order
-        so = transform(self.cleaned_data.get('so'))
-        sso = transform(self.cleaned_data.get('sso'))
+        so = map_sort_option(self.cleaned_data.get('so'))
+        sso = map_sort_option(self.cleaned_data.get('sso'))
         gbt = self.cleaned_data.get('gbt')
         sort_values = [ v for v in (so,sso) if v ]
 
@@ -468,7 +384,6 @@ class AdvancedSearchForm(FacetedSearchForm):
 # ---------------------------------------------------------
 
 class BrowseForm(forms.Form):
-    #list_name = forms.CharField(max_length=100,required=True,label='List')
     list = forms.ModelChoiceField(queryset=EmailList.objects,label='List')
     
     def __init__(self, *args, **kwargs):

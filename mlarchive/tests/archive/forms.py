@@ -16,13 +16,7 @@ def test_get_base_query():
     qd = QueryDict('?q=database&f_list=saag&so=date')
     result = get_base_query(qd)
     assert isinstance(result, QueryDict)
-    assert result.items() == [(u'?q', u'database')]
-    result = get_base_query(qd,filters=True)
-    assert isinstance(result, QueryDict)
     assert result.items() == [(u'f_list', u'saag'), (u'?q', u'database')]
-    result = get_base_query(qd,string=True)
-    assert isinstance(result, unicode)
-    assert result == u'%3Fq=database'
 
 @pytest.mark.django_db(transaction=True)
 def test_get_cache_key():
@@ -86,10 +80,10 @@ def test_group_by_thread(messages):
 #    sqs = sort_by_subject(sqs,None,reverse=False)
 #    assert [ x.pk for x in sqs ] == [1,2,4,3]
 
-def test_transform():
-    assert transform('invalid') == ''
-    assert transform('frm') == 'frm_name'
-    assert transform('-frm') == '-frm_name'
+def test_map_sort_option():
+    assert map_sort_option('invalid') == ''
+    assert map_sort_option('frm') == 'frm_name'
+    assert map_sort_option('-frm') == '-frm_name'
 
 @pytest.mark.django_db(transaction=True)
 def test_asf_get_facets(client,messages):

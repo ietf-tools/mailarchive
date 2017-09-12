@@ -280,7 +280,6 @@ def browse(request, list_name=None):
         redirect_url = '%s?%s' % (reverse('archive_search'), 'email_list=' + list_name)
         return redirect(redirect_url)
 
-    #form = BrowseForm()
     columns = get_columns(request.user)
 
     if request.method == "GET" and request.GET.get('list'):

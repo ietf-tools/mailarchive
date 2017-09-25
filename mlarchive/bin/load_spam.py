@@ -10,19 +10,18 @@ is spam.
 score FH_DATE_IS_19XX 0.1   # lower score of two digit date
 
 """
-# Set PYTHONPATH and load environment variables for standalone script -----------------
-# for file living in project/bin/
-import os
-import sys
-#path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-#if not path in sys.path:
-#    sys.path.insert(0, path)
-#os.environ['DJANGO_SETTINGS_MODULE'] = 'mlarchive.settings.production'
+# Standalone broilerplate -------------------------------------------------------------
+from django_setup import do_setup
+do_setup(settings='noindex')
 # -------------------------------------------------------------------------------------
+
 
 from django.conf import settings
 from mlarchive.archive.management.commands import _classes
+from mlarchive.archive.models import EmailList
 
+import os
+import sys
 import argparse
 import email
 import logging
@@ -55,6 +54,10 @@ def main():
 
     files = os.listdir(args.path)
     listname = os.path.basename(os.path.dirname(args.path))
+    try:
+        EmailList.objects.get(name=listname)
+    except EmailList.DoesNotExist:
+        parser.error('{} is not a listname'.format(listname))
 
     # apply limit if given
     if args.limit > 0:

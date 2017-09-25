@@ -232,7 +232,7 @@ def admin(request):
         if form.is_valid():
             kwargs = get_kwargs(form.cleaned_data)
             if kwargs:
-                results = SearchQuerySet().filter(**kwargs).order_by('id')
+                results = SearchQuerySet().filter(**kwargs).order_by('id').load_all()
 
     return render(request, 'archive/admin.html', {
         'results': results,

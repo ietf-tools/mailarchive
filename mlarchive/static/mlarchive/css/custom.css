@@ -338,6 +338,15 @@ ul.browse_list li {
     margin-bottom: 15px;
 }
 
+.nav-tabs > li, .nav-pills > li {
+    float:none;
+    display:inline-block;
+}
+
+.nav-tabs, .nav-pills {
+    text-align:center;
+}
+
 /* ==========================================================================
    Help
    ========================================================================== */

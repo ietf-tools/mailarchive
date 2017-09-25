@@ -5,14 +5,47 @@ import pytest
 
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.urls import reverse
+from django.contrib.auth.models import User
 from pyquery import PyQuery
 from selenium.webdriver.phantomjs.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
+#from seleniumlogin import force_login
 
-from mlarchive.archive.models import Message
+from mlarchive.archive.models import Message, EmailList
 
 
 timeout = 10
+
+
+from importlib import import_module
+from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, HASH_SESSION_KEY
+
+
+def force_login(user, driver, base_url):
+    from django.conf import settings
+    SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
+    selenium_login_start_page = getattr(settings, 'SELENIUM_LOGIN_START_PAGE', '/page_404/')
+    driver.get('{}{}'.format(base_url, selenium_login_start_page))
+
+    session = SessionStore()
+    session[SESSION_KEY] = user.id
+    session[BACKEND_SESSION_KEY] = settings.AUTHENTICATION_BACKENDS[0]
+    session[HASH_SESSION_KEY] = user.get_session_auth_hash()
+    session.save()
+
+    domain = base_url.split(':')[-2].split('/')[-1]
+    cookie = {
+        'name': settings.SESSION_COOKIE_NAME,
+        'value': session.session_key,
+        'path': '/',
+        'domain': domain
+    }
+
+    cookies = driver.get_cookies()
+    print cookies
+
+    driver.add_cookie(cookie)
+    driver.refresh()
 
 
 class MySeleniumTests(StaticLiveServerTestCase):
@@ -150,3 +183,47 @@ class MySeleniumTests(StaticLiveServerTestCase):
         # header is hidden
         element = self.selenium.find_element_by_id('msg-header')
         assert not element.is_displayed()
+
+
+"""
+class AdminSeleniumTests(StaticLiveServerTestCase):
+    '''Selenium functional test cases'''
+    @classmethod
+    def setUpClass(cls):
+        super(AdminSeleniumTests, cls).setUpClass()
+        from selenium.webdriver.chrome.webdriver import WebDriver
+        cls.selenium = WebDriver()
+        cls.selenium.implicitly_wait(10)
+        cls.selenium.set_window_size(1400, 1000)
+
+        User.objects.create_superuser(username='admin',
+                                      password='password',
+                                      email='admin@example.com')
+
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.selenium.quit()
+        super(AdminSeleniumTests, cls).tearDownClass()
+    
+    @pytest.mark.usefixtures("thread_messages", "admin_user")
+    def test_admin_spam_mode(self):
+        '''Test Spam Mode of admin view'''
+        email_list = EmailList.objects.first()
+        admin_url = reverse('archive_admin') + '?email_list=' + str(email_list.pk)
+        url = urlparse.urljoin(self.live_server_url, admin_url)
+        user = User.objects.get(username='admin')
+        force_login(user, self.selenium, self.live_server_url)
+        self.selenium.get(url)
+
+        # spam tabs are hidden
+        self.selenium.get_screenshot_as_file('tests/tmp/test_admin_spam_mode.png')
+        element = self.selenium.find_element_by_class_name('nav-tabs')
+        assert not element.is_displayed()
+
+        self.selenium.find_element_by_id('spam-toggle').click()
+
+        # spam tabs displayed
+        element = self.selenium.find_element_by_class_name('nav-tabs')
+        assert element.is_displayed()
+"""

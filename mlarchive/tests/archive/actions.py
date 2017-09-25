@@ -49,4 +49,4 @@ def test_not_spam(client):
     result = not_spam(request, query)
 
     msg = Message.objects.first()
-    assert msg.spam_score == 0
+    assert msg.spam_score == -1

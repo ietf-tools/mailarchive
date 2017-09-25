@@ -34,7 +34,7 @@ def not_spam(request, queryset):
     # queryset.update() doesn't call save() which means the index doesn't get updated
     # via RealtimeSingalProcessor, need to loop through and call save()
     for message in queryset:
-        message.spam_score=0
+        message.spam_score=-1
         message.save()
     messages.success(request, '%d Message(s) Marked not Spam' % count)
     return redirect('archive_admin')

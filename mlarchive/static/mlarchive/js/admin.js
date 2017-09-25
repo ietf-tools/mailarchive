@@ -2,11 +2,15 @@
 
 
 var mailarchAdmin = {
-
+    
+    spamModeActive: false,
+    subjectCol: 2,
+    fromCol: 3,
+    rowsToMove: $(),
+    
     init: function() {
         mailarchAdmin.cacheDom();
         mailarchAdmin.bindEvents();
-        //mailarchAdmin.initButtons();
         mailarchAdmin.$adminResults.focus();
         mailarchAdmin.selectInitialMessage();
         //$(document).keydown(mailarchAdmin.messageNav);
@@ -15,16 +19,25 @@ var mailarchAdmin = {
         
     cacheDom: function() {
         mailarchAdmin.$adminResults = $('#admin-results');
-        mailarchAdmin.$resultTableRows = $('#result-table tr');
+        mailarchAdmin.$activeResultTable = $('.active .result-table');
+        mailarchAdmin.$activeResultTableRows = $('.active .result-table tr');
         mailarchAdmin.$selectAll = $('#selectall');
         mailarchAdmin.$viewPane = $('#admin-view-pane');
+        mailarchAdmin.$spamToggle = $('#spam-toggle');
+        mailarchAdmin.$spamTable = $('#spam-pane table');
+        mailarchAdmin.$cleanTable = $('#clean-pane table');
+        mailarchAdmin.$spamYesButton = $('#yes-move');
+        mailarchAdmin.$spamNoButton = $('#no-move');
     },
     
     bindEvents: function() {
-        mailarchAdmin.$adminResults.on('keydown', mailarchAdmin.messageNav);
+        //mailarchAdmin.$resultTable.on('keydown', mailarchAdmin.messageNav);
         mailarchAdmin.$selectAll.on('click', mailarchAdmin.selectAll);
-        mailarchAdmin.$resultTableRows.on('click', mailarchAdmin.selectRow);
-        mailarchAdmin.$resultTableRows.on('dblclick', mailarchAdmin.openMsg);
+        mailarchAdmin.$activeResultTableRows.on('click', mailarchAdmin.selectRow);
+        mailarchAdmin.$activeResultTableRows.on('dblclick', mailarchAdmin.openMsg);
+        mailarchAdmin.$spamToggle.on('click', mailarchAdmin.toggleSpam);
+        mailarchAdmin.$spamYesButton.on('click', mailarchAdmin.moveRowsToSpam);
+        mailarchAdmin.$spamNoButton.on('click', mailarchAdmin.moveSelectedToSpam);
     },
 
     doAction: function(row) {
@@ -36,7 +49,7 @@ var mailarchAdmin = {
             var id = row.find('td:last').text()
             data = { action: action, id: id }
             alert("and here " + data);
-            $.get(url,data,mailarchAdmin.remove_row(row));
+            $.get(url,data,mailarchAdmin.removeRow(row));
         }
     },
     
@@ -72,8 +85,8 @@ var mailarchAdmin = {
                 if(prev.find('th').length == 0) {
                     row.removeClass('row-selected');
                     prev.addClass('row-selected');
-                    mailarchAdmin.loadMessage(prev);
-                    mailarchAdmin.scrollGrid(prev);
+                    //mailarchAdmin.loadMessage(prev);
+                    //mailarchAdmin.scrollGrid(prev);
                 }
             break;
             case arrow.down:
@@ -83,21 +96,22 @@ var mailarchAdmin = {
                 if(next.length > 0) {
                     row.removeClass('row-selected');
                     next.addClass('row-selected');
-                    mailarchAdmin.loadMessage(next);
-                    mailarchAdmin.scrollGrid(next);
+                    //mailarchAdmin.loadMessage(next);
+                    //mailarchAdmin.scrollGrid(next);
                 }
             break;
-            //case arrow.right:
-            //    event.preventDefault();
-            //    var row = $('.row-selected', this);
-            //    mailarchAdmin.doAction(row);
-            //break;
-            //case arrow.left:
-            //    event.preventDefault();
-            //    var row = $('.row-selected', this);
-            //    //row.hide("slide", {direction:"right"});
-            //    row.hide();
-            //break;
+            case arrow.right:
+                if (mailarchAdmin.spamModeActive) {
+                    event.preventDefault();
+                    mailarchAdmin.moveToSpam();
+                }
+            break;
+            case arrow.left:
+                if (mailarchAdmin.spamModeActive) {
+                    event.preventDefault();
+                    mailarchAdmin.moveToClean();
+                }
+            break;
             case space:
                 var row = $('.row-selected', this);
                 var chkbx = $('.action-select',row);
@@ -110,16 +124,76 @@ var mailarchAdmin = {
         }
     },
     
-    remove_row: function(row) {
+    moveRows: function(rows,target) {
+        rows.each(function() {
+            var tr = $( this ).remove().clone();
+            target.append(tr);
+        })
+        $('tr.row-selected').removeClass('row-selected');
+        mailarchAdmin.selectInitialMessage();
+        mailarchAdmin.refreshTabLabels();
+    },
+
+    moveToSpam: function() {
+        // move selected row, if other rows match subject, prompt to move
+        var tr = $('.row-selected');
+        var subject = tr.find('td:eq('+mailarchAdmin.subjectCol+')').text();
+        var rows = $('.active .result-table tr');
+        var matches = rows.filter(function() {
+            return $(this).find('td:eq('+mailarchAdmin.subjectCol+')').text() === subject;
+        })
+        if(matches.length > 1){
+            mailarchAdmin.rowsToMove = matches;
+            $('#spam-modal').modal('show');
+        } else {
+            mailarchAdmin.moveRows(tr, mailarchAdmin.$spamTable);
+        }
+        
+    },
+
+    moveRowsToSpam: function() {
+        mailarchAdmin.moveRows(mailarchAdmin.rowsToMove, mailarchAdmin.$spamTable);
+        mailarchAdmin.rowsToMove = $();
+        $('#spam-modal').modal('hide');
+    },
+
+    moveSelectedToSpam: function() {
+        mailarchAdmin.moveRows($('.row-selected'),mailarchAdmin.$spamTable);
+        mailarchAdmin.rowsToMove = $();
+        $('#spam-modal').modal('hide');
+    },
+
+    moveToClean: function() {
+        // move selected row and all with matching from address
+        var tr = $('.row-selected');
+        var from = tr.find('td:eq('+mailarchAdmin.fromCol+')').text();
+        var rows = $('.active .result-table tr');
+        var matches = rows.filter(function() {
+            return $(this).find('td:eq('+mailarchAdmin.fromCol+')').text() === from;
+        })
+        mailarchAdmin.moveRows(matches, mailarchAdmin.$cleanTable);
+    },
+
+    refreshTabLabels: function() {
+        $('.nav-tabs li a').each( function(){
+            var href = $(this).attr('href');
+            var count = $(href).find('tbody tr').length;
+            var text = $(this).text();
+            var match = text.match(/\d+/);
+            $(this).text(text.replace(match,count));
+        })
+    },
+
+    removeRow: function(row) {
         //row.hide("slide", {direction:"right"});
         row.hide();
     },
     
     selectInitialMessage: function() {
-        if(mailarchAdmin.$resultTableRows.length > 1) {
-            var row = mailarchAdmin.$resultTableRows.eq(1);
+        if($('.active .result-table tr').length > 1) {
+            var row = $('.active .result-table tr').eq(1);
             row.addClass('row-selected');
-            mailarchAdmin.loadMessage(row);
+            // mailarchAdmin.loadMessage(row);
         }
     },
     
@@ -142,14 +216,28 @@ var mailarchAdmin = {
     },
     
     selectAll: function () {
-        $('.action-select').prop('checked', this.checked);
+        $('.active .action-select').prop('checked', this.checked);
     },
     
     selectRow: function () {
-        mailarchAdmin.$resultTableRows.removeClass('row-selected');
+        mailarchAdmin.$activeResultTableRows.removeClass('row-selected');
         $(this).addClass('row-selected');
         mailarchAdmin.loadMessage($(this));
     },
+
+    toggleSpam: function() {
+        // NOTE the function gets called BEFORE state change
+        if ($(this).hasClass('active')) {
+            mailarchAdmin.spamModeActive = false;
+            $('body').css('overflow', 'visible');
+            $('ul.nav-tabs').addClass('hidden')
+        } else {
+            mailarchAdmin.spamModeActive = true;
+            $('body').css('overflow', 'hidden');
+            $(document).keydown(mailarchAdmin.messageNav);
+            $('ul.nav-tabs').removeClass('hidden')
+        }
+    }
 }
 
 

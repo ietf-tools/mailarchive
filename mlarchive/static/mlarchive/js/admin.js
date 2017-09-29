@@ -13,14 +13,14 @@ var mailarchAdmin = {
         mailarchAdmin.bindEvents();
         mailarchAdmin.$adminResults.focus();
         mailarchAdmin.selectInitialMessage();
-        //$(document).keydown(mailarchAdmin.messageNav);
+        $(document).keydown(mailarchAdmin.messageNav);
         $('#id_email_list').selectize({maxOptions:2000});
     },
         
     cacheDom: function() {
         mailarchAdmin.$adminResults = $('#admin-results');
         mailarchAdmin.$activeResultTable = $('.active .result-table');
-        mailarchAdmin.$activeResultTableRows = $('.active .result-table tr');
+        mailarchAdmin.$ResultTableRows = $('.result-table tr');
         mailarchAdmin.$selectAll = $('#selectall');
         mailarchAdmin.$viewPane = $('#admin-view-pane');
         mailarchAdmin.$spamToggle = $('#spam-toggle');
@@ -28,16 +28,25 @@ var mailarchAdmin = {
         mailarchAdmin.$cleanTable = $('#clean-pane table');
         mailarchAdmin.$spamYesButton = $('#yes-move');
         mailarchAdmin.$spamNoButton = $('#no-move');
+        mailarchAdmin.$spamProcessButton = $('#spam-process');
+        mailarchAdmin.$tabContent = $('.tab-content');
     },
     
     bindEvents: function() {
         //mailarchAdmin.$resultTable.on('keydown', mailarchAdmin.messageNav);
         mailarchAdmin.$selectAll.on('click', mailarchAdmin.selectAll);
-        mailarchAdmin.$activeResultTableRows.on('click', mailarchAdmin.selectRow);
-        mailarchAdmin.$activeResultTableRows.on('dblclick', mailarchAdmin.openMsg);
+        mailarchAdmin.$ResultTableRows.on('click', mailarchAdmin.selectRowHandler);
+        mailarchAdmin.$ResultTableRows.on('dblclick', mailarchAdmin.openMsg);
         mailarchAdmin.$spamToggle.on('click', mailarchAdmin.toggleSpam);
         mailarchAdmin.$spamYesButton.on('click', mailarchAdmin.moveRowsToSpam);
         mailarchAdmin.$spamNoButton.on('click', mailarchAdmin.moveSelectedToSpam);
+        mailarchAdmin.$spamProcessButton.on('click', mailarchAdmin.processSpam);
+        $( document ).ajaxStart(function() {
+            $(".spinner").removeClass("hidden");
+        });
+        $( document ).ajaxStop(function() {
+            $(".spinner").addClass("hidden");
+        });
     },
 
     doAction: function(row) {
@@ -58,16 +67,10 @@ var mailarchAdmin = {
         var msgId = row.find("td:last").html();
         if(/^\d+$/.test(msgId)){
             mailarchAdmin.$viewPane.load('/arch/ajax/msg/?id=' + msgId, function() {
-                // NTOE: don't use cached DOM objects here because these change
+                // NOTE: don't use cached DOM objects here because these change
                 $('#msg-header').hide();
-                $('#msg-date').after('<a id="toggle" href="#">Show header</a>');
-                $('#toggle').click(function(ev) {
-                    $('#msg-header').toggle();
-                    $(this).html(($('#toggle').text() == 'Show header') ? 'Hide header' : 'Show header');
-                });
-                //mailarchAdmin.$viewPane.scrollTop(0);    // should this be msg-body?
-                // hide message link in this view
-                $('#msg-link').hide();
+                $('#msg-info').hide();
+                $('#msg-body h3').hide();
             });
         }
     },
@@ -82,11 +85,9 @@ var mailarchAdmin = {
                 event.preventDefault();
                 var row = $('.row-selected', this);
                 var prev = row.prev();
-                if(prev.find('th').length == 0) {
-                    row.removeClass('row-selected');
-                    prev.addClass('row-selected');
-                    //mailarchAdmin.loadMessage(prev);
-                    //mailarchAdmin.scrollGrid(prev);
+                if(prev.length > 0) {
+                    mailarchAdmin.selectRow(prev);
+                    mailarchAdmin.scrollGrid(prev);
                 }
             break;
             case arrow.down:
@@ -94,44 +95,53 @@ var mailarchAdmin = {
                 var row = $('.row-selected', this);
                 var next = row.next();
                 if(next.length > 0) {
-                    row.removeClass('row-selected');
-                    next.addClass('row-selected');
-                    //mailarchAdmin.loadMessage(next);
-                    //mailarchAdmin.scrollGrid(next);
+                    mailarchAdmin.selectRow(next);
+                    mailarchAdmin.scrollGrid(next);
                 }
             break;
             case arrow.right:
+                event.preventDefault();
                 if (mailarchAdmin.spamModeActive) {
                     event.preventDefault();
                     mailarchAdmin.moveToSpam();
                 }
             break;
             case arrow.left:
+                event.preventDefault();
                 if (mailarchAdmin.spamModeActive) {
                     event.preventDefault();
                     mailarchAdmin.moveToClean();
                 }
             break;
             case space:
+                event.preventDefault();
                 var row = $('.row-selected', this);
                 var chkbx = $('.action-select',row);
                 chkbx.prop('checked',!chkbx.prop('checked'));
             break;
-            case enter:
-                var url = $('.row-selected', this).find("td:nth-child(6)").html();
-                window.open(url);
-            break;
+            //case enter:
+            //    var url = $('.row-selected', this).find("td:nth-child(6)").html();
+            //    window.open(url);
+            //break;
         }
     },
     
-    moveRows: function(rows,target) {
-        rows.each(function() {
-            var tr = $( this ).remove().clone();
-            target.append(tr);
+    moveRows: function(rows,target,direction) {
+        var index = $(".row-selected").index();
+        rows.each(function(index, value) {
+            var tr = $(this);
+            var clone = tr.clone(true).appendTo(target);
+            clone.removeClass('row-selected');
+            tr.remove();
+            //tr.hide("slide", {direction:direction}, 300, mailarchAdmin.callback);
         })
-        $('tr.row-selected').removeClass('row-selected');
-        mailarchAdmin.selectInitialMessage();
+        var row = $(".active tbody tr").eq(index);
+        mailarchAdmin.selectRow(row);
         mailarchAdmin.refreshTabLabels();
+    },
+
+    callback: function() {
+        $(this).remove();
     },
 
     moveToSpam: function() {
@@ -142,23 +152,23 @@ var mailarchAdmin = {
         var matches = rows.filter(function() {
             return $(this).find('td:eq('+mailarchAdmin.subjectCol+')').text() === subject;
         })
-        if(matches.length > 1){
+        if(matches.length > 1 && !$("#move-subject").is(':checked')){
             mailarchAdmin.rowsToMove = matches;
             $('#spam-modal').modal('show');
         } else {
-            mailarchAdmin.moveRows(tr, mailarchAdmin.$spamTable);
+            mailarchAdmin.moveRows(matches, mailarchAdmin.$spamTable, "right");
         }
         
     },
 
     moveRowsToSpam: function() {
-        mailarchAdmin.moveRows(mailarchAdmin.rowsToMove, mailarchAdmin.$spamTable);
+        mailarchAdmin.moveRows(mailarchAdmin.rowsToMove, mailarchAdmin.$spamTable, "right");
         mailarchAdmin.rowsToMove = $();
         $('#spam-modal').modal('hide');
     },
 
     moveSelectedToSpam: function() {
-        mailarchAdmin.moveRows($('.row-selected'),mailarchAdmin.$spamTable);
+        mailarchAdmin.moveRows($('.row-selected'),mailarchAdmin.$spamTable, "right");
         mailarchAdmin.rowsToMove = $();
         $('#spam-modal').modal('hide');
     },
@@ -171,7 +181,45 @@ var mailarchAdmin = {
         var matches = rows.filter(function() {
             return $(this).find('td:eq('+mailarchAdmin.fromCol+')').text() === from;
         })
-        mailarchAdmin.moveRows(matches, mailarchAdmin.$cleanTable);
+        mailarchAdmin.moveRows(matches, mailarchAdmin.$cleanTable, "left");
+    },
+
+    openMesg: function() {
+        var url = $(this).find("td:nth-child(6)").html();
+        window.open(url);
+    },
+
+    processPane: function(pane, action){
+        var data = new Object();
+        var rows = pane.find(".result-table tbody tr");
+        var ids = new Array();
+        rows.each( function() {
+            ids.push( $(this).find("td:last").html() );
+        })
+        data.action = action;
+        data.ids = ids.join();
+        data.csrfmiddlewaretoken = $.cookie("csrftoken");
+        console.log(data);
+        var jqxhr = $.post( "/arch/ajax/admin/action/", data, function() {
+            //alert( "success" );
+            rows.remove();
+            mailarchAdmin.refreshTabLabels();
+        })
+        .done(function() {
+            //alert( "second success" );
+        })
+        .fail(function() {
+            alert( "error" );
+        })
+        .always(function() {
+            //alert( "finished" );
+        })
+    },
+
+    processSpam: function(){
+        $(".spinner").removeClass("hidden");
+        mailarchAdmin.processPane($("#spam-pane"), "remove_selected");
+        mailarchAdmin.processPane($("#clean-pane"), "not_spam");
     },
 
     refreshTabLabels: function() {
@@ -188,30 +236,20 @@ var mailarchAdmin = {
         //row.hide("slide", {direction:"right"});
         row.hide();
     },
-    
-    selectInitialMessage: function() {
-        if($('.active .result-table tr').length > 1) {
-            var row = $('.active .result-table tr').eq(1);
-            row.addClass('row-selected');
-            // mailarchAdmin.loadMessage(row);
-        }
-    },
-    
-    openMesg: function() {
-        var url = $(this).find("td:nth-child(6)").html();
-        window.open(url);
-    },
-    
+
     // manage scroll bar
     scrollGrid: function (row){
         // changed formula because rpos is always within clientheight
-        var ch = mailarchAdmin.$adminResults[0].clientHeight,
-        st = mailarchAdmin.$adminResults.scrollTop(),
-        rpos = row.position().top,
-        rh = row.height();
-        if(rpos+rh >= ch) { mailarchAdmin.$adminResults.scrollTop(rpos-(ch)+rh+st); }
-        else if(rpos < 0) {
-            mailarchAdmin.$adminResults.scrollTop(st+rpos);
+        var ch = mailarchAdmin.$tabContent[0].clientHeight;
+        var st = mailarchAdmin.$tabContent.scrollTop();
+        var rtop = row.position().top;
+        var xtop = mailarchAdmin.$tabContent.position().top;
+        var xh = mailarchAdmin.$tabContent.height();
+        var rh = row.height();
+        if (rtop < (xtop+rh)) {
+            mailarchAdmin.$tabContent.scrollTop(st-rh);
+        } else if ((rtop+rh)>(xtop+xh)) {
+            mailarchAdmin.$tabContent.scrollTop(st+rh);
         }
     },
     
@@ -219,10 +257,22 @@ var mailarchAdmin = {
         $('.active .action-select').prop('checked', this.checked);
     },
     
-    selectRow: function () {
-        mailarchAdmin.$activeResultTableRows.removeClass('row-selected');
-        $(this).addClass('row-selected');
-        mailarchAdmin.loadMessage($(this));
+    selectInitialMessage: function() {
+        if($('.active .result-table tr').length > 1) {
+            mailarchAdmin.selectRow($('.active .result-table tr').eq(1));
+        }
+    },
+
+    selectRow: function (row) {
+        $('.result-table tr').removeClass('row-selected');
+        row.addClass('row-selected');
+        if (mailarchAdmin.spamModeActive){
+            mailarchAdmin.loadMessage(row);
+        }
+    },
+
+    selectRowHandler: function() {
+        mailarchAdmin.selectRow($(this));
     },
 
     toggleSpam: function() {
@@ -230,12 +280,23 @@ var mailarchAdmin = {
         if ($(this).hasClass('active')) {
             mailarchAdmin.spamModeActive = false;
             $('body').css('overflow', 'visible');
-            $('ul.nav-tabs').addClass('hidden')
+            $('ul.nav-tabs').addClass('hidden');
+            mailarchAdmin.$viewPane.addClass('hidden');
+            $('#admin_search_form').removeClass('hidden');
+            mailarchAdmin.$spamProcessButton.addClass('disabled');
+            $("#move-subject").parents('div.checkbox-inline').addClass('hidden');
+            mailarchAdmin.$tabContent.removeClass('spam-mode');
         } else {
             mailarchAdmin.spamModeActive = true;
             $('body').css('overflow', 'hidden');
-            $(document).keydown(mailarchAdmin.messageNav);
-            $('ul.nav-tabs').removeClass('hidden')
+            //$(document).keydown(mailarchAdmin.messageNav);
+            $('ul.nav-tabs').removeClass('hidden');
+            mailarchAdmin.$viewPane.removeClass('hidden');
+            $('#admin_search_form').addClass('hidden');
+            mailarchAdmin.$spamProcessButton.removeClass('disabled');
+            mailarchAdmin.loadMessage($('.row-selected'));
+            $("#move-subject").parents('div.checkbox-inline').removeClass('hidden');
+            mailarchAdmin.$tabContent.addClass('spam-mode');
         }
     }
 }

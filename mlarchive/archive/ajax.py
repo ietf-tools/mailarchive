@@ -28,8 +28,17 @@ def ajax_admin_action(request):
         return { 'success' : True }
 
     if request.method == 'POST':
-        assert False, request.POST
-        
+        action = request.POST.get('action')
+        ids = request.POST.get('ids')
+        if ids and isinstance(ids, basestring):
+            ids = ids.split(',')
+        else:
+            return { 'success' : False }
+        func = getattr(actions, action)
+        queryset = Message.objects.filter(pk__in=ids)
+        func(request, queryset)
+        return { 'success' : True }
+
 
 @check_access
 def ajax_get_msg(request, msg):

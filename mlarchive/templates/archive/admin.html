@@ -14,6 +14,7 @@
 
 <div id="admin-page">
     <div id="admin-top">
+        <div id="admin-view-pane" class="hidden"></div>
         <div id="admin_search_form">
             <form id="id_admin_form" name="admin-search-form" class="form-inline" action="." method="get">
                 <div class="row">
@@ -43,8 +44,11 @@
                         </div>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-2">
                         <button class="btn btn-default" type="submit">Search</button>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="checkbox-inline"><input type="checkbox" name="exclude_whitelisted_senders" value="exclude_whitelisted_senders">Exclude Whitelisted Senders</label>
                     </div>
                 </div>
             </form>
@@ -56,7 +60,7 @@
         <form id="id_admin_action" class="form-inline" name="admin-action-form" action="." method="post">{% csrf_token %}
 
         <div class="row">
-            <div class="col-md-2 col-md-offset-2">
+            <div class="col-md-1 col-md-offset-1">
                 <label class="checkbox-inline"><input type="checkbox" id="selectall" name="selectall" value="selectall">Select All</label>
             </div>
             <div class="col-md-4">
@@ -70,19 +74,29 @@
                 <input type="hidden" class="select-across" value="0" name="select_across" />
                 <button type="submit" class="btn btn-default" title="Run the selected action" name="index" value="0">Go</button>
             </div>
-            <div class="col-md-2">
-                <button id="spam-toggle" type="button" class="btn btn-primary" data-toggle="button" aria-pressed="false" autocomplete="off">Spam Mode</button>
+            <div class="col-md-3">
+                <div class="btn-group" role="group" aria-label="spam buttons">
+                    <button id="spam-toggle" type="button" class="btn btn-primary" data-toggle="button" aria-pressed="false" autocomplete="off">Spam Mode</button>
+                    <button id="spam-process" type="button" class="btn btn-primary disabled" data-toggle="button" aria-pressed="false" autocomplete="off">Process Spam</button>
+                    <span class="spinner hidden"><i class="fa fa-refresh fa-spin" style="font-size:24px"></i></span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="checkbox-inline hidden">
+                    <label class="checkbox-inline"><input type="checkbox" id="move-subject" value="" checked>Move identical subject</label>
+                </div>
+                
             </div>
         </div> <!-- row -->
 
         <ul class="nav nav-tabs hidden">
-          <div class="alert alert-warning" role="alert">Use left and right arrow keys to sort messages.  Right = spam, Left = not spam.  Then perform actions on subsets.</div>
+          <div class="alert alert-warning" role="alert">Use left and right arrow keys to sort messages.  Right = spam, Left = not spam.  Use Process Spam button to remove spam and mark clean messages.</div>
           <li role="presentation"><a data-toggle="tab" href="#clean-pane">Clean - 0</a></li>
           <li role="presentation" class="active"><a data-toggle="tab" href="#search-pane">Search - {{ results|length }}</a></li>
           <li role="presentation"><a data-toggle="tab" href="#spam-pane">Spam - 0</a></li>
         </ul>
 
-        <div class="tab-content">
+        <div class="tab-content" tabindex="0">
             <div id="clean-pane" class="tab-pane">
                 {% include "includes/admin_results.html" %}
             </div>
@@ -99,8 +113,6 @@
         </form>
 </div> <!-- result-list -->
 </div> <!-- admin-page -->
-
-<div id="admin-view-pane"></div>
 
 {% endblock %}
 
@@ -130,6 +142,7 @@
 {% block js %}
 <script type="text/javascript" src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'selectize/js/standalone/selectize.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
 <script type="text/javascript" src="{% static 'mlarchive/js/admin.js' %}"></script>
 {% endblock %}
 

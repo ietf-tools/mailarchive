@@ -1,4 +1,10 @@
 
+mailarch (1.10.10) ietf; urgency=normal
+
+ * Improve spam handling features of admin interface
+
+-- Ryan Cross <rcross@amsl.com>  25 Sep 2017 14:00:00 +0800
+
 mailarch (1.10.9) ietf; urgency=normal
 
  * Fix advanced search issues.

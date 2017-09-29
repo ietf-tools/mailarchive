@@ -91,3 +91,15 @@ def test_ajax_get_messages(client,messages):
     response = client.get(url)
     assert response.status_code == 404
 
+@pytest.mark.django_db(transaction=True)
+def test_ajax_admin_action(client):
+    user = UserFactory.create(is_superuser=True)
+    elist = EmailListFactory.create(name='public')
+    msg = MessageFactory.create(email_list=elist)
+    client.login(username='admin',password='admin')
+    url = reverse('ajax_admin_action')
+    data = {'action':'remove_selected', 'ids':'%s' % msg.pk}
+    response = client.post(url, data)
+    assert response.status_code == 200
+    assert Message.objects.count() == 0
+

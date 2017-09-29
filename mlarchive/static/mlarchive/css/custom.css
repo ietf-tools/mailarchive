@@ -347,6 +347,41 @@ ul.browse_list li {
     text-align:center;
 }
 
+#admin-view-pane {
+    height: 132px;
+    overflow-y: scroll;
+    padding: 0 20px;
+}
+
+.result-list .row {
+    margin: 0;
+}
+
+#admin-page .result-table {
+    table-layout: fixed;
+}
+
+#admin-page th.col1, #admin-page th.col2 {
+    width: 5%;
+}
+
+#admin-page th.col5 {
+    width: 10%;
+}
+
+#admin-page .tab-content {
+    height: calc(100vh - 345px);
+    overflow: auto;
+}
+
+#admin-page .tab-content.spam-mode {
+    height: calc(100vh - 435px);
+}
+
+.spinner {
+    margin: 0 20px;
+}
+
 /* ==========================================================================
    Help
    ========================================================================== */

@@ -214,31 +214,45 @@ def admin(request):
     the administrator to run queries and perform actions, ie. remove spam, on the
     results.  Available actions are defined in actions.py
     """
-    results = None
+    results = []
     form = AdminForm()
     action_form = AdminActionForm()
 
-    if request.method == 'POST':
-        action_form = AdminActionForm(request.POST)
-        if action_form.is_valid():
-            action = action_form.cleaned_data['action']      
-            func = getattr(actions, action)
-            selected = request.POST.getlist('_selected_action')
-            queryset = Message.objects.filter(pk__in=selected)
-            return func(request, queryset)
-    
-    elif request.method == 'GET' and request.GET:
+    def is_not_whitelisted(search_result):
+        if search_result.frm not in whitelist:
+            return True
+        else:
+            return False
+
+    # admin search query
+    if request.method == 'GET' and request.GET:
         form = AdminForm(request.GET)
         if form.is_valid():
             kwargs = get_kwargs(form.cleaned_data)
             if kwargs:
-                results = SearchQuerySet().filter(**kwargs).order_by('id').load_all()
+                whitelist = Message.objects.filter(spam_score=-1).values_list('frm',flat=True).distinct()
+                results = SearchQuerySet().filter(**kwargs).order_by('date').load_all()
+                if form.cleaned_data.get('exclude_whitelisted_senders'):
+                    results = filter(is_not_whitelisted, results)
+
+    # perfom action on checked messages
+    elif request.method == 'POST':
+        action_form = AdminActionForm(request.POST)
+        if action_form.is_valid():
+            action = action_form.cleaned_data['action']
+            func = getattr(actions, action)
+            selected = request.POST.getlist('_selected_action')
+            queryset = Message.objects.filter(pk__in=selected)
+            return func(request, queryset)
 
     return render(request, 'archive/admin.html', {
         'results': results,
         'form': form,
         'action_form': action_form,
     })
+
+
+
 
 @superuser_only
 def admin_console(request):

@@ -159,6 +159,7 @@ class AdminForm(forms.Form):
         required=False)
     spam = forms.BooleanField(required=False)
     spam_score = forms.CharField(max_length=6,required=False)
+    exclude_whitelisted_senders = forms.BooleanField(required=False)
 
     def clean_email_list(self):
         # return a list of IDs for use in search query

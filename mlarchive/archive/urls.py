@@ -10,7 +10,7 @@ from mlarchive.archive import views
 urlpatterns = [
     url(r'ajax/msg/?$', ajax.ajax_get_msg, name='ajax_get_msg'),
     url(r'ajax/messages/?$', ajax.ajax_messages, name='ajax_messages'),
-    url(r'ajax/admin/action/?$', ajax.ajax_admin_action, name='ajax_admin_action'),
+    url(r'ajax/admin/action/$', ajax.ajax_admin_action, name='ajax_admin_action'),
 
     url(r'^$', views.main, name='archive'),
     url(r'^admin/$', views.admin, name='archive_admin'),

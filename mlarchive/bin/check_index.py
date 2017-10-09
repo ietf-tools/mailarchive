@@ -15,7 +15,6 @@ from celery_haystack.utils import get_update_task
 from django.conf import settings
 from haystack.query import SearchQuerySet
 from mlarchive.archive.models import *
-from mlarchive.archive.forms import get_list_info
 
 import logging
 logpath = os.path.join(settings.DATA_ROOT,'log/check_index.log')
@@ -41,7 +40,7 @@ def main():
         if sr.object is None:
             count = count + 1
             logging.warning(sr.id + '\n')
-            elist = get_list_info(sr.email_list)
+            elist = sr.email_list
             stat[elist] = stat.get(elist,0) + 1
             if args.fix:
                 remove_index_entry(sr.id)

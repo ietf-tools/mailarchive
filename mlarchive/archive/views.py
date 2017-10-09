@@ -19,10 +19,10 @@ from haystack.query import SearchQuerySet
 
 from mlarchive.utils.decorators import check_access, superuser_only, pad_id
 from mlarchive.archive import actions
-from mlarchive.archive.query_utils import get_kwargs, get_cached_query
+from mlarchive.archive.query_utils import get_kwargs, get_cached_query, query_is_listname
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     find_message_date, find_message_gbt, get_query_neighbors, is_javascript_disabled,
-    get_query_string, get_browse_list)
+    get_query_string, get_browse_list, get_lists_for_user)
 
 from models import *
 from forms import *
@@ -50,8 +50,10 @@ class CustomSearchView(SearchView):
         extra_context().  This is required because create_response() corrupts regular
         facet_counts().
         """
+        if query_is_listname(request):
+            return redirect(reverse('archive_search') + '?email_list=' + request.GET['q'])
+        
         self.request = request
-
         self.form = self.build_form()
         self.query = self.get_query()
         self.results = self.get_results()
@@ -230,9 +232,9 @@ def admin(request):
         if form.is_valid():
             kwargs = get_kwargs(form.cleaned_data)
             if kwargs:
-                whitelist = Message.objects.filter(spam_score=-1).values_list('frm',flat=True).distinct()
                 results = SearchQuerySet().filter(**kwargs).order_by('date').load_all()
                 if form.cleaned_data.get('exclude_whitelisted_senders'):
+                    whitelist = Message.objects.filter(spam_score=-1).values_list('frm',flat=True).distinct()
                     results = filter(is_not_whitelisted, results)
 
     # perfom action on checked messages
@@ -294,7 +296,7 @@ def browse(request, list_name=None):
         redirect_url = '%s?%s' % (reverse('archive_search'), 'email_list=' + list_name)
         return redirect(redirect_url)
 
-    columns = get_columns(request.user)
+    columns = get_columns(request)
 
     if request.method == "GET" and request.GET.get('list'):
         form = BrowseForm(request=request,data=request.GET)
@@ -395,5 +397,8 @@ def main(request):
         except OSError:
             pass
 
-    return render(request, 'archive/main.html', {'form': form})
+    return render(request, 'archive/main.html', {
+        'form': form,
+        'lists': get_lists_for_user(request),
+    })
 

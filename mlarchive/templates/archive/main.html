@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Mail Archive{% endblock %}
 
@@ -6,10 +7,10 @@
 
 <div id="search-wrapper">
   <div id="search-container">
-  <form id="id_search_form" name="search-form" action="search" method="get">
+  <form id="id_search_form" name="search-form" action="search" method="get"{% if lists %} data-lists="{{ lists|join:',' }}"{% endif %}>
       <div>
         <div class="input-group">
-          <input id="id_q" name="q" type="search" class="form-control" placeholder="Search for..." {% if query %}value="{{ query }}"{% endif %}>
+          <input id="id_q" name="q" type="search" class="form-control typeahead" placeholder="Enter list name or search query..." {% if query %}value="{{ query }}"{% endif %}>
           <span class="input-group-btn">
             <button class="btn btn-default" type="submit">
               <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
@@ -37,9 +38,40 @@
 
 
 {% block js %}
+<script type="text/javascript" src="{% static 'bootstrap3-typeahead/bootstrap3-typeahead.js' %}"></script>
 <script type="text/javascript">
 $(function() {
     $('#id_q').focus();
+
+    var lists = $("#id_search_form").data("lists").split(",");
+    var source = [];
+    //alert(lists[0]);
+    $.each(lists, function(index, value) {
+      var item = new Object();
+      item.id = index;
+      item.name = value;
+      source.push(item);
+    })
+
+    var $input = $(".typeahead");
+    $input.typeahead({
+      source: source,
+      autoSelect: true
+    });
+    $input.change(function() {
+      var current = $input.typeahead("getActive");
+      if (current) {
+        // Some item from your model is active!
+        if (current.name == $input.val()) {
+          // This means the exact match is found. Use toLowerCase() if you want case insensitive match.
+        } else {
+          // This means it is only a partial match, you can either add a new item
+          // or take the active if you don't want new items
+        }
+      } else {
+        // Nothing is active so it is a new value (or maybe empty value)
+      }
+    });
 });
 </script>
 {% endblock %}

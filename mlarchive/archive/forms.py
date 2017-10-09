@@ -71,18 +71,6 @@ def get_cache_key(request):
     return m.hexdigest()
 
 
-def get_list_info(value):
-    """Map list name to list id or list id to list name.  This is essentially a cached
-    bi-directional dictionary lookup."""
-    mapping = cache.get('list_info')
-    if mapping is None:
-        mapping = { x.id:x.name for x in EmailList.objects.all() }
-        reversed = { v:k for k,v in mapping.items() }
-        mapping.update(reversed)
-        cache.set('list_info',mapping,86400)
-    return mapping.get(value)
-
-
 def group_by_thread(qs, so, sso, reverse=False):
     """Return a SearchQuerySet grouped by thread, ordered as follows:
     Top level threads ordered by date descending.  Sub-threads by date
@@ -156,17 +144,18 @@ class AdminForm(forms.Form):
     end_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='End date', required=False)
     email_list = forms.ModelMultipleChoiceField(
         queryset=EmailList.objects.all().order_by('name'),
+        to_field_name='name',
         required=False)
     spam = forms.BooleanField(required=False)
     spam_score = forms.CharField(max_length=6,required=False)
     exclude_whitelisted_senders = forms.BooleanField(required=False)
 
     def clean_email_list(self):
-        # return a list of IDs for use in search query
+        # return a list of names for use in search query
         # so we match get_kwargs() api
         email_list = self.cleaned_data.get('email_list')
         if email_list:
-            return [ e.pk for e in email_list ]
+            return [ e.name for e in email_list ]
 
 
 class AdminActionForm(forms.Form):
@@ -269,11 +258,6 @@ class AdvancedSearchForm(FacetedSearchForm):
                 facets['fields']['email_list'] = frm_count['fields']['email_list']
                 facets['fields']['frm_name'] = list_count['fields']['frm_name']
 
-            # map email_list id to name for use in template
-            if facets['fields']['email_list']:
-                new = [ (get_list_info(x),y) for x,y in facets['fields']['email_list'] ]
-                facets['fields']['email_list'] = new
-
             # sort facets by name
             for field in facets['fields']:
                 facets['fields'][field].sort()  # sort by name
@@ -367,20 +351,18 @@ class AdvancedSearchForm(FacetedSearchForm):
         return sqs
 
     def clean_email_list(self):
-        return [ n.pk for n in self.cleaned_data['email_list'] ]
+        return [ n.name for n in self.cleaned_data.get('email_list', []) ]
 
     def clean_f_list(self):
-        # take a comma separated list of email_list names and convert to list of ids
+        # take a comma separated list of email_list names and convert to list
         names = self.cleaned_data['f_list']
-        if not names:
-            return None
-        return map(get_list_info,names.split(','))
+        if names:
+            return names.split(',')
 
     def clean_f_from(self):
         names = self.cleaned_data['f_from']
-        if not names:
-            return None
-        return names.split(',')
+        if names:
+            return names.split(',')
 
 # ---------------------------------------------------------
 
@@ -390,7 +372,7 @@ class BrowseForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request')
         super(BrowseForm, self).__init__(*args, **kwargs)
-        self.fields['list'].queryset = EmailList.objects.exclude(pk__in=get_noauth(self.request)).order_by('name')
+        self.fields['list'].queryset = EmailList.objects.exclude(name__in=get_noauth(self.request)).order_by('name')
         self.fields["list"].widget.attrs["placeholder"] = "List name"
 
 

@@ -22,6 +22,7 @@ from django.urls import reverse
 
 from mlarchive.archive.forms import RulesForm
 from mlarchive.archive.models import EmailList
+from mlarchive.archive.utils import get_noauth, get_lists_for_user
 from mlarchive.utils.encoding import to_str
 
 contain_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\((?P<value>[^\)]+)\)')
@@ -219,31 +220,25 @@ def get_browse_list(request):
     return browse_list
 
 
-def get_columns(user):
+def get_columns(request):
     """Returns email lists the user can view, grouped in columns for display.
     columns is a dictionary of lists containing keys: active, inactive, private
     """
     display_columns = 5
     columns = {'private':[],'active':[],'inactive':[]}
-
-    # private columns
-    if user.is_authenticated():
-        if user.is_superuser:
-            lists = EmailList.objects.filter(private=True).order_by('name')
-        else:
-            lists = EmailList.objects.filter(private=True,members=user.pk).order_by('name')
-        if lists:
-            columns['private'] = chunks(lists,int(math.ceil(lists.count()/float(display_columns))))
-
-    # active columns
-    lists = EmailList.objects.filter(active=True,private=False).order_by('name')
-    if lists:
-        columns['active'] = chunks(lists,int(math.ceil(lists.count()/float(display_columns))))
-
-    # inactive columns
-    lists = EmailList.objects.filter(active=False,private=False).order_by('name')
-    if lists:
-        columns['inactive'] = chunks(lists,int(math.ceil(lists.count()/float(display_columns))))
+    lists = EmailList.objects.filter(name__in=get_lists_for_user(request))
+    
+    private = lists.filter(private=True)
+    if private:
+        columns['private'] = chunks(private,int(math.ceil(private.count()/float(display_columns))))
+    
+    active = lists.filter(active=True, private=False)
+    if active:
+        columns['active'] = chunks(active,int(math.ceil(active.count()/float(display_columns))))
+    
+    inactive = lists.filter(active=False, private=False)
+    if inactive:
+        columns['inactive'] = chunks(inactive,int(math.ceil(inactive.count()/float(display_columns))))
 
     return columns
 

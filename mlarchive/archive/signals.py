@@ -14,11 +14,11 @@ logger = logging.getLogger('mlarchive.custom')
 
 
 @receiver([post_save, post_delete], sender=EmailList)
-def _clear_cache(sender, instance, **kwargs):
+def _clear_lists_cache(sender, instance, **kwargs):
     """If EmailList object is saved or deleted remove the list_info cache entry
     """
-    cache.delete('list_info')
-
+    cache.delete('lists')
+    cache.delete('lists_public')
 
 @receiver(user_logged_in)
 def _clear_session(sender, request, user, **kwargs):

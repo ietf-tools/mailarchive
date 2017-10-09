@@ -15,7 +15,6 @@ import os
 from celery_haystack.utils import get_update_task
 from django.conf import settings
 
-from mlarchive.archive.forms import get_list_info
 from mlarchive.archive.management.commands._classes import MessageWrapper
 from mlarchive.archive.models import *
 

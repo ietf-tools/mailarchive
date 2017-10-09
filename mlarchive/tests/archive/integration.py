@@ -47,6 +47,7 @@ def test_auth_browse(client):
     response = client.get(url)
     assert response.status_code == 200
     q = PyQuery(response.content)
+    print response.context
     assert len(q('#private-lists li')) == 1
 
 @pytest.mark.django_db(transaction=True)
@@ -211,3 +212,12 @@ def test_queries_two_periods(client,messages):
     url = reverse('archive_search') + '?q=spec...)'
     response = client.get(url)
     assert response.status_code == 200
+
+@pytest.mark.django_db(transaction=True)
+def test_queries_list_term(client):
+    '''Test that a single term query that matches a list name redirects to list'''
+    EmailListFactory.create(name='pubone')
+    url = reverse('archive_search') + '?q=pubone'
+    response = client.get(url)
+    assert response.status_code == 302
+    assert response['location'] == '/arch/search/?email_list=pubone'

@@ -10,7 +10,7 @@ class MessageIndex(CelerySearchIndex, indexes.Indexable):
     text = indexes.CharField(document=True, use_template=True)
 
     date = indexes.DateTimeField(model_attr='date')
-    email_list = indexes.IntegerField(model_attr='email_list__id', faceted=True)
+    email_list = indexes.CharField(model_attr='email_list__name', faceted=True)
     frm = indexes.CharField(model_attr='frm')
     frm_name = indexes.CharField(model_attr='frm_name', faceted=True)
     msgid = indexes.CharField(model_attr='msgid')

@@ -12,17 +12,6 @@ from mlarchive.archive.signals import _get_lists_as_xml
 
 
 @pytest.mark.django_db(transaction=True)
-def test_clear_cache(client, messages):
-    #url = reverse('archive_search') + '?email_list=pubone'
-    #response = client.get(url)
-    cache.set('list_info',1)
-    assert cache.get('list_info')
-    elist = EmailList.objects.get(name='pubone')
-    elist.save()
-    assert not cache.get('list_info')
-
-
-@pytest.mark.django_db(transaction=True)
 def test_clear_session(client):
     url = reverse('archive_browse')
     response = client.get(url)

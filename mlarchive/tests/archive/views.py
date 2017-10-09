@@ -72,7 +72,7 @@ def test_admin_search_list(client,messages):
     msg = Message.objects.first()
     user = UserFactory.create(is_superuser=True)
     assert client.login(username='admin',password='admin')
-    url = reverse('archive_admin') + '?email_list=' + str(msg.email_list.pk)
+    url = reverse('archive_admin') + '?email_list=' + msg.email_list.name
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
@@ -200,6 +200,7 @@ def test_logout(client):
     assert response.status_code == 200
     assert not SESSION_KEY in client.session
 
+@pytest.mark.django_db(transaction=True)
 def test_main(client):
     url = reverse('archive')
     response = client.get(url)

@@ -4,11 +4,14 @@ import glob
 import mailbox
 import pytest
 from factories import *
+
+from haystack.query import SearchQuerySet
+
 from mlarchive.archive.view_funcs import *
 from mlarchive.archive.forms import group_by_thread
 from mlarchive.archive.models import EmailList
 from mlarchive.utils.test_utils import get_request
-from haystack.query import SearchQuerySet
+
 
 def test_chunks():
     result = list(chunks([1,2,3,4,5,6,7,8,9],3))
@@ -87,11 +90,15 @@ def test_initialize_formsets():
 
 @pytest.mark.django_db(transaction=True)
 def test_get_columns():
-    user = UserFactory.build()
-    x = EmailListFactory.create(name='public')
-    columns = get_columns(user)
+    user = UserFactory.create()
+    public = EmailListFactory.create(name='public')
+    private = EmailListFactory.create(name='private', private=True)
+    private.members.add(user)
+    request = get_request(user=user)
+    columns = get_columns(request)
     assert len(columns) == 3
     assert len(columns['active']) == 1
+    assert len(columns['private']) == 1
 
 def test_get_export_empty(client):
     url = '%s?%s' % (reverse('archive_export',kwargs={'type':'mbox'}), 'q=database')
@@ -103,7 +110,6 @@ def test_get_export_empty(client):
     #q = PyQuery(response.content)
     #assert len(q('li.error')) == 1
     #assert q('li.error').text() == "No messages to export."
-
 
 @pytest.mark.django_db(transaction=True)
 def test_get_export_limit_mbox(client,messages,settings):
@@ -139,7 +145,7 @@ def test_get_export_mbox(client,thread_messages,tmpdir):
     url = '%s?%s' % (reverse('archive_export',kwargs={'type':'mbox'}), 'q=database')
     request = get_request(url=url)
     elist = EmailList.objects.get(name='acme')
-    sqs = SearchQuerySet().filter(email_list=elist.pk)
+    sqs = SearchQuerySet().filter(email_list='acme')
 
     # validate response is valid tarball with mbox file, with 4 messages
     response = get_export(sqs,'mbox',request)
@@ -159,7 +165,7 @@ def test_get_export_maildir(client,thread_messages,tmpdir):
     url = '%s?%s' % (reverse('archive_export',kwargs={'type':'maildir'}), 'q=database')
     request = get_request(url=url)
     elist = EmailList.objects.get(name='acme')
-    sqs = SearchQuerySet().filter(email_list=elist.pk)
+    sqs = SearchQuerySet().filter(email_list='acme')
 
     # validate response is valid tarball with maildir directory and 4 messages
     response = get_export(sqs,'maildir',request)
@@ -181,7 +187,7 @@ def test_get_export_url(messages):
     url = '%s?%s' % (reverse('archive_export',kwargs={'type':'url'}), 'q=database')
     redirect_url = '%s?%s' % (reverse('archive_search'), 'q=database')
     request = get_request(url=url)
-    sqs = SearchQuerySet().filter(email_list=1)
+    sqs = SearchQuerySet().filter(email_list='pubone')
     response = get_export(sqs,'url',request)
     assert response.status_code == 200
     message = Message.objects.filter(email_list__pk=1).first()
@@ -204,3 +210,5 @@ def test_get_query_neighbors(messages):
     before, after = get_query_neighbors(sqs,sqs[0].object)
     assert before == None
     assert after == None
+
+

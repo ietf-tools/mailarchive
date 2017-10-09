@@ -6,6 +6,8 @@ from django.conf import settings
 from django.core.cache import cache
 from haystack.query import SQ
 
+from mlarchive.archive.utils import get_lists
+
 import logging
 logger = logging.getLogger('mlarchive.custom')
 
@@ -49,7 +51,7 @@ def get_filter_params(query):
 
 def get_kwargs(data):
     """Returns a dictionary to be used as kwargs for the SearchQuerySet, data is
-    a dictionary from form.cleaned_data and .  This function can be used with multiple
+    a dictionary from form.cleaned_data.  This function can be used with multiple
     forms which may not include exactly the same fields, so we use the get() method.
     """
     kwargs = {}
@@ -117,6 +119,13 @@ def get_query(request):
 def is_nojs_value(items):
     k,v = items
     if k.startswith('nojs') and k.endswith('value') and v:
+        return True
+    else:
+        return False
+
+def query_is_listname(request):
+    query = request.GET.get('q', '')
+    if request.GET.keys() == ['q'] and len(query.split()) == 1 and query in get_lists():
         return True
     else:
         return False

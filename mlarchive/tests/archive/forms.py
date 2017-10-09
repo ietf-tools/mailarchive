@@ -46,13 +46,6 @@ def test_get_cache_key():
     key4 = get_cache_key(request)
     assert key4
     
-@pytest.mark.django_db(transaction=True)
-def test_get_list_info():
-    EmailListFactory.create(name='ancp')
-    EmailListFactory.create(name='alto')
-    assert get_list_info(1) == 'ancp'
-    assert get_list_info('ancp') == 1
-
 def test_get_query():
     factory = RequestFactory()
     # simple query
@@ -67,7 +60,7 @@ def test_get_query():
     
 @pytest.mark.django_db(transaction=True)
 def test_group_by_thread(messages):
-    sqs = SearchQuerySet().filter(email_list=1)
+    sqs = SearchQuerySet().filter(email_list='pubone')
     sqs = sqs.order_by('tdate','date')
     print '{}'.format([ (x.pk,x.tdate,x.date) for x in sqs ])
     assert [ x.pk for x in sqs ] == [1,4,2,3]       # assert grouped by thread order

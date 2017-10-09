@@ -1,4 +1,17 @@
 
+mailarch (1.10.12) ietf; urgency=normal
+
+ * Add ability to enter list name in main search box to go directly
+   to list messages.  Includes autocomplete feature.  Fixes #2373
+
+-- Ryan Cross <rcross@amsl.com>  09 Oct 2017 15:00:00 +0800
+
+mailarch (1.10.11) ietf; urgency=normal
+
+ * Advanced support index update for v1.10.12
+
+-- Ryan Cross <rcross@amsl.com>  30 Sep 2017 14:00:00 +0800
+
 mailarch (1.10.10) ietf; urgency=normal
 
  * Improve spam handling features of admin interface

@@ -75,6 +75,23 @@ div:focus {
     border: 1px solid #FF8080;
 }
 
+#footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: white;
+}
+
+#footer p {
+    margin: 10px 0 17px;
+}
+
+#footer.scrolling {
+    position: static;
+    clear: both;
+}
+
 /* Progressive Enhancement Styling
    ========================================================================== */
 .js-show {
@@ -266,6 +283,10 @@ ul.browse_list li {
     width: 300px;
 }
 
+.browse_section:last-child {
+    overflow: auto;
+    padding-bottom: 30px;
+}
 /* ==========================================================================
    Advanced Search
    ========================================================================== */
@@ -472,18 +493,6 @@ i.toggle-pane {
 
 .filter-popup li .full {
     display: inline;
-}
-
-#footer {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background-color: white;
-}
-
-#footer p {
-    margin: 10px 0 17px;
 }
 
 nav.navbar {

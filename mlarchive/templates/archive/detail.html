@@ -38,6 +38,12 @@
 
 {% endblock %}
 
+{% block footer %}
+  {% with extra_class="scrolling" %}
+    {% include "includes/footer.html" %}
+  {% endwith %}
+{% endblock %}
+
 {% block js %}
 <script type="text/javascript" src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
 <script type="text/javascript" src="{% static 'mlarchive/js/detail.js' %}"></script>

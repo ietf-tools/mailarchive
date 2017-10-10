@@ -59,9 +59,8 @@
               {% endif %}
             </div>
             
-            <div id="footer">
-                <p class="small text-center">Email Archive v{{ version_num }}</p>
-            </div>
+            {% include "includes/footer.html" %}
+
         </div> <!-- sidebar -->
 
         <div id="msg-components">
@@ -178,6 +177,8 @@
         </div> <!-- msg-components -->
     </div> <!-- msg-container -->
 {% endblock %}
+
+{% block footer %}{% endblock %}
 
 {% block js %}
 <script type="text/javascript" src="{% static 'jquery-ui/jquery-ui.min.js' %}"></script>

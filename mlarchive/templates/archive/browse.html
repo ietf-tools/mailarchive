@@ -56,6 +56,12 @@
 
 {% endblock %}
 
+{% block footer %}
+  {% with extra_class="scrolling" %}
+    {% include "includes/footer.html" %}
+  {% endwith %}
+{% endblock %}
+
 {% block js %}
 <script type="text/javascript" src="{% static 'selectize/js/standalone/selectize.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'mlarchive/js/browse.js' %}"></script>

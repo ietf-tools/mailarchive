@@ -648,7 +648,12 @@ table.msg-list-header-table th a.btn {
 }
 
 #splitter-pane {
-    background-color: lightgrey;
+    background-position: 50%;
+    background-repeat: no-repeat;
+    background-image: url("../images/horizontal-grip.png");
+    background-color: #f6f6f6;
+    border-left: 1px solid #D6D6D6;
+    border-right: 1px solid #D6D6D6;
     position: absolute;
     left: 0;
     right: 0;

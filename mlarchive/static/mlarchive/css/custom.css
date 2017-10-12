@@ -409,6 +409,7 @@ ul.browse_list li {
 #help_page {
     margin-left: 10%;
     margin-right: 10%;
+    overflow: auto;
 }
 
 /* ==========================================================================

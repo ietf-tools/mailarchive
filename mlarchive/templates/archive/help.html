@@ -35,4 +35,8 @@
 
 {% endblock %}
 
-
+{% block footer %}
+  {% with extra_class="scrolling" %}
+    {% include "includes/footer.html" %}
+  {% endwith %}
+{% endblock %}

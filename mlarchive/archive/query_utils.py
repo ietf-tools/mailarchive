@@ -64,7 +64,8 @@ def get_kwargs(data):
     if data.get('end_date'):
         kwargs['date__lte'] = data['end_date']
     if data.get('email_list'):
-        kwargs['email_list__in'] = data['email_list']
+        # with Haystack/Xapian must replace dash with space in email list names
+        kwargs['email_list__in'] = [ x.replace('-',' ') for x in data['email_list'] ]
     if data.get('frm'):
         kwargs['frm__icontains'] = data['frm']
     if data.get('qdr') and data['qdr'] not in ('a','c'):

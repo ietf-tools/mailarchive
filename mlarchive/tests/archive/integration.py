@@ -104,6 +104,22 @@ def test_console_access(client):
 # Queries
 # --------------------------------------------------
 @pytest.mark.django_db(transaction=True)
+def test_queries_email_list(client,messages):
+    url = reverse('archive_search') + '?email_list=pubone'
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert len(results) == 4
+
+@pytest.mark.django_db(transaction=True)
+def test_queries_email_list_with_hyphen(client,messages):
+    url = reverse('archive_search') + '?email_list=dev-ops'
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert len(results) == 1
+
+@pytest.mark.django_db(transaction=True)
 def test_odd_queries(client):
     'Test some odd queries'
     url = reverse('archive_search')

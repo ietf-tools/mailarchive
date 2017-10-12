@@ -77,6 +77,10 @@ def load_db():
                           date=datetime.datetime(2017, 1, 6))
     MessageFactory.create(email_list=private)
     
+    # listname with hyphen
+    devops = EmailListFactory.create(name='dev-ops')
+    MessageFactory.create(email_list=devops)
+
 @pytest.fixture(scope="session")
 def index_resource():
     if not Message.objects.first():

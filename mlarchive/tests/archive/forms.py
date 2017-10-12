@@ -162,7 +162,7 @@ def test_asf_search_qdr(client,messages):
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
-    assert len(results) == 3
+    assert len(results) == 4
 
 @pytest.mark.django_db(transaction=True)
 def test_asf_search_from(client,messages):

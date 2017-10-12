@@ -1,4 +1,16 @@
 
+mailarch (1.10.13) ietf; urgency=normal
+
+ * Fix issue with handling email list names containing a hyphen. 
+   Add missing typeahead plugin.
+
+ * Add bug reporting links (Trac and mail) to footer.  Fixes #2372
+
+ * Add grip to search results page splitter bar, so it is more 
+   clear that the panes are resizable.
+
+-- Ryan Cross <rcross@amsl.com>  12 Oct 2017 11:00:00 +0800
+
 mailarch (1.10.12) ietf; urgency=normal
 
  * Add ability to enter list name in main search box to go directly

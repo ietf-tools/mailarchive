@@ -144,6 +144,35 @@ var mailarch = {
         return $(window).height() - mailarch.$listPane.offset().top - mailarch.bottomMargin;
     },
 
+    getMessages: function() {
+        if (mailarch.ajaxRequestSent) {
+            return true;
+        }
+        var queryid = mailarch.$msgList.attr('data-queryid');
+        var request = $.ajax({
+            "type": "GET",
+            "url": "/arch/ajax/messages/",
+            "data": { "qid": queryid, "lastitem": mailarch.lastItem }
+        });
+        mailarch.ajaxRequestSent = true;
+        request.done(function(data, testStatus, xhr) {
+            mailarch.ajaxRequestSent = false;
+            if(xhr.status == 200){
+                mailarch.$msgTableTbody.append(data);
+                mailarch.setLastItem();
+            } else if(xhr.status == 204)  {
+                mailarch.$msgList.off( "scroll" );
+            }
+        });
+        request.fail(function(xhr, textStatus, errorThrown) {
+            mailarch.ajaxRequestSent = false;
+            if(xhr.status == 404){
+                // server returns a 404 when query has expired from cache
+                window.location.reload();
+            }
+        });
+    },
+
     getSplitterTop: function() {
         var top = parseInt($.cookie("splitter"));
         if(!top) {
@@ -201,6 +230,9 @@ var mailarch = {
             mailarch.$window.on('scroll', mailarch.infiniteScroll);
             mailarch.setPaneHeights();
         }
+        if ($(".xtr").length == 20 && ! mailarch.$msgList.hasScrollBar()) {
+            mailarch.getMessages();
+        }
     },
     
     hasOverflow: function (element) {
@@ -214,32 +246,7 @@ var mailarch = {
     infiniteScroll: function() {
         // BOTTOM OF SCROLL
         if($(this).scrollTop() + $(this).innerHeight() > $(this)[0].scrollHeight - mailarch.scrollMargin) {
-            if (mailarch.ajaxRequestSent) {
-                return true;
-            }
-            var queryid = mailarch.$msgList.attr('data-queryid');
-            var request = $.ajax({
-                "type": "GET",
-                "url": "/arch/ajax/messages/",
-                "data": { "qid": queryid, "lastitem": mailarch.lastItem }
-            });
-            mailarch.ajaxRequestSent = true;
-            request.done(function(data, testStatus, xhr) {
-                mailarch.ajaxRequestSent = false;
-                if(xhr.status == 200){
-                    mailarch.$msgTableTbody.append(data);
-                    mailarch.setLastItem();
-                } else if(xhr.status == 204)  {
-                    mailarch.$msgList.off( "scroll" );
-                }
-            });
-            request.fail(function(xhr, textStatus, errorThrown) {
-                mailarch.ajaxRequestSent = false;
-                if(xhr.status == 404){
-                    // server returns a 404 when query has expired from cache
-                    window.location.reload();
-                }
-            });
+            mailarch.getMessages();
         }
         // TOP OF SCROLL
         if($(this).scrollTop() == 0 && mailarch.$msgList.data("queryset-offset")){
@@ -597,6 +604,7 @@ var mailarch = {
                 mailarch.$listPane.animate({height:height});
             }
             $.cookie('showpreview','false');
+            mailarch.handleResize();
         } else {
             var height = mailarch.getSplitterTop();
             mailarch.$listPane.animate({height:height},function() {
@@ -616,6 +624,6 @@ $(function() {
 // Custom function to detect if vertical scroll bar is visible
 (function($) {
     $.fn.hasScrollBar = function() {
-        return this.get(0).scrollHeight > this.height();
+        return this.get(0).scrollHeight > this.get(0).clientHeight;
     }
 })(jQuery);

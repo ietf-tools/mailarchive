@@ -324,7 +324,7 @@ var mailarch = {
     },
 
     initSort: function() {
-        mailarch.sortDefault['date'] = '-date';
+        mailarch.sortDefault['date'] = 'date';
         mailarch.sortDefault['email_list'] = 'email_list';
         mailarch.sortDefault['frm'] = 'frm';
         mailarch.sortDefault['score'] = '-score';
@@ -431,7 +431,7 @@ var mailarch = {
         var id = $(this).attr('id');
         var so = $.query.get('so');
         var new_so = "";
-        col = id.replace('sort-button-','');
+        var col = id.replace('sort-button-','');
         if(so==col){
             new_so = "-" + col;
         }

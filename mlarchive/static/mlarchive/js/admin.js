@@ -148,7 +148,7 @@ var mailarchAdmin = {
         // move selected row, if other rows match subject, prompt to move
         var tr = $('.row-selected');
         var subject = tr.find('td:eq('+mailarchAdmin.subjectCol+')').text();
-        var rows = $('.active .result-table tr');
+        var rows = $('.active .result-table tbody tr');
         var matches = rows.filter(function() {
             return $(this).find('td:eq('+mailarchAdmin.subjectCol+')').text() === subject;
         })
@@ -177,7 +177,7 @@ var mailarchAdmin = {
         // move selected row and all with matching from address
         var tr = $('.row-selected');
         var from = tr.find('td:eq('+mailarchAdmin.fromCol+')').text();
-        var rows = $('.active .result-table tr');
+        var rows = $('.active .result-table tbody tr');
         var matches = rows.filter(function() {
             return $(this).find('td:eq('+mailarchAdmin.fromCol+')').text() === from;
         })

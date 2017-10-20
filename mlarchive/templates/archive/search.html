@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
 {% load static archive_extras widget_tweaks %}
 
-{% block title %}Mail Archive Search Results{% endblock %}
+
+{% block title %}{% if browse_list %}{{ browse_list }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+
 
 {% block content %}
 

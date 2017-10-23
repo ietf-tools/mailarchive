@@ -18,7 +18,8 @@ from django.db.models.signals import post_save
 from django.contrib.auth.models import User
 from ietf.person.models import Email
 from optparse import OptionParser
-from mlarchive.archive.models import EmailList, _list_save_handler, _export_lists
+from mlarchive.archive.models import EmailList
+from mlarchive.archive.signals import _list_save_handler, _export_lists
 from subprocess import CalledProcessError, check_output
 import hashlib
 import base64

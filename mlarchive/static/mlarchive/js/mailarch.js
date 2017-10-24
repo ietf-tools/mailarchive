@@ -229,9 +229,9 @@ var mailarch = {
             mailarch.setHeaderWidths();
             mailarch.$window.on('scroll', mailarch.infiniteScroll);
             mailarch.setPaneHeights();
-        }
-        if ($(".xtr").length == 20 && ! mailarch.$msgList.hasScrollBar()) {
-            mailarch.getMessages();
+            if ($(".xtr").length == 20 && ! mailarch.$msgList.hasScrollBar()) {
+                mailarch.getMessages();
+            }
         }
     },
     

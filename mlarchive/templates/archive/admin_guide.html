@@ -200,3 +200,10 @@ $ celery worker -A mlarchive.celeryapp:app</pre>
     
 </div> <!-- admin_page -->
 {% endblock %}
+
+
+{% block footer %}
+  {% with extra_class="scrolling" %}
+    {% include "includes/footer.html" %}
+  {% endwith %}
+{% endblock %}

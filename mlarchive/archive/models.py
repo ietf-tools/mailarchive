@@ -12,6 +12,7 @@ from django.core.cache import cache
 from django.db import models
 from django.urls import reverse
 from django.utils.http import urlencode
+from django.template.loader import render_to_string
 
 from mlarchive.archive.generator import Generator
 from mlarchive.archive.thread import parse_message_ids
@@ -58,6 +59,11 @@ class Thread(models.Model):
     def __unicode__(self):
         return str(self.id)
 
+    def get_snippet(self):
+        """Returns all messages of the thread as an HTML snippet"""
+        context = {'messages':self.message_set.all()}
+        return render_to_string('archive/thread_snippet.html', context)
+        
     def set_first(self, message=None):
         """Sets the first message of the thread.  Call when adding or removing
         messages

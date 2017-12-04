@@ -1,28 +1,80 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Mail Archive{% endblock %}
 
 {% block content %}
 
-<div id="admin_page">
+<div id="admin_page" class="container-fluid">
     <div id="console-container">
-        <p>Last message uploaded:</p>
-        <p>
-    
-        {% comment %}
-        {% for key, value in cache_data.items %}
-            {{ key }}: {{ value }}
-        {% endfor %}
-        {% endcomment %}
-    
-        </p>
+      <div class="row">
+        <div class="col-sm-4">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <h3 class="panel-title">Total Messages</h3>
+            </div>
+            <div class="panel-body">
+              <h3>{{ message_count }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <h3 class="panel-title">Last Message</h3>
+            </div>
+            <div class="panel-body">
+              <h3>{{ last_message.date }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <h3 class="panel-title">Avg Response Time</h3>
+            </div>
+            <div class="panel-body">
+              <h3> - - - </h3>
+            </div>
+          </div>
+        </div>
+      </div> <!-- row -->
 
-        {{ revision_time }}
-        {{ revision_date }}
-        {{ revision_num }}
-        {{ revision_id }}
-        {{ version_num }}
+
+      <div class="row">
+        <div class="col-sm-12">
+          <div class="panel panel-default">
+            <div class="panel-body">
+              <div id="top25-chart"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-sm-12">
+          <div class="panel panel-default">
+            <div class="panel-body">
+              <div id="weekly-chart"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 </div> <!-- admin_page -->
 
+{% endblock %}
+
+{% block footer %}
+  {% with extra_class="scrolling" %}
+    {% include "includes/footer.html" %}
+  {% endwith %}
+{% endblock %}
+
+{% block js %}
+{% include "includes/top25_chart.html" %}
+{% include "includes/weekly_chart.html" %}
+<script src="https://code.highcharts.com/highcharts.src.js"></script>
+<script type="text/javascript" src="{% static 'mlarchive/js/console.js' %}"></script> 
 {% endblock %}

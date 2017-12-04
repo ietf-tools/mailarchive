@@ -34,7 +34,7 @@ def main():
     stat = {}
     messages = Message.objects.filter(updated__gte=start,updated__lt=end)
     for message in messages:
-        sqs = SearchQuerySet().filter(msgid=message.msgid,email_list=message.email_list.name)
+        sqs = SearchQuerySet().filter(msgid=message.msgid,email_list__in=[message.email_list.name.replace('-', ' ')])
         if sqs.count() != 1:
             print "Message not indexed.  {list}: {msgid}".format(
                 list=message.email_list,

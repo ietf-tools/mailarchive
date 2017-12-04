@@ -1,7 +1,9 @@
+import datetime
 import json
 import re
 import os
 import urllib
+from operator import itemgetter
 
 from django.conf import settings
 from django.contrib import messages
@@ -14,6 +16,7 @@ from django.forms.formsets import formset_factory
 from django.http import HttpResponseRedirect, HttpResponse, Http404, QueryDict
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
+from django.utils.safestring import mark_safe
 from haystack.views import SearchView, FacetedSearchView
 from haystack.query import SearchQuerySet
 
@@ -253,12 +256,45 @@ def admin(request):
         'action_form': action_form,
     })
 
-
-
-
 @superuser_only
 def admin_console(request):
-    return render(request, 'archive/admin_console.html', {'form': None})
+    weekly_chart_data = get_weekly_data()
+    top25_chart_data = get_top25_data()
+
+    return render(request, 'archive/admin_console.html', {
+        'last_message': Message.objects.order_by('-pk').first(),
+        'weekly_chart_data': mark_safe(json.dumps(weekly_chart_data)),
+        'top25_chart_data': mark_safe(json.dumps(top25_chart_data)),
+        'message_count': "{:,}".format(Message.objects.count()),
+    })
+
+def get_weekly_data():
+    '''Returns weekly archive incoming messages'''
+    data = []
+    start = datetime.datetime.today() - datetime.timedelta(days=365*3)
+    start = start.replace(hour=0,second=0, microsecond=0)
+    for day in range(156):
+        end = start + datetime.timedelta(days=7)
+        num = Message.objects.filter(date__gte=start,date__lt=end).count()
+        data.append([datetime_to_millis(start),num])
+        start = end
+
+    return [{"data":data}]
+
+def datetime_to_millis(date):
+    '''Convert a datetime object to Milliseconds since Unix Epoch''' 
+    return (date - datetime.datetime(1970,1,1)).total_seconds() * 1000
+
+def get_top25_data():
+    '''Returns incoming meesage count for top 25 most active lists'''
+    counts = {}
+    end = datetime.datetime.today()
+    start = end - datetime.timedelta(days=30)
+    for message in Message.objects.filter(date__gte=start,date__lt=end).select_related('email_list'):
+        name = message.email_list.name
+        counts[name] = counts.get(name, 0) + 1
+    data = sorted(counts.items(), key=itemgetter(1), reverse=True)[:25]
+    return data
 
 @superuser_only
 def admin_guide(request):

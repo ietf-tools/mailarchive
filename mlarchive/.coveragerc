@@ -1,0 +1,5 @@
+[run]
+omit = archive/migrations/* 
+
+[html]
+directory = coverage_html_report

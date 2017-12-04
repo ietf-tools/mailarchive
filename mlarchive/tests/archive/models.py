@@ -98,6 +98,14 @@ def test_message_get_references(client):
     assert msg.get_references() == expected
 
 @pytest.mark.django_db(transaction=True)
+def test_thread_get_snippet(client):
+    elist = EmailListFactory.create()
+    message = MessageFactory.create(
+        email_list=elist,
+        date=datetime.datetime(2016, 1, 1))
+    assert message.thread.get_snippet()
+
+@pytest.mark.django_db(transaction=True)
 def test_message_next_in_list(client):
     '''Test that message.next_in_list returns the next message in the
     list, ordered by date'''

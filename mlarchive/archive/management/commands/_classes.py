@@ -23,7 +23,7 @@ from mlarchive.archive.models import (Attachment, EmailList, Legacy, Message,
     Thread, get_in_reply_to_message)
 from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES, UNKNOWN_CONTENT_TYPE
 from mlarchive.archive.inspectors import *
-from mlarchive.archive.thread import compute_thread, parse_message_ids
+from mlarchive.archive.thread import compute_thread, reconcile_thread, parse_message_ids
 from mlarchive.utils.decorators import check_datetime
 from mlarchive.utils.encoding import decode_safely, decode_rfc2047_header
 
@@ -797,8 +797,15 @@ class MessageWrapper(object):
                              spam_score=self.spam_score,
                              subject=self.subject,
                              thread=self.thread,
+
                              to=self.get_to())
         # not saving here.
+        thread_messages = list(self.thread.message_set.all().order_by('date'))
+        thread_messages.append(self._archive_message)
+        self.thread_info = compute_thread(thread_messages)
+        info = self.thread_info[self.hashcode]
+        self._archive_message.thread_depth = info.depth
+        self._archive_message.thread_order = info.order
 
     def process_attachments(self, test=False):
         """Walks the message parts and saves any attachments
@@ -867,7 +874,7 @@ class MessageWrapper(object):
 
         # update thread information
         if self.archive_message.thread.message_set.count() > 1:
-            compute_thread(self.archive_message.thread)
+            reconcile_thread(self.thread_info)
 
         # now that the archive.Message object is created we can process any attachments
         self.process_attachments(test=test)

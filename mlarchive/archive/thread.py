@@ -22,7 +22,7 @@ the thread.
 
 import re
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple, OrderedDict
 from operator import methodcaller
 
 CONTAINER_COUNT = 0
@@ -254,23 +254,38 @@ def build_subject_table(root_node):
 
 
 def compute_thread(thread):
-    '''Computes the thread tree for given thread.  Updating Message.thread_depth
-    and Message.thread_order as necessary.  Called when messages are imported.
+    '''Computes the thread tree for given thread (Thread object or list of messages).
+    Returns OrderedDict key=hashcode,value=(message,depth,order)
     '''
-    queryset = thread.message_set.all().order_by('date')
-    root_node = process(queryset)
+    if hasattr(thread, '__iter__'):
+        messages = thread
+    else:
+        messages = thread.message_set.all().order_by('date')
+    data = OrderedDict()
+    ThreadInfo = namedtuple('ThreadInfo', ['message','depth','order'])
+    root_node = process(messages)
     for branch in get_root_set(root_node):
         for order, container in enumerate(branch.walk()):
             if container.is_empty():
                 pass
             else:
                 message = container.message
-                if (message.thread_order != order or
-                        message.thread_depth != container.depth):
-                    message.thread_order = order
-                    message.thread_depth = container.depth
-                    message.save()
+                data[message.hashcode] = ThreadInfo(message=message,
+                                                   depth=container.depth,
+                                                   order=order)
+    return data
 
+
+def reconcile_thread(thread_data):
+    '''Updates message.thread_depth and message.thread_order as needed, given
+    computed thread info
+    '''
+    for info in thread_data.values():
+        message = info.message
+        if (message.thread_order != info.order or message.thread_depth != info.depth):
+            message.thread_order = info.order
+            message.thread_depth = info.depth
+            message.save()
 
 def container_stats(parent, id_table):
     '''Show container stats for help in debugging'''
@@ -534,7 +549,7 @@ def prune_empty_containers(parent):
 
 
 def process(queryset, display=False, debug=False):
-    '''Takes a email list and returns the threaded structure as XXX'''
+    '''Takes an iterable of messages and returns the threaded structure'''
     global DEBUG
     DEBUG = debug
 

@@ -113,10 +113,14 @@ def test_compute_thread():
         references='<001@example.com>',
         thread_depth=0,
         thread_order=0)
-    compute_thread(thread)
-    message2 = Message.objects.get(msgid='002@example.com')
-    assert message2.thread_order == 1
-    assert message2.thread_depth == 1
+    info = compute_thread(thread)
+    info_iter = iter(info.values())
+    thread_info = info_iter.next()
+    assert thread_info.order == 0
+    assert thread_info.depth == 0
+    thread_info = info_iter.next()
+    assert thread_info.order == 1
+    assert thread_info.depth == 1
 
 
 def test_container_has_ancestor():

@@ -118,13 +118,4 @@ def thread_messages():
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'thread.mail')
     call_command('load', path, listname='acme', summary=True, stdout=content)
 
-'''
 
-@pytest.fixture(scope="session", autouse=True)
-def disconnect_signals():
-    post_save.disconnect(reindex_month_6_report, sender=Grant)
-    post_save.disconnect(reindex_month_12_report, sender=Grant)
-    post_save.disconnect(reindex_month_18_report, sender=Grant)
-    post_save.disconnect(reindex_month_24_report, sender=Grant)
-    post_save.disconnect(reindex_month_30_report, sender=Grant)
-'''

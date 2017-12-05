@@ -3,12 +3,16 @@ import pytest
 from django.urls import reverse
 from pyquery import PyQuery
 
-from mlarchive.archive.models import Message
-
+from mlarchive.archive.models import Message, Thread
+from mlarchive.archive.thread import compute_thread
 
 @pytest.mark.django_db(transaction=True)
 def test_thread_view(client, thread_messages):
     '''Check order of messages in thread view'''
+    info = compute_thread(Thread.objects.first())
+    print info
+    for m in Message.objects.all().order_by('thread_order'):
+        print m.pk, m.thread_order
     url = reverse('archive_search') + '?email_list=acme&gbt=1'
     response = client.get(url)
     assert response.status_code == 200

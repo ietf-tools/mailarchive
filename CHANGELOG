@@ -1,4 +1,32 @@
 
+mailarch (1.10.14) ietf; urgency=normal
+
+ * Fix Help page that didn't scroll
+
+ * Fix check_index24.py search query to work with new index
+
+ * Fix issue when search result pane is large, there is no way
+   to load more messages.  Fixes #1376
+ 
+ * Fix admin spam mode problem sorting messages with empty fields.
+   Fixes #2388
+
+ * Change date column sort to start with ascending, opposite of
+   the default sort, descending, when no date sort parameter is
+   provided.  Fixes #2366
+
+ * Set page title to list name when browsing a list.  Fixes #1258
+
+ * Fix browse view ordering
+
+ * Add components to console view
+
+ * Add retry loop for failed Xapian index lookups
+
+ * Refactor message import to eliminate double index updates
+
+-- Ryan Cross <rcross@amsl.com>  05 Dec 2017 15:30:00 +0800
+
 mailarch (1.10.13) ietf; urgency=normal
 
  * Fix issue with handling email list names containing a hyphen. 

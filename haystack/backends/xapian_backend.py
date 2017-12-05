@@ -1257,11 +1257,15 @@ class XapianSearchBackend(BaseSearchBackend):
             `start_offset` -- The start offset to pass to `enquire.get_mset`
             `end_offset` -- The end offset to pass to `enquire.get_mset`
         """
-        try:
-            return enquire.get_mset(start_offset, end_offset, checkatleast)
-        except xapian.DatabaseModifiedError:
-            database.reopen()
-            return enquire.get_mset(start_offset, end_offset, checkatleast)
+        # AMS Custom
+        retries = 0
+        while retries < settings.HAYSTACK_XAPIAN_MAX_RETRIES:
+            try:
+                return enquire.get_mset(start_offset, end_offset, checkatleast)
+            except xapian.DatabaseModifiedError:
+                database.reopen()
+                retries = retries + 1
+        return enquire.get_mset(start_offset, end_offset, checkatleast)
 
     @staticmethod
     def _get_document_data(database, document):

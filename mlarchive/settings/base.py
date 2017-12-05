@@ -220,6 +220,7 @@ HAYSTACK_CONNECTIONS = {
         'PATH': '/a/mailarch/data/archive_index',
     },
 }
+HAYSTACK_XAPIAN_MAX_RETRIES = 5    # number or times to retry lookup, enquire.get_mset.
 
 # ARCHIVE SETTINGS
 DATA_ROOT = '/a/mailarch/data'

@@ -61,16 +61,17 @@ def ajax_messages(request):
     firstitem: return set of messages before firstitem
     """
     buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
-    lastitem = int(request.GET.get('lastitem',0))
-    firstitem = int(request.GET.get('firstitem',0))
     queryid, query = get_cached_query(request)
     browse_list = get_browse_list(request)
+    results = []
 
     if query:
-        if lastitem:
+        if 'lastitem' in request.GET:
             # lastitem from request is 0 based, slice below is 1 based
+            lastitem = int(request.GET.get('lastitem',0))
             results = query[lastitem:lastitem+buffer]
-        elif firstitem:
+        elif 'firstitem' in request.GET:
+            firstitem = int(request.GET.get('firstitem',0))
             start = firstitem - buffer if firstitem > buffer else 0
             results = query[start:firstitem]
     else:

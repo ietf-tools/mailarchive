@@ -27,10 +27,10 @@ def get_noauth(request):
     if request.user.is_superuser:
         request.session['noauth'] = []
     elif request.user.is_authenticated:
-        request.session['noauth'] = [ x.name for x in EmailList.objects.filter(
+        request.session['noauth'] = [ x.name.replace('-',' ') for x in EmailList.objects.filter(
             private=True).exclude(members=request.user) ]
     else:
-        request.session['noauth'] = [ x.name for x in EmailList.objects.filter(
+        request.session['noauth'] = [ x.name.replace('-',' ') for x in EmailList.objects.filter(
             private=True) ]
     return request.session['noauth']
 

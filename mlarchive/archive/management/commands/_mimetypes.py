@@ -1,5 +1,8 @@
 '''
 Attachment Content Type mappings from MHonArc
+
+For IANA registry see:
+http://www.iana.org/assignments/media-types/media-types.xhtml
 '''
 
 UNKNOWN_CONTENT_TYPE = 'bin'
@@ -209,6 +212,7 @@ CONTENT_TYPES = {
     'text/html':('html','HTML document'),
     'text/plain':('txt','Text document'),
     'text/richtext':('rtx','Richtext document'),
+    'text/rtf':('rtf','Rich text format'),
     'text/setext':('stx','Setext document'),
     'text/sgml':('sgml','SGML document'),
     'text/tab-separated-values':('tsv','Tab separated values'),

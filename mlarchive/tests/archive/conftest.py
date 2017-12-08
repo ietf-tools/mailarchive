@@ -77,9 +77,12 @@ def load_db():
                           date=datetime.datetime(2017, 1, 6))
     MessageFactory.create(email_list=private)
     
-    # listname with hyphen
+    # listnames with hyphen
     devops = EmailListFactory.create(name='dev-ops')
     MessageFactory.create(email_list=devops)
+
+    privateops = EmailListFactory.create(name='private-ops', private=True)
+    MessageFactory.create(email_list=privateops)
 
 @pytest.fixture(scope="session")
 def index_resource():

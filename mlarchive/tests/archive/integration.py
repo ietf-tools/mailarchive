@@ -60,6 +60,15 @@ def test_not_logged_search(client,messages):
     assert len(results) == 0
 
 @pytest.mark.django_db(transaction=True)
+def test_not_logged_search_hypen(client,messages):
+    '''Test that a not logged in user does not see private lists with hyphen in search results'''
+    url = reverse('archive_search') + '?email_list=private-ops'
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert len(results) == 0
+
+@pytest.mark.django_db(transaction=True)
 def test_unauth_search(client,messages):
     """Test that a logged in user does not see results from private lists they aren't a member of"""
     user = UserFactory.create(username='dummy')

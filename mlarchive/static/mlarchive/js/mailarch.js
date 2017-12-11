@@ -27,10 +27,10 @@ var mailarch = {
         mailarch.cacheDom();
         mailarch.progressiveFeatures();
         mailarch.bindEvents();
+        mailarch.setLastItem();
         mailarch.initMessageList();
         mailarch.initFilters();
         mailarch.initPanels();
-        mailarch.setLastItem();
         mailarch.getURLParams();
         mailarch.initSort();
         mailarch.handleResize();

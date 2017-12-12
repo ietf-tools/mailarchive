@@ -20,7 +20,7 @@ from django.utils.safestring import mark_safe
 from haystack.views import SearchView, FacetedSearchView
 from haystack.query import SearchQuerySet
 
-from mlarchive.utils.decorators import check_access, superuser_only, pad_id
+from mlarchive.utils.decorators import check_access, superuser_only, pad_id, log_timing
 from mlarchive.archive import actions
 from mlarchive.archive.query_utils import get_kwargs, get_cached_query, query_is_listname
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
@@ -36,6 +36,22 @@ logger = logging.getLogger('mlarchive.custom')
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------
+class SearchResult(object):
+    def __init__(self, object):
+        self.object = object
+
+    @property
+    def subject(self):
+        return self.object.subject
+
+    @property
+    def frm_name(self):
+        return self.object.frm_name
+
+    @property
+    def date(self):
+        return self.object.date
+
 class CustomSearchView(SearchView):
     """A customized SearchView.  Need to add request object to the form init so we can
     use it for authorization
@@ -71,6 +87,7 @@ class CustomSearchView(SearchView):
     def build_form(self, form_kwargs=None):
         return super(self.__class__,self).build_form(form_kwargs={ 'request' : self.request })
 
+    @log_timing
     def build_page(self):
         """Returns tuple of:
         - subset of results for display (page)
@@ -81,6 +98,10 @@ class CustomSearchView(SearchView):
         message named in "index" with appropriate offset within slice, otherwise returns
         first #(results_per_page) messages and offsets=0.
         """
+        
+        # if self.request.GET.get('gbt') == '1':
+        #    return self.build_page_new()
+
         buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
         index = self.request.GET.get('index')
         try:
@@ -109,6 +130,20 @@ class CustomSearchView(SearchView):
             return (self.page, selected_offset)
         else:
             return (self.page, 0)
+
+    def build_page_new(self):
+        """Returns a page of results"""
+        results = []
+        index = self.request.GET.get('index')
+        if self.request.GET.get('gbt') == '1':
+            if index:
+                message = Message.objects.get(hashcode=index+'=')
+                results = [ SearchResult(m) for m in message.thread.message_set.order_by('thread_order') ]
+
+        #assert False, results
+        paginator = Paginator(results, self.results_per_page)
+        self.page = paginator.page(1)
+        return (self.page, message.thread_order)
 
     def extra_context(self):
         """Add variables to template context"""

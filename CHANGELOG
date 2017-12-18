@@ -1,4 +1,20 @@
 
+mailarch (1.10.15) ietf; urgency=normal
+
+ * Add logging of build_page() execution time
+
+ * Fix issue with javascript bad ajax call
+
+ * Add test for private lists with hyphen in name
+
+ * Fix issue with ajax call lastitem=0
+
+ * Fix issue with private list filtering
+
+ * Add support for text/rtf mimetype
+
+-- Ryan Cross <rcross@amsl.com>  18 Dec 2017 15:30:00 +0800
+
 mailarch (1.10.14) ietf; urgency=normal
 
  * Fix Help page that didn't scroll

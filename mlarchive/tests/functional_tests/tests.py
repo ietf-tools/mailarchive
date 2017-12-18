@@ -85,7 +85,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
             lambda driver: driver.find_element_by_tag_name('body'))
 
         # Get results page
-        self.assertIn('Search Results', self.selenium.title)
+        self.assertIn('example', self.selenium.title)
         self.selenium.get_screenshot_as_file('tests/tmp/mailarch_test.png')
 
         # Press back button

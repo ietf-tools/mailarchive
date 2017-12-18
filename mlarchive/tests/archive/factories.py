@@ -6,6 +6,7 @@ import factory
 import string
 import random
 
+from mlarchive.archive.management.commands._classes import get_base_subject
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
@@ -31,11 +32,13 @@ class MessageFactory(factory.DjangoModelFactory):
 
     date = datetime.datetime.now().replace(second=0, microsecond=0)
     subject = 'This is a test message'
+    base_subject = get_base_subject(subject)
     frm = 'John Smith <john@example.com>'
     msgid = factory.Sequence(lambda n: "%03d@example.com" % n)
     hashcode = factory.Sequence(lambda n: "a%03d=" % n)
     thread = factory.SubFactory(ThreadFactory)
     # email_list = factory.SubFactory(EmailListFactory)
+
 
 class UserFactory(factory.DjangoModelFactory):
     class Meta:

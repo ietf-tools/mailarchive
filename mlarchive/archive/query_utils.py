@@ -7,6 +7,7 @@ from django.core.cache import cache
 from haystack.query import SQ
 
 from mlarchive.archive.utils import get_lists
+from mlarchive.utils.test_utils import get_search_backend
 
 import logging
 logger = logging.getLogger('mlarchive.custom')
@@ -65,18 +66,27 @@ def get_kwargs(data):
         kwargs['date__lte'] = data['end_date']
     if data.get('email_list'):
         # with Haystack/Xapian must replace dash with space in email list names
-        kwargs['email_list__in'] = [ x.replace('-',' ') for x in data['email_list'] ]
+        if get_search_backend() == 'xapian':
+            kwargs['email_list__in'] = [ x.replace('-',' ') for x in data['email_list'] ]
+        else:
+            kwargs['email_list__in'] = data['email_list']
     if data.get('frm'):
-        kwargs['frm__icontains'] = data['frm']
+        if get_search_backend() == 'xapian':
+            kwargs['frm__icontains'] = data['frm']
+        else:
+            kwargs['frm'] = data['frm']
     if data.get('qdr') and data['qdr'] not in ('a','c'):
         kwargs['date__gte'] = get_qdr_time(data['qdr'])
     if data.get('subject'):
-        kwargs['subject__icontains'] = data['subject']
+        kwargs['subject'] = data['subject']
     if data.get('spam'):
         kwargs['spam_score__gt'] = 0
     if spam_score and spam_score.isdigit():
         bits = [ x for x in range(255) if x & int(spam_score)]
         kwargs['spam_score__in'] = bits
+    if data.get('to'):
+        kwargs['to'] = data['to']
+        
     return kwargs
 
 def get_qdr_time(val):
@@ -96,12 +106,12 @@ def get_qdr_time(val):
     elif val == 'y':
         return now - timedelta(days=365)
 
-def get_query(request):
+def parse_query(request):
     """Returns the query as a string.  Usually this is just the 'q' parameter.
     However, in the case of an advanced search with javascript disabled we need
     to build the query given the query parameters in the request"""
     if request.GET.get('q'):
-        return request.GET.get('q')
+        return parse_query_string(request.GET.get('q'))
     elif 'nojs' in request.META['QUERY_STRING']:
         query = []
         not_query = []
@@ -116,6 +126,12 @@ def get_query(request):
         return ' '.join(query + not_query)
     else:
         return ''
+
+def parse_query_string(query):
+    # Map from => frm
+    if 'from:' in query:
+        query = query.replace('from:','frm:')
+    return query
 
 def is_nojs_value(items):
     k,v = items

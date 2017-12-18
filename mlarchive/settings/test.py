@@ -10,6 +10,8 @@ del DATABASES['ietf']
 
 # HAYSTACK SETTINGS
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+HAYSTACK_CONNECTIONS['default']['INDEX_NAME'] = 'test'
+# xapian 
 HAYSTACK_XAPIAN_PATH = os.path.join(DATA_ROOT,'xapian.stub')
 HAYSTACK_CONNECTIONS['default']['PATH'] = HAYSTACK_XAPIAN_PATH
 
@@ -32,6 +34,9 @@ CACHES = {
 
 # IMAP Interface
 EXPORT_DIR = os.path.join(DATA_ROOT,'export')
+
+# uncomment to disable filters / facets
+#FILTER_CUTOFF = 0
 
 # Inspectors
 #INSPECTORS = {

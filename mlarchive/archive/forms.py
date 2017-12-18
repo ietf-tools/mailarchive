@@ -8,15 +8,14 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.cache import cache
 from django.utils.http import urlencode
-from haystack.backends.xapian_backend import XapianSearchBackend
 from haystack.forms import SearchForm, FacetedSearchForm
 from haystack.query import SearchQuerySet
-import xapian
 
 from mlarchive.archive.query_utils import (get_kwargs, generate_queryid, get_filter_params,
-    get_query, get_base_query)
+    parse_query, get_base_query)
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
+from mlarchive.utils.test_utils import get_search_backend
 
 import logging
 logger = logging.getLogger('mlarchive.custom')
@@ -79,7 +78,7 @@ def group_by_thread(qs, so, sso, reverse=False):
 
 
 def map_sort_option(val):
-    """This function takes a sort parameter and validates and mapss it for use
+    """This function takes a sort parameter and validates and maps it for use
     in an order_by clause.
     """
     if val not in VALID_SORT_OPTIONS:
@@ -192,9 +191,16 @@ class AdvancedSearchForm(FacetedSearchForm):
     qdr = forms.ChoiceField(choices=TIME_CHOICES,required=False,label=u'Time') # qualified date range
     f_list = forms.CharField(max_length=255,required=False)
     f_from = forms.CharField(max_length=255,required=False)
+    to = forms.CharField(max_length=255,required=False)
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request')
+        # can't use reserved word "from" as field name, so we need to map to "frm"
+        if args and 'from' in args[0]:
+            args = list(args)
+            args[0] = args[0].copy()
+            args[0].setlist('frm',args[0].pop('from'))
+            
         super(self.__class__, self).__init__(*args, **kwargs)
         self.fields["email_list"].widget.attrs["placeholder"] = "List names"
 
@@ -269,20 +275,16 @@ class AdvancedSearchForm(FacetedSearchForm):
         cache.set(cache_key,facets)
         return facets
 
-
-    def get_query(self):
-        return get_query(self.request)
-
     def process_query(self):
-        """Use Xapians builtin query parser"""
+        logger.info('Query:%s (%s)' % (self.q, self.data))
         if self.q:
-            logger.info('Query:%s' % self.q)
             self.searchqueryset.query.raw_search(self.q)
+
         return self.searchqueryset
 
     def search(self):
         """Custom search function.  This completely overrides the parent
-        search().  Should return a SearchQuerySet object.
+        search().  Returns a SearchQuerySet object.
         """
         # for now if search form doesn't validate return empty results
         if not self.is_valid():
@@ -291,7 +293,7 @@ class AdvancedSearchForm(FacetedSearchForm):
 
         self.f_list = self.cleaned_data['f_list']
         self.f_from = self.cleaned_data['f_from']
-        self.q = get_query(self.request)
+        self.q = parse_query(self.request)
         self.kwargs = get_kwargs(self.cleaned_data)
 
         # return empty queryset if no parameters passed
@@ -299,7 +301,7 @@ class AdvancedSearchForm(FacetedSearchForm):
             return self.no_query_found()
 
         sqs = self.process_query()
-
+        
         # handle URL parameters ------------------------------------
         if self.kwargs:
             sqs = sqs.filter(**self.kwargs)

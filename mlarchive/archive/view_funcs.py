@@ -226,7 +226,7 @@ def get_columns(request):
     """
     display_columns = 5
     columns = {'private':[],'active':[],'inactive':[]}
-    lists = EmailList.objects.filter(name__in=get_lists_for_user(request))
+    lists = EmailList.objects.filter(name__in=get_lists_for_user(request)).order_by('name')
     
     private = lists.filter(private=True)
     if private:

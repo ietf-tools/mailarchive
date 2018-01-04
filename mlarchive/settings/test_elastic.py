@@ -10,10 +10,10 @@ del DATABASES['ietf']
 
 # HAYSTACK SETTINGS
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+#HAYSTACK_CONNECTIONS['default']['ENGINE'] = 'haystack_elasticsearch.elasticsearch5.Elasticsearch5SearchEngine'
+HAYSTACK_CONNECTIONS['default']['ENGINE'] = 'mlarchive.archive.backends.ConfigurableElasticSearchEngine'
+HAYSTACK_CONNECTIONS['default']['URL'] = 'http://127.0.0.1:9200/'
 HAYSTACK_CONNECTIONS['default']['INDEX_NAME'] = 'test'
-# xapian 
-HAYSTACK_XAPIAN_PATH = os.path.join(DATA_ROOT,'xapian.stub')
-HAYSTACK_CONNECTIONS['default']['PATH'] = HAYSTACK_XAPIAN_PATH
 
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = os.path.join(DATA_ROOT,'archive')

@@ -46,24 +46,12 @@ def test_get_cache_key():
     key4 = get_cache_key(request)
     assert key4
     
-def test_get_query():
-    factory = RequestFactory()
-    # simple query
-    request=factory.get('/arch/search/?q=dummy')
-    assert get_query(request) == 'dummy'
-    # advanced query 
-    request=factory.get('/arch/search/?as=1&nojs-query-0-field=text&nojs-query-0-qualifier=contains&nojs-query-0-value=dummy')
-    assert get_query(request) == 'text:(dummy)'
-    # advanced query with nots
-    request=factory.get('/arch/search/?as=1&nojs-query-0-field=text&nojs-query-0-qualifier=contains&nojs-query-0-value=dummy&nojs-not-0-field=from&nojs-not-0-qualifier=contains&nojs-not-0-value=jones')
-    assert get_query(request) == 'text:(dummy) -from:(jones)'
-    
 @pytest.mark.django_db(transaction=True)
 def test_group_by_thread(messages):
-    sqs = SearchQuerySet().filter(email_list='pubone')
+    sqs = SearchQuerySet().filter(email_list__in=['pubone'])
     sqs = sqs.order_by('tdate','date')
-    print '{}'.format([ (x.pk,x.tdate,x.date) for x in sqs ])
-    assert [ x.pk for x in sqs ] == [1,4,2,3]       # assert grouped by thread order
+    print '{}'.format([ (x.msgid,x.tdate,x.date) for x in sqs ])
+    assert [ x.msgid for x in sqs ] == ['a01','a04','a02','a03']       # assert grouped by thread order
 
 #@pytest.mark.django_db(transaction=True)
 #def test_sort_by_subject(messages):

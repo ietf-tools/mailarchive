@@ -139,12 +139,18 @@ HAYSTACK_CONNECTIONS = {
 }
 
 
-Running tests
+RUNNING TESTS
 ---------------------------
 - cd to root of working directory
 - export PYTHONPATH=$PWD
 - cd mlarchive
 - py.test tests
+- py.test 
+
+As of Jan 2018, trunk includes support for Elasticsearch backend.  While the
+default backend is still Xapian, use this command to run tests using the 
+Elastic backend
+- py.test tests -c pytest_elastic.ini
 
 
 NOTES ON INFRASTRUCTURE

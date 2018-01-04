@@ -50,3 +50,15 @@ def test_query_is_listname():
     url = '%s?%s' % (reverse('archive_search'), 'q=pubone&qdr=w')
     request = get_request(url=url)
     assert query_is_listname(request) == False
+
+def test_parse_query():
+    factory = RequestFactory()
+    # simple query
+    request=factory.get('/arch/search/?q=dummy')
+    assert parse_query(request) == 'dummy'
+    # advanced query 
+    request=factory.get('/arch/search/?as=1&nojs-query-0-field=text&nojs-query-0-qualifier=contains&nojs-query-0-value=dummy')
+    assert parse_query(request) == 'text:(dummy)'
+    # advanced query with nots
+    request=factory.get('/arch/search/?as=1&nojs-query-0-field=text&nojs-query-0-qualifier=contains&nojs-query-0-value=dummy&nojs-not-0-field=from&nojs-not-0-qualifier=contains&nojs-not-0-value=jones')
+    assert parse_query(request) == 'text:(dummy) -from:(jones)'

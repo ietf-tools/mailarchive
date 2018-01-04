@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from django.core.management import call_command
 from factories import *
 from mlarchive.archive.management.commands._classes import get_base_subject
@@ -6,7 +9,25 @@ from StringIO import StringIO
 import datetime
 import os
 import pytest
+import django
+from django.conf import settings
 
+# `pytest` automatically calls this function once when tests are run.
+
+'''
+def pytest_configure(tmpdir_factory):
+    DATA_ROOT = str(tmpdir_factory.mktemp('data'))
+    settings.DATA_ROOT = DATA_ROOT
+    settings.ARCHIVE_DIR = os.path.join(DATA_ROOT,'archive')
+    # If you have any test specific settings, you can declare them here,
+    # e.g.
+    # settings.PASSWORD_HASHERS = (
+    #     'django.contrib.auth.hashers.MD5PasswordHasher',
+    # )
+    django.setup()
+    # Note: In Django =< 1.6 you'll need to run this instead
+    # settings.configure()
+'''
 
 def load_db():
     pubone = EmailListFactory.create(name='pubone')
@@ -16,24 +37,31 @@ def load_db():
     athread = ThreadFactory.create(date=datetime.datetime(2013, 1, 1))
     bthread = ThreadFactory.create(date=datetime.datetime(2013, 2, 1))
     MessageFactory.create(email_list=pubone,
+                          frm='Björn',
                           thread=athread,
-                          base_subject=get_base_subject('Another message'),
+                          subject='Another message about RFC6759',
+                          msgid='a01',
                           date=datetime.datetime(2013, 1, 1))
     MessageFactory.create(email_list=pubone,
                           thread=bthread,
                           subject='BBQ Invitation',
                           base_subject=get_base_subject('BBQ Invitation'),
                           date=datetime.datetime(2013, 2, 1),
+                          msgid='a02',
                           to='to@amsl.com')
     MessageFactory.create(email_list=pubone,
                           thread=bthread,
-                          base_subject=get_base_subject('Zero conf stuff'),
+                          subject='Re: draft-ietf-dnssec-secops',
+                          base_subject=get_base_subject('Re: draft-ietf-dnssec-secops'),
+                          msgid='a03',
                           date=datetime.datetime(2013, 3, 1))
     MessageFactory.create(email_list=pubone,
                           thread=athread,
                           frm='larry@amsl.com',
+                          subject = '[RE] BBQ Invitation things',
                           base_subject=get_base_subject('[RE] BBQ Invitation things'),
                           date=datetime.datetime(2014, 1, 1),
+                          msgid='a04',
                           spam_score=1)
     MessageFactory.create(email_list=pubtwo)
     MessageFactory.create(email_list=pubtwo)
@@ -91,7 +119,8 @@ def index_resource():
     # build index
     content = StringIO()
     call_command('update_index', stdout=content)
-
+    print content.read()
+    
     def fin():
         call_command('clear_index', noinput=True, stdout=content)
         print content.read()
@@ -121,4 +150,25 @@ def thread_messages():
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'thread.mail')
     call_command('load', path, listname='acme', summary=True, stdout=content)
 
+@pytest.fixture(scope='session')
+def tmp_dir(tmpdir_factory):
+    """Create temporary directory for this test run"""
+    tmpdir = tmpdir_factory.mktemp('data')
+    return str(tmpdir)
+
+@pytest.fixture()
+def data_dir(tmp_dir,settings,autouse=True):
+    """Set ARCHIVE_DIR to temporary directory"""
+    DATA_ROOT = tmp_dir
+    settings.DATA_ROOT = DATA_ROOT
+    settings.ARCHIVE_DIR = os.path.join(DATA_ROOT,'archive')
+
+@pytest.fixture()
+def query_messages(data_dir):
+    """Load some threads"""
+    content = StringIO()
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'query_acme.mail')
+    call_command('load', path, listname='acme', summary=True, stdout=content)
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'query_star.mail')
+    call_command('load', path, listname='star', summary=True, stdout=content)
 

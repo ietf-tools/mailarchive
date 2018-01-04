@@ -9,7 +9,7 @@ from django.template import RequestContext
 from django.template.loader import render_to_string
 
 from mlarchive.archive.models import EmailList
-
+from mlarchive.utils.test_utils import get_search_backend
 
 # --------------------------------------------------
 # Helper Functions
@@ -25,13 +25,14 @@ def get_noauth(request):
         return noauth
     
     if request.user.is_superuser:
-        request.session['noauth'] = []
+        lists = []
     elif request.user.is_authenticated:
-        request.session['noauth'] = [ x.name.replace('-',' ') for x in EmailList.objects.filter(
-            private=True).exclude(members=request.user) ]
+        lists = [ x.name for x in EmailList.objects.filter(private=True).exclude(members=request.user) ]
     else:
-        request.session['noauth'] = [ x.name.replace('-',' ') for x in EmailList.objects.filter(
-            private=True) ]
+        lists = [ x.name for x in EmailList.objects.filter(private=True) ]
+    if get_search_backend() == 'xapian':
+        lists = [ x.replace('-',' ') for x in lists ]
+    request.session['noauth'] = lists
     return request.session['noauth']
 
 def get_lists():

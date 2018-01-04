@@ -50,7 +50,7 @@ def test_admin_search_subject(client,messages):
     msg = Message.objects.first()
     user = UserFactory.create(is_superuser=True)
     assert client.login(username='admin',password='admin')
-    url = reverse('archive_admin') + '?subject=' + msg.subject.split()[0]
+    url = reverse('archive_admin') + '?subject=message'
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']

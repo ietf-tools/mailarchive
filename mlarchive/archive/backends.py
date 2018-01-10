@@ -110,6 +110,25 @@ class CustomElasticsearchQuery(Elasticsearch5SearchQuery):
 
         return u"%s%s" % (index_fieldname, query_frag)
 
+    def get_facet_counts(self):
+        """
+        Returns the facet counts received from the backend.
+
+        If the query has not been run, this will execute the query and store
+        the results.
+
+        Customized version.  Like base class get_results() and get_count() check for
+        self._raw_query and use run_raw() if not None
+        """
+        if self._facet_counts is None:
+            if self._raw_query:
+                # Special case for raw queries.
+                self.run_raw()
+            else:
+                self.run()
+
+        return self._facet_counts
+        
     def run_raw(self, **kwargs):
         """Executes a raw query. Returns a list of search results.
 

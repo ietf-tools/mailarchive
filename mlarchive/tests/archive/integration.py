@@ -349,6 +349,22 @@ def test_queries_sort_from(client,messages):
 # Misc Queries
 # --------------------------------------------------
 @pytest.mark.django_db(transaction=True)
+def test_queries_draft(client,messages):
+    url = reverse('archive_search') + '?q=draft-ietf-dnssec-secops'
+    response = client.get(url)
+    assert response.status_code == 200
+    assert len(response.context['results']) == 1
+    assert response.context['results'][0].msgid == 'a03'
+
+@pytest.mark.django_db(transaction=True)
+def test_queries_draft_partial(client,messages):
+    url = reverse('archive_search') + '?q=draft-ietf-dnssec'
+    response = client.get(url)
+    assert response.status_code == 200
+    assert len(response.context['results']) == 1
+    assert response.context['results'][0].msgid == 'a03'
+
+@pytest.mark.django_db(transaction=True)
 def test_queries_pagination(client,messages):
     # verify pre-conditions
     message_count = Message.objects.filter(email_list__name='pubthree').count()

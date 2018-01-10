@@ -26,12 +26,7 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 3500
 #HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.BaseSignalProcessor'
 #HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 HAYSTACK_XAPIAN_PATH = os.path.join(DATA_ROOT,'xapian.stub')
-HAYSTACK_CONNECTIONS = {
-    'default': {
-        'ENGINE': 'haystack.backends.xapian_backend.XapianEngine',
-        'PATH': HAYSTACK_XAPIAN_PATH,
-    },
-}
+HAYSTACK_CONNECTIONS['default']['PATH'] = HAYSTACK_XAPIAN_PATH
 
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = os.path.join(DATA_ROOT,'archive')

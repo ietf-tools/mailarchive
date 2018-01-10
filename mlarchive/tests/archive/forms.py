@@ -81,13 +81,16 @@ def test_asf_get_facets(client,messages):
     assert 'frm_name' in facets['fields']
 
     # high-level test
-    url = reverse('archive_search') + '?email_list=pubone'
+    url = reverse('archive_search') + '?q=topic'
     response = client.get(url)
     facets = response.context['facets']
 
     # ensure expected fields exist
     assert 'email_list' in facets['fields']
     assert 'frm_name' in facets['fields']
+
+    # ensure email_list correct
+    assert facets['fields']['email_list'] == [(u'apple', 6)]
 
     # ensure facet totals are equal
     email_list_total = sum([ c for x,c in facets['fields']['email_list'] ])

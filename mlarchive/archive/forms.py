@@ -225,8 +225,10 @@ class AdvancedSearchForm(FacetedSearchForm):
 
         # calculating facet_counts on large results sets is too costly so skip it
         # If you call results.count() before results.facet_counts() the facet_counts
-        # are corrupted.  The solution is to clone the query and call counts on that
+        # are corrupted in Xapian backend.  The solution is to clone the query and 
+        # call counts on that
         # TODO: this might also be implemented as a timeout
+        
         temp = sqs._clone()
         count = temp.count()
 
@@ -236,6 +238,7 @@ class AdvancedSearchForm(FacetedSearchForm):
 
             # if query contains no filters compute simple facet counts
             filters = get_filter_params(self.request.GET)
+
             if not filters:
                 facets = sqs.facet_counts()
 

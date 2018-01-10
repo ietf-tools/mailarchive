@@ -1,4 +1,4 @@
-import xapian
+#import xapian
 
 from django.apps import apps
 from django.core.exceptions import ImproperlyConfigured
@@ -188,9 +188,9 @@ class CeleryHaystackUpdateIndex(Task):
         logger.info("Finishing update index")
 
 
+'''
 class CeleryXapianBatchRemove(Task):
-    """
-    A celery task class used to batch delete index entries.  Takes the argument
+    """A celery task class used to batch delete index entries.  Takes the argument
     *documents* a list of documents to be deleted.
     NOTE: this implementation is specific to the Xapian backend.
     """
@@ -203,7 +203,7 @@ class CeleryXapianBatchRemove(Task):
             document.delete()
         database.close()
         logger.info("Called BatchRemove ({} documents)".format(len(documents)))
-
+'''
 
 @app.task
 def add(x, y):

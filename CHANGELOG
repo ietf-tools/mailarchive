@@ -1,4 +1,10 @@
 
+mailarch (1.11.0) ietf; urgency=normal
+
+ * Add support for Elasticsearch backend
+
+-- Ryan Cross <rcross@amsl.com>  10 Jan 2018 14:00:00 +0800
+
 mailarch (1.10.15) ietf; urgency=normal
 
  * Add logging of build_page() execution time

@@ -142,10 +142,10 @@ def test_get_export_anonymous_limit(client,thread_messages,settings):
 
 @pytest.mark.django_db(transaction=True)
 def test_get_export_mbox(client,thread_messages,tmpdir):
-    url = '%s?%s' % (reverse('archive_export',kwargs={'type':'mbox'}), 'q=database')
+    url = '%s?%s' % (reverse('archive_export',kwargs={'type':'mbox'}), 'q=anvil')
     request = get_request(url=url)
     elist = EmailList.objects.get(name='acme')
-    sqs = SearchQuerySet().filter(email_list='acme')
+    sqs = SearchQuerySet().filter(email_list__in=['acme'])
 
     # validate response is valid tarball with mbox file, with 4 messages
     response = get_export(sqs,'mbox',request)
@@ -162,10 +162,10 @@ def test_get_export_mbox(client,thread_messages,tmpdir):
 
 @pytest.mark.django_db(transaction=True)
 def test_get_export_maildir(client,thread_messages,tmpdir):
-    url = '%s?%s' % (reverse('archive_export',kwargs={'type':'maildir'}), 'q=database')
+    url = '%s?%s' % (reverse('archive_export',kwargs={'type':'maildir'}), 'q=anvil')
     request = get_request(url=url)
     elist = EmailList.objects.get(name='acme')
-    sqs = SearchQuerySet().filter(email_list='acme')
+    sqs = SearchQuerySet().filter(email_list__in=['acme'])
 
     # validate response is valid tarball with maildir directory and 4 messages
     response = get_export(sqs,'maildir',request)
@@ -184,14 +184,12 @@ def test_get_export_maildir(client,thread_messages,tmpdir):
 
 @pytest.mark.django_db(transaction=True)
 def test_get_export_url(messages):
-    url = '%s?%s' % (reverse('archive_export',kwargs={'type':'url'}), 'q=database')
-    redirect_url = '%s?%s' % (reverse('archive_search'), 'q=database')
+    url = '%s?%s' % (reverse('archive_export',kwargs={'type':'url'}), 'q=message')
     request = get_request(url=url)
-    sqs = SearchQuerySet().filter(email_list='pubone')
+    sqs = SearchQuerySet().filter(email_list__in=['pubone'])
     response = get_export(sqs,'url',request)
     assert response.status_code == 200
-    message = Message.objects.filter(email_list__pk=1).first()
-    assert message.get_absolute_url() in response.content
+    assert sqs[0].object.get_absolute_url() in response.content
 
 
 @pytest.mark.django_db(transaction=True)

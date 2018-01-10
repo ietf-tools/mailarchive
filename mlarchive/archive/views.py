@@ -22,7 +22,8 @@ from haystack.query import SearchQuerySet
 
 from mlarchive.utils.decorators import check_access, superuser_only, pad_id, log_timing
 from mlarchive.archive import actions
-from mlarchive.archive.query_utils import get_kwargs, get_cached_query, query_is_listname
+from mlarchive.archive.query_utils import (get_kwargs, get_cached_query, query_is_listname,
+    parse_query_string)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     find_message_date, find_message_gbt, get_query_neighbors, is_javascript_disabled,
     get_query_string, get_browse_list, get_lists_for_user)
@@ -148,7 +149,9 @@ class CustomSearchView(SearchView):
     def extra_context(self):
         """Add variables to template context"""
         extra = super(CustomSearchView, self).extra_context()
+        #assert False, (self.request.META['QUERY_STRING'])
         query_string = get_query_string(self.request)
+
 
         # settings
         extra['FILTER_CUTOFF'] = settings.FILTER_CUTOFF
@@ -245,6 +248,17 @@ class CustomSearchView(SearchView):
 
         return context
 
+    def get_query(self):
+        """
+        Returns the query provided by the user.
+
+        Returns an empty string if the query is invalid.
+        """
+        if self.form.is_valid():
+            q = self.form.cleaned_data['q']
+            return parse_query_string(q)
+
+        return ''
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------

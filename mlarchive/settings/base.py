@@ -222,6 +222,30 @@ HAYSTACK_CONNECTIONS = {
 }
 HAYSTACK_XAPIAN_MAX_RETRIES = 5    # number or times to retry lookup, enquire.get_mset.
 
+# ELASTICSEARCH SETTINGS
+ELASTICSEARCH_INDEX_MAPPINGS = {
+    "django_ct": {'type': 'string', 'index': 'not_analyzed', 'include_in_all': False},
+    "django_id": {'type': 'string', 'index': 'not_analyzed', 'include_in_all': False},
+    "date": {"type": "date"},
+    "email_list": {"type": "keyword"},
+    "email_list_exact": {"type": "keyword"},
+    "frm": {"type": "text","analyzer": "snowball"},
+    "frm_exact": {"type": "keyword"},
+    "frm_name": {"type": "keyword"},
+    "frm_name_exact": {"type": "keyword"},
+    "from": {"type": "text","analyzer": "snowball"},
+    "id": {"type": "text","fields": {"keyword": {"type": "keyword","ignore_above": 256}}},
+    "msgid": {"type": "text","analyzer": "snowball"},
+    "msgid_exact": {"type": "keyword"},
+    "spam_score": {"type": "long"},
+    "subject": {"type": "text","analyzer": "snowball"},
+    "tdate": {"type": "date"},
+    "text": {"type": "text","analyzer": "snowball"},
+    "tid": {"type": "long"},
+    "to": { "type": "text", "analyzer": "snowball"},
+    "torder": {"type": "long"}
+}
+
 # ARCHIVE SETTINGS
 DATA_ROOT = '/a/mailarch/data'
 ARCHIVE_DIR = os.path.join(DATA_ROOT,'archive')

@@ -803,7 +803,9 @@ class ElasticsearchSearchQuery(BaseSearchQuery):
 
         filter_types = {
             'content': u'%s',
-            'contains': u'*%s*',
+            # AMS Custom
+            #'contains': u'*%s*',
+            'contains': u'%s',
             'endswith': u'*%s',
             'startswith': u'%s*',
             'exact': u'%s',

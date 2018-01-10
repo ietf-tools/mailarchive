@@ -559,7 +559,11 @@ class XapianSearchBackend(BaseSearchBackend):
 
         except UnicodeDecodeError as e:
             import traceback
-            sys.stderr.write('Chunk failed {} {} {}.\n'.format(obj.pk,e,field))
+            if 'field' not in locals():
+                field = ''
+
+            sys.stderr.write('Chunk failed object:{} {} {} field:{} ({}).\n'.format(obj.pk,type(obj),vars(obj),field,e))
+            #sys.stderr.write('Chunk failed {} {} {}.\n'.format(obj.pk,e,''))
             traceback.print_exc(file=sys.stdout)
             # pass
 

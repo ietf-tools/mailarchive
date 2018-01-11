@@ -302,9 +302,12 @@ def test_queries_boolean_two_term_grouped(client,messages):
 @pytest.mark.django_db(transaction=True)
 def test_odd_queries(client):
     'Test some odd queries'
+    # search with no params
     url = reverse('archive_search')
+    response = client.get(url)
+    assert response.status_code == 200
+    # search with only hyphen
     url = url + '?q=-'
-    print url
     response = client.get(url)
     assert response.status_code == 200
 

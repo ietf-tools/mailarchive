@@ -196,7 +196,8 @@ class AdvancedSearchForm(FacetedSearchForm):
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request')
         # can't use reserved word "from" as field name, so we need to map to "frm"
-        if args and 'from' in args[0]:
+        # args is a tuple and args[0] is either None or a QueryDict
+        if args[0] and 'from' in args[0]:
             args = list(args)
             args[0] = args[0].copy()
             args[0].setlist('frm',args[0].pop('from'))

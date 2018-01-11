@@ -15,4 +15,4 @@
 .*.swp
 .DS_store
 # Simulated Subversion default ignores end here
-/ghostdriver.log
+/env

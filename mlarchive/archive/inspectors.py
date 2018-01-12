@@ -4,6 +4,7 @@ checkers'''
 
 from django.conf import settings
 
+
 class SpamMessage(Exception):
     pass
 
@@ -17,16 +18,16 @@ class InspectorMeta(type):
             # this is a derived class.  Add cls to the registry
             interface_id = name.lower()
             cls.registry[interface_id] = cls
-            
+
         super(InspectorMeta, cls).__init__(name, bases, dct)
 
 
 class Inspector(object):
     '''The base class for inspector classes.  Takes a MessageWrapper object and listname
-    (string).  Inherit from this class and implement has_condition(), handle_file(), 
+    (string).  Inherit from this class and implement has_condition(), handle_file(),
     raise_error() methods.  Call inspect() to run inspection.'''
     __metaclass__ = InspectorMeta
-    
+
     def __init__(self, message_wrapper, options=None):
         self.message_wrapper = message_wrapper
         self.listname = message_wrapper.listname
@@ -48,14 +49,14 @@ class Inspector(object):
 
     def handle_file(self):
         raise NotImplementedError
-    
+
     def raise_error(self):
         raise NotImplementedError
 
 
 class SpamInspector(Inspector):
     '''Base spam handling class.  To write a spam filter, inherit from this class and
-    implement has_condition().  Filters will be run on all mail unless a 
+    implement has_condition().  Filters will be run on all mail unless a
     settings.INSPECTOR_INLCUDES entry is used'''
 
     def has_condition(self):
@@ -92,6 +93,4 @@ class ListIdExistsSpamInspector(SpamInspector):
 class SpamStatusSpamInspector(SpamInspector):
     '''Checks for SpamStatus == Yes'''
     def has_condition(self):
-        return self.message_wrapper.email_message.get('X-Spam-Status','').startswith('Yes')
-
-        
+        return self.message_wrapper.email_message.get('X-Spam-Status', '').startswith('Yes')

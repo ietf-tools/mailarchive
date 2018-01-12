@@ -7,13 +7,14 @@ from django.db import migrations
 
 from mlarchive.archive.thread import get_references, get_in_reply_to, compute_thread
 
-def get_references_or_reply_to_thread(apps,message):
+
+def get_references_or_reply_to_thread(apps, message):
     Message = apps.get_model("archive", "Message")
     if message.references:
         msgids = get_references(message)
         for msgid in msgids:
             try:
-                msg = Message.objects.get(email_list=message.email_list,msgid=msgid)
+                msg = Message.objects.get(email_list=message.email_list, msgid=msgid)
                 return msg.thread
             except (Message.DoesNotExist, Message.MultipleObjectsReturned):
                 pass
@@ -21,10 +22,11 @@ def get_references_or_reply_to_thread(apps,message):
         msgid = get_in_reply_to(message)
         if msgid:
             try:
-                msg = Message.objects.get(email_list=message.email_list,msgid=msgid)
+                msg = Message.objects.get(email_list=message.email_list, msgid=msgid)
                 return msg.thread
             except (Message.DoesNotExist, Message.MultipleObjectsReturned):
                 pass
+
 
 def fix_threads(apps, schema_editor):
     '''Check each message since latest release.  If we find
@@ -36,12 +38,12 @@ def fix_threads(apps, schema_editor):
     # start checking messages prior to last migration, 12-4
     abandoned_threads = set()
     modified_threads = set()
-    start = datetime.datetime(2016,11,1)
+    start = datetime.datetime(2016, 11, 1)
     messages = Message.objects.filter(date__gte=start)
     for message in messages:
-        thread = get_references_or_reply_to_thread(apps,message)
+        thread = get_references_or_reply_to_thread(apps, message)
         if thread and message.thread != thread:
-            print "ID: {}-{}. {} => {}".format(message.id,message.email_list.name,message.thread.id,thread.id)
+            print "ID: {}-{}. {} => {}".format(message.id, message.email_list.name, message.thread.id, thread.id)
             abandoned_threads.add(message.thread)
             modified_threads.add(thread)
             message.thread = thread

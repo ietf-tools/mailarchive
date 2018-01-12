@@ -25,12 +25,13 @@ logger = logging.getLogger('mlarchive.custom')
 # Helper Functions
 # --------------------------------------------------
 
+
 def get_in_reply_to_message(in_reply_to_value, email_list):
     '''Returns the in_reply_to message, if it exists'''
     msgids = parse_message_ids(in_reply_to_value)
     if not msgids:
         return None
-    return get_message_prefer_list(msgids[0],email_list)
+    return get_message_prefer_list(msgids[0], email_list)
 
 
 def get_message_prefer_list(msgid, email_list):
@@ -43,6 +44,7 @@ def get_message_prefer_list(msgid, email_list):
 # --------------------------------------------------
 # Models
 # --------------------------------------------------
+
 
 class Thread(models.Model):
     first = models.ForeignKey(
@@ -58,9 +60,9 @@ class Thread(models.Model):
 
     def get_snippet(self):
         """Returns all messages of the thread as an HTML snippet"""
-        context = {'messages':self.message_set.all()}
+        context = {'messages': self.message_set.all()}
         return render_to_string('archive/thread_snippet.html', context)
-        
+
     def set_first(self, message=None):
         """Sets the first message of the thread.  Call when adding or removing
         messages
@@ -257,7 +259,7 @@ class Message(models.Model):
         """Returns list of messages from Rerefences header"""
         messages = []
         for msgid in self.get_references():
-            message = get_message_prefer_list(msgid,self.email_list)
+            message = get_message_prefer_list(msgid, self.email_list)
             if message:
                 messages.append(message)
         return messages
@@ -288,7 +290,7 @@ class Message(models.Model):
         messages = Message.objects
         messages = messages.filter(email_list=self.email_list,
             date__gte=self.date)
-        messages = messages.order_by('date','id')
+        messages = messages.order_by('date', 'id')
         messages = messages.exclude(id=self.id)
         return messages.first()
 
@@ -312,7 +314,7 @@ class Message(models.Model):
         messages = Message.objects
         messages = messages.filter(email_list=self.email_list,
             date__lte=self.date)
-        messages = messages.order_by('date','id')
+        messages = messages.order_by('date', 'id')
         messages = messages.exclude(id=self.id)
         return messages.last()
 
@@ -377,6 +379,3 @@ class Legacy(models.Model):
 
     def __unicode__(self):
         return '%s:%s' % (self.email_list_id, self.msgid)
-
-
-

@@ -24,15 +24,18 @@ from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_
     find_message_date, find_message_gbt, get_query_neighbors, is_javascript_disabled,
     get_query_string, get_browse_list, get_lists_for_user)
 
-from models import *
-from forms import *
+from models import EmailList, Message
+from forms import AdminForm, AdminActionForm, AdvancedSearchForm, BrowseForm, RulesForm
 
 import logging
 logger = logging.getLogger('mlarchive.custom')
 
+
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------
+
+
 class SearchResult(object):
     def __init__(self, object):
         self.object = object
@@ -48,6 +51,7 @@ class SearchResult(object):
     @property
     def date(self):
         return self.object.date
+
 
 class CustomSearchView(SearchView):
     """A customized SearchView.  Need to add request object to the form init so we can
@@ -68,21 +72,20 @@ class CustomSearchView(SearchView):
         """
         if query_is_listname(request):
             return redirect(reverse('archive_search') + '?email_list=' + request.GET['q'])
-        
+
         self.request = request
         self.form = self.build_form()
         self.query = self.get_query()
         self.results = self.get_results()
-        if hasattr(self.results,'myfacets'):
+        if hasattr(self.results, 'myfacets'):
             self.myfacets = self.results.myfacets
-        if hasattr(self.results,'queryid'):
+        if hasattr(self.results, 'queryid'):
             self.queryid = self.results.queryid
 
         return self.create_response()
 
-
     def build_form(self, form_kwargs=None):
-        return super(self.__class__,self).build_form(form_kwargs={ 'request' : self.request })
+        return super(self.__class__, self).build_form(form_kwargs={'request': self.request})
 
     @log_timing
     def build_page(self):
@@ -95,7 +98,7 @@ class CustomSearchView(SearchView):
         message named in "index" with appropriate offset within slice, otherwise returns
         first #(results_per_page) messages and offsets=0.
         """
-        
+
         # if self.request.GET.get('gbt') == '1':
         #    return self.build_page_new()
 
@@ -121,7 +124,7 @@ class CustomSearchView(SearchView):
             position = self.find_message(index)
             if position == -1:
                 raise Http404("No such message!")
-            page_no = ( position / self.results_per_page ) + 1
+            page_no = (position / self.results_per_page) + 1
             selected_offset = position % self.results_per_page
             self.page = paginator.page(page_no)
             return (self.page, selected_offset)
@@ -134,10 +137,10 @@ class CustomSearchView(SearchView):
         index = self.request.GET.get('index')
         if self.request.GET.get('gbt') == '1':
             if index:
-                message = Message.objects.get(hashcode=index+'=')
-                results = [ SearchResult(m) for m in message.thread.message_set.order_by('thread_order') ]
+                message = Message.objects.get(hashcode=index + '=')
+                results = [SearchResult(m) for m in message.thread.message_set.order_by('thread_order')]
 
-        #assert False, results
+        # assert False, results
         paginator = Paginator(results, self.results_per_page)
         self.page = paginator.page(1)
         return (self.page, message.thread_order)
@@ -145,9 +148,7 @@ class CustomSearchView(SearchView):
     def extra_context(self):
         """Add variables to template context"""
         extra = super(CustomSearchView, self).extra_context()
-        #assert False, (self.request.META['QUERY_STRING'])
         query_string = get_query_string(self.request)
-
 
         # settings
         extra['FILTER_CUTOFF'] = settings.FILTER_CUTOFF
@@ -160,7 +161,7 @@ class CustomSearchView(SearchView):
             extra['thread_sorted'] = True
             extra['view_thread_url'] = reverse('archive_search') + query_string
             _ = new_query.pop('gbt')  # noqa
-            extra['view_date_url' ] = reverse('archive_search') + '?' + new_query.urlencode()
+            extra['view_date_url'] = reverse('archive_search') + '?' + new_query.urlencode()
         else:
             extra['thread_sorted'] = False
             extra['view_date_url'] = reverse('archive_search') + query_string
@@ -169,24 +170,24 @@ class CustomSearchView(SearchView):
 
         # export links
         extra['anonymous_export_limit'] = settings.ANONYMOUS_EXPORT_LIMIT
-        extra['export_mbox'] = reverse('archive_export',kwargs={'type':'mbox'}) + query_string
-        extra['export_maildir'] = reverse('archive_export',kwargs={'type':'maildir'})+ query_string
-        extra['export_url'] = reverse('archive_export',kwargs={'type':'url'})+ query_string
+        extra['export_mbox'] = reverse('archive_export', kwargs={'type': 'mbox'}) + query_string
+        extra['export_maildir'] = reverse('archive_export', kwargs={'type': 'maildir'}) + query_string
+        extra['export_url'] = reverse('archive_export', kwargs={'type': 'url'}) + query_string
 
         # modify search link
         if 'as' in self.request.GET:
             extra['modify_search_url'] = reverse('archive_advsearch') + query_string
         else:
             extra['modify_search_url'] = 'javascript:history.back()'
-        
+
         if is_javascript_disabled(self.request):
             extra['modify_search_url'] = None
 
         # add custom facets
-        if hasattr(self,'myfacets'):
+        if hasattr(self, 'myfacets'):
             extra['facets'] = self.myfacets
 
-        if hasattr(self,'queryid'):
+        if hasattr(self, 'queryid'):
             extra['queryid'] = self.queryid
 
         # Progressive Enhancements.  Start with non-javascript functionality
@@ -206,28 +207,28 @@ class CustomSearchView(SearchView):
                 if 'index' in new_query:
                     new_query.pop('index')
                 extra['previous_page_url'] = reverse('archive_search') + '?' + new_query.urlencode()
-        
+
         return extra
 
-    def find_message(self,hash):
+    def find_message(self, hash):
         """Returns the position of message identified by hash in self.results.
         Currently only supports 'grouped by thread' and date sort order.
         """
         try:
-            msg = Message.objects.get(hashcode=hash+'=')
+            msg = Message.objects.get(hashcode=hash + '=')
         except Message.DoesNotExist:
             raise Http404("No such message!")
 
         if self.request.GET.get('gbt'):
-            return find_message_gbt(self.results,msg,reverse=True)
+            return find_message_gbt(self.results, msg, reverse=True)
         elif self.request.GET.get('so') == 'date':
-            return find_message_date(self.results,msg)
+            return find_message_date(self.results, msg)
         else:
-            return find_message_date(self.results,msg,reverse=True)
+            return find_message_date(self.results, msg, reverse=True)
 
     def get_context(self):
         page, selected_offset = self.build_page()
-        
+
         context = {
             'query': self.query,
             'form': self.form,
@@ -255,9 +256,12 @@ class CustomSearchView(SearchView):
             return parse_query_string(q)
 
         return ''
+
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
+
+
 @superuser_only
 def admin(request):
     """Administrator View.  Only accessible by the superuser this view allows
@@ -282,7 +286,7 @@ def admin(request):
             if kwargs:
                 results = SearchQuerySet().filter(**kwargs).order_by('date').load_all()
                 if form.cleaned_data.get('exclude_whitelisted_senders'):
-                    whitelist = Message.objects.filter(spam_score=-1).values_list('frm',flat=True).distinct()
+                    whitelist = Message.objects.filter(spam_score=-1).values_list('frm', flat=True).distinct()
                     results = filter(is_not_whitelisted, results)
 
     # perfom action on checked messages
@@ -301,6 +305,7 @@ def admin(request):
         'action_form': action_form,
     })
 
+
 @superuser_only
 def admin_console(request):
     weekly_chart_data = get_weekly_data()
@@ -313,37 +318,42 @@ def admin_console(request):
         'message_count': "{:,}".format(Message.objects.count()),
     })
 
+
 def get_weekly_data():
     '''Returns weekly archive incoming messages'''
     data = []
-    start = datetime.datetime.today() - datetime.timedelta(days=365*3)
-    start = start.replace(hour=0,second=0, microsecond=0)
+    start = datetime.datetime.today() - datetime.timedelta(days=365 * 3)
+    start = start.replace(hour=0, second=0, microsecond=0)
     for day in range(156):
         end = start + datetime.timedelta(days=7)
-        num = Message.objects.filter(date__gte=start,date__lt=end).count()
-        data.append([datetime_to_millis(start),num])
+        num = Message.objects.filter(date__gte=start, date__lt=end).count()
+        data.append([datetime_to_millis(start), num])
         start = end
 
-    return [{"data":data}]
+    return [{"data": data}]
+
 
 def datetime_to_millis(date):
-    '''Convert a datetime object to Milliseconds since Unix Epoch''' 
-    return (date - datetime.datetime(1970,1,1)).total_seconds() * 1000
+    '''Convert a datetime object to Milliseconds since Unix Epoch'''
+    return (date - datetime.datetime(1970, 1, 1)).total_seconds() * 1000
+
 
 def get_top25_data():
     '''Returns incoming meesage count for top 25 most active lists'''
     counts = {}
     end = datetime.datetime.today()
     start = end - datetime.timedelta(days=30)
-    for message in Message.objects.filter(date__gte=start,date__lt=end).select_related('email_list'):
+    for message in Message.objects.filter(date__gte=start, date__lt=end).select_related('email_list'):
         name = message.email_list.name
         counts[name] = counts.get(name, 0) + 1
     data = sorted(counts.items(), key=itemgetter(1), reverse=True)[:25]
     return data
 
+
 @superuser_only
 def admin_guide(request):
     return render(request, 'archive/admin_guide.html', {})
+
 
 def advsearch(request):
     """Advanced Search View"""
@@ -353,7 +363,7 @@ def advsearch(request):
 
     if request.GET:
         # reverse engineer advanced search form from query string
-        form = AdvancedSearchForm(request=request,initial=request.GET)
+        form = AdvancedSearchForm(request=request, initial=request.GET)
         query_formset, not_formset = initialize_formsets(request.GET.get('q'))
     else:
         form = AdvancedSearchForm(request=request)
@@ -369,6 +379,7 @@ def advsearch(request):
         'nojs_not_formset': nojs_not_formset,
     })
 
+
 def browse(request, list_name=None):
     """Presents a list of Email Lists the user has access to.  There are
     separate sections for private, active and inactive.
@@ -380,10 +391,10 @@ def browse(request, list_name=None):
     columns = get_columns(request)
 
     if request.method == "GET" and request.GET.get('list'):
-        form = BrowseForm(request=request,data=request.GET)
+        form = BrowseForm(request=request, data=request.GET)
         if form.is_valid():
-            params = [('email_list',form.cleaned_data['list'].name)]
-            return redirect("%s?%s" % (reverse('archive_search'),urllib.urlencode(params)))
+            params = [('email_list', form.cleaned_data['list'].name)]
+            return redirect("%s?%s" % (reverse('archive_search'), urllib.urlencode(params)))
     else:
         form = BrowseForm(request=request)
 
@@ -392,14 +403,15 @@ def browse(request, list_name=None):
         'columns': columns,
     })
 
+
 # TODO if we use this, need access decorator
 def browse_list(request, list_name):
     """Browse emails by list.  The simple version."""
     list_obj = get_object_or_404(EmailList, name=list_name)
 
     # default sort order is date descending
-    order = request.GET.get('so','-date')
-    if not order in ('date','-date','frm','-frm'):
+    order = request.GET.get('so', '-date')
+    if order not in ('date', '-date', 'frm', '-frm'):
         order = '-date'
     msgs = Message.objects.filter(email_list=list_obj).order_by(order)
 
@@ -407,6 +419,7 @@ def browse_list(request, list_name):
         'list_obj': list_obj,
         'msgs': msgs,
     })
+
 
 @pad_id
 @check_access
@@ -416,7 +429,7 @@ def detail(request, list_name, id, msg):
     """
     queryid, sqs = get_cached_query(request)
     if sqs:
-        previous_in_search, next_in_search = get_query_neighbors(query = sqs,message = msg)
+        previous_in_search, next_in_search = get_query_neighbors(query=sqs, message=msg)
         search_url = reverse('archive_search') + '?' + sqs.query_string
     else:
         previous_in_search = None
@@ -425,19 +438,20 @@ def detail(request, list_name, id, msg):
         search_url = None
 
     return render(request, 'archive/detail.html', {
-        'msg':msg,
+        'msg': msg,
         # cache items for use in template
-        'next_in_list':msg.next_in_list(),
-        'next_in_thread':msg.next_in_thread(),
-        'next_in_search':next_in_search,
-        'previous_in_list':msg.previous_in_list(),
-        'previous_in_thread':msg.previous_in_thread(),
-        'previous_in_search':previous_in_search,
-        'queryid':queryid,
-        'replies':msg.replies.all(),
-        'references':msg.get_references_messages(),
-        'search_url':search_url,
+        'next_in_list': msg.next_in_list(),
+        'next_in_thread': msg.next_in_thread(),
+        'next_in_search': next_in_search,
+        'previous_in_list': msg.previous_in_list(),
+        'previous_in_thread': msg.previous_in_thread(),
+        'previous_in_search': previous_in_search,
+        'queryid': queryid,
+        'replies': msg.replies.all(),
+        'references': msg.get_references_messages(),
+        'search_url': search_url,
     })
+
 
 def export(request, type):
     """Takes a search query string and builds a gzipped tar archive of the messages
@@ -447,23 +461,26 @@ def export(request, type):
     data = request.GET.copy()
     data['so'] = 'email_list'
     data['sso'] = 'date'
-    form = AdvancedSearchForm(data,load_all=False,request=request)
+    form = AdvancedSearchForm(data, load_all=False, request=request)
     sqs = form.search()
 
     return get_export(sqs, type, request)
 
+
 def legacy_message(request, list_name, id):
     """Redirect to the appropriate message given list name and legacy number"""
     try:
-        message = Message.objects.get(email_list__name=list_name,legacy_number=int(id))
+        message = Message.objects.get(email_list__name=list_name, legacy_number=int(id))
     except Message.DoesNotExist:
         raise Http404("Message not found")
     return HttpResponseRedirect(message.get_absolute_url())
+
 
 def logout_view(request):
     """Logout the user"""
     logout(request)
     return HttpResponseRedirect(reverse('archive'))
+
 
 def main(request):
     """Main page.  This page contains a simple search form and some links."""
@@ -474,7 +491,7 @@ def main(request):
 
     if os.path.exists(settings.LOG_FILE):
         try:
-            os.chmod(settings.LOG_FILE,0666)
+            os.chmod(settings.LOG_FILE, 0666)
         except OSError:
             pass
 
@@ -482,4 +499,3 @@ def main(request):
         'form': form,
         'lists': get_lists_for_user(request),
     })
-

@@ -16,13 +16,14 @@ logger = logging.getLogger('mlarchive.custom')
 # Helper Functions
 # --------------------------------------------------
 
+
 def guess_list(path):
     """Try to guess the list we are importing based on header values
     """
     mb = _classes.get_mb(path)
 
     # not enough info in MMDF-style mailbox to guess list
-    if not isinstance(mb,_classes.CustomMbox):
+    if not isinstance(mb, _classes.CustomMbox):
         return None
 
     if len(mb) == 0:
@@ -35,9 +36,10 @@ def guess_list(path):
             return val
     if msg.get('List-Post'):
         val = msg.get('List-Post')
-        match = re.match(r'<mailto:(.*)@.*',val)
+        match = re.match(r'<mailto:(.*)@.*', val)
         if match:
             return match.groups()[0]
+
 
 def isfile(path):
     """Custom version of os.path.isfile, return True if path is an existing regular file
@@ -50,16 +52,18 @@ def isfile(path):
         return False
     return True
 
+
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------
+
 
 class Command(BaseCommand):
     help = 'Imports message(s) into the archive'
 
     def add_arguments(self, parser):
         parser.add_argument('source')
-        parser.add_argument('-b', '--break',action='store_true', dest='break', default=False,
+        parser.add_argument('-b', '--break', action='store_true', dest='break', default=False,
             help='break on error')
         parser.add_argument('-d', '--dry-run', action='store_true', dest='dryrun', default=False,
             help='perform a trial run with no messages saved to db or disk'),
@@ -87,12 +91,12 @@ class Command(BaseCommand):
             files = [source]
         elif os.path.isdir(source):
             FILE_PATTERN = re.compile(r'^\d{4}-\d{2}(|.mail)$')
-            mboxs = [ f for f in os.listdir(source) if FILE_PATTERN.match(f) ]
+            mboxs = [f for f in os.listdir(source) if FILE_PATTERN.match(f)]
             # we need to import the files in chronological order so thread resolution works
             sorted_mboxs = sorted(mboxs)
-            full = [ os.path.join(source,x) for x in sorted_mboxs ]
+            full = [os.path.join(source, x) for x in sorted_mboxs]
             # exclude directories and empty files
-            files = filter(isfile,full)
+            files = filter(isfile, full)
         else:
             raise CommandError("%s is not a file or directory" % source)
 
@@ -110,24 +114,24 @@ class Command(BaseCommand):
             try:
                 loader = _classes.Loader(filename, **options)
                 loader.process()
-                for key,val in loader.stats.items():          # compile stats
-                    stats[key] = stats.get(key,0) + val
+                for key, val in loader.stats.items():          # compile stats
+                    stats[key] = stats.get(key, 0) + val
             except _classes.UnknownFormat as error:
                 # save failed message
                 if not (options['dryrun'] or options['test']):
                     target = EmailList.get_failed_dir(options['listname'])
                     if not os.path.exists(target):
                         os.makedirs(target)
-                    shutil.copy(filename,target)
+                    shutil.copy(filename, target)
                 logger.error("Import Error [Unknown file format, {0}]".format(error.args))
-                stats['unknown'] = stats.get('unknown',0) + 1
+                stats['unknown'] = stats.get('unknown', 0) + 1
 
         stats['time'] = int(time.time() - start_time)
 
         if options.get('summary'):
             return stats.__str__()
         else:
-            items = [ '%s:%s' % (k,v) for k,v in stats.items() if k != 'time']
+            items = ['%s:%s' % (k, v) for k, v in stats.items() if k != 'time']
             items.append('Elapsed Time:%s' % str(datetime.timedelta(seconds=stats['time'])))
             items.append('\n')
             return '\n'.join(items)

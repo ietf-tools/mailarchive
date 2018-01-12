@@ -11,6 +11,7 @@ from mlarchive.archive.query_utils import get_cached_query
 from mlarchive.archive.view_funcs import get_browse_list
 from mlarchive.utils.decorators import check_access, superuser_only
 
+
 @superuser_only
 @jsonapi
 def ajax_admin_action(request):
@@ -21,7 +22,7 @@ def ajax_admin_action(request):
         func = getattr(actions, action)
         queryset = Message.objects.filter(pk=id)
         func(request, queryset)
-        return { 'success' : True }
+        return {'success': True}
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -29,11 +30,11 @@ def ajax_admin_action(request):
         if ids and isinstance(ids, basestring):
             ids = ids.split(',')
         else:
-            return { 'success' : False }
+            return {'success': False}
         func = getattr(actions, action)
         queryset = Message.objects.filter(pk__in=ids)
         func(request, queryset)
-        return { 'success' : True }
+        return {'success': True}
 
 
 @check_access
@@ -45,8 +46,8 @@ def ajax_get_msg(request, msg):
     """
     msg_body = msg.get_body_html(request)
     msg_thread = render_to_string('includes/message_thread.html', {
-        'replies':msg.replies.all(),
-        'references':msg.get_references_messages()
+        'replies': msg.replies.all(),
+        'references': msg.get_references_messages()
     })
     return HttpResponse(msg_body + msg_thread)
 
@@ -64,10 +65,10 @@ def ajax_messages(request):
     if query:
         if 'lastitem' in request.GET:
             # lastitem from request is 0 based, slice below is 1 based
-            lastitem = int(request.GET.get('lastitem',0))
-            results = query[lastitem:lastitem+buffer]
+            lastitem = int(request.GET.get('lastitem', 0))
+            results = query[lastitem:lastitem + buffer]
         elif 'firstitem' in request.GET:
-            firstitem = int(request.GET.get('firstitem',0))
+            firstitem = int(request.GET.get('firstitem', 0))
             start = firstitem - buffer if firstitem > buffer else 0
             results = query[start:firstitem]
     else:
@@ -83,4 +84,3 @@ def ajax_messages(request):
         'browse_list': browse_list},
         RequestContext(request, {}),
     )
-

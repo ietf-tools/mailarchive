@@ -14,7 +14,8 @@ from django.db import migrations
 from mlarchive.archive.management.commands._classes import subject_is_reply
 from mlarchive.archive.thread import compute_thread
 
-START_DATE = datetime.datetime(2016,11,1)   # release 1.5.0
+START_DATE = datetime.datetime(2016, 11, 1)   # release 1.5.0
+
 
 def fix_threads(apps, schema_editor):
     Thread = apps.get_model('archive', 'Thread')
@@ -33,7 +34,7 @@ def fix_threads(apps, schema_editor):
             else:
                 continue
 
-            print "Moving message:{} from thread:{} to thread:{}".format(msg.pk,thread.pk,found_thread.pk)
+            print "Moving message:{} from thread:{} to thread:{}".format(msg.pk, thread.pk, found_thread.pk)
             if thread == found_thread:
                 print "WARNING: same thread"
                 continue
@@ -47,8 +48,10 @@ def fix_threads(apps, schema_editor):
 
     print "Total: {}".format(total)
 
+
 def reverse_fix_threads(apps, schema_editor):
     pass
+
 
 class Migration(migrations.Migration):
 

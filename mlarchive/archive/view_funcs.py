@@ -28,20 +28,26 @@ from mlarchive.utils.encoding import to_str
 contain_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\((?P<value>[^\)]+)\)')
 exact_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\"(?P<value>[^\"]+)\"')
 
+
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
+
+
 def chunks(l, n):
     """Yield successive n-sized chunks from l"""
     result = []
     for i in xrange(0, len(l), n):
-        #yield l[i:i+n]
-        result.append(l[i:i+n])
+        # yield l[i:i+n]
+        result.append(l[i:i + n])
     return result
+
 
 # --------------------------------------------------
 # View Functions
 # --------------------------------------------------
+
+
 def find_message_date(sqs, msg, reverse=False):
     """Returns the position message occurs in the SearchQuerySet.  Use
     binary search to locate the record.  Expects query set sorted by
@@ -58,10 +64,10 @@ def find_message_date(sqs, msg, reverse=False):
         compare = operator.lt
 
     while lo <= hi:
-        mid = (lo+hi)/2
+        mid = (lo + hi) / 2
         midval = sqs[mid]
-        if compare(midval.date,msg.date):
-            lo = mid+1
+        if compare(midval.date, msg.date):
+            lo = mid + 1
         elif midval.date == msg.date:
             break
         else:
@@ -88,7 +94,7 @@ def find_message_date(sqs, msg, reverse=False):
     return -1
 
 
-def find_message_gbt(sqs,msg, reverse=False):
+def find_message_gbt(sqs, msg, reverse=False):
     """Returns the position of message (msg) in queryset (sqs)
     for queries grouped by thread.  Uses binary search to locate the thread,
     then traverses the thread.
@@ -96,7 +102,7 @@ def find_message_gbt(sqs,msg, reverse=False):
     reverse=False: threads ordered ascending
     """
     last_index = sqs.count() - 1
-    
+
     lo = 0
     hi = last_index
     if hi == -1:            # abort if queryset is empty
@@ -114,10 +120,10 @@ def find_message_gbt(sqs,msg, reverse=False):
     else:
         compare = operator.lt
     while lo < hi:
-        mid = (lo+hi)/2
+        mid = (lo + hi) / 2
         midval = sqs[mid]
-        if compare(midval.object.thread.date,cdate):
-            lo = mid+1
+        if compare(midval.object.thread.date, cdate):
+            lo = mid + 1
         elif midval.object.thread.date == cdate:
             break
         else:
@@ -157,47 +163,48 @@ def initialize_formsets(query):
     Used when the GET of advanced search includes URL parameters, in other words
     we are returning to modify the search
     """
-    RulesFormset0 = formset_factory(RulesForm,extra=0)
-    RulesFormset1 = formset_factory(RulesForm,extra=1)
+    RulesFormset0 = formset_factory(RulesForm, extra=0)
+    RulesFormset1 = formset_factory(RulesForm, extra=1)
 
     qinitial = []
     ninitial = []
 
     while query:
         query = query.lstrip()
-        if re.search(contain_pattern,query):
-            mat = re.search(contain_pattern,query)
-            d = {'field':mat.groupdict()['field'],
-                 'value':mat.groupdict()['value'],
-                 'qualifier':'contains'}
-            if mat.groupdict()['neg']:
+        if re.search(contain_pattern, query):
+            match = re.search(contain_pattern, query)
+            d = {'field': match.groupdict()['field'],
+                 'value': match.groupdict()['value'],
+                 'qualifier': 'contains'}
+            if match.groupdict()['neg']:
                 ninitial.append(d)
             else:
                 qinitial.append(d)
-            query, n = re.subn(contain_pattern,'',query,1)
-        elif re.search(exact_pattern,query):
-            mat = re.search(exact_pattern,query)
-            d = {'field':mat.groupdict()['field'],
-                 'value':mat.groupdict()['value'],
-                 'qualifier':'exact'}
-            if mat.groupdict()['neg']:
+            query, n = re.subn(contain_pattern, '', query, 1)
+        elif re.search(exact_pattern, query):
+            match = re.search(exact_pattern, query)
+            d = {'field': match.groupdict()['field'],
+                 'value': match.groupdict()['value'],
+                 'qualifier': 'exact'}
+            if match.groupdict()['neg']:
                 ninitial.append(d)
             else:
                 qinitial.append(d)
-            query, n = re.subn(exact_pattern,'',query,1)
+            query, n = re.subn(exact_pattern, '', query, 1)
         else:
             query = query[1:]
 
     if qinitial:
-        query_formset = RulesFormset0(prefix='query',initial=qinitial)
+        query_formset = RulesFormset0(prefix='query', initial=qinitial)
     else:
         query_formset = RulesFormset1(prefix='query')
     if ninitial:
-        not_formset = RulesFormset0(prefix='not',initial=ninitial)
+        not_formset = RulesFormset0(prefix='not', initial=ninitial)
     else:
         not_formset = RulesFormset1(prefix='not')
 
     return query_formset, not_formset
+
 
 def is_javascript_disabled(request):
     if 'nojs' in request.GET:
@@ -209,7 +216,7 @@ def is_javascript_disabled(request):
 def get_browse_list(request):
     """Return the list name if this query is a browse list query"""
     query_string = get_query_string(request)
-    match = re.search(r"^\?email_list=([a-zA-Z0-9\_\-]+)",query_string)
+    match = re.search(r"^\?email_list=([a-zA-Z0-9\_\-]+)", query_string)
     if match:
         try:
             browse_list = EmailList.objects.get(name=match.group(1))
@@ -225,22 +232,23 @@ def get_columns(request):
     columns is a dictionary of lists containing keys: active, inactive, private
     """
     display_columns = 5
-    columns = {'private':[],'active':[],'inactive':[]}
+    columns = {'private': [], 'active': [], 'inactive': []}
     lists = EmailList.objects.filter(name__in=get_lists_for_user(request)).order_by('name')
-    
+
     private = lists.filter(private=True)
     if private:
-        columns['private'] = chunks(private,int(math.ceil(private.count()/float(display_columns))))
-    
+        columns['private'] = chunks(private, int(math.ceil(private.count() / float(display_columns))))
+
     active = lists.filter(active=True, private=False)
     if active:
-        columns['active'] = chunks(active,int(math.ceil(active.count()/float(display_columns))))
-    
+        columns['active'] = chunks(active, int(math.ceil(active.count() / float(display_columns))))
+
     inactive = lists.filter(active=False, private=False)
     if inactive:
-        columns['inactive'] = chunks(inactive,int(math.ceil(inactive.count()/float(display_columns))))
+        columns['inactive'] = chunks(inactive, int(math.ceil(inactive.count() / float(display_columns))))
 
     return columns
+
 
 def get_export(sqs, export_type, request):
     """Process an export request"""
@@ -248,17 +256,18 @@ def get_export(sqs, export_type, request):
     # don't allow export of huge querysets and skip empty querysets
     count = sqs.count()
     redirect_url = '%s?%s' % (reverse('archive_search'), request.META['QUERY_STRING'])
-    if (count > settings.EXPORT_LIMIT) or (count > settings.ANONYMOUS_EXPORT_LIMIT and not request.user.is_authenticated()):
-        messages.error(request,'Too many messages to export.')
+    if (count > settings.EXPORT_LIMIT) or (count > settings.ANONYMOUS_EXPORT_LIMIT and not request.user.is_authenticated()):  # noqa
+        messages.error(request, 'Too many messages to export.')
         return redirect(redirect_url)
     elif count == 0:
-        messages.error(request,'No messages to export.')
+        messages.error(request, 'No messages to export.')
         return redirect(redirect_url)
 
     if export_type == 'url':
-        return get_export_url(sqs,export_type,request)
+        return get_export_url(sqs, export_type, request)
     else:
-        return get_export_tar(sqs,export_type,request)
+        return get_export_tar(sqs, export_type, request)
+
 
 def get_export_url(sqs, export_type, request):
     """Return file containing URLs of all messages in query results"""
@@ -267,6 +276,7 @@ def get_export_url(sqs, export_type, request):
         url = result.object.get_absolute_url()
         content.append(request.build_absolute_uri(url))
     return HttpResponse('\n'.join(content), content_type='text/plain')
+
 
 def get_export_tar(sqs, export_type, request):
     """Returns a tar archive of messages
@@ -282,9 +292,9 @@ def get_export_tar(sqs, export_type, request):
     filename = basename + '.tar.gz'
 
     if export_type == 'maildir':
-        tar = build_maildir_tar(sqs,tar,basename)
+        tar = build_maildir_tar(sqs, tar, basename)
     elif export_type == 'mbox':
-        tar = build_mbox_tar(sqs,tar,basename)
+        tar = build_mbox_tar(sqs, tar, basename)
 
     tar.close()
     tardata.seek(0)
@@ -294,6 +304,7 @@ def get_export_tar(sqs, export_type, request):
     response['Content-Type'] = 'application/x-tar-gz'
     tardata.close()
     return response
+
 
 def get_random_basename(prefix):
     """Returns a string [prefix][date]_[random characters]"""
@@ -306,12 +317,14 @@ def get_random_basename(prefix):
         random=rand
     )
 
+
 def build_maildir_tar(sqs, tar, basename):
     """Returns tar file with messages from SearchQuerySet in maildir format"""
     for result in sqs:
-        arcname = os.path.join(basename,result.object.email_list.name,result.object.hashcode)
-        tar.add(result.object.get_file_path(),arcname=arcname)
+        arcname = os.path.join(basename, result.object.email_list.name, result.object.hashcode)
+        tar.add(result.object.get_file_path(), arcname=arcname)
     return tar
+
 
 def build_mbox_tar(sqs, tar, basename):
     """Returns tar file with messages from SearchQuerySet in mmox format.
@@ -321,18 +334,18 @@ def build_mbox_tar(sqs, tar, basename):
     mbox_date = sqs[0].object.date.strftime('%Y-%m')
     mbox_list = sqs[0].object.email_list.name
     fd, temp_path = tempfile.mkstemp()
-    mbox_file = os.fdopen(fd,'w')
+    mbox_file = os.fdopen(fd, 'w')
     for result in sqs:
         date = result.object.date.strftime('%Y-%m')
         mlist = result.object.email_list.name
         if date != mbox_date or mlist != mbox_list:
             mbox_file.close()
-            tar.add(temp_path,arcname=os.path.join(basename,
-                                                   mbox_list,
-                                                   mbox_date + '.mbox'))
+            tar.add(temp_path, arcname=os.path.join(basename,
+                                                    mbox_list,
+                                                    mbox_date + '.mbox'))
             os.remove(temp_path)
             fd, temp_path = tempfile.mkstemp()
-            mbox_file = os.fdopen(fd,'w')
+            mbox_file = os.fdopen(fd, 'w')
             mbox_date = date
             mbox_list = mlist
 
@@ -344,41 +357,46 @@ def build_mbox_tar(sqs, tar, basename):
             mbox_file.write('\n')
 
     mbox_file.close()
-    tar.add(temp_path,arcname=os.path.join(basename,
-                                           mbox_list,
-                                           mbox_date + '.mbox'))
+    tar.add(temp_path, arcname=os.path.join(basename,
+                                            mbox_list,
+                                            mbox_date + '.mbox'))
     os.remove(temp_path)
     return tar
 
-def get_message_index(query,message):
+
+def get_message_index(query, message):
     """Returns the index of message in SearchQuerySetmessage, -1 if not found"""
-    for n,result in enumerate(query):
+    for n, result in enumerate(query):
         if result.object == message:
             return n
     return -1
 
-def get_message_before(query,index):
+
+def get_message_before(query, index):
     """Returns message of SearchQuerySet before index or None"""
     try:
-        return query[index-1].object
+        return query[index - 1].object
     except (IndexError, AssertionError):
         return None
 
-def get_message_after(query,index):
+
+def get_message_after(query, index):
     """Returns next message of SearchQuerySet after index or None"""
     try:
-        return query[index+1].object
+        return query[index + 1].object
     except IndexError:
         return None
 
-def get_query_neighbors(query,message):
+
+def get_query_neighbors(query, message):
     """Returns a tuple previous_message and next_message given a message
     from the query results"""
-    index = get_message_index(query,message)
+    index = get_message_index(query, message)
     if index == -1:
-        return None,None
+        return None, None
     else:
-        return get_message_before(query,index),get_message_after(query,index)
+        return get_message_before(query, index), get_message_after(query, index)
+
 
 def get_query_string(request):
     """Returns the query string from the request, including '?' """

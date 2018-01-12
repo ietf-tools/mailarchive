@@ -22,7 +22,7 @@ class XapianMessageIndex(CelerySearchIndex, indexes.Indexable):
     def get_model(self):
         return Message
 
-    #def index_queryset(self):
+    # def index_queryset(self):
     #    """Used when the entire index for model is updated."""
     #    return Note.objects.filter(pub_date__lte=datetime.datetime.now())
 
@@ -40,7 +40,7 @@ class ElasticMessageIndex(CelerySearchIndex, indexes.Indexable):
 
     date = indexes.DateTimeField(model_attr='date')
     email_list = indexes.CharField(model_attr='email_list__name', faceted=True, indexed=False)
-    #frm = indexes.CharField(model_attr='frm',index_fieldname='from', faceted=True, indexed=False)
+    # frm = indexes.CharField(model_attr='frm',index_fieldname='from', faceted=True, indexed=False)
     frm = indexes.CharField(model_attr='frm', faceted=True)
     frm_name = indexes.CharField(model_attr='frm_name', faceted=True, indexed=False)
     msgid = indexes.CharField(model_attr='msgid', indexed=False)

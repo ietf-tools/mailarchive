@@ -21,7 +21,11 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='message',
             name='in_reply_to',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='replies', to='archive.Message'),
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='replies',
+                to='archive.Message'),
         ),
         migrations.AlterField(
             model_name='message',

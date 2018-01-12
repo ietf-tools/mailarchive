@@ -21,6 +21,7 @@ def _clear_lists_cache(sender, instance, **kwargs):
     cache.delete('lists')
     cache.delete('lists_public')
 
+
 @receiver(user_logged_in)
 def _clear_session(sender, request, user, **kwargs):
     """Clear the cached session['noauth'] on login because it will change
@@ -69,7 +70,7 @@ def _list_save_handler(sender, instance, **kwargs):
 
 def _export_lists():
     """Write XML dump of list / memberships and call external program"""
-    
+
     # Dump XML
     data = _get_lists_as_xml()
     path = os.path.join(settings.EXPORT_DIR, 'email_lists.xml')

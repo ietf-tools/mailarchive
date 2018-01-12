@@ -28,9 +28,11 @@ UNDERSCORE = '_'
 MESSAGE_RFC822_BEGIN = '<blockquote>\n<small>---&nbsp;<i>Begin&nbsp;Message</i>&nbsp;---</small>'
 MESSAGE_RFC822_END = '<small>---&nbsp;<i>End&nbsp;Message</i>&nbsp;---</small>\n</blockquote>'
 
+
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
+
 
 def skip_attachment(function):
     """This is a decorator for custom MIME part handlers, handle_*.
@@ -45,6 +47,7 @@ def skip_attachment(function):
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------
+
 
 class Generator:
     """Generates output from a Message object tree.
@@ -86,9 +89,9 @@ class Generator:
         """Return headers decoded.  Takes a 2-tuple (the output of
         email.message.Message.items()) and returns a list of tuples.
         """
-        return [ (k,decode_safely(v)) for k,v in headers ]
+        return [(k, decode_safely(v)) for k, v in headers]
 
-    def _dispatch(self,part):
+    def _dispatch(self, part):
         """Get the Content-Type: for the message, then try to dispatch to
         self._handle_<maintype>_<subtype>().  If there's no handler for the
         full MIME type, then dispatch to self._handle_<maintype>().  If
@@ -105,7 +108,7 @@ class Generator:
                 return None
         return meth(part)
 
-    def _get_decoded_payload(self,part):
+    def _get_decoded_payload(self, part):
         """Returns the decoded payload.
 
         - first decode using Content-Transfer-Encoding
@@ -117,7 +120,7 @@ class Generator:
 
     # multipart handlers ----------------------------------------------------------
 
-    def _handle_message_external_body(self,part):
+    def _handle_message_external_body(self, part):
         """Handler for Message/External-body
 
         Two common supported formats:
@@ -151,7 +154,7 @@ class Generator:
             payload = inner[0].get_payload()
             try:
                 return payload.decode(codec)
-            except (UnicodeDecodeError,LookupError):
+            except (UnicodeDecodeError, LookupError):
                 return None
 
         # handle A format
@@ -159,17 +162,17 @@ class Generator:
             rawsite = part.get_param('site')
             rawdir = part.get_param('directory')
             rawname = part.get_param('name')
-            if None in (rawsite,rawdir,rawname):
+            if None in (rawsite, rawdir, rawname):
                 return None
             site = collapse_rfc2231_value(rawsite)
             directory = collapse_rfc2231_value(rawdir)
             name = collapse_rfc2231_value(rawname)
-            link = 'ftp://%s/%s/%s' % (site,directory,name)
-            html = '<div><a rel="nofollow" href="%s">&lt;%s&gt;</a></div>' % (link,link)
+            link = 'ftp://%s/%s/%s' % (site, directory, name)
+            html = '<div><a rel="nofollow" href="%s">&lt;%s&gt;</a></div>' % (link, link)
             return html
         return None
 
-    def _handle_message_rfc822(self,entity):
+    def _handle_message_rfc822(self, entity):
         """Handler for message/rfc822.
         Insert HTML beginning and ending tags
         """
@@ -182,28 +185,28 @@ class Generator:
             parts.append(MESSAGE_RFC822_END)
         return parts
 
-    def _handle_multipart(self,entity):
+    def _handle_multipart(self, entity):
         """Generic multipart handler"""
         parts = []
-        
+
         # Corrupt boundaries may cause a mutlipart entity's get_payload() to return
         # the rest of the message as a string rather than the expected list of MIME
         # entities
         if not isinstance(entity.get_payload(), list):
             return self._handle_text(entity)
-            
+
         for part in entity.get_payload():
             parts.extend(self.parse_entity(part))
         return parts
-        
-    def _handle_multipart_alternative(self,entity):
+
+    def _handle_multipart_alternative(self, entity):
         """Handler for multipart/alternative.
         NOTE: rather than trying to handle possibly malformed HTML, prefer the
         text/* versions for display, which comes first.  Basically return first
         parsable item.
         """
         parts = []
-        
+
         # Corrupt boundaries may cause a mutlipart entity's get_payload() to return
         # the rest of the message as a string rather than the expected list of MIME
         # entities
@@ -220,7 +223,7 @@ class Generator:
     # non-multipart handlers ----------------------------------------------------------
 
     @skip_attachment
-    def _handle_text(self,part):
+    def _handle_text(self, part):
         """Fallback handler for text/* MIME parts.  Takes a message.Message part
         Used by text/plain, text/enriched, etc
         """
@@ -234,27 +237,28 @@ class Generator:
             return render_to_string('archive/message_plain.html', {'payload': payload})
 
     @skip_attachment
-    def _handle_text_html(self,part):
+    def _handle_text_html(self, part):
         """Handler for text/HTML MIME parts.  Takes a message.Message part"""
         if settings.DEBUG:
-            logger.debug('called: _handle_text_html [{0}, {1}]'.format(self.msg.email_list,self.msg.msgid))
+            logger.debug('called: _handle_text_html [{0}, {1}]'.format(self.msg.email_list, self.msg.msgid))
 
         payload = self._get_decoded_payload(part)
 
         # clean html document of unwanted elements (html,script,style,etc)
-        cleaner = Cleaner(scripts=True,meta=True,page_structure=True,style=True,
-                          remove_tags=['body'],forms=True,frames=True,add_nofollow=True)
+        cleaner = Cleaner(scripts=True, meta=True, page_structure=True, style=True,
+                          remove_tags=['body'], forms=True, frames=True, add_nofollow=True)
         try:
             clean = cleaner.clean_html(payload)
         except (XMLSyntaxError, ParserError) as error:
-            logger.error('Error cleaning HTML body [{}, {}, {}]'.format(self.msg.email_list,self.msg.msgid,error.args))
+            logger.error('Error cleaning HTML body [{}, {}, {}]'.format(
+                self.msg.email_list, self.msg.msgid, error.args))
             if self.text_only:
                 return None
             else:
                 return '<< invalid HTML >>'
 
         if self.text_only:
-            soup = BeautifulSoup(clean,'html5lib')
+            soup = BeautifulSoup(clean, 'html5lib')
             clean = soup.get_text()
 
         return clean
@@ -297,7 +301,7 @@ class Generator:
         parts = []
         output = self._dispatch(entity)
         if output:
-            if hasattr(output,'__iter__'):
+            if hasattr(output, '__iter__'):
                 parts.extend(output)
             else:
                 parts.append(output)

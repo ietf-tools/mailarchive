@@ -262,7 +262,7 @@ def compute_thread(thread):
     else:
         messages = thread.message_set.all().order_by('date')
     data = OrderedDict()
-    ThreadInfo = namedtuple('ThreadInfo', ['message','depth','order'])
+    ThreadInfo = namedtuple('ThreadInfo', ['message', 'depth', 'order'])
     root_node = process(messages)
     for branch in get_root_set(root_node):
         for order, container in enumerate(branch.walk()):
@@ -286,6 +286,7 @@ def reconcile_thread(thread_data):
             message.thread_order = info.order
             message.thread_depth = info.depth
             message.save()
+
 
 def container_stats(parent, id_table):
     '''Show container stats for help in debugging'''
@@ -445,7 +446,7 @@ def gather_subjects(root_node):
 
 def get_ascii(value):
     '''Returns ascii of value'''
-    return value.encode('ascii',errors='replace')
+    return value.encode('ascii', errors='replace')
 
 
 def get_in_reply_to(message):

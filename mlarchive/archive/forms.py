@@ -16,27 +16,27 @@ from mlarchive.archive.utils import get_noauth
 import logging
 logger = logging.getLogger('mlarchive.custom')
 
-FIELD_CHOICES = (('text','Subject and Body'),
-                 ('subject','Subject'),
-                 ('from','From'),
-                 ('to','To'),
-                 ('msgid','Message-ID'))
+FIELD_CHOICES = (('text', 'Subject and Body'),
+                 ('subject', 'Subject'),
+                 ('from', 'From'),
+                 ('to', 'To'),
+                 ('msgid', 'Message-ID'))
 
-QUALIFIER_CHOICES = (('contains','contains'),
-                     ('exact','exact'))
-                     #('startswith','startswith'))
+QUALIFIER_CHOICES = (('contains', 'contains'),
+                     ('exact', 'exact'))
 
-TIME_CHOICES = (('a','Any time'),
-                ('d','Past 24 hours'),
-                ('w','Past week'),
-                ('m','Past month'),
-                ('y','Past year'),
-                ('c','Custom range...'))
+TIME_CHOICES = (('a', 'Any time'),
+                ('d', 'Past 24 hours'),
+                ('w', 'Past week'),
+                ('m', 'Past month'),
+                ('y', 'Past year'),
+                ('c', 'Custom range...'))
 
-VALID_SORT_OPTIONS = ('frm','-frm','date','-date','email_list','-email_list',
-                      'subject','-subject')
+VALID_SORT_OPTIONS = ('frm', '-frm', 'date', '-date', 'email_list', '-email_list',
+                      'subject', '-subject')
 
 DEFAULT_SORT = getattr(settings, 'ARCHIVE_DEFAULT_SORT', '-date')
+
 
 def profile(func):
     """Decorator to log the time it takes to run a function"""
@@ -47,9 +47,11 @@ def profile(func):
         return result
     return wrap
 
+
 # --------------------------------------------------------
 # Helper Functions
 # --------------------------------------------------------
+
 
 def get_cache_key(request):
     """Returns a hash key that identifies a unique query.  First we strip all URL
@@ -70,7 +72,7 @@ def group_by_thread(qs, so, sso, reverse=False):
     """Return a SearchQuerySet grouped by thread, ordered as follows:
     Top level threads ordered by date descending.  Sub-threads by date
     ascending"""
-    return qs.order_by('-tdate','tid','torder')
+    return qs.order_by('-tdate', 'tid', 'torder')
 
 
 def map_sort_option(val):
@@ -79,13 +81,16 @@ def map_sort_option(val):
     """
     if val not in VALID_SORT_OPTIONS:
         return ''
-    if val in ('frm','-frm'):
+    if val in ('frm', '-frm'):
         val = val + '_name'    # use just email portion of from
     return val
+
 
 # --------------------------------------------------------
 # Fields
 # --------------------------------------------------------
+
+
 def yyyymmdd_to_strftime_format(fmt):
     translation_table = sorted([
         ("yyyy", "%Y"),
@@ -128,21 +133,32 @@ class DatepickerDateField(forms.DateTimeField):
         for k, v in picker_settings.iteritems():
             self.widget.attrs["data-date-%s" % k] = v
 
+
 # --------------------------------------------------------
 # Forms
 # --------------------------------------------------------
+
+
 class AdminForm(forms.Form):
-    subject = forms.CharField(max_length=255,required=False)
-    frm = forms.CharField(max_length=255,required=False)
-    msgid = forms.CharField(max_length=255,required=False)
-    start_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Start date', required=False)
-    end_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='End date', required=False)
+    subject = forms.CharField(max_length=255, required=False)
+    frm = forms.CharField(max_length=255, required=False)
+    msgid = forms.CharField(max_length=255, required=False)
+    start_date = DatepickerDateField(
+        date_format="yyyy-mm-dd",
+        picker_settings={"autoclose": "1"},
+        label='Start date',
+        required=False)
+    end_date = DatepickerDateField(
+        date_format="yyyy-mm-dd",
+        picker_settings={"autoclose": "1"},
+        label='End date',
+        required=False)
     email_list = forms.ModelMultipleChoiceField(
         queryset=EmailList.objects.all().order_by('name'),
         to_field_name='name',
         required=False)
     spam = forms.BooleanField(required=False)
-    spam_score = forms.CharField(max_length=6,required=False)
+    spam_score = forms.CharField(max_length=6, required=False)
     exclude_whitelisted_senders = forms.BooleanField(required=False)
 
     def clean_email_list(self):
@@ -150,7 +166,7 @@ class AdminForm(forms.Form):
         # so we match get_kwargs() api
         email_list = self.cleaned_data.get('email_list')
         if email_list:
-            return [ e.name for e in email_list ]
+            return [e.name for e in email_list]
 
 
 class AdminActionForm(forms.Form):
@@ -162,32 +178,40 @@ class LowerCaseModelMultipleChoiceField(forms.ModelMultipleChoiceField):
         if not value:
             return []
         if hasattr(value, '__iter__') and isinstance(value[0], basestring):
-            value = [ v.lower() for v in value if isinstance(v, basestring) ]
+            value = [v.lower() for v in value if isinstance(v, basestring)]
         return super(LowerCaseModelMultipleChoiceField, self).prepare_value(value)
 
 
 class AdvancedSearchForm(FacetedSearchForm):
-    #start_date = forms.DateField(required=False,
+    # start_date = forms.DateField(required=False,
     #        widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
-    start_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Start date', required=False)
-    #end_date = forms.DateField(required=False,
+    start_date = DatepickerDateField(
+        date_format="yyyy-mm-dd",
+        picker_settings={"autoclose": "1"},
+        label='Start date',
+        required=False)
+    # end_date = forms.DateField(required=False,
     #        widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
-    end_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='End date', required=False)
-    #email_list = forms.CharField(max_length=255,required=False,widget=forms.HiddenInput)
-    email_list = LowerCaseModelMultipleChoiceField(queryset=EmailList.objects,to_field_name='name',required=False)
-    subject = forms.CharField(max_length=255,required=False)
-    frm = forms.CharField(max_length=255,required=False)
-    msgid = forms.CharField(max_length=255,required=False)
-    #operator = forms.ChoiceField(choices=(('AND','ALL'),('OR','ANY')))
-    so = forms.CharField(max_length=25,required=False,widget=forms.HiddenInput)
-    sso = forms.CharField(max_length=25,required=False,widget=forms.HiddenInput)
-    spam_score = forms.CharField(max_length=3,required=False)
+    end_date = DatepickerDateField(
+        date_format="yyyy-mm-dd",
+        picker_settings={"autoclose": "1"},
+        label='End date',
+        required=False)
+    # email_list = forms.CharField(max_length=255,required=False,widget=forms.HiddenInput)
+    email_list = LowerCaseModelMultipleChoiceField(queryset=EmailList.objects, to_field_name='name', required=False)
+    subject = forms.CharField(max_length=255, required=False)
+    frm = forms.CharField(max_length=255, required=False)
+    msgid = forms.CharField(max_length=255, required=False)
+    # operator = forms.ChoiceField(choices=(('AND','ALL'),('OR','ANY')))
+    so = forms.CharField(max_length=25, required=False, widget=forms.HiddenInput)
+    sso = forms.CharField(max_length=25, required=False, widget=forms.HiddenInput)
+    spam_score = forms.CharField(max_length=3, required=False)
     # group and filter fields
     gbt = forms.BooleanField(required=False)                     # group by thread
-    qdr = forms.ChoiceField(choices=TIME_CHOICES,required=False,label=u'Time') # qualified date range
-    f_list = forms.CharField(max_length=255,required=False)
-    f_from = forms.CharField(max_length=255,required=False)
-    to = forms.CharField(max_length=255,required=False)
+    qdr = forms.ChoiceField(choices=TIME_CHOICES, required=False, label=u'Time')  # qualified date range
+    f_list = forms.CharField(max_length=255, required=False)
+    f_from = forms.CharField(max_length=255, required=False)
+    to = forms.CharField(max_length=255, required=False)
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request')
@@ -196,8 +220,8 @@ class AdvancedSearchForm(FacetedSearchForm):
         if len(args) and isinstance(args[0], dict) and 'from' in args[0]:
             args = list(args)
             args[0] = args[0].copy()
-            args[0].setlist('frm',args[0].pop('from'))
-            
+            args[0].setlist('frm', args[0].pop('from'))
+
         super(self.__class__, self).__init__(*args, **kwargs)
         self.fields["email_list"].widget.attrs["placeholder"] = "List names"
 
@@ -217,15 +241,15 @@ class AdvancedSearchForm(FacetedSearchForm):
         if facets:
             return facets
 
-        #if settings.DEBUG:
+        # if settings.DEBUG:
         #    messages.info(self.request,'Facets not in cache')
 
         # calculating facet_counts on large results sets is too costly so skip it
         # If you call results.count() before results.facet_counts() the facet_counts
-        # are corrupted in Xapian backend.  The solution is to clone the query and 
+        # are corrupted in Xapian backend.  The solution is to clone the query and
         # call counts on that
         # TODO: this might also be implemented as a timeout
-        
+
         temp = sqs._clone()
         count = temp.count()
 
@@ -260,7 +284,7 @@ class AdvancedSearchForm(FacetedSearchForm):
                 copy = sqs._clone()
                 frm_count = sqs.filter(frm_name__in=self.f_from).facet_counts()
                 list_count = copy.filter(email_list__in=self.f_list).facet_counts()
-                facets = {'fields': {},'dates': {},'queries': {}}
+                facets = {'fields': {}, 'dates': {}, 'queries': {}}
                 facets['fields']['email_list'] = frm_count['fields']['email_list']
                 facets['fields']['frm_name'] = list_count['fields']['frm_name']
 
@@ -269,10 +293,10 @@ class AdvancedSearchForm(FacetedSearchForm):
                 facets['fields'][field].sort()  # sort by name
 
         else:
-            facets = facets = {'fields': {},'dates': {},'queries': {}}
+            facets = facets = {'fields': {}, 'dates': {}, 'queries': {}}
 
         # save in cache
-        cache.set(cache_key,facets)
+        cache.set(cache_key, facets)
         return facets
 
     def process_query(self):
@@ -302,7 +326,7 @@ class AdvancedSearchForm(FacetedSearchForm):
             return self.no_query_found()
 
         sqs = self.process_query()
-        
+
         # handle URL parameters ------------------------------------
         if self.kwargs:
             sqs = sqs.filter(**self.kwargs)
@@ -331,7 +355,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         so = map_sort_option(self.cleaned_data.get('so'))
         sso = map_sort_option(self.cleaned_data.get('sso'))
         gbt = self.cleaned_data.get('gbt')
-        sort_values = [ v for v in (so,sso) if v ]
+        sort_values = [v for v in (so, sso) if v]
 
         if gbt:
             sqs = group_by_thread(sqs, so, sso, reverse=True)
@@ -345,18 +369,17 @@ class AdvancedSearchForm(FacetedSearchForm):
         sqs.query_string = self.request.META['QUERY_STRING']
         sqs.queryid = queryid
         # logger.info('Queryid:%s' % queryid)
-        cache.set(queryid,sqs,7200)           # 2 hours
+        cache.set(queryid, sqs, 7200)           # 2 hours
 
         logger.info('Backend Query: %s' % sqs.query.build_query())
 
         # insert facets just before returning query, so they don't get overridden
         sqs.myfacets = facets
 
-
         return sqs
 
     def clean_email_list(self):
-        return [ n.name for n in self.cleaned_data.get('email_list', []) ]
+        return [n.name for n in self.cleaned_data.get('email_list', [])]
 
     def clean_f_list(self):
         # take a comma separated list of email_list names and convert to list
@@ -371,9 +394,10 @@ class AdvancedSearchForm(FacetedSearchForm):
 
 # ---------------------------------------------------------
 
+
 class BrowseForm(forms.Form):
-    list = forms.ModelChoiceField(queryset=EmailList.objects,label='List')
-    
+    list = forms.ModelChoiceField(queryset=EmailList.objects, label='List')
+
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request')
         super(BrowseForm, self).__init__(*args, **kwargs)
@@ -387,9 +411,8 @@ class FilterForm(forms.Form):
 
 class RulesForm(forms.Form):
     field = forms.ChoiceField(choices=FIELD_CHOICES,
-            widget=forms.Select(attrs={'class':'parameter'}))
+            widget=forms.Select(attrs={'class': 'parameter'}))
     qualifier = forms.ChoiceField(choices=QUALIFIER_CHOICES,
-            widget=forms.Select(attrs={'class':'qualifier'}))
+            widget=forms.Select(attrs={'class': 'qualifier'}))
     value = forms.CharField(max_length=120,
-            widget=forms.TextInput(attrs={'class':'operand'}))
-
+            widget=forms.TextInput(attrs={'class': 'operand'}))

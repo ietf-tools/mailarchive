@@ -6,12 +6,14 @@ from django.utils import six
 
 from haystack.inputs import Clean, Exact, PythonData, Raw
 
+
 class ConfigurableElasticsearchBackend(Elasticsearch5SearchBackend):
     def build_schema(self, fields):
         content_field_name = 'text'
         mapping = settings.ELASTICSEARCH_INDEX_MAPPINGS
 
         return (content_field_name, mapping)
+
 
 class CustomElasticsearchQuery(Elasticsearch5SearchQuery):
     def build_query_fragment(self, field, filter_type, value):
@@ -46,7 +48,7 @@ class CustomElasticsearchQuery(Elasticsearch5SearchQuery):
 
         filter_types = {
             'content': u'%s',
-            #'contains': u'*%s*',
+            # 'contains': u'*%s*',
             'contains': u'%s',
             'endswith': u'*%s',
             'startswith': u'%s*',
@@ -128,7 +130,7 @@ class CustomElasticsearchQuery(Elasticsearch5SearchQuery):
                 self.run()
 
         return self._facet_counts
-        
+
     def run_raw(self, **kwargs):
         """Executes a raw query. Returns a list of search results.
 
@@ -148,7 +150,7 @@ class CustomElasticsearchQuery(Elasticsearch5SearchQuery):
         query_filter = self.build_query()
 
         # combine
-        combined = u'({query}) AND {filter}'.format(query=query,filter=query_filter)
+        combined = u'({query}) AND {filter}'.format(query=query, filter=query_filter)
         search_kwargs = self.build_params()
         search_kwargs.update(self._raw_query_params)
 
@@ -158,11 +160,12 @@ class CustomElasticsearchQuery(Elasticsearch5SearchQuery):
         results = self.backend.search(combined, **search_kwargs)
         self._results = results.get('results', [])
         self._hit_count = results.get('hits', 0)
-        #self._facet_counts = results.get('facets', {})
+        # self._facet_counts = results.get('facets', {})
         self._facet_counts = self.post_process_facets(results)
         self._spelling_suggestion = results.get('spelling_suggestion', None)
 
+
 class ConfigurableElasticSearchEngine(Elasticsearch5SearchEngine):
-    #backend = ConfigurableElasticsearchBackend
+    # backend = ConfigurableElasticsearchBackend
     backend = Elasticsearch5SearchBackend
     query = CustomElasticsearchQuery

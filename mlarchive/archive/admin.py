@@ -1,9 +1,10 @@
 from django.contrib import admin
 
-from mlarchive.archive.models import *
+from mlarchive.archive.models import Message, EmailList, Attachment, Thread
+
 
 class MessageAdmin(admin.ModelAdmin):
-    raw_id_fields = ('email_list','in_reply_to','thread')
+    raw_id_fields = ('email_list', 'in_reply_to', 'thread')
 
 
 admin.site.register(Message, MessageAdmin)

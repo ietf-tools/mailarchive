@@ -21,7 +21,7 @@ from dateutil.tz import tzoffset
 from mlarchive.archive.models import (Attachment, EmailList, Legacy, Message,
     Thread, get_in_reply_to_message)
 from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES, UNKNOWN_CONTENT_TYPE
-from mlarchive.archive.inspectors import *
+from mlarchive.archive.inspectors import *      # noqa
 from mlarchive.archive.thread import compute_thread, reconcile_thread, parse_message_ids
 from mlarchive.utils.decorators import check_datetime
 from mlarchive.utils.encoding import decode_safely, decode_rfc2047_header
@@ -57,18 +57,19 @@ date_formats = ["%a %b %d %H:%M:%S %Y",
                 "%a %b %d %H:%M:%S %Y %Z"]
 
 MBOX_SEPARATOR_PATTERN = re.compile(r'^From .* (Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+')
-SEPARATOR_PATTERNS = [ re.compile(r'^Return-[Pp]ath:'),
-                       re.compile(r'^Envelope-to:'),
-                       re.compile(r'^Received:'),
-                       re.compile(r'^X-Envelope-From:'),
-                       re.compile(r'^From:'),
-                       re.compile(r'^Date:'),
-                       re.compile(r'^To:'),
-                       re.compile(r'^Path:'),
-                       re.compile(r'^20[0-1][0-9]$') ]      # odd one, see forces
+SEPARATOR_PATTERNS = [re.compile(r'^Return-[Pp]ath:'),
+                      re.compile(r'^Envelope-to:'),
+                      re.compile(r'^Received:'),
+                      re.compile(r'^X-Envelope-From:'),
+                      re.compile(r'^From:'),
+                      re.compile(r'^Date:'),
+                      re.compile(r'^To:'),
+                      re.compile(r'^Path:'),
+                      re.compile(r'^20[0-1][0-9]$')]      # odd one, see forces
 
 HEADER_PATTERN = re.compile(r'^[\041-\071\073-\176]{1,}:')
-SENT_PATTERN = re.compile(r'^(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(\d{1,2})/(\d{1,2})/(\d{4,4})\s+(\d{1,2}):(\d{2,2})\s+(AM|PM)')
+SENT_PATTERN = re.compile(
+    r'^(Sun|Mon|Tue|Wed|Thu|Fri|Sat)\s+(\d{1,2})/(\d{1,2})/(\d{4,4})\s+(\d{1,2}):(\d{2,2})\s+(AM|PM)')
 MSGID_PATTERN = re.compile(r'<([^>]+)>')                    # [^>] means any character except ">"
 ENVELOPE_DATE_PATTERN = re.compile(r'(Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+')
 ENVELOPE_DUPETZ_PATTERN = re.compile(r'[\-\+]\d{4} \([A-Z]+\)$')
@@ -79,32 +80,42 @@ subj_leader_pattern = subj_blob_pattern + r'*' + subj_refwd_pattern
 subj_blob_regex = re.compile(r'^' + subj_blob_pattern)
 subj_leader_regex = re.compile(r'^' + subj_leader_pattern)
 
+
 # --------------------------------------------------
 # Custom Exceptions
 # --------------------------------------------------
+
+
 class DateError(Exception):
     # failed to parse the message date
     pass
+
 
 class DuplicateMessage(Exception):
     # Duplicate Message-id
     pass
 
+
 class GenericWarning(Exception):
     pass
+
 
 class NoHeaders(Exception):
     # the message contains no header fields, usually indicates problem with parsing
     pass
 
+
 class UnknownFormat(Exception):
     # the mail file format is unrecognized
     pass
 
+
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
-def archive_message(data,listname,private=False,save_failed=True):
+
+
+def archive_message(data, listname, private=False, save_failed=True):
     """This function is the internals of the interface to Mailman.  It is called by the
     standalone script archive-mail.py.  Inputs are:
     data: the message as a string (comes from sys.stdin.read())
@@ -114,7 +125,7 @@ def archive_message(data,listname,private=False,save_failed=True):
     """
     try:
         msg = email.message_from_string(data)
-        mw = MessageWrapper(msg,listname,private=private)
+        mw = MessageWrapper(msg, listname, private=private)
         mw.save()
     except DuplicateMessage as error:
         # if DuplicateMessage it's already been saved to _dupes
@@ -129,16 +140,18 @@ def archive_message(data,listname,private=False,save_failed=True):
         if not save_failed:
             return 1
         if msg:
-            save_failed_msg(msg,listname,error)
+            save_failed_msg(msg, listname, error)
         else:
-            save_failed_msg(data,listname,error)
+            save_failed_msg(data, listname, error)
         return 1    # TODO: other error?
     return 0
 
+
 def clean_spaces(s):
     """Reduce all whitespaces to one space"""
-    s = re.sub(r'\s+',' ',s)
+    s = re.sub(r'\s+', ' ', s)
     return s
+
 
 def flatten_message(msg):
     """Returns the message flattened to a string, for use in writing to a file.  NOTE:
@@ -150,6 +163,7 @@ def flatten_message(msg):
     g = Generator(fp, mangle_from_=False)
     g.flatten(msg)
     return fp.getvalue()
+
 
 def get_base_subject(text):
     """Returns 'base subject' of a message.  This is the subject which has specific
@@ -170,12 +184,12 @@ def get_base_subject(text):
         while True:
             # step 3
             textin = text
-            text = subj_leader_regex.sub('',text)
+            text = subj_leader_regex.sub('', text)
 
             # step 4
             m = subj_blob_regex.match(text)
             if m:
-                temp = subj_blob_regex.sub('',text)
+                temp = subj_blob_regex.sub('', text)
                 if temp:
                     text = temp
             if text == textin:    # step 5 (else repeat 3 & 4)
@@ -189,6 +203,7 @@ def get_base_subject(text):
             break
 
     return text
+
 
 def get_envelope_date(msg):
     """Returns the date, a naive or aware datetime object, from the message
@@ -209,6 +224,7 @@ def get_envelope_date(msg):
 
     return parsedate_to_datetime(date)
 
+
 def get_from(msg):
     """Returns the 'from' line of message.  This function is required because of the
     disparity between different message objects.  email.message.Message has a
@@ -224,6 +240,7 @@ def get_from(msg):
         if frm:
             return frm
 
+
 def get_header_date(msg):
     """Returns the date, a naive or aware datetime object, from the message header.
     First checks the 'Date:' field, then 'Sent:'.  Returns None if it can't locate
@@ -236,6 +253,7 @@ def get_header_date(msg):
         return None
     return parsedate_to_datetime(date)
 
+
 def get_incr_path(path):
     """Return path with unused incremental suffix"""
     files = glob.glob(path + '.*')
@@ -245,6 +263,7 @@ def get_incr_path(path):
     else:
         sequence = '0'
     return path + '.' + sequence.zfill(4)
+
 
 def get_mb(path):
     """Returns a mailbox object based on the first line of the file.
@@ -257,29 +276,31 @@ def get_mb(path):
         while not line or line == '\n':
             line = f.readline()
         if line.startswith('From '):                # most common mailbox type, MBOX
-            return CustomMbox(path,separator=MBOX_SEPARATOR_PATTERN)
+            return CustomMbox(path, separator=MBOX_SEPARATOR_PATTERN)
         elif line == '\x01\x01\x01\x01\n':          # next most common type, MMDF
             return CustomMMDF(path)
         for pattern in SEPARATOR_PATTERNS:          # less common types
             if pattern.match(line):
-                return CustomMbox(path,separator=pattern)
+                return CustomMbox(path, separator=pattern)
 
     # if we get here the file isn't recognized.  Raise an error
-    raise UnknownFormat('%s, %s' % (path,line))
+    raise UnknownFormat('%s, %s' % (path, line))
+
 
 def get_mime_extension(type):
     """Returns the proper file extension for the given mime content type (string),
     returns a tuple of extension, description
     """
     if type in CONTENT_TYPES:
-        ext,desc = CONTENT_TYPES[type]
+        ext, desc = CONTENT_TYPES[type]
         # return only the first of multiple extensions
         return (ext.split(',')[0], desc)
     # TODO: type without x
     elif type.startswith('text/'):
-        return ('txt','Text Data')
+        return ('txt', 'Text Data')
     else:
-        return (UNKNOWN_CONTENT_TYPE,type)
+        return (UNKNOWN_CONTENT_TYPE, type)
+
 
 def get_received_date(msg):
     """Returns the date from the received header field.  Date field is last field
@@ -293,15 +314,17 @@ def get_received_date(msg):
     else:
         return parsedate_to_datetime(recs[0].split(';')[-1])
 
+
 def is_aware(date):
     """Returns True if the date object passed in timezone aware, False if naive.
     See http://docs.python.org/2/library/datetime.html section 8.1.1
     """
-    if not isinstance(date,datetime.datetime):
+    if not isinstance(date, datetime.datetime):
         return False
     if date.tzinfo and date.tzinfo.utcoffset(date) is not None:
         return True
     return False
+
 
 def parsedate_to_datetime(date):
     """Returns a datetime object from string.  May return naive or aware datetime.
@@ -316,11 +339,12 @@ def parsedate_to_datetime(date):
         tz = tuple[-1]
         if tz is None:
             return datetime.datetime(*tuple[:6])
-        return datetime.datetime(*tuple[:6],tzinfo=tzoffset(None,tz))
+        return datetime.datetime(*tuple[:6], tzinfo=tzoffset(None, tz))
     except ValueError:
         return None
 
-def save_failed_msg(data,listname,error):
+
+def save_failed_msg(data, listname, error):
     """Called when an attempt to import a message fails.  "data" will typically be an
     instance of email.message.Message.  In some odd case where message parsing fails
     "data" will be a string (this should never happen because the email.parser excepts
@@ -330,7 +354,7 @@ def save_failed_msg(data,listname,error):
     # get filename
     path = EmailList.get_failed_dir(listname)
     basename = datetime.datetime.today().strftime('%Y-%m-%d')
-    files = glob.glob(os.path.join(path,basename + '.*'))
+    files = glob.glob(os.path.join(path, basename + '.*'))
     if files:
         files.sort()
         sequence = str(int(files[-1][-4:]) + 1)
@@ -339,43 +363,46 @@ def save_failed_msg(data,listname,error):
     filename = basename + '.' + sequence.zfill(4)
 
     # log entry
-    if isinstance(data,email.message.Message):
+    if isinstance(data, email.message.Message):
         output = flatten_message(data)
-        identifier = data.get('Message-ID','')
+        identifier = data.get('Message-ID', '')
         if not identifier:
             identifier = get_from(data)
     else:
         output = data
         identifier = ''
-    log_msg = "Import Error [{0}, {1}, {2}]".format(os.path.join(path,filename),(error.__class__,error.args),identifier)
+    log_msg = "Import Error [{0}, {1}, {2}]".format(
+        os.path.join(path, filename), (error.__class__, error.args), identifier)
     logger.error(log_msg)
 
-    write_file(os.path.join(path,filename),output)
+    write_file(os.path.join(path, filename), output)
+
 
 def call_remote_backup(path):
     """If REMOTE_BACKUP_DIR is defined copies the message specified in path to the
     local backup archive directory, creating subdirectories as needed.  Else checks for
     REMOTE_BACKUP_COMMAND, and calls this command with path as the first argument"""
-    if hasattr(settings,'REMOTE_BACKUP_DIR'):
+    if hasattr(settings, 'REMOTE_BACKUP_DIR'):
         # strip relative path
         parts = path.split('/')
         if parts[-2].startswith('_'):
             relative_path = os.path.join(*parts[-3:])
         else:
             relative_path = os.path.join(*parts[-2:])
-        target_path = os.path.join(settings.REMOTE_BACKUP_DIR,relative_path)
+        target_path = os.path.join(settings.REMOTE_BACKUP_DIR, relative_path)
         directory = os.path.dirname(target_path)
         if not os.path.exists(directory):
             os.makedirs(directory)
-            os.chmod(directory,02777)
-        shutil.copy2(path,target_path)
+            os.chmod(directory, 02777)
+        shutil.copy2(path, target_path)
 
-    elif hasattr(settings,'REMOTE_BACKUP_COMMAND'):
+    elif hasattr(settings, 'REMOTE_BACKUP_COMMAND'):
         backup_command = settings.REMOTE_BACKUP_COMMAND
         try:
-            subprocess.check_call([backup_command,path])
-        except (OSError,subprocess.CalledProcessError) as error:
+            subprocess.check_call([backup_command, path])
+        except (OSError, subprocess.CalledProcessError) as error:
             logger.error('Error calling remote backup command ({})'.format(error))
+
 
 def subject_is_reply(text):
     """Returns True if the subject line indicates a reply (or forward) to a message"""
@@ -384,17 +411,18 @@ def subject_is_reply(text):
     # remove blob(s)
     m = subj_blob_regex.match(text)
     if m:
-        temp = subj_blob_regex.sub('',text)
+        temp = subj_blob_regex.sub('', text)
         if temp:
             text = temp
     if text.startswith('[Fwd:'):
         return True
     if text.endswith('(fwd)'):
         return True
-    
+
     return False
 
-def write_file(path,data):
+
+def write_file(path, data):
     """Function to write file to disk.
     - creates directory if it doesn't exist
     - saves file
@@ -404,16 +432,19 @@ def write_file(path,data):
     directory = os.path.dirname(path)
     if not os.path.exists(directory):
         os.makedirs(directory)
-        os.chmod(directory,02777)
-    with open(path,'w') as f:
+        os.chmod(directory, 02777)
+    with open(path, 'w') as f:
         f.write(data)
         f.flush()
-    os.chmod(path,0666)
-    #call_remote_backup(path)
+    os.chmod(path, 0666)
+    # call_remote_backup(path)
+
 
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------
+
+
 class CustomMMDF(mailbox.MMDF):
     """Custom implementation of mailbox.MMDF.  The original class from the standard
     library is flawed in that it uses the same get_message() function as mailbox.mbox,
@@ -425,11 +456,12 @@ class CustomMMDF(mailbox.MMDF):
         """Return a Message representation or raise a KeyError."""
         start, stop = self._lookup(key)
         self._file.seek(start)
-        #from_line = self._file.readline().replace(os.linesep, '')
+        # from_line = self._file.readline().replace(os.linesep, '')
         string = self._file.read(stop - self._file.tell())
         msg = self._message_factory(string.replace(os.linesep, '\n'))
-        #msg.set_from(from_line[5:])
+        # msg.set_from(from_line[5:])
         return msg
+
 
 class CustomMbox(mailbox.mbox):
     """Custom mbox class that improves message parsing.  Expects the separator keyword
@@ -457,7 +489,7 @@ class CustomMbox(mailbox.mbox):
     def _generate_toc(self):
         """Generate key-to-(start, stop) table of contents."""
         starts, stops = [], []
-        lines = deque(' ',maxlen=2)
+        lines = deque(' ', maxlen=2)
         self._file.seek(0)
         while True:
             line_pos = self._file.tell()
@@ -487,6 +519,7 @@ class CustomMbox(mailbox.mbox):
         if has_from:
             msg.set_from(from_line)
         return msg
+
 
 class Loader(object):
     """Object which handles loading messages from a mailbox file.  filename is the name
@@ -519,10 +552,10 @@ class Loader(object):
     def _cleanup(self):
         """Call this function when you are done with the loader object
         """
-        #logger.info('size: %s, loaded: %s' % (self.mb._file_length,self.stats['bytes_loaded']))
+        # logger.info('size: %s, loaded: %s' % (self.mb._file_length,self.stats['bytes_loaded']))
         self.mb.close()
 
-    def _load_message(self,msg):
+    def _load_message(self, msg):
         """Use MessageWrapper to save a Message to the archive.
         """
         self.stats['count'] += 1
@@ -530,11 +563,12 @@ class Loader(object):
             mw = MessageWrapper(msg, self.listname, private=self.private)
         except Exception as e:
             import sys
-            raise type(e), type(e)(e.message + ' happens at {} with text: {}'.format(self.filename,msg.as_string()[:120])), sys.exc_info()[2]
+            raise type(e), type(e)(e.message + ' happens at {} with text: {}'.format(
+                self.filename, msg.as_string()[:120])), sys.exc_info()[2]
 
         # filter using Legacy archive
-        if self.options.get('firstrun') and mw.date < (datetime.datetime.now() - datetime.timedelta(days=30)) and mw.created_id == False:
-            legacy = Legacy.objects.filter(msgid=mw.msgid,email_list_id=self.listname)
+        if self.options.get('firstrun') and mw.date < (datetime.datetime.now() - datetime.timedelta(days=30)) and mw.created_id is False:  # noqa
+            legacy = Legacy.objects.filter(msgid=mw.msgid, email_list_id=self.listname)
             if not legacy:
                 self.stats['spam'] += 1
                 if not (self.options.get('dryrun') or self.options.get('test')):
@@ -555,14 +589,15 @@ class Loader(object):
             try:
                 self._load_message(m)
             except DuplicateMessage as error:
-                logger.warning("Import Warn [{0}, {1}, {2}]".format(self.filename,error.args,get_from(m)))
+                logger.warning("Import Warn [{0}, {1}, {2}]".format(self.filename, error.args, get_from(m)))
             except Exception as error:
-                save_failed_msg(m,self.listname,error)
+                save_failed_msg(m, self.listname, error)
                 self.stats['errors'] += 1
                 if self.options.get('break'):
                     raise
 
         self._cleanup()
+
 
 class MessageWrapper(object):
     """This class takes a email.message.Message object (email_message) and listname as
@@ -607,7 +642,7 @@ class MessageWrapper(object):
     def _init_in_reply_to_fields(self):
         """Initialize self.in_reply_to, self.in_reply_to_value"""
         assert self.email_list
-        self.in_reply_to_value = self.email_message.get('In-Reply-To','')
+        self.in_reply_to_value = self.email_message.get('In-Reply-To', '')
         self.in_reply_to = get_in_reply_to_message(
             self.in_reply_to_value,
             self.email_list)
@@ -618,8 +653,8 @@ class MessageWrapper(object):
         string suitable for a To or CC header
         """
         result = []
-        tuples = getaddresses([decode_rfc2047_header(text)]) # getaddresses takes a sequence
-        for name,address in tuples:                          # flatten list of tuples
+        tuples = getaddresses([decode_rfc2047_header(text)])  # getaddresses takes a sequence
+        for name, address in tuples:                          # flatten list of tuples
             if name:
                 result.append(name)
             if address:
@@ -647,19 +682,19 @@ class MessageWrapper(object):
         NOTE: in a test run we can find the date in the Received header in
         2366079 of 2426328 records, 97.5% of the time (all but 2 were timezone aware)
         """
-        for func in (get_received_date,get_header_date,get_envelope_date):
+        for func in (get_received_date, get_header_date, get_envelope_date):
             date = func(self.email_message)
             if date:
                 if is_aware(date):
-                    #try:
+                    # try:
                     return date.astimezone(pytz.utc).replace(tzinfo=None)   # return as naive UTC
-                    #except ValueError:
+                    # except ValueError:
                     #    pass
                 else:
                     return date
         else:
             # can't really proceed without a date, likely indicates bigger parsing error
-            raise DateError("%s, %s" % (self.msgid,self.email_message.get_unixfrom()))
+            raise DateError("%s, %s" % (self.msgid, self.email_message.get_unixfrom()))
 
     def get_hash(self):
         """Returns the message hashcode, a SHA-1 digest of the Message-ID and listname.
@@ -671,7 +706,7 @@ class MessageWrapper(object):
         return base64.urlsafe_b64encode(sha.digest())
 
     def get_msgid(self):
-        msgid = self.normalize(self.email_message.get('Message-ID',''))
+        msgid = self.normalize(self.email_message.get('Message-ID', ''))
         if msgid:
             msgid = msgid.strip('<>')
         else:
@@ -685,19 +720,19 @@ class MessageWrapper(object):
             self.spam_score = self.spam_score | settings.MARK_BITS['NO_MSGID']
             # add message-id to email_message headers so it gets to disk file
             if 'message-id' in self.email_message:
-                self.email_message.replace_header('Message-ID',msgid)
+                self.email_message.replace_header('Message-ID', msgid)
             else:
-                self.email_message.add_header('Message-ID',msgid)
-            #raise GenericWarning('No MessageID (%s)' % self.email_message.get_from())
+                self.email_message.add_header('Message-ID', msgid)
+            # raise GenericWarning('No MessageID (%s)' % self.email_message.get_from())
         return msgid
 
     def get_subject(self):
         """Gets the message subject.  If the subject looks like spam, long line with
         no spaces, truncate it so as not to cause index errors
         """
-        subject = self.normalize(self.email_message.get('Subject',''))
+        subject = self.normalize(self.email_message.get('Subject', ''))
         # TODO: spam?
-        #if len(subject) > 120 and len(subject.split()) == 1:
+        # if len(subject) > 120 and len(subject.split()) == 1:
         #    subject = subject[:120]
         return subject
 
@@ -709,7 +744,7 @@ class MessageWrapper(object):
         return self.get_addresses(to)
 
     def get_thread(self):
-        """This is a simplified version of the Zawinski threading algorithm used to 
+        """This is a simplified version of the Zawinski threading algorithm used to
         thread incoming messages.
 
         Referecnces:
@@ -736,7 +771,7 @@ class MessageWrapper(object):
         """Returns the thread given text containing message ids"""
         for msgid in parse_message_ids(value):
             try:
-                message = Message.objects.get(email_list=self.email_list,msgid=msgid)
+                message = Message.objects.get(email_list=self.email_list, msgid=msgid)
                 return message.thread
             except (Message.DoesNotExist, Message.MultipleObjectsReturned):
                 pass
@@ -753,7 +788,7 @@ class MessageWrapper(object):
             return header_text
 
         # TODO: need this?
-        #if type(header_text) is unicode:    # return if already unicode
+        # if type(header_text) is unicode:    # return if already unicode
         #    return header_text              # ie. get_filename() for example sometimes returns unicode
 
         if '=?' in header_text:              # handle RFC2047 encoded-words
@@ -770,24 +805,24 @@ class MessageWrapper(object):
         """Perform the rest of the parsing and construct the Message object.  Note,
         we are not saving the object to the database.  This happens in the save() function.
         """
-        self.email_list,created = EmailList.objects.get_or_create(
-            name=self.listname,defaults={'description':self.listname,'private':self.private})
+        self.email_list, created = EmailList.objects.get_or_create(
+            name=self.listname, defaults={'description': self.listname, 'private': self.private})
         self.hashcode = self.get_hash()
         self._init_in_reply_to_fields()
-        self.references = self.email_message.get('References','')
+        self.references = self.email_message.get('References', '')
         self.subject = self.get_subject()
         self.base_subject = get_base_subject(self.subject)
         self.thread = self.get_thread()
         self.from_line = self.normalize(get_from(self.email_message)) or ''
         if self.from_line:
             self.from_line = self.from_line[5:].lstrip()    # we only need the unique part
-        self.frm = self.normalize(self.email_message.get('From',''))
+        self.frm = self.normalize(self.email_message.get('From', ''))
         self._archive_message = Message(base_subject=self.base_subject,
                              cc=self.get_cc(),
                              date=self.date,
                              email_list=self.email_list,
-                             frm = self.frm,
-                             from_line = self.from_line,
+                             frm=self.frm,
+                             from_line=self.from_line,
                              hashcode=self.hashcode,
                              in_reply_to_value=self.in_reply_to_value,
                              in_reply_to=self.in_reply_to,
@@ -814,7 +849,7 @@ class MessageWrapper(object):
             name = part.get_filename()
             type = part.get_content_type()
             if name and type in CONTENT_TYPES:     # indicates an attachment
-                extension,description = get_mime_extension(type)
+                extension, description = get_mime_extension(type)
 
                 # create record
                 attach = Attachment.objects.create(message=self.archive_message,
@@ -824,7 +859,7 @@ class MessageWrapper(object):
                 # handle unrecognized
                 payload = part.get_payload(decode=True)
                 if not payload:
-                    attach.error = '<<< %s; name=%s: Unrecognized >>>' % (type,name)
+                    attach.error = '<<< %s; name=%s: Unrecognized >>>' % (type, name)
                     attach.save()
                     continue
 
@@ -838,7 +873,7 @@ class MessageWrapper(object):
                         f.write(payload)
                     attach.filename = os.path.basename(fp.name)
                     attach.save()
-                    os.chmod(fp.name,0666)
+                    os.chmod(fp.name, 0666)
                     call_remote_backup(fp.name)
 
     def save(self, test=False):
@@ -853,7 +888,7 @@ class MessageWrapper(object):
                 inspector.inspect()
 
         # check for duplicate message id, and skip
-        if Message.objects.filter(msgid=self.msgid,email_list__name=self.listname):
+        if Message.objects.filter(msgid=self.msgid, email_list__name=self.listname):
             self.write_msg(subdir='_dupes')
             raise DuplicateMessage('Duplicate msgid: %s' % self.msgid)
 
@@ -878,7 +913,7 @@ class MessageWrapper(object):
         # now that the archive.Message object is created we can process any attachments
         self.process_attachments(test=test)
 
-    def write_msg(self,subdir=None):
+    def write_msg(self, subdir=None):
         """Write a copy of the original email message to the disk archive.
         Use optional argument subdir to specify a subdirectory within the list directory
         ie. "_filtered" or "_failure"
@@ -890,9 +925,9 @@ class MessageWrapper(object):
 
         # build path
         if subdir:
-            path = os.path.join(settings.ARCHIVE_DIR,self.listname,subdir,filename)
+            path = os.path.join(settings.ARCHIVE_DIR, self.listname, subdir, filename)
         else:
-            path = os.path.join(settings.ARCHIVE_DIR,self.listname,filename)
+            path = os.path.join(settings.ARCHIVE_DIR, self.listname, filename)
 
         # if the file already exists, append a suffix
         if os.path.exists(path):
@@ -904,4 +939,4 @@ class MessageWrapper(object):
         output = re.sub("\r(?!\n)|(?<!\r)\n", "\r\n", flatten_message(self.email_message))
 
         # write file
-        write_file(path,output)
+        write_file(path, output)

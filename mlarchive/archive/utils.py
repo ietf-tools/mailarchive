@@ -1,12 +1,8 @@
 import json
-import mailbox
 from collections import OrderedDict
 
 from django.core.cache import cache
 from django.http import HttpResponse
-from django.shortcuts import render_to_response
-from django.template import RequestContext
-from django.template.loader import render_to_string
 
 from mlarchive.archive.models import EmailList
 from mlarchive.utils.test_utils import get_search_backend

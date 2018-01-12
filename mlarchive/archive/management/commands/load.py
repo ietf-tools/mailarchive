@@ -1,11 +1,12 @@
 import datetime
+import os
 import re
 import shutil
 import time
 
 from django.core.management.base import BaseCommand, CommandError
 
-from mlarchive.archive.models import *
+from mlarchive.archive.models import EmailList, Legacy
 from mlarchive.archive.management.commands import _classes
 
 import logging

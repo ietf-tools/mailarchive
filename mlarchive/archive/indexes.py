@@ -1,5 +1,4 @@
 from celery_haystack.indexes import CelerySearchIndex
-from django.conf import settings
 from haystack import indexes
 
 from mlarchive.archive.models import Message

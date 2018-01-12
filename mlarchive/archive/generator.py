@@ -16,7 +16,6 @@ import mailbox
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.template.loader import render_to_string
-from django.conf import settings
 from lxml.etree import XMLSyntaxError, ParserError
 from lxml.html.clean import Cleaner
 

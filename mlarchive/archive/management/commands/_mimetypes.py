@@ -153,7 +153,7 @@ CONTENT_TYPES = {
     'chemical/jcamp-dx':('jdx','Jcamp chemical spectra test'),
     'chemical/kinemage':('kin','Kinemage'),
     'chemical/macromodel-input':('mmd,mmod','Macromodel chemical test'),
-    'chemical/mopac-input':('gau','Mopac chemical test'),
+    #'chemical/mopac-input':('gau','Mopac chemical test'),
     'chemical/mdl-molfile':('mol','MOL mdl chemical test'),
     'chemical/mdl-rdf':('rdf','RDF chemical test'),
     'chemical/mdl-rxn':('rxn','RXN chemical test'),

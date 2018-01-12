@@ -5,4 +5,4 @@ class ArchiveConfig(AppConfig):
     verbose_name = "Archive"
 
     def ready(self):
-        import mlarchive.archive.signals
+        import mlarchive.archive.signals    # noqa

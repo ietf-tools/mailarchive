@@ -1,14 +1,11 @@
 from email.utils import parseaddr
-from collections import OrderedDict
 import logging
 import os
 import re
-import shutil
 import subprocess
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.cache import cache
 from django.db import models
 from django.urls import reverse
 from django.utils.http import urlencode
@@ -218,7 +215,7 @@ class Message(models.Model):
         try:
             with open(self.get_file_path()) as f:
                 return f.read()
-        except IOError as error:
+        except IOError:
             msg = 'Error reading message file: %s' % self.get_file_path()
             logger.warning(msg)
             return msg

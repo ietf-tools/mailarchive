@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 import datetime
 
-from django.db import models, migrations
+from django.db import migrations
 
 from mlarchive.archive.thread import get_references, get_in_reply_to, compute_thread
 
@@ -33,7 +33,6 @@ def fix_threads(apps, schema_editor):
     change it.
     '''
     Message = apps.get_model("archive", "Message")
-    Thread = apps.get_model('archive', 'Thread')
     # start checking messages prior to last migration, 12-4
     abandoned_threads = set()
     modified_threads = set()

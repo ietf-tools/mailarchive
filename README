@@ -145,7 +145,7 @@ RUNNING TESTS
 - export PYTHONPATH=$PWD
 - cd mlarchive
 - py.test tests
-- py.test 
+- py.test --flakes archive
 
 As of Jan 2018, trunk includes support for Elasticsearch backend.  While the
 default backend is still Xapian, use this command to run tests using the 

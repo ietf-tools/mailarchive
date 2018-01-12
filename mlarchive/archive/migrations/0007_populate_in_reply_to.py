@@ -3,9 +3,8 @@ from __future__ import unicode_literals
 
 import re
 
-from django.db import models, migrations
+from django.db import migrations
 
-from mlarchive.archive.models import Message, get_in_reply_to_message
 
 MESSAGE_ID_RE = re.compile(r'<(.*?)>')
 
@@ -56,19 +55,9 @@ def get_replies(apps, schema_editor):
                     print "reply_message:{}:{}".format(reply_message.pk,type(reply_message))
                     sys.exit()
 
-def get_in_reply_to_message(in_reply_to_value, email_list):
-    '''Returns the in_reply_to message, if it exists'''
-    
-    if not msgids:
-        return None
-    return get_message_prefer_list(msgids[0],email_list)
-
-def get_message_prefer_list(msgid, email_list):
-    '''Returns Message (or None) prefers proivded list'''
-    Message = apps.get_model("archive", "Message")
-
 
 def reverse_get_replies(apps, schema_editor):
+    Message = apps.get_model("archive", "Message")
     Message.objects.all().update(in_reply_to=None)
 
 

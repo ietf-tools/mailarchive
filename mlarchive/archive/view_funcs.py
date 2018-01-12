@@ -16,13 +16,13 @@ from StringIO import StringIO
 from django.conf import settings
 from django.contrib import messages
 from django.forms.formsets import formset_factory
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 
 from mlarchive.archive.forms import RulesForm
 from mlarchive.archive.models import EmailList
-from mlarchive.archive.utils import get_noauth, get_lists_for_user
+from mlarchive.archive.utils import get_lists_for_user
 from mlarchive.utils.encoding import to_str
 
 contain_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\((?P<value>[^\)]+)\)')

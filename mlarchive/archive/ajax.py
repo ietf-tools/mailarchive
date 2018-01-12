@@ -1,16 +1,12 @@
-import json
-
 from django.conf import settings
-from django.core.cache import cache
-from django.db.models import Q
 from django.http import HttpResponse
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.template.loader import render_to_string
 
 from mlarchive.archive import actions
 from mlarchive.archive.utils import jsonapi
-from mlarchive.archive.models import EmailList, Message
+from mlarchive.archive.models import Message
 from mlarchive.archive.query_utils import get_cached_query
 from mlarchive.archive.view_funcs import get_browse_list
 from mlarchive.utils.decorators import check_access, superuser_only

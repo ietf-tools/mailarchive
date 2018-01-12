@@ -2,9 +2,7 @@ import random
 import re
 from datetime import datetime, timedelta
 
-from django.conf import settings
 from django.core.cache import cache
-from haystack.query import SQ
 
 from mlarchive.archive.utils import get_lists
 from mlarchive.utils.test_utils import get_search_backend
@@ -115,7 +113,7 @@ def parse_query(request):
         items = filter(is_nojs_value, request.GET.items())
         for key,value in items:
             field = request.GET[key.replace('value','field')]
-            qualifier = request.GET[key.replace('value','qualifier')]
+            # qualifier = request.GET[key.replace('value','qualifier')]
             if 'query' in key:
                 query.append('{}:({})'.format(field,value))
             else:

@@ -10,7 +10,7 @@ from __future__ import unicode_literals
 
 import datetime
 
-from django.db import models, migrations
+from django.db import migrations
 from mlarchive.archive.management.commands._classes import subject_is_reply
 from mlarchive.archive.thread import compute_thread
 

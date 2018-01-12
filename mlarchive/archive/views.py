@@ -1,24 +1,20 @@
 import datetime
 import json
-import re
 import os
 import urllib
 from operator import itemgetter
 
 from django.conf import settings
-from django.contrib import messages
 from django.contrib.auth import logout
-from django.contrib.auth.decorators import user_passes_test
-from django.core.cache import cache
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.db.models import Q
 from django.forms.formsets import formset_factory
-from django.http import HttpResponseRedirect, HttpResponse, Http404, QueryDict
+from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from haystack.views import SearchView, FacetedSearchView
+from haystack.views import SearchView
 from haystack.query import SearchQuerySet
+from haystack.forms import SearchForm
 
 from mlarchive.utils.decorators import check_access, superuser_only, pad_id, log_timing
 from mlarchive.archive import actions
@@ -103,7 +99,7 @@ class CustomSearchView(SearchView):
         # if self.request.GET.get('gbt') == '1':
         #    return self.build_page_new()
 
-        buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
+        # buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
         index = self.request.GET.get('index')
         try:
             page_no = int(self.request.GET.get('page', 1))
@@ -163,7 +159,7 @@ class CustomSearchView(SearchView):
         if 'gbt' in self.request.GET:
             extra['thread_sorted'] = True
             extra['view_thread_url'] = reverse('archive_search') + query_string
-            _ = new_query.pop('gbt')
+            _ = new_query.pop('gbt')  # noqa
             extra['view_date_url' ] = reverse('archive_search') + '?' + new_query.urlencode()
         else:
             extra['thread_sorted'] = False

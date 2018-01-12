@@ -1,21 +1,17 @@
 import hashlib
 import time
 from collections import OrderedDict
-from operator import attrgetter
 
 from django import forms
 from django.conf import settings
-from django.contrib import messages
 from django.core.cache import cache
 from django.utils.http import urlencode
-from haystack.forms import SearchForm, FacetedSearchForm
-from haystack.query import SearchQuerySet
+from haystack.forms import FacetedSearchForm
 
 from mlarchive.archive.query_utils import (get_kwargs, generate_queryid, get_filter_params,
     parse_query, get_base_query)
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
-from mlarchive.utils.test_utils import get_search_backend
 
 import logging
 logger = logging.getLogger('mlarchive.custom')

@@ -629,27 +629,27 @@ table.msg-list-header-table th a.btn {
     min-width: 60px;
 }
 
-.xtable.thread-sorted .xtd.depth-1 {
+.xtable.thread-sorted .xtd.depth-1, .thread-snippet li.depth-1 {
     padding-left: 2em;
 }
 
-.xtable.thread-sorted .xtd.depth-2 {
+.xtable.thread-sorted .xtd.depth-2, .thread-snippet li.depth-2 {
     padding-left: 3em;
 }
 
-.xtable.thread-sorted .xtd.depth-3 {
+.xtable.thread-sorted .xtd.depth-3, .thread-snippet li.depth-3 {
     padding-left: 4em;
 }
 
-.xtable.thread-sorted .xtd.depth-4 {
+.xtable.thread-sorted .xtd.depth-4, .thread-snippet li.depth-4 {
     padding-left: 5em;
 }
 
-.xtable.thread-sorted .xtd.depth-5 {
+.xtable.thread-sorted .xtd.depth-5, .thread-snippet li.depth-5 {
     padding-left: 6em;
 }
 
-.xtable.thread-sorted .xtd.depth-6 {
+.xtable.thread-sorted .xtd.depth-6, .thread-snippet li.depth-6 {
     padding-left: 7em;
 }
 
@@ -941,6 +941,18 @@ ul.navbar-nav a.disabled, ul.navbar-nav a.disabled:hover {
 
 .msg-detail-toolbar .btn-group a {
     width: 33%;
+}
+
+.thread-snippet {
+    font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+    font-size: 13px;
+    list-style-type: none;
+    margin-top: 30px;
+    padding-left: 0;
+}
+
+.current-msg {
+    background: #f4f5f5
 }
 
 @media (min-width: 768px)

@@ -45,10 +45,7 @@ def ajax_get_msg(request, msg):
     NOTE: msg_thread changes avg response time from ~100ms to ~200ms
     """
     msg_body = msg.get_body_html(request)
-    msg_thread = render_to_string('includes/message_thread.html', {
-        'replies': msg.replies.all(),
-        'references': msg.get_references_messages()
-    })
+    msg_thread = render_to_string('includes/message_thread.html', {'msg': msg})
     return HttpResponse(msg_body + msg_thread)
 
 

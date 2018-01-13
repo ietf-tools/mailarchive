@@ -50,14 +50,11 @@ def test_ajax_get_msg_thread_links(client, thread_messages):
     url = '%s/?id=%s' % (reverse('ajax_get_msg'), msg.pk)
     response = client.get(url)
     assert response.status_code == 200
-    
+
     q = PyQuery(response.content)
     assert q('#message-thread').length == 1
-    assert len(response.context['references']) == 1
-    assert q('.thread-ref-link').length == 1
-    assert len(response.context['replies']) == 1
-    assert q('.thread-reply-link').length == 1
-    
+    assert q('.thread-snippet li').length == 4
+
 @pytest.mark.django_db(transaction=True)
 def test_ajax_get_messages(client,messages):
     # run initial query to setup cache

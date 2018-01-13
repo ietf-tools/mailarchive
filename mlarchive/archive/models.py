@@ -267,6 +267,14 @@ class Message(models.Model):
     def get_removed_dir(self):
         return self.email_list.removed_dir
 
+    def get_thread_snippet(self):
+        """Returns all messages of the thread as an HTML snippet"""
+        context = {
+            'messages': self.thread.message_set.all(),
+            'msg': self,
+        }
+        return render_to_string('archive/thread_snippet.html', context)
+
     def list_by_date_url(self):
         return reverse(
             'archive_search') + '?email_list={}&index={}'.format(

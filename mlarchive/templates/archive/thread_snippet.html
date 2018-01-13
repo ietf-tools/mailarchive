@@ -1,3 +1,6 @@
+{% load archive_extras %}
+<ul class="thread-snippet">
 {% for message in messages %}
-    {{ message.subject }}
+    <li class="depth-{{ message.thread_depth|max_depth }}{% if msg.msgid == message.msgid %} current-msg{% endif %}"><a href="{{ message.get_absolute_url }}">{{ message.subject|truncatechars:50 }}</a>&nbsp;&nbsp;{{ message.frm_name }}</li>
 {% endfor %}
+</ul>

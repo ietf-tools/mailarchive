@@ -1,4 +1,20 @@
 
+mailarch (1.11.1) ietf; urgency=normal
+
+ * Add notes on using the Admin Page to the Admin Guide
+
+ * Add admin navigation links to footer
+
+ * Improve thread snippet/links on bottom of message detail
+
+ * Changes to comply with Pyflakes / PEP8 
+
+ * Fix bug on empty search params
+
+ * Move virtualenv to "env/"
+
+-- Ryan Cross <rcross@amsl.com>  23 Jan 2018 16:00:00 +0800
+
 mailarch (1.11.0) ietf; urgency=normal
 
  * Add support for Elasticsearch backend

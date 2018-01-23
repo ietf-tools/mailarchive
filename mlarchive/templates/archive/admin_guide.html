@@ -13,6 +13,7 @@
         <li><a href="#delete_message">How do I delete unwanted messages from the archive?</a></li>
         <li><a href="#rebuild_index">How do I rebuild the index for a subset of messages?</a></li>
         <li><a href="#subpoena">How do I collect messages for response to a subpoena?</a></li>
+        <li><a href="#admin">How do I use the Admin page?</a></li>
         <li><a href="#xapian">Xapian</a></li>
         <li><a href="#memcached">Memcached</a></li>
         <li><a href="#rabbitmq">RabbitMQ</a></li>
@@ -73,6 +74,13 @@ cd /a/mailarch/data/archive/[listname]/
 for fil in `find . -path "./_*/*" ! -path "./_attachments/*" -exec grep -l searchterm {} \;`; do cp $fil /tmp/sub012214/; done;
 cd /tmp
 tar cvf sub012214.tar ./sub012214</pre></p>
+
+    <span id="admin"></span>
+    <h2>Admin Page</h2>
+    <p>The <a href="{% url "archive_admin" %}">Admin Page</a> lets you search for messages and then perform an action on those messages.  There are currently two supported actions:<br>
+<strong>Remove:</strong> moves the message to the archive/[list]/_removed directory, and removes it from the searchable index<br>
+<strong>Mark not spam:</strong> clears the spam_score message attribute</p>
+<p>The admin page also has a special Spam Mode.  When enabled, the messages can be quickly sorted using the arrow keys, right for spam, left for not spam.  When a message is sorted as not spam, all other messages from the same sender are automatically sorted as not spam as well.  And when a message is sorted as spam all messages with an identical subject are sorted as spam.  Sometimes this may not be desired, so the behaviour can be disabled.  Spam mode is useful, for example, when a list has lots of spam in a given date range.  The user can sort through thousands of messages in a very efficient manner.</p>
 
     <span id="xapian"></span>
     <h2>Xapian Utilities</h2>

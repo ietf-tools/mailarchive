@@ -148,6 +148,7 @@ var mailarch = {
         if (mailarch.ajaxRequestSent) {
             return true;
         }
+        // console.log(mailarch.urlParams);
         var queryid = mailarch.$msgList.attr('data-queryid');
         var request = $.ajax({
             "type": "GET",

@@ -898,7 +898,7 @@ class MessageWrapper(object):
             raise CommandError('Duplicate hash, msgid: %s' % self.msgid)
 
         # ensure message has been processed
-        _ = self._archive_message    # noqa
+        _ = self.archive_message    # noqa
 
         # write message to disk and then save, post_save signal calls indexer
         # which requires file to be present

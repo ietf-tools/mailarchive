@@ -1,6 +1,6 @@
 #!/usr/bin/python
 '''
->From quote, "From" lines that occur in the middle of a message
+Fix uuid named files
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
@@ -8,33 +8,30 @@ from django_setup import do_setup
 do_setup(settings='production')
 # -------------------------------------------------------------------------------------
 
-from mlarchive.archive.models import *
+from mlarchive.archive.models import Message
 from email.utils import parseaddr
 import glob
+import email
 import mailbox
 import re
+import os
+import shutil
 
 def main():
-    PATTERN = re.compile(r'From .*@.* .{24}')
-    with open('/a/home/rcross/tmp/fix1.txt') as f:
-        files = f.read().splitlines()
+    files = glob.glob('/a/mailarch/data/archive/*/????????-????-????-????-????????????')
+    print "{} files found".format(len(files))
 
     for file in files:
-        with open(file) as f:
-            curblank = False
-            count = 0
-            for line in f:
-                count += 1
-                lastblank = curblank
-                if line == '\n':
-                    curblank = True
-                else:
-                    curblank = False
-
-                if line.startswith('From '):
-                    if not PATTERN.match(line) and lastblank:
-                        print '%s:%d %s' % (file,count,line)
-
+        with open(file) as fp:
+            msg = email.message_from_file(fp)
+        filename = os.path.basename(file)
+        listname = os.path.basename(os.path.dirname(file))
+        msgid = msg['message-id'].strip('<>')
+        message = Message.objects.get(email_list__name=listname,msgid=msgid)
+        print "{}:{}".format(listname,msgid)
+        print "{}  ==>  {}".format(file,message.hashcode)
+        target = os.path.join(os.path.dirname(file),message.hashcode)
+        shutil.move(file,target)
 
 if __name__ == "__main__":
     main()

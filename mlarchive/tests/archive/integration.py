@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-import sys
 
+from django.conf import settings
 from django.urls import reverse
-from factories import *
+from factories import EmailListFactory, UserFactory
 from haystack.query import SearchQuerySet
-from mlarchive.archive.models import *
+from mlarchive.archive.models import Message
 from mlarchive.utils.test_utils import get_search_backend
 
 from pyquery import PyQuery
@@ -19,35 +19,37 @@ from pyquery import PyQuery
 @pytest.mark.django_db(transaction=True)
 def test_not_logged_browse(client):
     'Test that a not logged in user does not see any private lists in browse menu'
-    elist = EmailListFactory.create(name='private',private=True)
+    EmailListFactory.create(name='private', private=True)
     url = reverse('archive_browse')
     response = client.get(url)
     assert response.status_code == 200
     q = PyQuery(response.content)
     assert len(q('#private-lists li')) == 0
+
 
 @pytest.mark.django_db(transaction=True)
 def test_unauth_browse(client):
     '''Test that a logged in user does not see private lists they aren't
     a member of.
     '''
-    elist = EmailListFactory.create(name='private',private=True)
-    user = UserFactory.create()
-    assert client.login(username='admin',password='admin')
+    EmailListFactory.create(name='private', private=True)
+    UserFactory.create()
+    assert client.login(username='admin', password='admin')
     url = reverse('archive_browse')
     response = client.get(url)
     assert response.status_code == 200
     q = PyQuery(response.content)
     assert len(q('#private-lists li')) == 0
 
+
 @pytest.mark.django_db(transaction=True)
 def test_auth_browse(client):
     '''Test that a logged in user does see private lists they are
     a member of.
     '''
-    elist = EmailListFactory.create(name='private',private=True)
+    elist = EmailListFactory.create(name='private', private=True)
     user = UserFactory.create()
-    assert client.login(username='admin',password='admin')
+    assert client.login(username='admin', password='admin')
     elist.members.add(user)
     url = reverse('archive_browse')
     response = client.get(url)
@@ -56,8 +58,22 @@ def test_auth_browse(client):
     print response.context
     assert len(q('#private-lists li')) == 1
 
+
 @pytest.mark.django_db(transaction=True)
-def test_not_logged_search(client,messages):
+def test_not_logged_browse_private_list(client, messages):
+    '''Test that an unauthenticated user cannot access private list
+    browse views
+    '''
+    message = Message.objects.filter(email_list__name='private').first()
+    url = reverse('archive_search') + '?email_list=private&index={}'.format(message.hashcode.strip('='))
+    response = client.get(url)
+    print url
+    print response.content
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db(transaction=True)
+def test_not_logged_search(client, messages):
     '''Test that a not logged in user does not see private lists in search results'''
     url = reverse('archive_search') + '?email_list=private'
     response = client.get(url)
@@ -65,8 +81,9 @@ def test_not_logged_search(client,messages):
     results = response.context['results']
     assert len(results) == 0
 
+
 @pytest.mark.django_db(transaction=True)
-def test_not_logged_search_hypen(client,messages):
+def test_not_logged_search_hypen(client, messages):
     '''Test that a not logged in user does not see private lists with hyphen in search results'''
     url = reverse('archive_search') + '?email_list=private-ops'
     response = client.get(url)
@@ -74,16 +91,18 @@ def test_not_logged_search_hypen(client,messages):
     results = response.context['results']
     assert len(results) == 0
 
+
 @pytest.mark.django_db(transaction=True)
-def test_unauth_search(client,messages):
+def test_unauth_search(client, messages):
     """Test that a logged in user does not see results from private lists they aren't a member of"""
-    user = UserFactory.create(username='dummy')
-    assert client.login(username='dummy',password='admin')
+    UserFactory.create(username='dummy')
+    assert client.login(username='dummy', password='admin')
     url = reverse('archive_search') + '?email_list=private'
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
     assert len(results) == 0
+
 
 @pytest.mark.django_db(transaction=True)
 def test_admin_access(client):
@@ -95,12 +114,13 @@ def test_admin_access(client):
     q = PyQuery(response.content)
     assert len(q('a[href="/arch/admin"]')) == 0
     # admin user
-    user = UserFactory.create(is_superuser=True)
-    assert client.login(username='admin',password='admin')
+    UserFactory.create(is_superuser=True)
+    assert client.login(username='admin', password='admin')
     response = client.get(url)
     assert response.status_code == 200
     q = PyQuery(response.content)
     assert len(q('a[href="/arch/admin/"]')) == 1
+
 
 @pytest.mark.django_db(transaction=True)
 def test_console_access(client):
@@ -110,14 +130,17 @@ def test_console_access(client):
     response = client.get(url)
     assert response.status_code == 403
     # admin user
-    user = UserFactory.create(is_superuser=True)
-    assert client.login(username='admin',password='admin')
+    UserFactory.create(is_superuser=True)
+    assert client.login(username='admin', password='admin')
     response = client.get(url)
     assert response.status_code == 200
+
 
 # --------------------------------------------------
 # Haystack Queries
 # --------------------------------------------------
+
+
 @pytest.mark.django_db(transaction=True)
 def test_haystack_content(query_messages):
     assert 'pytest' in settings.DATA_ROOT
@@ -130,8 +153,10 @@ def test_haystack_content(query_messages):
 # --------------------------------------------------
 # Keyword Queries
 # --------------------------------------------------
+
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_to_field(client,messages):
+def test_queries_to_field(client, messages):
     url = reverse('archive_search') + '?q=to:to@amsl.com'
     response = client.get(url)
     assert response.status_code == 200
@@ -139,8 +164,9 @@ def test_queries_to_field(client,messages):
     assert len(results) == 1
     assert 'to@amsl.com' in results[0].to
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_from_field(client,messages):
+def test_queries_from_field(client, messages):
     url = reverse('archive_search') + '?q=from:larry@amsl.com'
     response = client.get(url)
     assert response.status_code == 200
@@ -148,8 +174,9 @@ def test_queries_from_field(client,messages):
     assert len(results) == 1
     assert 'larry@amsl.com' in getattr(results[0], 'frm')
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_subject_field(client,messages):
+def test_queries_subject_field(client, messages):
     url = reverse('archive_search') + '?q=subject:BBQ'
     response = client.get(url)
     assert response.status_code == 200
@@ -157,8 +184,9 @@ def test_queries_subject_field(client,messages):
     assert len(results) == 2
     assert 'BBQ' in results[0].subject
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_msgid_field(client,messages):
+def test_queries_msgid_field(client, messages):
     msgid = Message.objects.first().msgid
     url = reverse('archive_search') + '?q=msgid:{}'.format(msgid)
     response = client.get(url)
@@ -167,8 +195,9 @@ def test_queries_msgid_field(client,messages):
     assert len(results) == 1
     assert results[0].msgid == msgid
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_spam_score_field(client,messages):
+def test_queries_spam_score_field(client, messages):
     url = reverse('archive_search') + '?q=spam_score:1'
     response = client.get(url)
     assert response.status_code == 200
@@ -176,8 +205,9 @@ def test_queries_spam_score_field(client,messages):
     assert len(results) == 1
     assert results[0].spam_score == 1
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_email_list_field(client,messages):
+def test_queries_email_list_field(client, messages):
     url = reverse('archive_search') + '?q=email_list:pubone'
     response = client.get(url)
     assert response.status_code == 200
@@ -185,28 +215,33 @@ def test_queries_email_list_field(client,messages):
     assert len(results) == 4
     assert results[0].email_list == 'pubone'
 
+
 # --------------------------------------------------
 # Parameter Queries
 # --------------------------------------------------
+
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_email_list(client,messages):
+def test_queries_email_list(client, messages):
     url = reverse('archive_search') + '?email_list=pubone'
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
     assert len(results) == 4
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_email_list_with_hyphen(client,messages):
+def test_queries_email_list_with_hyphen(client, messages):
     url = reverse('archive_search') + '?email_list=dev-ops'
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
     assert len(results) == 1
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_to_param(client,messages):
-    print [ m.msgid for m in Message.objects.all() ]
+def test_queries_to_param(client, messages):
+    print [m.msgid for m in Message.objects.all()]
     url = reverse('archive_search') + '?to=to@amsl.com'
     response = client.get(url)
     assert response.status_code == 200
@@ -214,8 +249,9 @@ def test_queries_to_param(client,messages):
     assert len(results) == 1
     assert 'to@amsl.com' in results[0].to
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_from_param(client,messages):
+def test_queries_from_param(client, messages):
     url = reverse('archive_search') + '?from=larry@amsl.com'
     response = client.get(url)
     assert response.status_code == 200
@@ -223,8 +259,9 @@ def test_queries_from_param(client,messages):
     assert len(results) == 1
     assert 'larry@amsl.com' in getattr(results[0], 'frm')
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_subject_param(client,messages):
+def test_queries_subject_param(client, messages):
     url = reverse('archive_search') + '?subject=BBQ'
     response = client.get(url)
     assert response.status_code == 200
@@ -232,8 +269,9 @@ def test_queries_subject_param(client,messages):
     assert len(results) == 2
     assert 'BBQ' in results[0].subject
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_msgid_field(client,messages):
+def test_queries_msgid_field(client, messages):
     msgid = Message.objects.first().msgid
     url = reverse('archive_search') + '?msgid={}'.format(msgid)
     response = client.get(url)
@@ -242,8 +280,9 @@ def test_queries_msgid_field(client,messages):
     assert len(results) == 1
     assert results[0].msgid == msgid
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_spam_score_field(client,messages):
+def test_queries_spam_score_field(client, messages):
     url = reverse('archive_search') + '?spam_score=1'
     response = client.get(url)
     assert response.status_code == 200
@@ -251,11 +290,14 @@ def test_queries_spam_score_field(client,messages):
     assert len(results) == 1
     assert results[0].spam_score == 1
 
+
 # --------------------------------------------------
 # Boolean Queries
 # --------------------------------------------------
+
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_boolean_two_term_implicit(client,messages):
+def test_queries_boolean_two_term_implicit(client, messages):
     url = reverse('archive_search') + '?q=invitation+things'
     response = client.get(url)
     assert response.status_code == 200
@@ -263,8 +305,9 @@ def test_queries_boolean_two_term_implicit(client,messages):
     assert len(results) == 1
     assert results[0].msgid == 'a04'
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_boolean_two_term_and(client,messages):
+def test_queries_boolean_two_term_and(client, messages):
     url = reverse('archive_search') + '?q=invitation+AND+things'
     response = client.get(url)
     assert response.status_code == 200
@@ -272,8 +315,9 @@ def test_queries_boolean_two_term_and(client,messages):
     assert len(results) == 1
     assert results[0].msgid == 'a04'
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_boolean_two_term_or(client,messages):
+def test_queries_boolean_two_term_or(client, messages):
     url = reverse('archive_search') + '?q=invitation OR joe'
     response = client.get(url)
     assert response.status_code == 200
@@ -281,13 +325,13 @@ def test_queries_boolean_two_term_or(client,messages):
     from mlarchive.utils.test_utils import get_search_backend
     print get_search_backend()
     print len(results.object_list), results.object_list[0].msgid
-    #assert False
     assert len(results) == 2
     assert results[0].msgid in ['a02', 'a04']
     assert results[1].msgid in ['a02', 'a04']
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_boolean_two_term_grouped(client,messages):
+def test_queries_boolean_two_term_grouped(client, messages):
     url = reverse('archive_search') + '?q=(invitation+AND+things)+OR+another'
     response = client.get(url)
     assert response.status_code == 200
@@ -296,9 +340,12 @@ def test_queries_boolean_two_term_grouped(client,messages):
     assert results[0].msgid in ['a01', 'a04']
     assert results[1].msgid in ['a01', 'a04']
 
+
 # --------------------------------------------------
 # Odd Queries
 # --------------------------------------------------
+
+
 @pytest.mark.django_db(transaction=True)
 def test_odd_queries(client):
     'Test some odd queries'
@@ -311,23 +358,26 @@ def test_odd_queries(client):
     response = client.get(url)
     assert response.status_code == 200
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_bad_qid(client,messages):
+def test_queries_bad_qid(client, messages):
     'Test malicious query'
     message = Message.objects.first()
     url = message.get_absolute_url() + "/%3fqid%3ddf6d7ccfedface723ffb184a6f52bab3'+order+by+1+--+;"
     response = client.get(url)
     assert response.status_code == 404
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_two_periods(client,messages):
+def test_queries_two_periods(client, messages):
     '''Test that range operator (two periods) doesn't cause error'''
     url = reverse('archive_search') + '?q=spec...)'
     response = client.get(url)
     assert response.status_code == 200
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_unicode(client,messages):
+def test_queries_unicode(client, messages):
     url = reverse('archive_search') + u'?q=frm%3ABj%C3%B6rn'
     response = client.get(url)
     assert response.status_code == 200
@@ -340,7 +390,7 @@ def test_queries_unicode(client,messages):
 # Sorted Queries
 # --------------------------------------------------
 @pytest.mark.django_db(transaction=True)
-def test_queries_sort_from(client,messages):
+def test_queries_sort_from(client, messages):
     url = reverse('archive_search') + '?email_list=pubthree&so=frm'
     response = client.get(url)
     assert response.status_code == 200
@@ -352,23 +402,25 @@ def test_queries_sort_from(client,messages):
 # Misc Queries
 # --------------------------------------------------
 @pytest.mark.django_db(transaction=True)
-def test_queries_draft(client,messages):
+def test_queries_draft(client, messages):
     url = reverse('archive_search') + '?q=draft-ietf-dnssec-secops'
     response = client.get(url)
     assert response.status_code == 200
     assert len(response.context['results']) == 1
     assert response.context['results'][0].msgid == 'a03'
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_draft_partial(client,messages):
+def test_queries_draft_partial(client, messages):
     url = reverse('archive_search') + '?q=draft-ietf-dnssec'
     response = client.get(url)
     assert response.status_code == 200
     assert len(response.context['results']) == 1
     assert response.context['results'][0].msgid == 'a03'
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_pagination(client,messages):
+def test_queries_pagination(client, messages):
     # verify pre-conditions
     message_count = Message.objects.filter(email_list__name='pubthree').count()
     assert message_count == 21
@@ -377,9 +429,10 @@ def test_queries_pagination(client,messages):
     response = client.get(url)
     assert response.status_code == 200
     assert len(response.context['results']) == 1
-    
+
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_pagination_bogus(client,messages):
+def test_queries_pagination_bogus(client, messages):
     # verify pre-conditions
     message_count = Message.objects.filter(email_list__name='pubthree').count()
     assert message_count == 21
@@ -394,8 +447,9 @@ def test_queries_pagination_bogus(client,messages):
     assert response.status_code == 200
     assert len(response.context['results']) == 1    # should get last page
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_range(client,messages):
+def test_queries_range(client, messages):
     '''Test valid range operator'''
     if get_search_backend() == 'elasticsearch':
         url = reverse('archive_search') + '?q=date%3A%5B2000-01-01 TO 2013-12-31%5D'
@@ -404,6 +458,7 @@ def test_queries_range(client,messages):
     response = client.get(url)
     assert response.status_code == 200
     assert len(response.context['results']) == 3
+
 
 @pytest.mark.django_db(transaction=True)
 def test_queries_list_term(client):
@@ -414,8 +469,9 @@ def test_queries_list_term(client):
     assert response.status_code == 302
     assert response['location'] == '/arch/search/?email_list=pubone'
 
+
 @pytest.mark.django_db(transaction=True)
-def test_queries_draft_name(client,messages):
+def test_queries_draft_name(client, messages):
     url = reverse('archive_search') + '?q=draft-ietf-dnssec-secops'
     response = client.get(url)
     assert response.status_code == 200
@@ -426,25 +482,30 @@ def test_queries_draft_name(client,messages):
 # --------------------------------------------------
 # Elastic Specific Tests
 # --------------------------------------------------
-@pytest.mark.skipif(get_search_backend() == 'xapian',reason="Requires Elasticsearch")
+
+
+@pytest.mark.skipif(get_search_backend() == 'xapian', reason="Requires Elasticsearch")
 @pytest.mark.django_db(transaction=True)
-def test_queries_boolean_negated_term(client,messages):
+def test_queries_boolean_negated_term(client, messages):
     url = reverse('archive_search') + '?q=-rfc6759'
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
     assert len(results) > 1
-    assert 'a01' not in [ x.msgid for x in results ]
+    assert 'a01' not in [x.msgid for x in results]
 
-@pytest.mark.skipif(get_search_backend() == 'xapian',reason="Requires Elasticsearch")
+
+@pytest.mark.skipif(get_search_backend() == 'xapian', reason="Requires Elasticsearch")
 @pytest.mark.django_db(transaction=True)
-def test_queries_boolean_wildcard(client,messages):
+def test_queries_boolean_wildcard(client, messages):
     url = reverse('archive_search') + '?q=*6759'
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
     assert len(results) == 1
     assert results[0].msgid == 'a01'
+
+
 '''
 @pytest.mark.django_db(transaction=True)
 def test_queries_partial_match(client,messages):

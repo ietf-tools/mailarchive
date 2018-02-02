@@ -3,9 +3,8 @@ import os
 import pytest
 import xml.etree.ElementTree as ET
 
-from factories import *
+from factories import EmailListFactory, ThreadFactory, MessageFactory, UserFactory
 from django.urls import reverse
-from django.core.cache import cache
 
 from mlarchive.archive.models import EmailList, Message, Thread
 from mlarchive.archive.signals import _get_lists_as_xml
@@ -14,13 +13,14 @@ from mlarchive.archive.signals import _get_lists_as_xml
 @pytest.mark.django_db(transaction=True)
 def test_clear_session(client):
     url = reverse('archive_browse')
-    response = client.get(url)
+    client.get(url)
     assert 'noauth' in client.session
-    user = UserFactory.create(is_superuser=True)
-    assert client.login(username='admin',password='admin')
+    UserFactory.create(is_superuser=True)
+    assert client.login(username='admin', password='admin')
     url = reverse('archive')
-    response = client.get(url)
+    client.get(url)
     assert 'noauth' not in client.session
+
 
 @pytest.mark.django_db(transaction=True)
 def test_message_remove(client, thread_messages):
@@ -41,12 +41,11 @@ def test_message_remove(client, thread_messages):
 @pytest.mark.django_db(transaction=True)
 def test_message_save(client):
     today = datetime.datetime.now().replace(second=0, microsecond=0)
-    yesterday = today - datetime.timedelta(days=1)
-    public = EmailListFactory.create(name='public',private=False)
+    public = EmailListFactory.create(name='public', private=False)
     thread = ThreadFactory.create()
-    msg = MessageFactory.create(
+    MessageFactory.create(
         email_list=public,
-        date = today,
+        date=today,
         thread=thread)
     thread = Thread.objects.get(pk=thread.pk)
     assert thread.date == today
@@ -61,10 +60,11 @@ def test_notify_new_list(client, tmpdir, settings):
     with open(path) as file:
         assert 'dummy' in file.read()
 
+
 @pytest.mark.django_db(transaction=True)
 def test_get_lists_as_xml(client):
-    private = EmailListFactory.create(name='private',private=True)
-    public = EmailListFactory.create(name='public',private=False)
+    private = EmailListFactory.create(name='private', private=True)
+    EmailListFactory.create(name='public', private=False)
     user = UserFactory.create(username='test')
     private.members.add(user)
     xml = _get_lists_as_xml()
@@ -77,6 +77,6 @@ def test_get_lists_as_xml(client):
 
     private_anonymous = root.find("shared_root/[@name='private']").find("user/[@name='anonymous']")
     assert private_anonymous.attrib['access'] == 'none'
-    
+
     private_test = root.find("shared_root/[@name='private']").find("user/[@name='test']")
     assert private_test.attrib['access'] == 'read,write'

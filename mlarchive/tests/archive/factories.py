@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from mlarchive.archive.models import *
+from mlarchive.archive.models import Message, EmailList, Thread
 
 import datetime
 import factory
@@ -7,6 +7,7 @@ import string
 import random
 
 from mlarchive.archive.management.commands._classes import get_base_subject
+
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
@@ -35,7 +36,7 @@ class MessageFactory(factory.DjangoModelFactory):
     base_subject = get_base_subject(subject)
     frm = 'John Smith <john@example.com>'
     msgid = factory.Sequence(lambda n: "%03d@example.com" % n)
-    hashcode = factory.Sequence(lambda n: "a%03d=" % n)
+    hashcode = factory.Sequence(lambda n: "abcdefghijklmnopqrstuvx%04d=" % n)
     thread = factory.SubFactory(ThreadFactory)
     # email_list = factory.SubFactory(EmailListFactory)
 

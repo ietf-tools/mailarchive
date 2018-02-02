@@ -122,7 +122,7 @@ Hello.
     assert get_from(message) == 'From rcross@amsl.com Fri Feb 21 11:09:00 2014'
 
     # test mailbox.mboxMessage
-    path = os.path.join(settings.BASE_DIR,'tests','data','ancp-2013-08.mail')
+    path = os.path.join(settings.BASE_DIR,'tests','data','mbox.1')
     mb = mailbox.mbox(path)
     assert get_from(mb[0]) == 'internet-drafts@ietf.org  Wed Aug 21 16:20:36 2013'
 

@@ -6,6 +6,7 @@ from pyquery import PyQuery
 from mlarchive.archive.models import Message, Thread
 from mlarchive.archive.thread import compute_thread
 
+
 @pytest.mark.django_db(transaction=True)
 def test_thread_view(client, thread_messages):
     '''Check order of messages in thread view'''

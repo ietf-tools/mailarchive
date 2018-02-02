@@ -5,10 +5,9 @@ from collections import namedtuple, defaultdict
 import pytest
 from factories import EmailListFactory, MessageFactory, ThreadFactory
 from mlarchive.archive.thread import (Container, process, build_container,
-    count_root_set, find_root, find_root_set, subject_is_reply, 
+    count_root_set, find_root, find_root_set, subject_is_reply,
     gather_subjects, prune_empty_containers, sort_thread, compute_thread,
-    gather_siblings, display_thread, get_in_reply_to,
-    get_references_or_in_reply_to)
+    gather_siblings, get_in_reply_to, get_references_or_in_reply_to)
 from mlarchive.archive.models import Message
 
 
@@ -92,20 +91,19 @@ def test_build_container():
     assert container3.next is container2
 
 
-
 @pytest.mark.django_db(transaction=True)
 def test_compute_thread():
     '''Test adding a message to existing thread'''
     elist = EmailListFactory.create()
     thread = ThreadFactory.create()
-    message1 = MessageFactory.create(
+    MessageFactory.create(
         email_list=elist,
         msgid='001@example.com',
         date=datetime.datetime(2016, 1, 1),
         thread=thread,
         thread_depth=0,
         thread_order=0)
-    message2 = MessageFactory.create(
+    MessageFactory.create(
         email_list=elist,
         msgid='002@example.com',
         date=datetime.datetime(2016, 1, 2),
@@ -172,7 +170,7 @@ def test_container_walk():
                     tree.c7]
     # check depth
     depths = [c.depth for c in tree.c1.walk()]
-    assert depths == [0,1,2,1,2,1,1]
+    assert depths == [0, 1, 2, 1, 2, 1, 1]
 
 
 def test_count_root_set():
@@ -207,8 +205,8 @@ def test_find_root_set():
 def test_gather_siblings():
     tree = create_tree()
     siblings = defaultdict(list)
-    gather_siblings(tree.c1,siblings)
-    assert siblings[tree.c1] == [tree.c2,tree.c4,tree.c6,tree.c7]
+    gather_siblings(tree.c1, siblings)
+    assert siblings[tree.c1] == [tree.c2, tree.c4, tree.c6, tree.c7]
     assert siblings[tree.c2] == [tree.c3]
     assert siblings[tree.c4] == [tree.c5]
 
@@ -241,7 +239,7 @@ def test_get_in_reply_to():
     # test none
     message = MessageFactory.create(
         email_list=elist)
-    assert get_in_reply_to(message) == None
+    assert get_in_reply_to(message) is None
     # test simple
     message = MessageFactory.create(
         email_list=elist,
@@ -454,7 +452,7 @@ def test_sort_thread():
     root_node = find_root_set(id_table)
     sort_thread(root_node)
     order = [c.message.msgid for c in root_node.walk() if not c.is_empty()]
-    assert order == [u'003@example.com',u'001@example.com',u'002@example.com']
+    assert order == [u'003@example.com', u'001@example.com', u'002@example.com']
 
 
 @pytest.mark.django_db(transaction=True)

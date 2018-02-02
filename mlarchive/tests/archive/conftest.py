@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.core.management import call_command
-from factories import *
-from mlarchive.archive.management.commands._classes import get_base_subject
-from StringIO import StringIO
-
 import datetime
 import os
 import pytest
-import django
+from factories import EmailListFactory, ThreadFactory, MessageFactory
+from StringIO import StringIO
 from django.conf import settings
+from django.core.management import call_command
+from mlarchive.archive.management.commands._classes import get_base_subject
+from mlarchive.archive.models import Message, Thread
 
 # `pytest` automatically calls this function once when tests are run.
 
@@ -28,6 +27,7 @@ def pytest_configure(tmpdir_factory):
     # Note: In Django =< 1.6 you'll need to run this instead
     # settings.configure()
 '''
+
 
 def load_db():
     pubone = EmailListFactory.create(name='pubone')
@@ -58,7 +58,7 @@ def load_db():
     MessageFactory.create(email_list=pubone,
                           thread=athread,
                           frm='larry@amsl.com',
-                          subject = '[RE] BBQ Invitation things',
+                          subject='[RE] BBQ Invitation things',
                           base_subject=get_base_subject('[RE] BBQ Invitation things'),
                           date=datetime.datetime(2014, 1, 1),
                           msgid='a04',
@@ -103,14 +103,16 @@ def load_db():
                           subject='Re: New Topic',
                           thread_order=1,
                           date=datetime.datetime(2017, 1, 6))
-    MessageFactory.create(email_list=private)
-    
+    MessageFactory.create(email_list=private, date=datetime.datetime(2017, 1, 1))
+    MessageFactory.create(email_list=private, date=datetime.datetime(2017, 1, 2))
+
     # listnames with hyphen
     devops = EmailListFactory.create(name='dev-ops')
     MessageFactory.create(email_list=devops)
 
     privateops = EmailListFactory.create(name='private-ops', private=True)
     MessageFactory.create(email_list=privateops)
+
 
 @pytest.fixture(scope="session")
 def index_resource():
@@ -120,7 +122,7 @@ def index_resource():
     content = StringIO()
     call_command('update_index', stdout=content)
     print content.read()
-    
+
     def fin():
         call_command('clear_index', noinput=True, stdout=content)
         print content.read()
@@ -133,16 +135,6 @@ def messages(index_resource):
         load_db()
 
 
-@pytest.fixture(scope="session")
-def index():
-    """Load a Xapian index"""
-    content = StringIO()
-    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'ancp-2010-03.mail')
-    call_command('load', path, listname='ancp', summary=True, stdout=content)
-    # def fin():
-    #   remove index
-
-
 @pytest.fixture()
 def thread_messages():
     """Load some threads"""
@@ -150,18 +142,73 @@ def thread_messages():
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'thread.mail')
     call_command('load', path, listname='acme', summary=True, stdout=content)
 
+
+@pytest.fixture()
+def thread_messages_db_only():
+    public = EmailListFactory.create(name='pubone')
+    athread = ThreadFactory.create(date=datetime.datetime(2017, 1, 1))
+    bthread = ThreadFactory.create(date=datetime.datetime(2017, 2, 1))
+    cthread = ThreadFactory.create(date=datetime.datetime(2017, 3, 1))
+    MessageFactory.create(email_list=public,
+                          thread=athread,
+                          thread_order=0,
+                          msgid='x001',
+                          date=datetime.datetime(2017, 1, 1))
+    MessageFactory.create(email_list=public,
+                          thread=athread,
+                          thread_order=1,
+                          msgid='x002',
+                          date=datetime.datetime(2017, 2, 15))
+    MessageFactory.create(email_list=public,
+                          thread=athread,
+                          thread_order=2,
+                          msgid='x003',
+                          date=datetime.datetime(2017, 1, 15))
+    MessageFactory.create(email_list=public,
+                          thread=bthread,
+                          thread_order=0,
+                          msgid='x004',
+                          date=datetime.datetime(2017, 2, 1))
+    MessageFactory.create(email_list=public,
+                          thread=bthread,
+                          thread_order=1,
+                          msgid='x005',
+                          date=datetime.datetime(2017, 3, 15))
+    MessageFactory.create(email_list=public,
+                          thread=cthread,
+                          thread_order=0,
+                          msgid='x006',
+                          date=datetime.datetime(2017, 3, 1))
+    MessageFactory.create(email_list=public,
+                          thread=cthread,
+                          thread_order=1,
+                          msgid='x007',
+                          date=datetime.datetime(2017, 3, 20))
+    MessageFactory.create(email_list=public,
+                          thread=cthread,
+                          thread_order=2,
+                          msgid='x008',
+                          date=datetime.datetime(2017, 3, 10))
+
+    # set first
+    for thread in Thread.objects.all():
+        thread.set_first()
+
+
 @pytest.fixture(scope='session')
 def tmp_dir(tmpdir_factory):
     """Create temporary directory for this test run"""
     tmpdir = tmpdir_factory.mktemp('data')
     return str(tmpdir)
 
+
 @pytest.fixture()
-def data_dir(tmp_dir,settings,autouse=True):
+def data_dir(tmp_dir, settings, autouse=True):
     """Set ARCHIVE_DIR to temporary directory"""
     DATA_ROOT = tmp_dir
     settings.DATA_ROOT = DATA_ROOT
-    settings.ARCHIVE_DIR = os.path.join(DATA_ROOT,'archive')
+    settings.ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
+
 
 @pytest.fixture()
 def query_messages(data_dir):
@@ -171,4 +218,3 @@ def query_messages(data_dir):
     call_command('load', path, listname='acme', summary=True, stdout=content)
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'query_star.mail')
     call_command('load', path, listname='star', summary=True, stdout=content)
-

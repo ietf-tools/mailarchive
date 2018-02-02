@@ -3,22 +3,17 @@
 import urlparse
 import pytest
 
+from importlib import import_module
+from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, HASH_SESSION_KEY
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.urls import reverse
-from django.contrib.auth.models import User
 from pyquery import PyQuery
 from selenium.webdriver.phantomjs.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
-#from seleniumlogin import force_login
-
-from mlarchive.archive.models import Message, EmailList
+from mlarchive.archive.models import Message
 
 
 timeout = 10
-
-
-from importlib import import_module
-from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, HASH_SESSION_KEY
 
 
 def force_login(user, driver, base_url):
@@ -72,17 +67,17 @@ class MySeleniumTests(StaticLiveServerTestCase):
         url = urlparse.urljoin(self.live_server_url, messages[0].get_absolute_url())
         self.selenium.get(url)
         self.selenium.find_element_by_id('next-in-list').click()
-        
+
         # Wait until the response is received
         WebDriverWait(self.selenium, timeout).until(
             lambda driver: driver.find_element_by_tag_name('body'))
-        
+
         # Get results page
         # print self.selenium.page_source
         self.selenium.get_screenshot_as_file('tests/tmp/test_message_detail_next_list.png')
         self.assertIn('Archive', self.selenium.title)
         self.assertIn(messages[1].msgid, self.selenium.page_source)
-        
+
     @pytest.mark.usefixtures("thread_messages")
     def test_message_detail_previous_list(self):
         '''Test previous message in list button of message detail'''
@@ -91,11 +86,11 @@ class MySeleniumTests(StaticLiveServerTestCase):
         url = urlparse.urljoin(self.live_server_url, messages[1].get_absolute_url())
         self.selenium.get(url)
         self.selenium.find_element_by_id('previous-in-list').click()
-        
+
         # Wait until the response is received
         WebDriverWait(self.selenium, timeout).until(
             lambda driver: driver.find_element_by_tag_name('body'))
-        
+
         # Get results page
         # print self.selenium.page_source
         self.selenium.get_screenshot_as_file('tests/tmp/test_message_detail_previous_list.png')
@@ -114,7 +109,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         second_row = q('.xtr:nth-child(2)')
         message_url = second_row.find('.xtd.url-col')
         next_message_url = message_url.text()
-        
+
         # navigate to first message detail
         elements = self.selenium.find_elements_by_css_selector("a.msg-detail")
         elements[0].click()
@@ -122,14 +117,14 @@ class MySeleniumTests(StaticLiveServerTestCase):
         # Wait until the response is received
         WebDriverWait(self.selenium, timeout).until(
             lambda driver: driver.find_element_by_tag_name('body'))
-        
+
         # click next in search button
         self.selenium.find_element_by_id('next-in-search').click()
 
         # Wait until the response is received
         WebDriverWait(self.selenium, timeout).until(
             lambda driver: driver.find_element_by_tag_name('body'))
-            
+
         print self.selenium.current_url
         self.assertIn(next_message_url, self.selenium.current_url)
 
@@ -139,14 +134,14 @@ class MySeleniumTests(StaticLiveServerTestCase):
         message = Message.objects.first()
         url = urlparse.urljoin(self.live_server_url, message.get_absolute_url())
         self.selenium.get(url)
-        
+
         # navbar is there
         element = self.selenium.find_element_by_class_name('navbar-msg-detail')
         assert element.is_displayed()
 
         # click hide
         self.selenium.find_element_by_link_text('Hide Navigation Bar').click()
-        
+
         # navbar is gone
         element = self.selenium.find_element_by_class_name('navbar-msg-detail')
         assert not element.is_displayed()
@@ -164,14 +159,14 @@ class MySeleniumTests(StaticLiveServerTestCase):
         message = Message.objects.first()
         url = urlparse.urljoin(self.live_server_url, message.get_absolute_url())
         self.selenium.get(url)
-        
+
         # header is hidden
         element = self.selenium.find_element_by_id('msg-header')
         assert not element.is_displayed()
 
         # click show
         self.selenium.find_element_by_link_text('Show header').click()
-        
+
         # header is visible
         self.selenium.get_screenshot_as_file('tests/tmp/test_message_detail_toggle_msg_header.png')
         element = self.selenium.find_element_by_id('msg-header')
@@ -205,7 +200,7 @@ class AdminSeleniumTests(StaticLiveServerTestCase):
     def tearDownClass(cls):
         cls.selenium.quit()
         super(AdminSeleniumTests, cls).tearDownClass()
-    
+
     @pytest.mark.usefixtures("thread_messages", "admin_user")
     def test_admin_spam_mode(self):
         '''Test Spam Mode of admin view'''

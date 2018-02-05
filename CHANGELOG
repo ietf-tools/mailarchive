@@ -1,4 +1,12 @@
 
+mailarch (1.11.2) ietf; urgency=normal
+
+ * Refactor slow queries with index parameter
+
+ * Flake, PEP8 changes, new tests for index query improvements
+
+-- Ryan Cross <rcross@amsl.com>  05 Feb 2018 12:00:00 +0800
+
 mailarch (1.11.1) ietf; urgency=normal
 
  * Add notes on using the Admin Page to the Admin Guide

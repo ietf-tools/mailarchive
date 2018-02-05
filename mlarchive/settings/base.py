@@ -212,6 +212,7 @@ LOGGING = {
 # HAYSTACK SETTINGS
 HAYSTACK_DEFAULT_OPERATOR = 'AND'
 HAYSTACK_SIGNAL_PROCESSOR = 'celery_haystack.signals.CelerySignalProcessor'
+HAYSTACK_SEARCH_RESULTS_PER_PAGE = 20
 
 HAYSTACK_XAPIAN_PATH = '/a/mailarch/data/xapian.stub'
 HAYSTACK_CONNECTIONS = {
@@ -252,7 +253,7 @@ ARCHIVE_DIR = os.path.join(DATA_ROOT,'archive')
 CONSOLE_STATS_FILE = os.path.join(DATA_ROOT,'log/console.json')
 EXPORT_LIMIT = 50000            # maximum number of messages we will export
 ANONYMOUS_EXPORT_LIMIT = 250    # maximum number of messages a non-logged in user can export
-FILTER_CUTOFF = 15000           # maximum results for which we'll provide filter options
+FILTER_CUTOFF = 5000           # maximum results for which we'll provide filter options
 LOG_FILE = os.path.join(DATA_ROOT,'log/mlarchive.log')
 MAILMAN_DIR = '/usr/lib/mailman'
 SERVER_MODE = 'production'

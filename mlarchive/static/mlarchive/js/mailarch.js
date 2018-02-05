@@ -34,6 +34,7 @@ var mailarch = {
         mailarch.getURLParams();
         mailarch.initSort();
         mailarch.handleResize();
+        // $('[data-toggle="tooltip"]').tooltip({container: 'body'});
     },
 
     cacheDom: function() {
@@ -144,16 +145,20 @@ var mailarch = {
         return $(window).height() - mailarch.$listPane.offset().top - mailarch.bottomMargin;
     },
 
-    getMessages: function() {
+    getNextMessages: function() {
+        // prevent multiple requests
         if (mailarch.ajaxRequestSent) {
             return true;
         }
         // console.log(mailarch.urlParams);
-        var queryid = mailarch.$msgList.attr('data-queryid');
+        var queryid = mailarch.$msgList.data('queryid');
+        var browselist = mailarch.$msgList.data('browse-list');
+        var gbt = mailarch.$msgList.data('gbt');
+        var referenceId = $("#msg-list .xtr:last .id-col").html();
         var request = $.ajax({
             "type": "GET",
             "url": "/arch/ajax/messages/",
-            "data": { "qid": queryid, "lastitem": mailarch.lastItem }
+            "data": { "qid": queryid, "referenceitem": mailarch.lastItem, "browselist": browselist, "referenceid": referenceId, "gbt": gbt, "direction": "next" }
         });
         mailarch.ajaxRequestSent = true;
         request.done(function(data, testStatus, xhr) {
@@ -167,6 +172,45 @@ var mailarch = {
         });
         request.fail(function(xhr, textStatus, errorThrown) {
             mailarch.ajaxRequestSent = false;
+            if(xhr.status == 404){
+                // server returns a 404 when query has expired from cache
+                window.location.reload();
+            }
+        });
+    },
+
+    getPreviousMessages: function() {
+        // prevent multiple requests
+        if (mailarch.ajaxRequestSent) {
+            return true;
+        }
+        var queryid = mailarch.$msgList.data('queryid');
+        var referenceItem = mailarch.$msgList.data('queryset-offset');
+        var browselist = mailarch.$msgList.data('browse-list');
+        var gbt = mailarch.$msgList.data('gbt');
+        var referenceId = $("#msg-list .xtr:first .id-col").html();
+        var request = $.ajax({
+            "type": "GET",
+            "url": "/arch/ajax/messages/",
+            "data": { "qid": queryid, "referenceitem": referenceItem, "browselist": browselist, "referenceid": referenceId, "gbt": gbt, "direction": "previous" }
+        });
+        request.done(function(data, testStatus, xhr) {
+            if(xhr.status == 200){
+                // NOTE: when prepending data scrollTop stays at zero
+                // meaning user loses context, so we need to reposition
+                // scrollTop after prepend.
+                var lengthBefore = mailarch.$msgTable.find('.xtr').length;
+                mailarch.$msgTableTbody.prepend(data);
+                var numNewRows = mailarch.$msgTable.find('.xtr').length - lengthBefore;
+                var newOffset = referenceItem - numNewRows;
+                mailarch.$msgList.data('queryset-offset',newOffset);
+                var oldTop = mailarch.$msgTable.find('.xtr').eq(numNewRows);
+                mailarch.$msgList.scrollTop(oldTop.position().top);
+            } else if(xhr.status == 204)  {
+                mailarch.$msgList.off( "scroll" );
+            }
+        });
+        request.fail(function(xhr, textStatus, errorThrown) {
             if(xhr.status == 404){
                 // server returns a 404 when query has expired from cache
                 window.location.reload();
@@ -247,39 +291,11 @@ var mailarch = {
     infiniteScroll: function() {
         // BOTTOM OF SCROLL
         if($(this).scrollTop() + $(this).innerHeight() > $(this)[0].scrollHeight - mailarch.scrollMargin) {
-            mailarch.getMessages();
+            mailarch.getNextMessages();
         }
         // TOP OF SCROLL
         if($(this).scrollTop() == 0 && mailarch.$msgList.data("queryset-offset")){
-            var queryid = mailarch.$msgList.attr('data-queryid');
-            var firstItem = mailarch.$msgList.data('queryset-offset');
-            var request = $.ajax({
-                "type": "GET",
-                "url": "/arch/ajax/messages/",
-                "data": { "qid": queryid, "firstitem": firstItem }
-            });
-            request.done(function(data, testStatus, xhr) {
-                if(xhr.status == 200){
-                    // NOTE: when prepending data scrollTop stays at zero
-                    // meaning user loses context, so we need to reposition
-                    // scrollTop after prepend.
-                    var lengthBefore = mailarch.$msgTable.find('.xtr').length;
-                    mailarch.$msgTableTbody.prepend(data);
-                    var numNewRows = mailarch.$msgTable.find('.xtr').length - lengthBefore;
-                    var newOffset = firstItem - numNewRows;
-                    mailarch.$msgList.data('queryset-offset',newOffset);
-                    var oldTop = mailarch.$msgTable.find('.xtr').eq(numNewRows);
-                    mailarch.$msgList.scrollTop(oldTop.position().top);
-                } else if(xhr.status == 204)  {
-                    mailarch.$msgList.off( "scroll" );
-                }
-            });
-            request.fail(function(xhr, textStatus, errorThrown) {
-                if(xhr.status == 404){
-                    // server returns a 404 when query has expired from cache
-                    window.location.reload();
-                }
-            });
+            mailarch.getPreviousMessages();
         }
     },
 

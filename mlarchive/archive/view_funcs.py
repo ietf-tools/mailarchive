@@ -27,7 +27,29 @@ from mlarchive.utils.encoding import to_str
 
 contain_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\((?P<value>[^\)]+)\)')
 exact_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\"(?P<value>[^\"]+)\"')
+browse_pattern = re.compile(r'email_list=(?P<name>[a-z0-9_\-\+]+)(?P<gbt>&gbt=1)?&index=(?P<index>[\w\-]{27})')
 
+
+# --------------------------------------------------
+# Classes
+# --------------------------------------------------
+
+
+class SearchResult(object):
+    def __init__(self, object):
+        self.object = object
+
+    @property
+    def subject(self):
+        return self.object.subject
+
+    @property
+    def frm_name(self):
+        return self.object.frm_name
+
+    @property
+    def date(self):
+        return self.object.date
 
 # --------------------------------------------------
 # Helper Functions
@@ -401,3 +423,11 @@ def get_query_neighbors(query, message):
 def get_query_string(request):
     """Returns the query string from the request, including '?' """
     return '?' + request.META['QUERY_STRING']
+
+
+def get_browse_params(string):
+    match = browse_pattern.match(string)
+    if match:
+        return match.groupdict()
+    else:
+        return {}

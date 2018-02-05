@@ -20,6 +20,10 @@ urlpatterns = [
     url(r'^browse/$', views.browse, name='archive_browse'),
     url(r'^browse/(?P<list_name>[a-z0-9_\-\+]+)/$', views.browse, name='archive_browse_redirect'),
     # url(r'^browse/(?P<list_name>\w+)/', views.browse_list, name='archive_browse_list'),
+    # url(r'^browse_/', search_view_factory(
+    #    form_class=AdvancedSearchForm,
+    #    view_class=views.CustomBrowseView,
+    #    template='archive/search.html'), name='archive_browse_list'),
     url(r'^export/(?P<type>mbox|maildir|url)/', views.export, name='archive_export'),
     url(r'^help/$', TemplateView.as_view(template_name="archive/help.html"), name='archive_help'),
     url(r'^legacy/msg/(?P<list_name>[a-z0-9_\-\+]+)/(?P<id>[0-9]+)/$',

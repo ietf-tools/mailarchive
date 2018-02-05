@@ -5,7 +5,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from functools import wraps
-from mlarchive.archive.models import Message
+from mlarchive.archive.models import Message, EmailList
 
 import logging
 logger = logging.getLogger('mlarchive.custom')
@@ -21,11 +21,11 @@ def check_access(func):
     """
     def wrapper(request, *args, **kwargs):
         # if passed as a URL parameter id is a record id (more common)
-        if request.GET.get('id','').isdigit():
-            msg = get_object_or_404(Message,id=request.GET['id'])
+        if request.GET.get('id', '').isdigit():
+            msg = get_object_or_404(Message, id=request.GET['id'])
         # if passed as a function argument id is a hashcode (less common)
         elif 'id' in kwargs:
-            msg = get_object_or_404(Message,hashcode=kwargs['id'])
+            msg = get_object_or_404(Message, hashcode=kwargs['id'])
         else:
             raise Http404
 
@@ -38,6 +38,54 @@ def check_access(func):
 
     return wraps(func)(wrapper)
 
+
+def check_list_access(func):
+    """
+    This decorator checks that the user making the request has access to the
+    list being requested.  Expects a url in the form /arch/browse_/[listname].
+    Listname cannot come as a URL parameter because haysatck will not support this.
+    It also adds the list object to the function arguments so we don't have to repeat the
+    lookup.
+    """
+    def wrapper(request, *args, **kwargs):
+        listname = request.get_full_path().split('/')[3]
+        try:
+            email_list = EmailList.objects.get(name=listname)
+        except EmailList.DoesNotExist:
+            raise Http404
+
+        if email_list.private and not request.user.is_superuser:
+            if not request.user.is_authenticated() or not email_list.members.filter(id=request.user.id):
+                raise PermissionDenied
+
+        return func(request, *args, **kwargs)
+
+    return wraps(func)(wrapper)
+
+
+def check_ajax_list_access(func):
+    """
+    This decorator checks that the user making the request has access to the
+    list being requested.
+    """
+    def wrapper(request, *args, **kwargs):
+        listname = request.GET.get('browselist')
+        if not listname:
+            return func(request, *args, **kwargs)
+        try:
+            email_list = EmailList.objects.get(name=listname)
+        except EmailList.DoesNotExist:
+            raise Http404
+
+        if email_list.private and not request.user.is_superuser:
+            if not request.user.is_authenticated() or not email_list.members.filter(id=request.user.id):
+                raise PermissionDenied
+
+        return func(request, *args, **kwargs)
+
+    return wraps(func)(wrapper)
+
+
 def check_datetime(func):
     '''
     This decorator checks the datetime return value of func for dates incorrectly derived
@@ -45,13 +93,14 @@ def check_datetime(func):
     '''
     def wrapper(*args, **kwargs):
         dt = func(*args, **kwargs)
-        if isinstance(dt,datetime.datetime):
+        if isinstance(dt, datetime.datetime):
             if 69 <= dt.year < 100:
-                dt = datetime.datetime(dt.year + 1900,dt.month,dt.day,dt.hour,dt.minute)
+                dt = datetime.datetime(dt.year + 1900, dt.month, dt.day, dt.hour, dt.minute)
             elif 0 <= dt.year < 69:
-                dt = datetime.datetime(dt.year + 2000,dt.month,dt.day,dt.hour,dt.minute)
+                dt = datetime.datetime(dt.year + 2000, dt.month, dt.day, dt.hour, dt.minute)
         return dt
     return wraps(func)(wrapper)
+
 
 def pad_id(func):
     '''
@@ -64,6 +113,7 @@ def pad_id(func):
         return func(*args, **kwargs)
     return wrapper
 
+
 def log_timing(func):
     '''
     This is a decorator that logs the time it took to complete the decorated function.
@@ -73,9 +123,10 @@ def log_timing(func):
         t1 = time.time()
         res = func(*arg)
         t2 = time.time()
-        logger.info('%s took %0.3f ms' % (func.func_name, (t2-t1)*1000.0))
+        logger.info('%s took %0.3f ms' % (func.func_name, (t2 - t1) * 1000.0))
         return res
     return wrapper
+
 
 def superuser_only(function):
     '''

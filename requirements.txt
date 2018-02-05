@@ -16,6 +16,7 @@ factory-boy>=2.6.0
 html5lib
 lxml>=3.3.5
 MySQL-python>=1.2.5
+mock>=2.0.0
 pyquery>=1.2.13
 pytest
 pytest-coverage
@@ -25,3 +26,4 @@ pytest-django>=2.9.1
 python-dateutil>=2.2
 python-memcached>=1.48
 selenium
+six

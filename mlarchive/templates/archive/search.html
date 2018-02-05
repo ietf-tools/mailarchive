@@ -151,7 +151,7 @@
                         </div>
                     {% endif %}
 
-                    <div id="msg-list" class="msg-list wrapper" tabindex="-1" data-queryid="{{ queryid }}" data-queryset-offset="{{ page.start_index|add:'-1' }}" data-selected-offset="{{ selected_offset }}">
+                    <div id="msg-list" class="msg-list wrapper" tabindex="-1" data-queryid="{{ queryid }}" data-queryset-offset="{{ queryset_offset }}" data-selected-offset="{{ selected_offset }}" data-browse-list="{{ browse_params.name|default_if_none:"" }}" data-gbt="{{ browse_params.gbt|default_if_none:"" }}">
                         <div class="table table-condensed msg-table xtable{% if thread_sorted %} thread-sorted{% endif %}">
                             <div class="xtbody">
                                 {% with page as results %}

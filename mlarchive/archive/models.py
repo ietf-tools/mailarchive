@@ -73,6 +73,14 @@ class Thread(models.Model):
         self.date = message.date
         self.save()
 
+    def get_next(self):
+        """Returns next thread in the list"""
+        return Thread.objects.filter(first__email_list=self.first.email_list, date__gt=self.date).order_by('date').first()
+
+    def get_previous(self):
+        """Returns previous thread in the list"""
+        return Thread.objects.filter(first__email_list=self.first.email_list, date__lt=self.date).order_by('-date').first()
+
 
 class EmailList(models.Model):
     active = models.BooleanField(default=True, db_index=True)

@@ -20,13 +20,6 @@ NON_FILTER_PARAMS = ('so', 'sso', 'page', 'gbt')
 # --------------------------------------------------
 
 
-def clean_queryid(query_id):
-    if VALID_QUERYID_RE.match(query_id):
-        return query_id
-    else:
-        return None
-
-
 def generate_queryid():
     return '%032x' % random.getrandbits(128)
 
@@ -49,6 +42,13 @@ def get_cached_query(request):
         if queryid:
             return (queryid, cache.get(queryid))
     return (None, None)
+
+
+def clean_queryid(query_id):
+    if VALID_QUERYID_RE.match(query_id):
+        return query_id
+    else:
+        return None
 
 
 def get_filter_params(query):

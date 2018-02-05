@@ -8,8 +8,8 @@ from mlarchive.archive import actions
 from mlarchive.archive.utils import jsonapi
 from mlarchive.archive.models import Message
 from mlarchive.archive.query_utils import get_cached_query
-from mlarchive.archive.view_funcs import get_browse_list
-from mlarchive.utils.decorators import check_access, superuser_only
+from mlarchive.archive.view_funcs import get_browse_list, SearchResult
+from mlarchive.utils.decorators import check_access, superuser_only, check_ajax_list_access
 
 
 @superuser_only
@@ -49,25 +49,25 @@ def ajax_get_msg(request, msg):
     return HttpResponse(msg_body + msg_thread)
 
 
+@check_ajax_list_access
 def ajax_messages(request):
     """Ajax function to retrieve more messages from queryset.  Expects one of two args:
     lastitem: return set of messages after lastitem
     firstitem: return set of messages before firstitem
     """
-    buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
     queryid, query = get_cached_query(request)
     browse_list = get_browse_list(request)
+    browselist = request.GET.get('browselist')   # comes from check_browse_list()
+    referenceitem = int(request.GET.get('referenceitem', 0))
+    referenceid = request.GET.get('referenceid')
+    direction = request.GET.get('direction')
+    gbt = request.GET.get('gbt')
     results = []
 
     if query:
-        if 'lastitem' in request.GET:
-            # lastitem from request is 0 based, slice below is 1 based
-            lastitem = int(request.GET.get('lastitem', 0))
-            results = query[lastitem:lastitem + buffer]
-        elif 'firstitem' in request.GET:
-            firstitem = int(request.GET.get('firstitem', 0))
-            start = firstitem - buffer if firstitem > buffer else 0
-            results = query[start:firstitem]
+        results = get_query_results(query, referenceitem, direction)
+    elif browselist:
+        results = get_browse_results(referenceid, direction, gbt)
     else:
         # TODO or fail?, signal to reload query
         return HttpResponse(status=404)     # Request Timeout (query gone from cache)
@@ -81,3 +81,57 @@ def ajax_messages(request):
         'browse_list': browse_list},
         RequestContext(request, {}),
     )
+
+
+def get_query_results(query, referenceitem, direction):
+    '''Returns a set of messages from query using direction: next or previous
+    from the referenceitem, which is the 1 based index of the query'''
+    buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
+    if direction == 'next':
+        return query[referenceitem:referenceitem + buffer]
+    elif direction == 'previous':
+        start = referenceitem - buffer if referenceitem > buffer else 0
+        return query[start:referenceitem]
+
+
+def get_browse_results(referenceid, direction, gbt):
+    '''Call appropriate low-level function based on group-by-thread (gbt)'''
+    reference_message = Message.objects.get(pk=referenceid)
+    if gbt:
+        return get_browse_results_gbt(reference_message, direction)
+    else:
+        return get_browse_results_date(reference_message, direction)
+
+
+def get_browse_results_gbt(reference_message, direction):
+    '''Returns a set of messages grouped by thread.  Because default ordering is date descending,
+    direction "next" calls get_previous() and "previous" vice versa.'''
+    buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
+    results = []
+    if direction == 'next':
+        thread = reference_message.thread.get_previous()
+        while len(results) < buffer and thread:
+            results.extend([SearchResult(m) for m in thread.message_set.order_by('thread_order')])
+            thread = thread.get_previous()
+    elif direction == 'previous':
+        thread = reference_message.thread.get_next()
+        while len(results) < buffer and thread:
+            # prepend to results
+            results = [SearchResult(m) for m in thread.message_set.order_by('thread_order')] + results
+            thread = thread.get_next()
+    return results
+
+
+def get_browse_results_date(reference_message, direction):
+    '''Returns a set of messages ordered by date'''
+    buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
+    if direction == 'next':
+        results = [SearchResult(m) for m in Message.objects.filter(
+            email_list=reference_message.email_list,
+            date__lt=reference_message.date).order_by('-date')[:buffer]]
+    elif direction == 'previous':
+        results = [SearchResult(m) for m in Message.objects.filter(
+            email_list=reference_message.email_list,
+            date__gt=reference_message.date).order_by('date')[:buffer]]
+        results.reverse()
+    return results

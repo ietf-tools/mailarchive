@@ -154,7 +154,7 @@ var mailarch = {
         var queryid = mailarch.$msgList.data('queryid');
         var browselist = mailarch.$msgList.data('browse-list');
         var gbt = mailarch.$msgList.data('gbt');
-        var referenceId = $("#msg-list .xtr:last .id-col").html();
+        var referenceId = $("#msg-list .xtr:last .id-col").text();
         var request = $.ajax({
             "type": "GET",
             "url": "/arch/ajax/messages/",
@@ -188,7 +188,7 @@ var mailarch = {
         var referenceItem = mailarch.$msgList.data('queryset-offset');
         var browselist = mailarch.$msgList.data('browse-list');
         var gbt = mailarch.$msgList.data('gbt');
-        var referenceId = $("#msg-list .xtr:first .id-col").html();
+        var referenceId = $("#msg-list .xtr:first .id-col").text();
         var request = $.ajax({
             "type": "GET",
             "url": "/arch/ajax/messages/",

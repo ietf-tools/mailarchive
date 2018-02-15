@@ -34,7 +34,7 @@ class XapianMessageIndex(CelerySearchIndex, indexes.Indexable):
 class ElasticMessageIndex(CelerySearchIndex, indexes.Indexable):
     """Define Index fields.
 
-    For Elastidsearch, faceted=True creates the Keyword (unanalyzed) field type.
+    For Elasticsearch, faceted=True creates the Keyword (unanalyzed) field type.
     """
     text = indexes.CharField(document=True, use_template=True)
 

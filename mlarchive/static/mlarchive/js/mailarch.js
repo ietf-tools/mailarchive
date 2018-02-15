@@ -12,12 +12,16 @@ var mailarch = {
     // VARAIBLES =============================================
     ajaxRequestSent: false,
     bottomMargin: 17,
-    showFilters: true,
-    showPreview: true,
+    defaultListPaneHeight: 225,
+    splitterTop: 225,   // set from cookie later
+    isDateOrdered: false,
+    isGroupByThread: false,
+    showFilters: $.cookie('showfilters') == "false" ? false : true,
+    showPreview: $.cookie('showpreview') == "false" ? false : true,
     lastItem: 0,
     urlParams: {},
+    resultsPerPage: 20,
     sortDefault: new Array(),
-    defaultListPaneHeight: 225,
     scrollMargin: $('.xtr').height(),
     splitterHeight: $('#splitter-pane').height(),
     
@@ -25,13 +29,13 @@ var mailarch = {
     
     init: function() {
         mailarch.cacheDom();
+        mailarch.setProps();
         mailarch.progressiveFeatures();
         mailarch.bindEvents();
-        mailarch.setLastItem();
         mailarch.initMessageList();
+        mailarch.initSplitter();
         mailarch.initFilters();
         mailarch.initPanels();
-        mailarch.getURLParams();
         mailarch.initSort();
         mailarch.handleResize();
         // $('[data-toggle="tooltip"]').tooltip({container: 'body'});
@@ -78,15 +82,17 @@ var mailarch = {
         mailarch.$listFilterClear.on('click', mailarch.clearListFilter);
         mailarch.$modifySearch.on('click', mailarch.removeIndexParam);
         mailarch.$moreLinks.on('click', mailarch.showFilterPopup);
-        mailarch.$msgList.on('keydown', mailarch.messageNav);
         mailarch.$msgList.on('scroll', mailarch.infiniteScroll);
-        mailarch.$msgTable.on('click','.xtr', mailarch.selectRow);
-        mailarch.$msgTable.on('dblclick','.xtr', mailarch.gotoMessage);
         mailarch.$searchForm.on('submit', mailarch.submitSearch);
         mailarch.$sortButtons.on('click', mailarch.performSort);
         mailarch.$toggleFiltersLink.on('click', mailarch.toggleFilters)
         mailarch.$togglePreviewLink.on('click', mailarch.togglePreview);
         mailarch.$window.resize(mailarch.handleResize);
+        if(!base.isLegacyOn){
+            mailarch.$msgList.on('keydown', mailarch.messageNav);
+            mailarch.$msgTable.on('click','.xtr', mailarch.selectRow);
+            mailarch.$msgTable.on('dblclick','.xtr', mailarch.gotoMessage);
+        }
         if(!mailarch.isSmallViewport()) {
             mailarch.$window.on('scroll', mailarch.infiniteScroll);
         }
@@ -94,6 +100,33 @@ var mailarch = {
     
     // SECONDARY FUNCTIONS ====================================
     
+    addBorder: function(start, end) {
+        // end is optional like slice
+        if (mailarch.isDateOrdered && base.isLegacyOn) {
+            mailarch.ifChanged('date-col', 'date-border', start, end);
+        }
+        if (mailarch.isGroupByThread) {
+            mailarch.ifChanged('thread-col', 'thread-border', start, end);
+        }
+    },
+
+    ifChanged: function(field, border_class, start, end) {
+        // make end argument optional to match slice arguments
+        var range = Array.prototype.slice.call(arguments, 2, 4);
+        var rowset = mailarch.$msgList.find(".xtr");
+        var rows = rowset.slice.apply(rowset, range);
+        
+        var text = rows.first().find(".xtd." + field).text();
+        rows.each(function( index ) {
+            var val = $(this).find(".xtd." + field).text();
+            if(val != text) {
+                // console.log(index, val, text);
+                $(this).addClass(border_class);
+            }
+            text = val;
+        });
+    },
+
     applyFilter: function() {
         var values = [];
         var name = $(this).attr('name');
@@ -141,7 +174,7 @@ var mailarch = {
         location.search = $.param(mailarch.urlParams);
     },
     
-    getListPaneHeight: function() {
+    getMaxListPaneHeight: function() {
         return $(window).height() - mailarch.$listPane.offset().top - mailarch.bottomMargin;
     },
 
@@ -150,7 +183,6 @@ var mailarch = {
         if (mailarch.ajaxRequestSent) {
             return true;
         }
-        // console.log(mailarch.urlParams);
         var queryid = mailarch.$msgList.data('queryid');
         var browselist = mailarch.$msgList.data('browse-list');
         var gbt = mailarch.$msgList.data('gbt');
@@ -164,8 +196,11 @@ var mailarch = {
         request.done(function(data, testStatus, xhr) {
             mailarch.ajaxRequestSent = false;
             if(xhr.status == 200){
+                var before = mailarch.$msgTableTbody.find(".xtr").length;
                 mailarch.$msgTableTbody.append(data);
+                mailarch.addBorder(before - 1);
                 mailarch.setLastItem();
+
             } else if(xhr.status == 204)  {
                 mailarch.$msgList.off( "scroll" );
             }
@@ -202,6 +237,7 @@ var mailarch = {
                 var lengthBefore = mailarch.$msgTable.find('.xtr').length;
                 mailarch.$msgTableTbody.prepend(data);
                 var numNewRows = mailarch.$msgTable.find('.xtr').length - lengthBefore;
+                mailarch.addBorder(0, numNewRows + 1);
                 var newOffset = referenceItem - numNewRows;
                 mailarch.$msgList.data('queryset-offset',newOffset);
                 var oldTop = mailarch.$msgTable.find('.xtr').eq(numNewRows);
@@ -274,7 +310,7 @@ var mailarch = {
             mailarch.setHeaderWidths();
             mailarch.$window.on('scroll', mailarch.infiniteScroll);
             mailarch.setPaneHeights();
-            if ($(".xtr").length == 20 && ! mailarch.$msgList.hasScrollBar()) {
+            if ($(".xtr").length == mailarch.resultsPerPage && !mailarch.$msgList.hasScrollBar()) {
                 mailarch.getMessages();
             }
         }
@@ -322,21 +358,20 @@ var mailarch = {
     },
     
     initMessageList: function() {
-        if (!mailarch.isSmallViewport()) {
+        if (!mailarch.isSmallViewport() && !base.isLegacyOn) {
             mailarch.$msgList.focus();
-            mailarch.initSplitter();
             mailarch.selectInitialMessage();
         }
+        mailarch.addBorder(0);
     },
     
     initPanels: function() {
-        var showfilters = $.cookie("showfilters");
-        if (showfilters == 'false') {
-            mailarch.toggleFilters();
+        mailarch.setPaneHeights();
+        if (!mailarch.showFilters || base.isLegacyOn) {
+            mailarch.doHideFilters();
         }
-        var showpreview = $.cookie("showpreview");
-        if (showpreview == 'false') {
-            mailarch.togglePreview(false);   // don't animate
+        if (!mailarch.showPreview || base.isLegacyOn) {
+            mailarch.doHidePreview(false);   // don't animate
         }
     },
 
@@ -367,6 +402,7 @@ var mailarch = {
     
     initSplitter: function() {
         // no splitter for mobile
+        mailarch.splitterTop = mailarch.getSplitterTop();
         if (mailarch.isSmallViewport()) {
             return true;
         }
@@ -381,13 +417,11 @@ var mailarch = {
             },
             stop: function(event, ui){
                 var top = ui.position.top;
+                mailarch.splitterTop = top;
                 $.cookie("splitter",top);
                 // mailarch.checkMessageListScrollBar();
             }
         });
-        
-        mailarch.setPaneHeights();
-
     },
     
     isSmallViewport: function() {
@@ -398,6 +432,35 @@ var mailarch = {
         }
     },
     
+    legacyOff: function() {
+        if(!mailarch.showFilters){
+            mailarch.toggleFilters();
+        }
+        if(!mailarch.showPreview){
+            mailarch.togglePreview();
+        }
+        mailarch.$msgList.removeClass('legacy')
+        mailarch.$msgList.on('keydown', mailarch.messageNav);
+        mailarch.$msgTable.on('click','.xtr', mailarch.selectRow);
+        mailarch.$msgTable.on('dblclick','.xtr', mailarch.gotoMessage);
+        mailarch.initMessageList();
+    },
+    
+    legacyOn: function() {
+        if(mailarch.showFilters){
+            mailarch.toggleFilters();
+        }
+        if(mailarch.showPreview){
+            mailarch.togglePreview();
+        }
+        mailarch.$msgList.addClass('legacy')
+        mailarch.$msgList.off('keydown');
+        mailarch.$msgTable.off('click','.xtr');
+        mailarch.$msgTable.off('dblclick','.xtr');
+        mailarch.$msgTable.find('.xtr').removeClass('row-selected');
+        mailarch.addBorder(0);
+    },
+
     // given the row of the msg list, load the message text in the msg view pane
     loadMessage: function(row) {
         var msgId = row.find(".xtd.id-col").html();
@@ -486,14 +549,8 @@ var mailarch = {
         mailarch.$pageLinks.addClass('btn btn-default visible-xs-inline-block');
         mailarch.$pageCount.addClass('visible-xs-inline-block');
 
-        // Use arrow as message detail link instead of subject text
-        if(!mailarch.isSmallViewport()) {
-            mailarch.$msgLinks.each(function(index) {
-                //console.log( index + ": " + $( this ).html() );
-                var html = $( this ).html();
-                $( this ).html('<i class="fa fa-arrow-right" aria-hidden="true"></i>');
-                $( this ).before(html);
-            })
+        if(!mailarch.isSmallViewport() && !base.isLegacyOn) {
+            mailarch.$msgList.removeClass('legacy');
         }
         
         // Show progressive elements
@@ -519,8 +576,9 @@ var mailarch = {
         st = mailarch.$msgList.scrollTop(),
         rpos = row.position().top,
         rh = row.height();
-        if(rpos+rh >= ch) { mailarch.$msgList.scrollTop(rpos-(ch)+rh+st); }
-        else if(rpos < 0) {
+        if(rpos+rh >= ch) { 
+            mailarch.$msgList.scrollTop(rpos-(ch)+rh+st); 
+        } else if(rpos < 0) {
             mailarch.$msgList.scrollTop(st+rpos);
         }
     },
@@ -535,6 +593,9 @@ var mailarch = {
             var row = mailarch.$msgTable.find('.xtbody .xtr:first');
         }
         row.addClass('row-selected');
+        if(base.isLegacyOn) {
+            row.find('a').focus();
+        }
         mailarch.loadMessage(row);
     },
     
@@ -562,16 +623,29 @@ var mailarch = {
     },
     
     setPaneHeights: function() {
+        mailarch.$viewPane.css("top",mailarch.splitterTop + mailarch.splitterHeight);
+        mailarch.$splitterPane.css("top",mailarch.splitterTop);
         if(mailarch.showPreview) {
-            var top = mailarch.getSplitterTop();
-            mailarch.$listPane.css("height",top);
-            mailarch.$viewPane.css("top",top + mailarch.splitterHeight);
-            mailarch.$splitterPane.css("top",top);
+            mailarch.$listPane.css("height",mailarch.splitterTop);
         } else {
-            mailarch.$listPane.css("height",mailarch.getListPaneHeight());
+            mailarch.$listPane.css("height",mailarch.getMaxListPaneHeight());
         }
     },
     
+    setProps: function() {
+        mailarch.getURLParams();
+        mailarch.setLastItem();
+        mailarch.resultsPerPage = mailarch.$msgList.data('results-per-page');
+        // get message ordering
+        if(mailarch.urlParams.hasOwnProperty('gbt')) {
+            mailarch.isDateOrdered = false;
+            mailarch.isGroupByThread = true;
+        } else if (!mailarch.urlParams.hasOwnProperty('so') || mailarch.urlParams['so'].endsWith('date')) {
+            mailarch.isDateOrdered = true;
+        }
+        //console.log(mailarch.isDateOrdered);
+    },
+
     showFilterPopup: function(event) {
         event.preventDefault();
         var container = $(this).parents('div:eq(0)')
@@ -587,49 +661,68 @@ var mailarch = {
     },
     
     toggleFilters: function() {
-        // toggle arrow icon
         event.preventDefault();
-        mailarch.showFilters = !mailarch.showFilters;
-        mailarch.$toggleFiltersIcon.toggleClass("fa-chevron-left", mailarch.showFilters);
-        mailarch.$toggleFiltersIcon.toggleClass("fa-chevron-right", !mailarch.showFilters);
-        if(!mailarch.showFilters) {
-            mailarch.$sidebar.addClass('hidden');
-            $('#msg-components').addClass('x-full-width')
-            mailarch.setHeaderWidths();
-            $.cookie('showfilters','false');
+        if(mailarch.showFilters) {
+            mailarch.doHideFilters();
         } else {
-            mailarch.$sidebar.removeClass('hidden');
-            $('#msg-components').removeClass('x-full-width')
-            mailarch.setHeaderWidths();
-            $.cookie('showfilters','true');
+            mailarch.doShowFilters();
         }
     },
 
-    togglePreview: function(doAnimation) {
-        // toggle arrow icon
-        mailarch.showPreview = !mailarch.showPreview;
-        mailarch.$togglePreviewIcon.toggleClass("fa-chevron-down", mailarch.showPreview);
-        mailarch.$togglePreviewIcon.toggleClass("fa-chevron-up", !mailarch.showPreview);
+    doShowFilters: function() {
+        mailarch.showFilters = true;
+        $.cookie('showfilters','true');
+        mailarch.$toggleFiltersIcon.addClass("fa-chevron-left");
+        mailarch.$toggleFiltersIcon.removeClass("fa-chevron-right");
+        mailarch.$sidebar.removeClass('hidden');
+        $('#msg-components').removeClass('x-full-width');
+        mailarch.setHeaderWidths();
+    },
 
-        if(!mailarch.showPreview) {
-            var height = mailarch.getListPaneHeight();
-            mailarch.$viewPane.hide();
-            mailarch.$splitterPane.hide();
-            if (doAnimation == false){
-                mailarch.$listPane.height(height);
-            } else {
-                mailarch.$listPane.animate({height:height});
-            }
-            $.cookie('showpreview','false');
-            mailarch.handleResize();
+    doHideFilters: function() {
+        mailarch.showFilters = false;
+        $.cookie('showfilters','false');
+        mailarch.$toggleFiltersIcon.removeClass("fa-chevron-left");
+        mailarch.$toggleFiltersIcon.addClass("fa-chevron-right");
+        mailarch.$sidebar.addClass('hidden');
+        $('#msg-components').addClass('x-full-width');
+        mailarch.setHeaderWidths();
+    },
+
+    togglePreview: function(doAnimation) {
+        event.preventDefault();
+        if(mailarch.showPreview) {
+            mailarch.doHidePreview(doAnimation);
         } else {
-            var height = mailarch.getSplitterTop();
-            mailarch.$listPane.animate({height:height},function() {
-                mailarch.$viewPane.show();
-                mailarch.$splitterPane.show();
-            });
-            $.cookie('showpreview','true');
+            mailarch.doShowPreview(doAnimation);
         }
+    },
+
+    doShowPreview: function(doAnimation) {
+        mailarch.showPreview = true;
+        $.cookie('showpreview','true');
+        mailarch.$togglePreviewIcon.addClass("fa-chevron-down");
+        mailarch.$togglePreviewIcon.removeClass("fa-chevron-up");
+        mailarch.$listPane.animate({height:mailarch.splitterTop},function() {
+            mailarch.$viewPane.show();
+            mailarch.$splitterPane.show();
+        });
+    },
+
+    doHidePreview: function(doAnimation) {
+        var height = mailarch.getMaxListPaneHeight();
+        mailarch.showPreview = false;
+        $.cookie('showpreview','false');
+        mailarch.$togglePreviewIcon.removeClass("fa-chevron-down");
+        mailarch.$togglePreviewIcon.addClass("fa-chevron-up");
+        mailarch.$viewPane.hide();
+        mailarch.$splitterPane.hide();
+        if (doAnimation == false){
+            mailarch.$listPane.height(height);
+        } else {
+            mailarch.$listPane.animate({height:height});
+        }
+        mailarch.handleResize();
     }
 }
 

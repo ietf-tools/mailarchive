@@ -197,6 +197,7 @@ class CustomSearchView(SearchView):
         extra['browse_list'] = get_browse_list(self.request)
         extra['browse_params'] = self.browse_params
         extra['query_string'] = query_string
+        extra['results_per_page'] = settings.HAYSTACK_SEARCH_RESULTS_PER_PAGE
         if self.browse_params:
             extra['queryset_offset'] = '200'
         else:

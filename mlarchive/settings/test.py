@@ -1,4 +1,5 @@
 # settings/test.py
+import os
 from .base import *
 
 DATA_ROOT = '/tmp/mailarch/data'
@@ -11,14 +12,18 @@ del DATABASES['ietf']
 # HAYSTACK SETTINGS
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 HAYSTACK_CONNECTIONS['default']['INDEX_NAME'] = 'test'
-# xapian 
-HAYSTACK_XAPIAN_PATH = os.path.join(DATA_ROOT,'xapian.stub')
+# xapian
+HAYSTACK_XAPIAN_PATH = os.path.join(DATA_ROOT, 'xapian.stub')
 HAYSTACK_CONNECTIONS['default']['PATH'] = HAYSTACK_XAPIAN_PATH
 
+# use standard default of 20 as it's easier to test
+HAYSTACK_SEARCH_RESULTS_PER_PAGE = 20
+SEARCH_SCROLL_BUFFER_SIZE = HAYSTACK_SEARCH_RESULTS_PER_PAGE
+
 # ARCHIVE SETTINGS
-ARCHIVE_DIR = os.path.join(DATA_ROOT,'archive')
-LOG_FILE = os.path.join(BASE_DIR,'tests/tmp','mlarchive.log')
-IMPORT_LOG_FILE = os.path.join(BASE_DIR,'tests/tmp','archive-mail.log')
+ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
+LOG_FILE = os.path.join(BASE_DIR, 'tests/tmp', 'mlarchive.log')
+IMPORT_LOG_FILE = os.path.join(BASE_DIR, 'tests/tmp', 'archive-mail.log')
 
 SERVER_MODE = 'development'
 
@@ -33,12 +38,12 @@ CACHES = {
 }
 
 # IMAP Interface
-EXPORT_DIR = os.path.join(DATA_ROOT,'export')
+EXPORT_DIR = os.path.join(DATA_ROOT, 'export')
 
 # uncomment to disable filters / facets
-#FILTER_CUTOFF = 0
+# FILTER_CUTOFF = 0
 
 # Inspectors
-#INSPECTORS = {
+# INSPECTORS = {
 #    'ListIdSpamInspector': {'includes':['mpls']}
-#}
+# }

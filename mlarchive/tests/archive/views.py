@@ -154,14 +154,14 @@ def test_browse_redirect(client):
     assert response.status_code == 302
     assert response['location'] == '/arch/search/?email_list=pubone'
 
-
+"""
 @pytest.mark.django_db(transaction=True)
 def test_browse_list(client, messages):
     url = reverse('archive_browse_list') + 'pubone'
     response = client.get(url)
     print url
     assert response.status_code == 200
-
+"""
 
 @pytest.mark.django_db(transaction=True)
 def test_browse_list_bogus_index(client, messages):

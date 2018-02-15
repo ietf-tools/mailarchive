@@ -15,6 +15,10 @@ HAYSTACK_CONNECTIONS['default']['ENGINE'] = 'mlarchive.archive.backends.Configur
 HAYSTACK_CONNECTIONS['default']['URL'] = 'http://127.0.0.1:9200/'
 HAYSTACK_CONNECTIONS['default']['INDEX_NAME'] = 'test'
 
+# use standard default of 20 as it's easier to test
+HAYSTACK_SEARCH_RESULTS_PER_PAGE = 20
+SEARCH_SCROLL_BUFFER_SIZE = HAYSTACK_SEARCH_RESULTS_PER_PAGE
+
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = os.path.join(DATA_ROOT,'archive')
 LOG_FILE = os.path.join(BASE_DIR,'tests/tmp','mlarchive.log')

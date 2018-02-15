@@ -151,7 +151,7 @@
                         </div>
                     {% endif %}
 
-                    <div id="msg-list" class="msg-list wrapper" tabindex="-1" data-queryid="{{ queryid }}" data-queryset-offset="{{ queryset_offset }}" data-selected-offset="{{ selected_offset }}" data-browse-list="{{ browse_params.name|default_if_none:"" }}" data-gbt="{{ browse_params.gbt|default_if_none:"" }}">
+                    <div id="msg-list" class="msg-list wrapper legacy" tabindex="-1" data-results-per-page="{{ results_per_page }}" data-queryid="{{ queryid }}" data-queryset-offset="{{ queryset_offset }}" data-selected-offset="{{ selected_offset }}" data-browse-list="{{ browse_params.name|default_if_none:"" }}" data-gbt="{{ browse_params.gbt|default_if_none:"" }}">
                         <div class="table table-condensed msg-table xtable{% if thread_sorted %} thread-sorted{% endif %}">
                             <div class="xtbody">
                                 {% with page as results %}
@@ -184,8 +184,6 @@
 
 {% block js %}
 <script type="text/javascript" src="{% static 'jquery-ui/jquery-ui.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
 <script type="text/javascript" src="{% static 'jquery.query/jquery.query.js' %}"></script>
 <script type="text/javascript" src="{% static 'mlarchive/js/mailarch.js' %}"></script>
-
 {% endblock %}

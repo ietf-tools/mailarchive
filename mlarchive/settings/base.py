@@ -85,7 +85,7 @@ MEDIA_URL = ''
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
-#ADMIN_MEDIA_PREFIX = '/media/'
+# ADMIN_MEDIA_PREFIX = '/media/'
 
 # List of callables that know how to import templates from various sources.
 TEMPLATES = [
@@ -166,24 +166,24 @@ LOGGING = {
     'handlers': {
         'watched_file':
         {
-            'level' : 'DEBUG',
-            'formatter' : 'simple',
-            'class' : 'logging.handlers.WatchedFileHandler',
-            'filename' :  '/a/mailarch/data/log/mlarchive.log',
+            'level': 'DEBUG',
+            'formatter': 'simple',
+            'class': 'logging.handlers.WatchedFileHandler',
+            'filename': '/a/mailarch/data/log/mlarchive.log',
         },
         'archive-mail_file_handler':
         {
-            'level' : 'DEBUG',
-            'formatter' : 'simple',
-            'class' : 'logging.handlers.WatchedFileHandler',
-            'filename' :   '/a/mailarch/data/log/archive-mail.log',
+            'level': 'DEBUG',
+            'formatter': 'simple',
+            'class': 'logging.handlers.WatchedFileHandler',
+            'filename': '/a/mailarch/data/log/archive-mail.log',
         },
         'email':
         {
-            'level' : 'DEBUG',
-            'formatter' : 'simple',
-            'class' : 'logging.handlers.SMTPHandler',
-            'mailhost' : ('ietfa.amsl.com',25),
+            'level': 'DEBUG',
+            'formatter': 'simple',
+            'class': 'logging.handlers.SMTPHandler',
+            'mailhost': ('ietfa.amsl.com', 25),
             'fromaddr': 'rcross@ietfa.amsl.com',
             'toaddrs': ['rcross@amsl.com'],
             'subject': 'logging message',
@@ -202,7 +202,7 @@ LOGGING = {
         },
         'mlarchive.email': {
             'handlers': ['email'],
-            #'handlers': ['mail_admins'],
+            # 'handlers': ['mail_admins'],
             'level': 'DEBUG',
             'propagate': True,
         }
@@ -212,7 +212,7 @@ LOGGING = {
 # HAYSTACK SETTINGS
 HAYSTACK_DEFAULT_OPERATOR = 'AND'
 HAYSTACK_SIGNAL_PROCESSOR = 'celery_haystack.signals.CelerySignalProcessor'
-HAYSTACK_SEARCH_RESULTS_PER_PAGE = 20
+HAYSTACK_SEARCH_RESULTS_PER_PAGE = 40
 
 HAYSTACK_XAPIAN_PATH = '/a/mailarch/data/xapian.stub'
 HAYSTACK_CONNECTIONS = {
@@ -258,7 +258,8 @@ LOG_FILE = os.path.join(DATA_ROOT,'log/mlarchive.log')
 MAILMAN_DIR = '/usr/lib/mailman'
 SERVER_MODE = 'production'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-SEARCH_SCROLL_BUFFER_SIZE = 20  # number of messages to load when scrolling search results
+# number of messages to load when scrolling search results
+SEARCH_SCROLL_BUFFER_SIZE = HAYSTACK_SEARCH_RESULTS_PER_PAGE
 TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
 USE_EXTERNAL_PROCESSOR = False
 MAX_THREAD_DEPTH = 6

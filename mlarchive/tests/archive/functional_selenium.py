@@ -97,6 +97,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         self.assertIn('Archive', self.selenium.title)
         self.assertIn(messages[0].msgid, self.selenium.page_source)
 
+    """
     @pytest.mark.usefixtures("thread_messages")
     def test_message_detail_next_search(self):
         '''Test next message in search results button of message detail'''
@@ -127,7 +128,8 @@ class MySeleniumTests(StaticLiveServerTestCase):
 
         print self.selenium.current_url
         self.assertIn(next_message_url, self.selenium.current_url)
-
+    """
+    
     @pytest.mark.usefixtures("thread_messages")
     def test_message_detail_toggle_nav(self):
         '''Test toggle navigation bar feature of message detail'''

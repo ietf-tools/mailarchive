@@ -152,24 +152,18 @@ div:focus {
     padding-right: 0.8em;
 }
 
-#nav-help {
+.nav-menu {
     color: white;
     display: inline-block;
     margin-right: 15px;
 }
 
-#nav-help a:link, #nav-help a:visited {
+.nav-menu > a:link, .nav-menu > a:visited {
     color: white;
 }
 
 #login {
-    color: white;
-    display: inline-block;
     margin: 12px 5px;
-}
-
-#login a:link, #login a:visited {
-    color: white;
 }
 
 #login a:hover {
@@ -657,6 +651,28 @@ table.msg-list-header-table th a.btn {
     width: 15px;
 }
 
+#msg-list.legacy .subj-col span {
+    display: none;
+}
+
+#msg-list.legacy .subj-col a {
+    display: table-cell;
+}
+
+#msg-list.legacy .subj-col a:visited {
+    color: #551A8B;
+}
+
+#msg-list.legacy .xtd {
+    padding-bottom: 2px;
+    padding-top: 2px;
+}
+
+#msg-list .subj-col a {
+    display: none;
+}
+
+
 #splitter-pane {
     background-position: 50%;
     background-repeat: no-repeat;
@@ -850,6 +866,10 @@ table.msg-list-header-table th a.btn {
     
     .xtable.thread-sorted .xtr.thread-border .xtd {
         border-top: 1px solid #dddddd;
+    }
+
+    #msg-list.legacy .xtable:not(.thread-sorted) .xtr.date-border .xtd{
+        border-top: 1px solid #585858;
     }
 
     .list-col {

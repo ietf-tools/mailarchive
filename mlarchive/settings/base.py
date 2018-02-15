@@ -1,6 +1,5 @@
 # Django settings for mlarchive project.
 
-import django.conf.global_settings as DEFAULT_SETTINGS
 import os
 import json
 
@@ -11,8 +10,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # THE ONE TRUE WAY
 # JSON-based secrets module
-with open(os.path.join(BASE_DIR,"settings","secrets.json")) as f:
+with open(os.path.join(BASE_DIR, "settings", "secrets.json")) as f:
     secrets = json.loads(f.read())
+
 
 def get_secret(setting, secrets=secrets):
     """Get the secret variable or return explicit exception."""
@@ -21,6 +21,7 @@ def get_secret(setting, secrets=secrets):
     except KeyError:
         error_msg = "Set the {0} environment variable".format(setting)
         raise ImproperlyConfigured(error_msg)
+
 
 SECRET_KEY = get_secret("SECRET_KEY")
 
@@ -42,7 +43,7 @@ DATABASES = {
 
 DEBUG = False
 
-ALLOWED_HOSTS = ['.ietf.org','.amsl.com']
+ALLOWED_HOSTS = ['.ietf.org', '.amsl.com']
 ADMINS = (
     ('Ryan Cross', 'rcross@amsl.com'),
 )
@@ -230,31 +231,31 @@ ELASTICSEARCH_INDEX_MAPPINGS = {
     "date": {"type": "date"},
     "email_list": {"type": "keyword"},
     "email_list_exact": {"type": "keyword"},
-    "frm": {"type": "text","analyzer": "snowball"},
+    "frm": {"type": "text", "analyzer": "snowball"},
     "frm_exact": {"type": "keyword"},
     "frm_name": {"type": "keyword"},
     "frm_name_exact": {"type": "keyword"},
-    "from": {"type": "text","analyzer": "snowball"},
-    "id": {"type": "text","fields": {"keyword": {"type": "keyword","ignore_above": 256}}},
-    "msgid": {"type": "text","analyzer": "snowball"},
+    "from": {"type": "text", "analyzer": "snowball"},
+    "id": {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}},
+    "msgid": {"type": "text", "analyzer": "snowball"},
     "msgid_exact": {"type": "keyword"},
     "spam_score": {"type": "long"},
-    "subject": {"type": "text","analyzer": "snowball"},
+    "subject": {"type": "text", "analyzer": "snowball"},
     "tdate": {"type": "date"},
-    "text": {"type": "text","analyzer": "snowball"},
+    "text": {"type": "text", "analyzer": "snowball"},
     "tid": {"type": "long"},
-    "to": { "type": "text", "analyzer": "snowball"},
+    "to": {"type": "text", "analyzer": "snowball"},
     "torder": {"type": "long"}
 }
 
 # ARCHIVE SETTINGS
 DATA_ROOT = '/a/mailarch/data'
-ARCHIVE_DIR = os.path.join(DATA_ROOT,'archive')
-CONSOLE_STATS_FILE = os.path.join(DATA_ROOT,'log/console.json')
+ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
+CONSOLE_STATS_FILE = os.path.join(DATA_ROOT, 'log/console.json')
 EXPORT_LIMIT = 50000            # maximum number of messages we will export
 ANONYMOUS_EXPORT_LIMIT = 250    # maximum number of messages a non-logged in user can export
 FILTER_CUTOFF = 5000           # maximum results for which we'll provide filter options
-LOG_FILE = os.path.join(DATA_ROOT,'log/mlarchive.log')
+LOG_FILE = os.path.join(DATA_ROOT, 'log/mlarchive.log')
 MAILMAN_DIR = '/usr/lib/mailman'
 SERVER_MODE = 'production'
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
@@ -265,10 +266,10 @@ USE_EXTERNAL_PROCESSOR = False
 MAX_THREAD_DEPTH = 6
 
 # spam_score bits
-MARK_BITS = { 'NON_ASCII_HEADER':0b0001,
-              'NO_RECVD_DATE':0b0010,
-              'NO_MSGID':0b0100,
-              'HAS_HTML_PART':0b1000 }
+MARK_BITS = {'NON_ASCII_HEADER': 0b0001,
+             'NO_RECVD_DATE': 0b0010,
+             'NO_MSGID': 0b0100,
+             'HAS_HTML_PART': 0b1000}
 
 # MARK Flags.  0 = disabled.  Otherwise use unique integer
 MARK_HTML = 10
@@ -276,15 +277,13 @@ MARK_LOAD_SPAM = 11
 
 # Inspector configuration
 INSPECTORS = {
-    'ListIdSpamInspector': {'includes':['ietf-dkim']},
-    'ListIdExistsSpamInspector': {'includes':['webdav']}
+    'ListIdSpamInspector': {'includes': ['ietf-dkim']},
+    'ListIdExistsSpamInspector': {'includes': ['webdav']}
 }
 
 # AUTH
 LOGIN_REDIRECT_URL = '/arch/'
-AUTHENTICATION_BACKENDS = (
-    'htauth.backend.HtauthBackend',
-    )
+AUTHENTICATION_BACKENDS = ('htauth.backend.HtauthBackend',)
 HTAUTH_PASSWD_FILENAME = get_secret("HTAUTH_PASSWD_FILENAME")
 
 # Cache settings
@@ -298,7 +297,7 @@ CACHES = {
 
 # Celery Settings
 CELERY_BROKER_URL = 'amqp://'
-#CELERY_RESULT_BACKEND = 'amqp://'
+# CELERY_RESULT_BACKEND = 'amqp://'
 CELERY_TIMEZONE = 'America/Los_Angeles'
 CELERY_ENABLE_UTC = True
 CELERY_HAYSTACK_DEFAULT_ALIAS = 'default'
@@ -306,7 +305,7 @@ CELERY_HAYSTACK_MAX_RETRIES = 1
 CELERY_HAYSTACK_RETRY_DELAY = 300
 CELERY_HAYSTACK_TRANSACTION_SAFE = False
 
-# Use one or the other: 
+# Use one or the other:
 # REMOTE_BACKUP_DIR for local backup directory
 # REMOTE_BACKUP_COMMAND to run external backup command
 
@@ -314,7 +313,7 @@ CELERY_HAYSTACK_TRANSACTION_SAFE = False
 # REMOTE_BACKUP_DIR = os.path.join(DATA_ROOT,'archive_backup')
 
 # IMAP Interface
-EXPORT_DIR = os.path.join(DATA_ROOT,'export')
+EXPORT_DIR = os.path.join(DATA_ROOT, 'export')
 # NOTIFY_LIST_CHANGE_COMMAND = '/a/mailarch/scripts/call_imap_import.sh'
 
 # new in Django 1.6

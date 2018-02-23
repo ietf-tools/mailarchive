@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load static %}
+
+
+{% block content %}
+
+    <div id="static-page">
+        {% with prefix="mail" %}
+            {% include "includes/static_index_nav.html" %}
+        {% endwith %}
+
+        <ul class="static-index">
+        {% for message in page reversed %}
+            {% with date=message.date|date:"M d Y" %}
+                {% ifchanged %}<h3>{{ date }}</h3>{% endifchanged %}
+                <li>
+                    <a id="{{ message.hashcode|slice:':-1' }}" href="{{ message.get_absolute_url }}">{{ message.subject }}</a>
+                    <span class="name-col">{{ message.frm_name }}</span>
+                </li>
+            {% endwith %}
+        {% endfor %}
+        </ul>
+
+        {% with prefix="mail" %}
+            {% include "includes/static_index_nav.html" %}
+        {% endwith %}
+    </div> <!-- static-page -->
+
+{% endblock %}
+
+
+{% block footer %}
+  {% with extra_class="scrolling" %}
+    {% include "includes/footer.html" %}
+  {% endwith %}
+{% endblock %}
+
+
+{% block js %}
+<script type="text/javascript" src="{% static 'mlarchive/js/static_index.js' %}"></script>
+{% endblock %}

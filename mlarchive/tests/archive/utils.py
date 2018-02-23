@@ -1,10 +1,12 @@
+import os
 import pytest
 from factories import EmailListFactory, UserFactory
 
+from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.test.client import RequestFactory
 
-from mlarchive.archive.utils import get_noauth, get_lists, get_lists_for_user
+from mlarchive.archive.utils import get_noauth, get_lists, get_lists_for_user, rebuild_static_index
 from mlarchive.utils.test_utils import get_request
 
 
@@ -43,3 +45,11 @@ def test_get_lists_for_user(admin_user):
     lists = get_lists_for_user(get_request(user=user1))
     assert private1 in lists
     assert private2 not in lists
+
+
+@pytest.mark.django_db(transaction=True)
+def test_rebuild_static_index(messages):
+    rebuild_static_index()
+    assert 'pubone' in os.listdir(settings.STATIC_INDEX_DIR)
+    assert 'index.html' in os.listdir(os.path.join(settings.STATIC_INDEX_DIR, 'pubone'))
+    assert 'maillist.html' in os.listdir(os.path.join(settings.STATIC_INDEX_DIR, 'pubone'))

@@ -12,7 +12,7 @@
       {# {% include "includes/detail_legacy.html" %} #}
     </div> <!-- msg-aside -->
 
-    <div id="msg-detail" class="col-md-8 col-md-pull-4">
+    <div id="msg-detail" class="col-md-8 col-md-pull-4" data-date-index-url="{{ msg.get_date_index_url }}" data-thread-index-url="{{ msg.get_thread_index_url }}">
       {{ msg.get_body_html|safe }}
       {% include "includes/message_thread.html" %}
 

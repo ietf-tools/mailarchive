@@ -5,12 +5,19 @@ var mailarchDetails = {
     init: function() {
         mailarchDetails.progressiveFeatures();
         mailarchDetails.setupToggles();
+        mailarchDetails.setNavLinks();
     },
 
     progressiveFeatures: function() {
     // Progressive Javascript setup
         // Show progressive elements
         $('.js-off').addClass('js-on').removeClass('js-off');
+    },
+
+    setNavLinks: function() {
+        // if static cookie
+        $("#date-index").attr("href", $("#msg-detail").data('date-index-url'));
+        $("#thread-index").attr("href", $("#msg-detail").data('thread-index-url'));
     },
 
     setupToggles: function() {

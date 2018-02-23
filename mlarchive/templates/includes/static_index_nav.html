@@ -1,0 +1,18 @@
+    {% if page.has_next %}
+        {% if page.next_page_number == page.paginator.num_pages %}
+            <a href="{{ prefix }}list.html">[Prev Page]</a>
+        {% else %}
+            <a href="{{ prefix }}{{ page.next_page_number }}.html">[Prev Page]</a>
+        {% endif %}
+    {% else %}
+        [Prev Page]
+    {% endif %}
+
+    {% if page.has_previous %}
+        <a href="{{ prefix }}{{ page.previous_page_number|stringformat:"04d" }}.html">[Next Page]</a>
+    {% else %}
+        [Next Page]
+    {% endif %}
+
+    <a href="maillist.html">[Date Index]</a>
+    <a href="threadlist.html">[Thread Index]</a>

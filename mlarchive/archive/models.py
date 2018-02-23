@@ -142,6 +142,8 @@ class Message(models.Model):
     thread_order = models.IntegerField(default=0)
     to = models.TextField(blank=True, default='')
     updated = models.DateTimeField(auto_now=True)
+    date_index_page = models.IntegerField(default=0)
+    thread_index_page = models.IntegerField(default=0)
 
     def __unicode__(self):
         return self.msgid
@@ -229,6 +231,22 @@ class Message(models.Model):
             msg = 'Error reading message file: %s' % self.get_file_path()
             logger.warning(msg)
             return msg
+
+    def get_date_index_url(self):
+        url = reverse('archive_browse_redirect', kwargs={'list_name': self.email_list.name})
+        if self.date_index_page == 0:
+            filename = 'maillist.html'
+        else:
+            filename = 'mail{page:04d}.html'.format(page=self.date_index_page)
+        return url + '{filename}#{fragment}'.format(filename=filename, fragment=self.hashcode.rstrip('='))
+
+    def get_thread_index_url(self):
+        url = reverse('archive_browse_redirect', kwargs={'list_name': self.email_list.name})
+        if self.thread_index_page == 0:
+            filename = 'threadlist.html'
+        else:
+            filename = 'thread{page:04d}.html'.format(page=self.thread_index_page)
+        return url + '{filename}#{fragment}'.format(filename=filename, fragment=self.hashcode.rstrip('='))
 
     def get_file_path(self):
         return os.path.join(

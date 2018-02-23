@@ -5,7 +5,25 @@ var mailarchDetails = {
     init: function() {
         mailarchDetails.progressiveFeatures();
         mailarchDetails.setupToggles();
-        mailarchDetails.setNavLinks();
+        mailarchDetails.initNavLinks();
+    },
+
+    doStaticNavLinks: function() {
+        $("#date-index").attr("href", $("#msg-detail").data('static-date-index-url'));
+        $("#thread-index").attr("href", $("#msg-detail").data('static-thread-index-url'));
+    },
+
+    doRegularNavLinks: function() {
+        $("#date-index").attr("href", $("#msg-detail").data('date-index-url'));
+        $("#thread-index").attr("href", $("#msg-detail").data('thread-index-url'));
+    },
+
+    legacyOn: function() {
+        mailarchDetails.doStaticNavLinks();
+    },
+
+    legacyOff: function() {
+        mailarchDetails.doRegularNavLinks();
     },
 
     progressiveFeatures: function() {
@@ -14,10 +32,10 @@ var mailarchDetails = {
         $('.js-off').addClass('js-on').removeClass('js-off');
     },
 
-    setNavLinks: function() {
-        // if static cookie
-        $("#date-index").attr("href", $("#msg-detail").data('date-index-url'));
-        $("#thread-index").attr("href", $("#msg-detail").data('thread-index-url'));
+    initNavLinks: function() {
+        if(base.isLegacyOn){
+            mailarchDetails.doStaticNavLinks();
+        }
     },
 
     setupToggles: function() {

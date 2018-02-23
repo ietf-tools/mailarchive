@@ -4,7 +4,7 @@
 
 {% block content %}
 
-    <div id="static-page">
+    <div id="static-page" class="container-fluid">
         {% with prefix="mail" %}
             {% include "includes/static_index_nav.html" %}
         {% endwith %}
@@ -12,7 +12,7 @@
         <ul class="static-index">
         {% for message in page reversed %}
             {% with date=message.date|date:"M d Y" %}
-                {% ifchanged %}<h3>{{ date }}</h3>{% endifchanged %}
+                {% ifchanged %}<h4>{{ date }}</h4>{% endifchanged %}
                 <li>
                     <a id="{{ message.hashcode|slice:':-1' }}" href="{{ message.get_absolute_url }}">{{ message.subject }}</a>
                     <span class="name-col">{{ message.frm_name }}</span>

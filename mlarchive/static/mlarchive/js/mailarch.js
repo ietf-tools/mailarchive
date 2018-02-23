@@ -88,7 +88,7 @@ var mailarch = {
         mailarch.$toggleFiltersLink.on('click', mailarch.toggleFilters)
         mailarch.$togglePreviewLink.on('click', mailarch.togglePreview);
         mailarch.$window.resize(mailarch.handleResize);
-        if(!base.isLegacyOn){
+        if(mailarch.showPreview){
             mailarch.$msgList.on('keydown', mailarch.messageNav);
             mailarch.$msgTable.on('click','.xtr', mailarch.selectRow);
             mailarch.$msgTable.on('dblclick','.xtr', mailarch.gotoMessage);
@@ -102,7 +102,7 @@ var mailarch = {
     
     addBorder: function(start, end) {
         // end is optional like slice
-        if (mailarch.isDateOrdered && base.isLegacyOn) {
+        if (mailarch.isDateOrdered && !mailarch.showPreview) {
             mailarch.ifChanged('date-col', 'date-border', start, end);
         }
         if (mailarch.isGroupByThread) {
@@ -358,7 +358,7 @@ var mailarch = {
     },
     
     initMessageList: function() {
-        if (!mailarch.isSmallViewport() && !base.isLegacyOn) {
+        if (!mailarch.isSmallViewport() && mailarch.showPreview) {
             mailarch.$msgList.focus();
             mailarch.selectInitialMessage();
         }
@@ -367,10 +367,10 @@ var mailarch = {
     
     initPanels: function() {
         mailarch.setPaneHeights();
-        if (!mailarch.showFilters || base.isLegacyOn) {
+        if (!mailarch.showFilters) {
             mailarch.doHideFilters();
         }
-        if (!mailarch.showPreview || base.isLegacyOn) {
+        if (!mailarch.showPreview) {
             mailarch.doHidePreview(false);   // don't animate
         }
     },
@@ -432,6 +432,7 @@ var mailarch = {
         }
     },
     
+    /*
     legacyOff: function() {
         if(!mailarch.showFilters){
             mailarch.toggleFilters();
@@ -460,6 +461,7 @@ var mailarch = {
         mailarch.$msgTable.find('.xtr').removeClass('row-selected');
         mailarch.addBorder(0);
     },
+    */
 
     // given the row of the msg list, load the message text in the msg view pane
     loadMessage: function(row) {
@@ -549,7 +551,7 @@ var mailarch = {
         mailarch.$pageLinks.addClass('btn btn-default visible-xs-inline-block');
         mailarch.$pageCount.addClass('visible-xs-inline-block');
 
-        if(!mailarch.isSmallViewport() && !base.isLegacyOn) {
+        if(!mailarch.isSmallViewport() && mailarch.showPreview) {
             mailarch.$msgList.removeClass('legacy');
         }
         
@@ -593,7 +595,7 @@ var mailarch = {
             var row = mailarch.$msgTable.find('.xtbody .xtr:first');
         }
         row.addClass('row-selected');
-        if(base.isLegacyOn) {
+        if(!mailarch.showPreview) {
             row.find('a').focus();
         }
         mailarch.loadMessage(row);

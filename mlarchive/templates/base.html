@@ -50,12 +50,12 @@
                     <a href="{% url "archive_help" %}">Help</a>
                 </div>
                 {% endif %}
-                <!-- <div class="nav-menu dropdown">
+                <div class="nav-menu dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Settings</a>
                     <ul class="dropdown-menu" role="menu">
                         <li><a id="toggle-legacy" href="#">Legacy Mode On</a></li>
                     </ul>
-                </div> -->
+                </div>
                 <div id="login" class="nav-menu noprint">
                 {% if user.is_authenticated %}
                     <span class="login-user pipe">{{ user }}</span>
@@ -107,5 +107,6 @@
 <script type="text/javascript" src="{% static 'mlarchive/js/base.js' %}"></script>
 {% block js %}{% endblock %}
 
+<!-- debug_toolbar_here -->
 </body>
 </html>

@@ -514,8 +514,10 @@ def detail(request, list_name, id, msg):
     """Displays the requested message.
     NOTE: the "msg" argument is a Message object added by the check_access decorator
     """
+    is_legacy_on = True if request.COOKIES.get('isLegacyOn') == 'true' else False
     queryid, sqs = get_cached_query(request)
-    if sqs:
+
+    if sqs and not is_legacy_on:
         previous_in_search, next_in_search = get_query_neighbors(query=sqs, message=msg)
         search_url = reverse('archive_search') + '?' + sqs.query_string
     else:
@@ -534,8 +536,6 @@ def detail(request, list_name, id, msg):
         'previous_in_thread': msg.previous_in_thread(),
         'previous_in_search': previous_in_search,
         'queryid': queryid,
-        'replies': msg.replies.all(),
-        'references': msg.get_references_messages(),
         'search_url': search_url,
     })
 

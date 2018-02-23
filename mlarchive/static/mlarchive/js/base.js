@@ -36,12 +36,18 @@ var base = {
             if(typeof mailarch !== 'undefined'){
                 mailarch.legacyOff();
             }
+            if(typeof mailarchDetails !== 'undefined'){
+                mailarchDetails.legacyOff();
+            }
         } else {
             base.isLegacyOn = true;
             $.cookie('isLegacyOn','true', { expires: 5*365, path: '/'});
             base.$toggleLegacyLink.text("Legacy Mode Off");
             if(typeof mailarch !== 'undefined'){
                 mailarch.legacyOn();
+            }
+            if(typeof mailarchDetails !== 'undefined'){
+                mailarchDetails.legacyOn();
             }
         }
     },

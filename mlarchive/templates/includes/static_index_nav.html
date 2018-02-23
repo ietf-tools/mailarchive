@@ -1,8 +1,61 @@
+<nav class="navbar navbar-default navbar-static-index">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      {# <a class="navbar-brand" href="#">Brand</a> #}
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse">
+      <ul class="nav navbar-nav">
+        
+        <li>
+          {% if page.has_next %}
+            {% if page.next_page_number == page.paginator.num_pages %}
+              <a href="{{ prefix }}list.html">Newer Messages</a>
+            {% else %}
+              <a href="{{ prefix }}{{ page.next_page_number|stringformat:"04d" }}.html">Newer Messages</a>
+            {% endif %}
+          {% else %}
+              <a class="disabled">Newer Messages</a>
+          {% endif %}
+        </li>
+
+        <li>
+          {% if page.has_previous %}
+            <a href="{{ prefix }}{{ page.previous_page_number|stringformat:"04d" }}.html">Older Messages</a>
+          {% else %}
+            <a class="disabled">Older Messages</a>
+          {% endif %}
+        </li>
+
+        {% if prefix == "mail" %}
+          <li><a href="threadlist.html">Thread Index</a></li>
+        {% else %}
+          <li><a href="maillist.html">Date Index</a></li>
+        {% endif %}
+
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+      </ul>
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav>
+
+
+{% comment %}
+
     {% if page.has_next %}
         {% if page.next_page_number == page.paginator.num_pages %}
             <a href="{{ prefix }}list.html">[Prev Page]</a>
         {% else %}
-            <a href="{{ prefix }}{{ page.next_page_number }}.html">[Prev Page]</a>
+            <a href="{{ prefix }}{{ page.next_page_number|stringformat:"04d" }}.html">[Prev Page]</a>
         {% endif %}
     {% else %}
         [Prev Page]
@@ -16,3 +69,5 @@
 
     <a href="maillist.html">[Date Index]</a>
     <a href="threadlist.html">[Thread Index]</a>
+
+{% endcomment %}

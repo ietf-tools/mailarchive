@@ -67,9 +67,7 @@ def test_not_logged_browse_private_list(client, messages):
     message = Message.objects.filter(email_list__name='private').first()
     url = reverse('archive_search') + '?email_list=private&index={}'.format(message.hashcode.strip('='))
     response = client.get(url)
-    print url
-    print response.content
-    assert response.status_code == 403
+    assert 'No results found' in response.content
 
 
 @pytest.mark.django_db(transaction=True)
@@ -439,13 +437,13 @@ def test_queries_pagination_bogus(client, messages):
     # test non integer
     url = reverse('archive_search') + '?email_list=pubthree&page=bogus'
     response = client.get(url)
-    assert response.status_code == 200
-    assert len(response.context['results']) == 20   # should get page 1
+    assert response.status_code == 404
+    # assert len(response.context['results']) == 20   # should get page 1
     # test page too high
     url = reverse('archive_search') + '?email_list=pubthree&page=1000'
     response = client.get(url)
-    assert response.status_code == 200
-    assert len(response.context['results']) == 1    # should get last page
+    assert response.status_code == 404
+    # assert len(response.context['results']) == 1    # should get last page
 
 
 @pytest.mark.django_db(transaction=True)
@@ -467,7 +465,7 @@ def test_queries_list_term(client):
     url = reverse('archive_search') + '?q=pubone'
     response = client.get(url)
     assert response.status_code == 302
-    assert response['location'] == '/arch/search/?email_list=pubone'
+    assert response['location'] == reverse('archive_browse_list', kwargs={'list_name': 'pubone'})
 
 
 @pytest.mark.django_db(transaction=True)

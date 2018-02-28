@@ -73,6 +73,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         # End up back at advanced search
         self.assertEquals('Mail Archive Advanced Search', self.selenium.title)
 
+"""
     def test_back_to_browse(self):
         # Setup
         EmailList.objects.create(name='example')
@@ -97,12 +98,12 @@ class MySeleniumTests(StaticLiveServerTestCase):
         # End up back at browse page
         self.assertEquals('Mail Archive Browse', self.selenium.title)
 
-"""
+
     def test_thread_view(self):
         '''Check order of messages in thread view'''
         # User browses list
         url = urlparse.urljoin(self.live_server_url, reverse(
-            'archive_browse_redirect', kwargs={'list_name': 'acme'}))
+            'archive_browse_list', kwargs={'list_name': 'acme'}))
         self.selenium.get(url)
 
         # User clicks Thread, to view by thread.

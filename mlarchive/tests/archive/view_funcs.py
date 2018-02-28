@@ -6,12 +6,13 @@ import pytest
 import tarfile
 from factories import EmailListFactory, UserFactory
 from StringIO import StringIO
+
 from haystack.query import SearchQuerySet
+from django.http import HttpResponse
 from django.urls import reverse
 
-from mlarchive.archive.view_funcs import (find_message_date, find_message_gbt, chunks,
-    initialize_formsets, get_columns, get_export, get_query_neighbors, get_browse_params)
-from mlarchive.archive.forms import group_by_thread
+from mlarchive.archive.view_funcs import (chunks, initialize_formsets, get_columns,
+    get_export, get_query_neighbors, custom_search_view_factory)
 from mlarchive.archive.models import EmailList
 from mlarchive.utils.test_utils import get_request
 
@@ -22,64 +23,12 @@ def test_chunks():
     assert result[0] == [1, 2, 3]
 
 
-@pytest.mark.django_db(transaction=True)
-def test_find_message_date(messages):
-    sqs = SearchQuerySet().order_by('date')
-    last = sqs.count() - 1
-    assert find_message_date(sqs, sqs[0].object) == 0        # first
-    assert find_message_date(sqs, sqs[1].object) == 1        # second
-    assert find_message_date(sqs, sqs[last].object) == last  # last
-    # queryset of one
-    msg = sqs[0].object
-    sqs = SearchQuerySet().filter(msgid=msg.msgid)
-    assert find_message_date(sqs, msg) == 0
-    # empty queryset
-    sqs = SearchQuerySet().filter(msgid='bogus')
-    assert find_message_date(sqs, msg) == -1
-
-
-@pytest.mark.django_db(transaction=True)
-def test_find_message_date_reverse(messages):
-    sqs = SearchQuerySet().order_by('-date')
-    last = sqs.count() - 1
-    assert find_message_date(sqs, sqs[0].object, reverse=True) == 0        # first
-    assert find_message_date(sqs, sqs[1].object, reverse=True) == 1        # second
-    assert find_message_date(sqs, sqs[last].object, reverse=True) == last  # last
-    # queryset of one
-    sqs = SearchQuerySet().filter(msgid=sqs[0].msgid).order_by('-date')
-    assert find_message_date(sqs, sqs[0].object, reverse=True) == 0
-    # empty queryset
-    msg = sqs[0].object
-    sqs = SearchQuerySet().filter(msgid='bogus').order_by('-date')
-    assert find_message_date(sqs, msg, reverse=True) == -1
-
-
-@pytest.mark.django_db(transaction=True)
-def test_find_message_gbt(messages):
-    sqs = SearchQuerySet().filter(subject='New Topic')
-    sqs = group_by_thread(sqs, None, None, reverse=True)
-    last = sqs.count() - 1
-    assert find_message_gbt(sqs, sqs[0].object, reverse=True) == 0        # first
-    assert find_message_gbt(sqs, sqs[1].object, reverse=True) == 1        # second
-    assert find_message_gbt(sqs, sqs[last].object, reverse=True) == last  # last
-
-    # queryset of one
-    sqs = SearchQuerySet().filter(msgid=sqs[0].msgid)
-    sqs = group_by_thread(sqs, None, None, reverse=True)
-    assert find_message_gbt(sqs, sqs[0].object, reverse=True) == 0
-
-    # empty queryset
-    msg = sqs[0].object
-    sqs = SearchQuerySet().filter(msgid='bogus')
-    sqs = group_by_thread(sqs, None, None, reverse=True)
-    assert find_message_gbt(sqs, msg, reverse=True) == -1
-
-    # queryset contains only one thread, msg before midpoint but has date > midpoint
-    # as can happen with hierarchical display
-    sqs = SearchQuerySet().filter(subject='New Topic')
-    sqs = group_by_thread(sqs, None, None, reverse=True)
-    msg = sqs[1].object
-    assert find_message_gbt(sqs, msg, reverse=True) == 1
+def test_custom_search_view_factory():
+    request = get_request()
+    view = custom_search_view_factory()
+    response = view(request)
+    assert isinstance(response, HttpResponse)
+    assert response.status_code == 200
 
 
 def test_initialize_formsets():
@@ -214,13 +163,3 @@ def test_get_query_neighbors(messages):
     before, after = get_query_neighbors(sqs, sqs[0].object)
     assert before is None
     assert after is None
-
-
-def test_get_browse_params():
-    # a valid browse query
-    params = get_browse_params('email_list=dummy&index=abcdefghijklmnopqrstuvwxyza')
-    assert params['name'] == 'dummy'
-    assert params['index'] == 'abcdefghijklmnopqrstuvwxyza'
-    assert params['gbt'] is None
-    # a regular search query, not browse
-    assert not get_browse_params('email_list=dummy')

@@ -148,24 +148,24 @@ def test_browse(client):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_browse_redirect(client):
-    url = reverse('archive_browse_redirect', kwargs={'list_name': 'pubone'})
-    response = client.get(url)
-    assert response.status_code == 302
-    assert response['location'] == '/arch/search/?email_list=pubone'
-
-"""
-@pytest.mark.django_db(transaction=True)
 def test_browse_list(client, messages):
-    url = reverse('archive_browse_list') + 'pubone'
+    url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'})
     response = client.get(url)
     print url
     assert response.status_code == 200
-"""
+
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_list_private(client, messages):
+    url = reverse('archive_browse_list', kwargs={'list_name': 'private'})
+    response = client.get(url)
+    print url
+    assert response.status_code == 403
+
 
 @pytest.mark.django_db(transaction=True)
 def test_browse_list_bogus_index(client, messages):
-    url = reverse('archive_search') + '?email_list=pubone&index={}'.format('x' * 27)
+    url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?index={}'.format('x' * 27)
     response = client.get(url)
     assert response.status_code == 404
 

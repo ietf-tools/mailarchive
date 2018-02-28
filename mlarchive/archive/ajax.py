@@ -1,14 +1,12 @@
 from django.conf import settings
 from django.http import HttpResponse
-from django.shortcuts import render_to_response
-from django.template import RequestContext
+from django.shortcuts import render
 from django.template.loader import render_to_string
 
 from mlarchive.archive import actions
 from mlarchive.archive.utils import jsonapi
 from mlarchive.archive.models import Message
 from mlarchive.archive.query_utils import get_cached_query
-from mlarchive.archive.view_funcs import get_browse_list, SearchResult
 from mlarchive.utils.decorators import check_access, superuser_only, check_ajax_list_access
 
 
@@ -56,7 +54,6 @@ def ajax_messages(request):
     firstitem: return set of messages before firstitem
     """
     queryid, query = get_cached_query(request)
-    browse_list = get_browse_list(request)
     browselist = request.GET.get('browselist')   # comes from check_browse_list()
     referenceitem = int(request.GET.get('referenceitem', 0))
     referenceid = request.GET.get('referenceid')
@@ -75,12 +72,7 @@ def ajax_messages(request):
     if not results:
         return HttpResponse(status=204)     # No Content
 
-    return render_to_response('includes/results_divs.html', {
-        'results': results,
-        'queryid': queryid,
-        'browse_list': browse_list},
-        RequestContext(request, {}),
-    )
+    return render(request, 'includes/results_divs.html', {'results': results})
 
 
 def get_query_results(query, referenceitem, direction):
@@ -111,13 +103,13 @@ def get_browse_results_gbt(reference_message, direction):
     if direction == 'next':
         thread = reference_message.thread.get_previous()
         while len(results) < buffer and thread:
-            results.extend([SearchResult(m) for m in thread.message_set.order_by('thread_order')])
+            results.extend(thread.message_set.order_by('thread_order'))
             thread = thread.get_previous()
     elif direction == 'previous':
         thread = reference_message.thread.get_next()
         while len(results) < buffer and thread:
             # prepend to results
-            results = [SearchResult(m) for m in thread.message_set.order_by('thread_order')] + results
+            results = thread.message_set.order_by('thread_order') + results
             thread = thread.get_next()
     return results
 
@@ -126,12 +118,8 @@ def get_browse_results_date(reference_message, direction):
     '''Returns a set of messages ordered by date'''
     buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
     if direction == 'next':
-        results = [SearchResult(m) for m in Message.objects.filter(
-            email_list=reference_message.email_list,
-            date__lt=reference_message.date).order_by('-date')[:buffer]]
+        results = Message.objects.filter(email_list=reference_message.email_list, date__lt=reference_message.date).order_by('-date')[:buffer]
     elif direction == 'previous':
-        results = [SearchResult(m) for m in Message.objects.filter(
-            email_list=reference_message.email_list,
-            date__gt=reference_message.date).order_by('date')[:buffer]]
+        results = Message.objects.filter(email_list=reference_message.email_list, date__gt=reference_message.date).order_by('date')[:buffer]
         results.reverse()
     return results

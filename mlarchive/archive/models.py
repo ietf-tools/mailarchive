@@ -233,15 +233,25 @@ class Message(models.Model):
             return msg
 
     def get_date_index_url(self):
-        url = reverse('archive_browse_redirect', kwargs={'list_name': self.email_list.name})
+        base = reverse('archive_browse_list', kwargs={'list_name': self.email_list.name})
+        fragment = '?index={}'.format(self.hashcode.rstrip('='))
+        return base + fragment
+
+    def get_thread_index_url(self):
+        base = reverse('archive_browse_list', kwargs={'list_name': self.email_list.name})
+        fragment = '?gbt=1&index={}'.format(self.hashcode.rstrip('='))
+        return base + fragment
+
+    def get_static_date_index_url(self):
+        url = reverse('archive_browse_list', kwargs={'list_name': self.email_list.name})
         if self.date_index_page == 0:
             filename = 'maillist.html'
         else:
             filename = 'mail{page:04d}.html'.format(page=self.date_index_page)
         return url + '{filename}#{fragment}'.format(filename=filename, fragment=self.hashcode.rstrip('='))
 
-    def get_thread_index_url(self):
-        url = reverse('archive_browse_redirect', kwargs={'list_name': self.email_list.name})
+    def get_static_thread_index_url(self):
+        url = reverse('archive_browse_list', kwargs={'list_name': self.email_list.name})
         if self.thread_index_page == 0:
             filename = 'threadlist.html'
         else:
@@ -300,18 +310,6 @@ class Message(models.Model):
             'msg': self,
         }
         return render_to_string('archive/thread_snippet.html', context)
-
-    def list_by_date_url(self):
-        return reverse(
-            'archive_search') + '?email_list={}&index={}'.format(
-                self.email_list.name,
-                self.hashcode.rstrip('='))
-
-    def list_by_thread_url(self):
-        return reverse(
-            'archive_search') + '?email_list={}&gbt=1&index={}'.format(
-                self.email_list.name,
-                self.hashcode.rstrip('='))
 
     def mark(self, bit):
         """Mark this message using the bit provided, using field spam_score

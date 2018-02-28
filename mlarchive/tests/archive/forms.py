@@ -165,7 +165,8 @@ def test_asf_search_qdr(client, messages):
     results = response.context['results']
     for m in Message.objects.all():
         print m.msgid, m.date
-    assert len(results) == 4
+    # message from yesterday may not be included due to test timing
+    assert len(results) in [4,5]
 
 
 @pytest.mark.django_db(transaction=True)

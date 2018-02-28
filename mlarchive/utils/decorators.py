@@ -42,15 +42,11 @@ def check_access(func):
 def check_list_access(func):
     """
     This decorator checks that the user making the request has access to the
-    list being requested.  Expects a url in the form /arch/browse_/[listname].
-    Listname cannot come as a URL parameter because haysatck will not support this.
-    It also adds the list object to the function arguments so we don't have to repeat the
-    lookup.
+    list being requested.
     """
     def wrapper(request, *args, **kwargs):
-        listname = request.get_full_path().split('/')[3]
         try:
-            email_list = EmailList.objects.get(name=listname)
+            email_list = EmailList.objects.get(name=kwargs['list_name'])
         except EmailList.DoesNotExist:
             raise Http404
 

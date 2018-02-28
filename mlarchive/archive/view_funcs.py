@@ -19,6 +19,7 @@ from django.forms.formsets import formset_factory
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
+from haystack.views import SearchView
 
 from mlarchive.archive.forms import RulesForm
 from mlarchive.archive.models import EmailList
@@ -27,14 +28,13 @@ from mlarchive.utils.encoding import to_str
 
 contain_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\((?P<value>[^\)]+)\)')
 exact_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\"(?P<value>[^\"]+)\"')
-browse_pattern = re.compile(r'email_list=(?P<name>[a-z0-9_\-\+]+)(?P<gbt>&gbt=1)?&index=(?P<index>[\w\-]{27})')
 
 
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------
 
-
+'''
 class SearchResult(object):
     def __init__(self, object):
         self.object = object
@@ -50,6 +50,7 @@ class SearchResult(object):
     @property
     def date(self):
         return self.object.date
+'''
 
 # --------------------------------------------------
 # Helper Functions
@@ -69,115 +70,14 @@ def chunks(l, n):
 # View Functions
 # --------------------------------------------------
 
-
-def find_message_date(sqs, msg, reverse=False):
-    """Returns the position message occurs in the SearchQuerySet.  Use
-    binary search to locate the record.  Expects query set sorted by
-    date ascending unless reverse=True.
+def custom_search_view_factory(view_class=SearchView, *args, **kwargs):
+    """Modified version of haystack.views.search_view_factory() to support passed
+    URL parameters
+    See: https://github.com/django-haystack/django-haystack/issues/1063
     """
-    lo = 0
-    hi = sqs.count() - 1
-    if hi == -1:            # abort if queryset is empty
-        return -1
-
-    if reverse:
-        compare = operator.gt
-    else:
-        compare = operator.lt
-
-    while lo <= hi:
-        mid = (lo + hi) / 2
-        midval = sqs[mid]
-        if compare(midval.date, msg.date):
-            lo = mid + 1
-        elif midval.date == msg.date:
-            break
-        else:
-            hi = mid
-
-    if midval.object == msg:
-        return mid
-    if midval.date != msg.date:
-        return -1
-
-    # we get here if there are messages with the exact same date
-    # find the first message with this date
-    count = sqs.count()
-    pre = mid - 1
-    while pre >= 0 and sqs[pre].date == msg.date:
-        mid = pre
-        pre = pre - 1
-    # search forward
-    while mid < count and sqs[mid].date == msg.date:
-        if sqs[mid].object == msg:
-            return mid
-        mid = mid + 1
-
-    return -1
-
-
-def find_message_gbt(sqs, msg, reverse=False):
-    """Returns the position of message (msg) in queryset (sqs)
-    for queries grouped by thread.  Uses binary search to locate the thread,
-    then traverses the thread.
-    reverse=True: threads ordered descending
-    reverse=False: threads ordered ascending
-    """
-    last_index = sqs.count() - 1
-
-    lo = 0
-    hi = last_index
-    if hi == -1:            # abort if queryset is empty
-        return -1
-    if hi == 0:             # simple check if queryset is length of 1
-        if sqs[0].object == msg:
-            return 0
-        else:
-            return -1
-
-    cdate = msg.thread.date
-    # first locate the thread
-    if reverse:
-        compare = operator.gt
-    else:
-        compare = operator.lt
-    while lo < hi:
-        mid = (lo + hi) / 2
-        midval = sqs[mid]
-        if compare(midval.object.thread.date, cdate):
-            lo = mid + 1
-        elif midval.object.thread.date == cdate:
-            break
-        else:
-            hi = mid
-
-    if midval.object == msg:
-        return mid
-
-    # traverse thread
-    # determine most likely direction to search, assumes ascending order
-    thread_date = midval.object.thread.date
-    if midval.object.date <= msg.date:
-        step = 1
-    elif midval.object.date > msg.date:
-        step = -1
-
-    # try searching in the most likely direction
-    starting_point = mid
-    while 0 <= mid <= last_index and sqs[mid].object.thread.date == thread_date:
-        if sqs[mid].object == msg:
-            return mid
-        mid = mid + step
-
-    # didn't find. try the other direction
-    mid = starting_point
-    while 0 <= mid <= last_index and sqs[mid].object.thread.date == thread_date:
-        if sqs[mid].object == msg:
-            return mid
-        mid = mid - step
-
-    # didn't find message
-    return -1
+    def search_view(request, *vargs, **vkwargs):
+        return view_class(*args, **kwargs)(request, *vargs, **vkwargs)
+    return search_view
 
 
 def initialize_formsets(query):
@@ -226,27 +126,6 @@ def initialize_formsets(query):
         not_formset = RulesFormset1(prefix='not')
 
     return query_formset, not_formset
-
-
-def is_javascript_disabled(request):
-    if 'nojs' in request.GET:
-        return True
-    else:
-        return False
-
-
-def get_browse_list(request):
-    """Return the list name if this query is a browse list query"""
-    query_string = get_query_string(request)
-    match = re.search(r"^\?email_list=([a-zA-Z0-9\_\-]+)", query_string)
-    if match:
-        try:
-            browse_list = EmailList.objects.get(name=match.group(1))
-        except EmailList.DoesNotExist:
-            browse_list = None
-    else:
-        browse_list = None
-    return browse_list
 
 
 def get_columns(request):
@@ -423,11 +302,3 @@ def get_query_neighbors(query, message):
 def get_query_string(request):
     """Returns the query string from the request, including '?' """
     return '?' + request.META['QUERY_STRING']
-
-
-def get_browse_params(string):
-    match = browse_pattern.match(string)
-    if match:
-        return match.groupdict()
-    else:
-        return {}

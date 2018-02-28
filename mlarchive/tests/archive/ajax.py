@@ -130,17 +130,12 @@ def test_ajax_get_messages_browse_gbt(client, messages):
     url = '{}/?qid=&referenceitem=1&browselist=pubone&referenceid={}&gbt=1&direction=next'.format(
         reverse('ajax_messages'), last_message.pk)
     response = client.get(url)
-    print threads[0].pk
-    print threads[0].get_next()
-    for m in threads[0].message_set.all().order_by('thread_order'): print m.date, m.pk
-    print threads[1].pk
-    for m in threads[1].message_set.all().order_by('thread_order'): print m.date, m.pk
     assert response.status_code == 200
     assert len(response.context['results']) == messages.count()
 
     # assert proper order
     print [(m.pk, m.thread_order) for m in messages]
-    assert [r.object.pk for r in response.context['results']] == [m.pk for m in messages]
+    assert [r.pk for r in response.context['results']] == [m.pk for m in messages]
 
 
 @pytest.mark.django_db(transaction=True)
@@ -173,7 +168,7 @@ def test_get_browse_results_gbt(client, thread_messages_db_only):
     message = Message.objects.get(msgid='x008')
     results = get_browse_results_gbt(reference_message=message, direction='next')
     assert len(results) == 5
-    assert [r.object.msgid for r in results] == ['x004', 'x005', 'x001', 'x002', 'x003']
+    assert [r.msgid for r in results] == ['x004', 'x005', 'x001', 'x002', 'x003']
 
 
 @pytest.mark.django_db(transaction=True)
@@ -182,4 +177,4 @@ def test_get_browse_results_date(client, messages):
     results = get_browse_results_date(reference_message=messages[9], direction='next')
     print messages.count()
     assert len(results) == 11
-    assert [r.object.pk for r in results] == [m.pk for m in messages[10:]]
+    assert [r.pk for r in results] == [m.pk for m in messages[10:]]

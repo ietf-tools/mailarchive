@@ -56,7 +56,7 @@
             </div> <!-- search-filters -->
             
             <div id="message">
-              {% if count > FILTER_CUTOFF %}
+              {% if page.paginator.count > filter_cutoff %}
                 <p>Refine search to enable filters</p>
               {% endif %}
             </div>
@@ -92,13 +92,13 @@
                                 <li><a id="modify-search" href="{{ modify_search_url }}" title="Modify Search"><span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span></a></li>
                             {% endif %}
                             <!-- <li><a id="clear-sort" href="#">Clear Sort</a></li> -->
-                            <li{% if not thread_sorted %} class="active"{% endif %}><a href="{{ view_date_url }}">Date</a></li>
-                            <li{% if thread_sorted %} class="active"{% endif %}><a id="gbt-link" href="{{ view_thread_url }}">Thread</a></li>
+                            <li{% if not group_by_thread %} class="active"{% endif %}><a href="{{ view_date_url }}">Date</a></li>
+                            <li{% if group_by_thread %} class="active"{% endif %}><a id="gbt-link" href="{{ view_thread_url }}">Thread</a></li>
                         </ul>
                         
                         <ul class="nav navbar-nav navbar-right">
                             <li class="dropdown">
-                                {% if not user.is_authenticated and count > anonymous_export_limit %}
+                                {% if not user.is_authenticated and page.paginator.count > anonymous_export_limit %}
                                 <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" title="Login to enable large exports">Export <span class="caret"></span></a>
                                 {% else %}
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Export <span class="caret"></span></a>
@@ -129,7 +129,7 @@
             <div id="msg-panes">
                 <div id="list-pane">
                     {# In thread view, no sorting available #}
-                    {% if thread_sorted %}
+                    {% if group_by_thread %}
                         <div class="header">
                             <span>Subject</span>
                         </div><div class="header">
@@ -151,8 +151,8 @@
                         </div>
                     {% endif %}
 
-                    <div id="msg-list" class="msg-list wrapper legacy" tabindex="-1" data-results-per-page="{{ results_per_page }}" data-queryid="{{ queryid }}" data-queryset-offset="{{ queryset_offset }}" data-selected-offset="{{ selected_offset }}" data-browse-list="{{ browse_params.name|default_if_none:"" }}" data-gbt="{{ browse_params.gbt|default_if_none:"" }}">
-                        <div class="table table-condensed msg-table xtable{% if thread_sorted %} thread-sorted{% endif %}">
+                    <div id="msg-list" class="msg-list wrapper legacy" tabindex="-1" data-results-per-page="{{ results_per_page }}" data-queryid="{{ queryid }}" data-queryset-offset="{{ queryset_offset }}" data-selected-offset="{{ selected_offset }}" data-browse-list="{{ browse_list|default_if_none:"" }}" data-gbt="{% if group_by_thread %}1{% endif %}">
+                        <div class="table table-condensed msg-table xtable{% if group_by_thread %} thread-sorted{% endif %}">
                             <div class="xtbody">
                                 {% with page as results %}
                                     {% include "includes/results_divs.html" %}
@@ -162,7 +162,7 @@
                     </div> <!-- msg-list -->
 
                     <div id="msg-list-controls">
-                        <div id="message-count" class="list-control">{{ count }} Messages</div>
+                        <div id="message-count" class="list-control">{{ page.paginator.count }} Messages</div>
                         <div class="list-control page-nav">
                             {% if page.has_previous %}<a class="pull-left" href="{{ previous_page_url }}">Previous</a>{% endif %}
                             <span class="current-page">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>

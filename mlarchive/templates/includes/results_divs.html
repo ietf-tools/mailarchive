@@ -1,16 +1,18 @@
 {% load archive_extras %}{% for result in results %}
+    {% with result=result.object|default:result %}
     <div class="xtr">
-        <div class="xtd subj-col depth-{{ result.object.thread_depth|max_depth }}">
-            <span>{{ result.subject }}</span><a class="msg-detail" href="{{ result.object.get_absolute_url }}">{{ result.subject }}</a>
+        <div class="xtd subj-col depth-{{ result.thread_depth|max_depth }}">
+            <span>{{ result.subject }}</span><a class="msg-detail" href="{{ result.get_absolute_url }}">{{ result.subject }}</a>
         </div>
         <div class="xtd from-col">{{ result.frm_name|truncatechars:35 }}</div>
         <div class="xtd date-col">{{ result.date|date:"Y-m-d" }}</div>
-        <div class="xtd list-col">{{ result.object.email_list }}</div>
+        <div class="xtd list-col">{{ result.email_list }}</div>
         <div class="xtd score-col hidden">{{ result.score }}</div>
-        <div class="xtd url-col hidden">{{ result.object.get_absolute_url }}</div>
-        <div class="xtd id-col hidden">{{ result.object.id }}</div>
-        <div class="xtd thread-col hidden">{{ result.object.thread_id }}</div>
+        <div class="xtd url-col hidden">{{ result.get_absolute_url }}</div>
+        <div class="xtd id-col hidden">{{ result.id }}</div>
+        <div class="xtd thread-col hidden">{{ result.thread_id }}</div>
     </div>
+    {% endwith %}
 {% empty %}
     <div class="xtr"><div class="xtd no-results">No results found</div></div>
 {% endfor %}

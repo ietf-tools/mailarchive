@@ -6,8 +6,7 @@ from operator import itemgetter
 
 from django.conf import settings
 from django.contrib.auth import logout
-from django.core.exceptions import PermissionDenied
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.utils.decorators import method_decorator
 from django.forms.formsets import formset_factory
 from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import render, get_object_or_404, redirect
@@ -17,16 +16,15 @@ from haystack.views import SearchView
 from haystack.query import SearchQuerySet
 from haystack.forms import SearchForm
 
-from mlarchive.utils.decorators import check_access, superuser_only, pad_id, log_timing
+from mlarchive.utils.decorators import check_access, superuser_only, pad_id, log_timing, check_list_access
 from mlarchive.archive import actions
 from mlarchive.archive.query_utils import (get_kwargs, get_cached_query, query_is_listname,
     parse_query_string)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
-    find_message_date, find_message_gbt, get_query_neighbors, is_javascript_disabled,
-    get_query_string, get_browse_list, get_lists_for_user, get_browse_params, SearchResult)
+    get_query_neighbors, get_query_string, get_lists_for_user)
 
 from models import EmailList, Message
-from forms import AdminForm, AdminActionForm, AdvancedSearchForm, BrowseForm, RulesForm
+from forms import AdminForm, AdminActionForm, AdvancedSearchForm, BrowseForm, RulesForm, VALID_SORT_OPTIONS
 
 import logging
 logger = logging.getLogger('mlarchive.custom')
@@ -36,72 +34,9 @@ logger = logging.getLogger('mlarchive.custom')
 # Classes
 # --------------------------------------------------
 
-
-class CustomBrowseView(SearchView):
-    """A customized SearchView.
-    """
-    def __name__(self):
-        return "CustomBrowseView"
-
-    def __call__(self, request):
-        """Generates the actual response to the search.
-
-        Relies on internal, overridable methods to construct the response.
-        """
-        self.request = request
-        self.check_access()
-        # search_view_factory won't named handle URL params so need to extract list
-        self.list_name = request.get_full_path().split('/')[3]
-        self.form = self.build_form()
-        self.query = self.get_query()
-        self.results = self.get_results()
-        if hasattr(self.results, 'myfacets'):
-            self.myfacets = self.results.myfacets
-        if hasattr(self.results, 'queryid'):
-            self.queryid = self.results.queryid
-
-        return self.create_response()
-
-    def build_form(self, form_kwargs=None):
-        return super(self.__class__, self).build_form(form_kwargs={'request': self.request})
-
-    def build_page(self):
-        """Returns a page of results"""
-        results = []
-        index = self.request.GET.get('index')
-        results = [SearchResult(m) for m in Message.objects.filter(email_list__name=self.list_name).order_by('-date')[:self.results_per_page]]
-
-        # if self.request.GET.get('gbt') == '1':
-        #    if index:
-        #        message = Message.objects.get(hashcode=index + '=')
-        #        results = [SearchResult(m) for m in message.thread.message_set.order_by('thread_order')]
-
-        # assert False, (results,self.list_name)
-        paginator = Paginator(results, self.results_per_page)
-        self.page = paginator.page(1)
-        # return (self.page, 0)
-        return (paginator, self.page)
-
-    def check_access(self):
-        listname = self.request.get_full_path().split('/')[3]
-        try:
-            email_list = EmailList.objects.get(name=listname)
-        except EmailList.DoesNotExist:
-            raise Http404
-
-        if email_list.private and not self.request.user.is_superuser:
-            if not self.request.user.is_authenticated() or not email_list.members.filter(id=self.request.user.id):
-                raise PermissionDenied
-
-    # def extra_context(self):
-    #     extra = {}
-    #     extra['listname'] = ''
-
-
 class CustomSearchView(SearchView):
-    """A customized SearchView.  Need to add request object to the form init so we can
-    use it for authorization
-    """
+    """A customized SearchView"""
+
     def __name__(self):
         return "CustomSearchView"
 
@@ -116,11 +51,10 @@ class CustomSearchView(SearchView):
         facet_counts().
         """
         if query_is_listname(request):
-            return redirect(reverse('archive_search') + '?email_list=' + request.GET['q'])
+            # return redirect(reverse('archive_search') + '?email_list=' + request.GET['q'])
+            return redirect(reverse('archive_browse_list', kwargs={'list_name': request.GET['q']}))
 
         self.request = request
-        self.browse_params = get_browse_params(self.request.META['QUERY_STRING'])
-        self.check_access()
         self.form = self.build_form()
         self.query = self.get_query()
         self.results = self.get_results()
@@ -132,60 +66,8 @@ class CustomSearchView(SearchView):
         return self.create_response()
 
     def build_form(self, form_kwargs=None):
-        return super(self.__class__, self).build_form(form_kwargs={'request': self.request})
-
-    @log_timing
-    def build_page(self):
-        """Returns tuple of:
-        - subset of results for display (page)
-        - selected offset: the offset of message specified in query arguments within
-          results subset (page)
-
-        If request arguments include "index", returns slice of results containing
-        message named in "index" with appropriate offset within slice, otherwise returns
-        first #(results_per_page) messages and offsets=0.
-        """
-
-        # buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
-        # index = self.request.GET.get('index')
-        try:
-            page_no = int(self.request.GET.get('page', 1))
-        except ValueError:
-            page_no = 1
-        # prime slice
-        start_offset = (page_no - 1) * self.results_per_page
-        self.results[start_offset:start_offset + self.results_per_page + 1]
-        paginator = Paginator(self.results, self.results_per_page)
-        try:
-            self.page = paginator.page(page_no)
-        except PageNotAnInteger:
-            self.page = paginator.page(1)
-        except EmptyPage:
-            # If page is out of range (e.g. 9999), deliver last page of results.
-            self.page = paginator.page(paginator.num_pages)
-
-        # if index:
-        #    position = self.find_message(index)
-        #    if position == -1:
-        #        raise Http404("No such message!")
-        #    page_no = (position / self.results_per_page) + 1
-        #    selected_offset = position % self.results_per_page
-        #    self.page = paginator.page(page_no)
-        #    return (self.page, selected_offset)
-        # else:
-        return (self.page, 0)
-
-    def check_access(self):
-        if self.browse_params:
-            listname = self.browse_params['name']
-            try:
-                email_list = EmailList.objects.get(name=listname)
-            except EmailList.DoesNotExist:
-                raise Http404
-
-            if email_list.private and not self.request.user.is_superuser:
-                if not self.request.user.is_authenticated() or not email_list.members.filter(id=self.request.user.id):
-                    raise PermissionDenied
+        """Add request object to the form init so we can use it for authorization"""
+        return super(CustomSearchView, self).build_form(form_kwargs={'request': self.request})
 
     def extra_context(self):
         """Add variables to template context"""
@@ -193,28 +75,10 @@ class CustomSearchView(SearchView):
         query_string = get_query_string(self.request)
 
         # settings
-        extra['FILTER_CUTOFF'] = settings.FILTER_CUTOFF
-        extra['browse_list'] = get_browse_list(self.request)
-        extra['browse_params'] = self.browse_params
+        extra['filter_cutoff'] = settings.FILTER_CUTOFF
         extra['query_string'] = query_string
         extra['results_per_page'] = settings.HAYSTACK_SEARCH_RESULTS_PER_PAGE
-        if self.browse_params:
-            extra['queryset_offset'] = '200'
-        else:
-            extra['queryset_offset'] = str(self.page.start_index() - 1)
-
-        # thread sort
-        new_query = self.request.GET.copy()
-        if 'gbt' in self.request.GET:
-            extra['thread_sorted'] = True
-            extra['view_thread_url'] = reverse('archive_search') + query_string
-            _ = new_query.pop('gbt')  # noqa
-            extra['view_date_url'] = reverse('archive_search') + '?' + new_query.urlencode()
-        else:
-            extra['thread_sorted'] = False
-            extra['view_date_url'] = reverse('archive_search') + query_string
-            new_query['gbt'] = 1
-            extra['view_thread_url'] = reverse('archive_search') + '?' + new_query.urlencode()
+        extra['queryset_offset'] = str(self.page.start_index() - 1)
 
         # export links
         extra['anonymous_export_limit'] = settings.ANONYMOUS_EXPORT_LIMIT
@@ -228,9 +92,6 @@ class CustomSearchView(SearchView):
         else:
             extra['modify_search_url'] = 'javascript:history.back()'
 
-        if is_javascript_disabled(self.request):
-            extra['modify_search_url'] = None
-
         # add custom facets
         if hasattr(self, 'myfacets'):
             extra['facets'] = self.myfacets
@@ -238,10 +99,25 @@ class CustomSearchView(SearchView):
         if hasattr(self, 'queryid'):
             extra['queryid'] = self.queryid
 
-        # Progressive Enhancements.  Start with non-javascript functionality
-        extra['no_js'] = True
+        self.set_thread_links(extra)
+        self.set_page_links(extra)
 
-        # pagination links
+        return extra
+
+    def set_thread_links(self, extra):
+        extra['group_by_thread'] = True if 'gbt' in self.request.GET else False
+        new_query = self.request.GET.copy()
+
+        if extra['group_by_thread']:
+            extra['view_thread_url'] = reverse('archive_search') + extra['query_string']
+            new_query.pop('gbt')
+            extra['view_date_url'] = reverse('archive_search') + '?' + new_query.urlencode()
+        else:
+            extra['view_date_url'] = reverse('archive_search') + extra['query_string']
+            new_query['gbt'] = 1
+            extra['view_thread_url'] = reverse('archive_search') + '?' + new_query.urlencode()
+
+    def set_page_links(self, extra):
         if self.page and self.page.has_other_pages():
             if self.page.has_next():
                 new_query = self.request.GET.copy()
@@ -256,93 +132,78 @@ class CustomSearchView(SearchView):
                     new_query.pop('index')
                 extra['previous_page_url'] = reverse('archive_search') + '?' + new_query.urlencode()
 
-        return extra
-
-    def find_message(self, hash):
-        """Returns the position of message identified by hash in self.results.
-        Currently only supports 'grouped by thread' and date sort order.
-        """
-        try:
-            msg = Message.objects.get(hashcode=hash + '=')
-        except Message.DoesNotExist:
-            raise Http404("No such message!")
-
-        if self.request.GET.get('gbt'):
-            return find_message_gbt(self.results, msg, reverse=True)
-        elif self.request.GET.get('so') == 'date':
-            return find_message_date(self.results, msg)
-        else:
-            return find_message_date(self.results, msg, reverse=True)
-
     def get_context(self):
-        page, selected_offset = self.build_page()
+        # page, selected_offset = self.build_page()
+        self.paginator, self.page = self.build_page()
+
         context = {
             'query': self.query,
             'form': self.form,
-            'page': page,
-            'count': self.results_count,
-            'suggestion': None,
-            'selected_offset': selected_offset,
+            'page': self.page,
+            'selected_offset': None,
         }
-
-        if self.results and hasattr(self.results, 'query') and self.results.query.backend.include_spelling:
-            context['suggestion'] = self.form.get_suggestion()
 
         context.update(self.extra_context())
 
         return context
 
     def get_query(self):
-        """
-        Returns the query provided by the user.
-
-        Returns an empty string if the query is invalid.
-        """
         if self.form.is_valid():
             q = self.form.cleaned_data['q']
             return parse_query_string(q)
 
         return ''
 
-    def get_browse_results(self):
+
+@method_decorator(check_list_access, name='__call__')
+class CustomBrowseView(CustomSearchView):
+    """A customized SearchView.
+    """
+    def __name__(self):
+        return "CustomBrowseView"
+
+    def __call__(self, request, list_name):
+        self.list_name = list_name
+        return super(CustomBrowseView, self).__call__(request)
+
+    def get_results(self):
         """
         Gets a small set of results from the database rather than the search index.
         Expects a URL like .../?email_list=dummy&index=abcd
         """
-        results = []
-        try:
-            index_message = Message.objects.get(
-                email_list__name=self.browse_params['name'],
-                hashcode=self.browse_params['index'] + '=')
-        except Message.DoesNotExist:
-            raise Http404("No such message!")
+        # Don't wrap because we handle this in the template now
+        email_list = get_object_or_404(EmailList, name=self.list_name)
+        fields = get_order_fields(self.request)
+        results = email_list.message_set.order_by(*fields)
 
-        self.results_count = Message.objects.filter(email_list__name=self.browse_params['name']).count()
+        self.index = self.request.GET.get('index')
+        if self.index:
+            try:
+                index_message = Message.objects.get(email_list__name=self.list_name, hashcode=self.index + '=')
+            except Message.DoesNotExist:
+                raise Http404("No such message!")
 
-        if 'gbt' in self.request.GET:
-            thread = index_message.thread
-            while len(results) < self.results_per_page and thread:
-                results.extend([SearchResult(m) for m in thread.message_set.order_by('thread_order')])
-                thread = thread.get_previous()  # default ordering is descending by thread date
-        else:
-            results = [SearchResult(m) for m in Message.objects.filter(
-                email_list__name=self.browse_params['name'],
-                date__lte=index_message.date).order_by('-date')[:self.results_per_page]]
+            self.results_count = Message.objects.filter(email_list__name=self.list_name).count()
+
+            if 'gbt' in self.request.GET:
+                thread = index_message.thread
+                while len(results) < self.results_per_page and thread:
+                    results.extend(thread.message_set.order_by('thread_order'))
+                    thread = thread.get_previous()  # default ordering is descending by thread date
+            else:
+                results = Message.objects.filter(
+                    email_list__name=self.list_name,
+                    date__lte=index_message.date).order_by('-date')[:self.results_per_page]
 
         return results
 
-    def get_results(self):
-        """
-        Fetches the results via the form or list browse function.
+    def extra_context(self):
+        """Add variables to template context"""
+        extra = super(CustomBrowseView, self).extra_context()
+        extra['browse_list'] = self.list_name
+        extra['queryset_offset'] = '200'
 
-        Returns an empty list if there's no query to search with.
-        """
-        if self.browse_params:
-            return self.get_browse_results()
-        else:
-            results = self.form.search()
-            self.results_count = results.count()
-            return results
+        return extra
 
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
@@ -471,8 +332,12 @@ def browse(request, list_name=None):
     """Presents a list of Email Lists the user has access to.  There are
     separate sections for private, active and inactive.
     """
+    is_legacy_on = True if request.COOKIES.get('isLegacyOn') == 'true' else False
     if list_name:
-        redirect_url = '%s?%s' % (reverse('archive_search'), 'email_list=' + list_name)
+        if is_legacy_on:
+            redirect_url = '/arch/browse/{name}/index.html'.format(name=list_name)
+        else:
+            redirect_url = '%s?%s' % (reverse('archive_search'), 'email_list=' + list_name)
         return redirect(redirect_url)
 
     columns = get_columns(request)
@@ -480,8 +345,12 @@ def browse(request, list_name=None):
     if request.method == "GET" and request.GET.get('list'):
         form = BrowseForm(request=request, data=request.GET)
         if form.is_valid():
-            params = [('email_list', form.cleaned_data['list'].name)]
-            return redirect("%s?%s" % (reverse('archive_search'), urllib.urlencode(params)))
+            list_name = form.cleaned_data['list'].name
+            params = [('email_list', list_name)]
+            if is_legacy_on:
+                return redirect('/arch/browse/{name}/index.html'.format(name=list_name))
+            else:
+                return redirect("%s?%s" % (reverse('archive_search'), urllib.urlencode(params)))
     else:
         form = BrowseForm(request=request)
 
@@ -491,21 +360,18 @@ def browse(request, list_name=None):
     })
 
 
-# TODO if we use this, need access decorator
-def browse_list(request, list_name):
-    """Browse emails by list.  The simple version."""
-    list_obj = get_object_or_404(EmailList, name=list_name)
+def get_order_fields(request):
+    """Returns the list of fields to use in queryset ordering"""
+    if request.GET.get('gbt'):
+        return ('-thread__date', 'thread_id', 'thread_order')
 
     # default sort order is date descending
     order = request.GET.get('so', '-date')
-    if order not in ('date', '-date', 'frm', '-frm'):
+    if order not in VALID_SORT_OPTIONS:
         order = '-date'
-    msgs = Message.objects.filter(email_list=list_obj).order_by(order)
+    return (order, )
 
-    return render(request, 'archive/browse_list.html', {
-        'list_obj': list_obj,
-        'msgs': msgs,
-    })
+    # TODO secondary sort order
 
 
 @pad_id

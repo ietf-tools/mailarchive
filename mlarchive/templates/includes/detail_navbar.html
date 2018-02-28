@@ -23,7 +23,7 @@
             <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
             </a>
         </li>
-        <li title="Date Index"><a id="date-index" href="{{ msg.list_by_date_url }}">Date</a></li>
+        <li title="Date Index"><a id="date-index" href="{{ msg.get_date_index_url }}">Date</a></li>
         <li title="Next by date">
           {% if next_in_list %}
             <a id="next-in-list" href="{{ next_in_list.get_absolute_url }}" aria-label="next in list">
@@ -42,7 +42,7 @@
             <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
             </a>
         </li>
-        <li title="Thread Index"><a id="thread-index" href="{{ msg.list_by_thread_url }}">Thread</a></li>
+        <li title="Thread Index"><a id="thread-index" href="{{ msg.get_thread_index_url }}">Thread</a></li>
         <li title="Next in thread">
           {% if next_in_thread %}
             <a id="next-in-thread" href="{{ next_in_thread.get_absolute_url }}" aria-label="next in thread">

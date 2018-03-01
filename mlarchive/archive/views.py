@@ -80,7 +80,7 @@ class CustomSearchView(SearchView):
         extra['results_per_page'] = settings.HAYSTACK_SEARCH_RESULTS_PER_PAGE
         extra['queryset_offset'] = str(self.page.start_index() - 1)
         extra['count'] = self.results.count()
-        
+
         # export links
         extra['anonymous_export_limit'] = settings.ANONYMOUS_EXPORT_LIMIT
         extra['export_mbox'] = reverse('archive_export', kwargs={'type': 'mbox'}) + query_string
@@ -158,8 +158,7 @@ class CustomSearchView(SearchView):
 
 @method_decorator(check_list_access, name='__call__')
 class CustomBrowseView(CustomSearchView):
-    """A customized SearchView.
-    """
+    """A customized SearchView for browsing a list"""
     def __name__(self):
         return "CustomBrowseView"
 
@@ -168,11 +167,7 @@ class CustomBrowseView(CustomSearchView):
         return super(CustomBrowseView, self).__call__(request)
 
     def get_results(self):
-        """
-        Gets a small set of results from the database rather than the search index.
-        Expects a URL like .../?email_list=dummy&index=abcd
-        """
-        # Don't wrap because we handle this in the template now
+        """Gets a small set of results from the database rather than the search index"""
         email_list = get_object_or_404(EmailList, name=self.list_name)
         fields = get_order_fields(self.request)
         results = email_list.message_set.order_by(*fields)
@@ -202,7 +197,14 @@ class CustomBrowseView(CustomSearchView):
         extra['browse_list'] = self.list_name
         extra['queryset_offset'] = '200'
         extra['count'] = Message.objects.filter(email_list__name=self.list_name).count()
-        
+
+        # export links
+        new_query = self.request.GET.copy()
+        new_query['email_list'] = self.list_name
+        extra['export_mbox'] = reverse('archive_export', kwargs={'type': 'mbox'}) + '?' + new_query.urlencode()
+        extra['export_maildir'] = reverse('archive_export', kwargs={'type': 'maildir'}) + '?' + new_query.urlencode()
+        extra['export_url'] = reverse('archive_export', kwargs={'type': 'url'}) + '?' + new_query.urlencode()
+
         return extra
 
 # --------------------------------------------------

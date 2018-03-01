@@ -151,7 +151,6 @@ def test_browse(client):
 def test_browse_list(client, messages):
     url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'})
     response = client.get(url)
-    print url
     assert response.status_code == 200
 
 
@@ -159,7 +158,6 @@ def test_browse_list(client, messages):
 def test_browse_list_private(client, messages):
     url = reverse('archive_browse_list', kwargs={'list_name': 'private'})
     response = client.get(url)
-    print url
     assert response.status_code == 403
 
 
@@ -172,8 +170,7 @@ def test_browse_list_bogus_index(client, messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_browse_query(client, messages):
-    message = Message.objects.filter(email_list__name='pubone').order_by('-date').first()
-    url = '%s/?email_list=pubone&index=%s' % (reverse('archive_search'), message.hashcode.strip('='))
+    url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?q=hello'
     response = client.get(url)
     assert response.status_code == 200
     assert len(response.context['results']) == 4
@@ -181,16 +178,15 @@ def test_browse_query(client, messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_browse_query_gbt(client, messages):
+    url = reverse('archive_browse_list', kwargs={'list_name': 'apple'}) + '?gbt=1'
     messages = Message.objects.filter(email_list__name='apple').order_by('thread_order')
-    message = messages.first()
-    url = '%s/?email_list=apple&gbt=1&index=%s' % (reverse('archive_search'), message.hashcode.strip('='))
     response = client.get(url)
     assert response.status_code == 200
     assert len(response.context['results']) == 6
 
     # assert proper order
     print [(m.pk, m.thread_order) for m in messages]
-    assert [r.object.pk for r in response.context['results']] == [m.pk for m in messages]
+    assert [r.pk for r in response.context['results']] == [m.pk for m in messages]
 
 
 @pytest.mark.django_db(transaction=True)

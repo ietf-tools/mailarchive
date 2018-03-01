@@ -239,7 +239,6 @@ class AdvancedSearchForm(FacetedSearchForm):
 
             # if query contains no filters compute simple facet counts
             filters = get_filter_params(self.request.GET)
-
             if not filters:
                 facets = sqs.facet_counts()
 

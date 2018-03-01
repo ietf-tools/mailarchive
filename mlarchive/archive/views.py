@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib.auth import logout
 from django.utils.decorators import method_decorator
 from django.forms.formsets import formset_factory
-from django.http import HttpResponseRedirect, Http404
+from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -51,8 +51,7 @@ class CustomSearchView(SearchView):
         facet_counts().
         """
         if query_is_listname(request):
-            # return redirect(reverse('archive_search') + '?email_list=' + request.GET['q'])
-            return redirect(reverse('archive_browse_list', kwargs={'list_name': request.GET['q']}))
+            return redirect('archive_browse_list', list_name=request.GET['q'])
 
         self.request = request
         self.form = self.build_form()
@@ -163,6 +162,10 @@ class CustomBrowseView(CustomSearchView):
         return "CustomBrowseView"
 
     def __call__(self, request, list_name):
+        is_legacy_on = True if request.COOKIES.get('isLegacyOn') == 'true' else False
+        if is_legacy_on:
+            return redirect('./maillist.html')
+
         self.list_name = list_name
         return super(CustomBrowseView, self).__call__(request)
 
@@ -330,18 +333,11 @@ def advsearch(request):
     })
 
 
-def browse(request, list_name=None):
+def browse(request):
     """Presents a list of Email Lists the user has access to.  There are
     separate sections for private, active and inactive.
     """
     is_legacy_on = True if request.COOKIES.get('isLegacyOn') == 'true' else False
-    if list_name:
-        if is_legacy_on:
-            redirect_url = '/arch/browse/{name}/index.html'.format(name=list_name)
-        else:
-            redirect_url = '%s?%s' % (reverse('archive_search'), 'email_list=' + list_name)
-        return redirect(redirect_url)
-
     columns = get_columns(request)
 
     if request.method == "GET" and request.GET.get('list'):
@@ -352,7 +348,7 @@ def browse(request, list_name=None):
             if is_legacy_on:
                 return redirect('/arch/browse/{name}/index.html'.format(name=list_name))
             else:
-                return redirect("%s?%s" % (reverse('archive_search'), urllib.urlencode(params)))
+                return redirect('{url}?{params}'.format(url=reverse('archive_search'), params=urllib.urlencode(params)))
     else:
         form = BrowseForm(request=request)
 
@@ -414,13 +410,13 @@ def legacy_message(request, list_name, id):
         message = Message.objects.get(email_list__name=list_name, legacy_number=int(id))
     except Message.DoesNotExist:
         raise Http404("Message not found")
-    return HttpResponseRedirect(message.get_absolute_url())
+    return redirect(message)
 
 
 def logout_view(request):
     """Logout the user"""
     logout(request)
-    return HttpResponseRedirect(reverse('archive'))
+    return redirect('archive')
 
 
 def main(request):

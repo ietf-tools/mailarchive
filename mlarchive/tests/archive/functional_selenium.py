@@ -181,8 +181,28 @@ class MySeleniumTests(StaticLiveServerTestCase):
         element = self.selenium.find_element_by_id('msg-header')
         assert not element.is_displayed()
 
-
 """
+    def test_legacy_mode(self):
+        main_url = reverse('archive')
+        url = urlparse.urljoin(self.live_server_url, main_url)
+        print url
+        self.selenium.get(url)
+        print self.selenium.page_source
+
+        # click Legacy Mode On
+        self.selenium.find_element_by_id('nav-settings').click()
+        self.selenium.get_screenshot_as_file('tests/tmp/test_legacy_mode.png')
+        #self.selenium.find_element_by_link_text('Legacy Mode On').click()
+        self.selenium.find_element_by_id('toggle-legacy').click()
+
+        # Wait until the response is received
+        #WebDriverWait(self.selenium, timeout).until(
+        #    lambda driver: driver.find_element_by_tag_name('body'))
+
+        cookies = self.selenium.get_cookies()
+        print cookies
+        assert False
+
 class AdminSeleniumTests(StaticLiveServerTestCase):
     '''Selenium functional test cases'''
     @classmethod

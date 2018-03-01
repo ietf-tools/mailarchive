@@ -1,5 +1,6 @@
 import os
 import pytest
+
 from django.conf import settings
 from django.contrib.auth import SESSION_KEY
 from django.urls import reverse
@@ -186,6 +187,16 @@ def test_browse_query_gbt(client, messages):
 
     # assert proper order
     assert [r.pk for r in response.context['results']] == [m.pk for m in messages]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_legacy_mode(client):
+    elist = EmailListFactory.create()
+    url = reverse('archive_browse_list', kwargs={'list_name': elist.name})
+    client.cookies['isLegacyOn'] = 'true'
+    response = client.get(url)
+    assert response.status_code == 302
+    assert response['location'] == './maillist.html'
 
 
 @pytest.mark.django_db(transaction=True)

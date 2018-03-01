@@ -2,6 +2,7 @@ import random
 import re
 from datetime import datetime, timedelta
 
+from django.conf import settings
 from django.core.cache import cache
 
 from mlarchive.archive.utils import get_lists
@@ -14,6 +15,10 @@ VALID_QUERYID_RE = re.compile(r'^[a-f0-9]{32}$')
 FILTER_PARAMS = ('f_list', 'f_from')
 NON_FILTER_PARAMS = ('so', 'sso', 'page', 'gbt')
 
+VALID_SORT_OPTIONS = ('frm', '-frm', 'date', '-date', 'email_list', '-email_list',
+                      'subject', '-subject')
+
+DEFAULT_SORT = getattr(settings, 'ARCHIVE_DEFAULT_SORT', '-date')
 
 # --------------------------------------------------
 # Functions handle URL parameters
@@ -109,6 +114,28 @@ def get_qdr_time(val):
         return now - timedelta(days=30)
     elif val == 'y':
         return now - timedelta(days=365)
+
+
+def get_order_fields(params):
+    """Returns the list of fields to use in queryset ordering"""
+    if params.get('gbt'):
+        return ('-thread__date', 'thread_id', 'thread_order')
+
+    # default sort order is date descending
+    so = map_sort_option(params.get('so', DEFAULT_SORT))
+    sso = map_sort_option(params.get('sso'))
+    return [v for v in (so, sso) if v]
+
+
+def map_sort_option(val):
+    """This function takes a sort parameter and validates and maps it for use
+    in an order_by clause.
+    """
+    if val not in VALID_SORT_OPTIONS:
+        return ''
+    if val in ('frm', '-frm'):
+        val = val + '_name'    # use just email portion of from
+    return val
 
 
 def parse_query(request):

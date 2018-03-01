@@ -7,7 +7,7 @@ from django.test.client import RequestFactory
 from django.urls import reverse
 from factories import UserFactory
 from haystack.query import SearchQuerySet
-from mlarchive.archive.forms import AdvancedSearchForm, get_base_query, get_cache_key, map_sort_option
+from mlarchive.archive.forms import AdvancedSearchForm, get_base_query, get_cache_key
 from pyquery import PyQuery
 
 from mlarchive.archive.models import Message
@@ -62,12 +62,6 @@ def test_group_by_thread(messages):
 #    assert [ x.pk for x in sqs ] == [3,4,2,1]
 #    sqs = sort_by_subject(sqs,None,reverse=False)
 #    assert [ x.pk for x in sqs ] == [1,2,4,3]
-
-
-def test_map_sort_option():
-    assert map_sort_option('invalid') == ''
-    assert map_sort_option('frm') == 'frm_name'
-    assert map_sort_option('-frm') == '-frm_name'
 
 
 @pytest.mark.django_db(transaction=True)

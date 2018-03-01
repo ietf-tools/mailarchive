@@ -185,7 +185,6 @@ def test_browse_query_gbt(client, messages):
     assert len(response.context['results']) == 6
 
     # assert proper order
-    print [(m.pk, m.thread_order) for m in messages]
     assert [r.pk for r in response.context['results']] == [m.pk for m in messages]
 
 

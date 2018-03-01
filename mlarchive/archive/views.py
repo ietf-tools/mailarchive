@@ -19,12 +19,12 @@ from haystack.forms import SearchForm
 from mlarchive.utils.decorators import check_access, superuser_only, pad_id, log_timing, check_list_access
 from mlarchive.archive import actions
 from mlarchive.archive.query_utils import (get_kwargs, get_cached_query, query_is_listname,
-    parse_query_string)
+    parse_query_string, get_order_fields)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     get_query_neighbors, get_query_string, get_lists_for_user)
 
 from models import EmailList, Message
-from forms import AdminForm, AdminActionForm, AdvancedSearchForm, BrowseForm, RulesForm, VALID_SORT_OPTIONS
+from forms import AdminForm, AdminActionForm, AdvancedSearchForm, BrowseForm, RulesForm
 
 import logging
 logger = logging.getLogger('mlarchive.custom')
@@ -169,7 +169,7 @@ class CustomBrowseView(CustomSearchView):
     def get_results(self):
         """Gets a small set of results from the database rather than the search index"""
         email_list = get_object_or_404(EmailList, name=self.list_name)
-        fields = get_order_fields(self.request)
+        fields = get_order_fields(self.request.GET)
         results = email_list.message_set.order_by(*fields)
 
         self.index = self.request.GET.get('index')
@@ -360,20 +360,6 @@ def browse(request, list_name=None):
         'form': form,
         'columns': columns,
     })
-
-
-def get_order_fields(request):
-    """Returns the list of fields to use in queryset ordering"""
-    if request.GET.get('gbt'):
-        return ('-thread__date', 'thread_id', 'thread_order')
-
-    # default sort order is date descending
-    order = request.GET.get('so', '-date')
-    if order not in VALID_SORT_OPTIONS:
-        order = '-date'
-    return (order, )
-
-    # TODO secondary sort order
 
 
 @pad_id

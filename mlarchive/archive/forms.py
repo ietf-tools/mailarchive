@@ -9,7 +9,7 @@ from django.utils.http import urlencode
 from haystack.forms import FacetedSearchForm
 
 from mlarchive.archive.query_utils import (get_kwargs, generate_queryid, get_filter_params,
-    parse_query, get_base_query)
+    parse_query, get_base_query, get_order_fields)
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
 
@@ -31,11 +31,6 @@ TIME_CHOICES = (('a', 'Any time'),
                 ('m', 'Past month'),
                 ('y', 'Past year'),
                 ('c', 'Custom range...'))
-
-VALID_SORT_OPTIONS = ('frm', '-frm', 'date', '-date', 'email_list', '-email_list',
-                      'subject', '-subject')
-
-DEFAULT_SORT = getattr(settings, 'ARCHIVE_DEFAULT_SORT', '-date')
 
 
 def profile(func):
@@ -73,17 +68,6 @@ def group_by_thread(qs, so, sso, reverse=False):
     Top level threads ordered by date descending.  Sub-threads by date
     ascending"""
     return qs.order_by('-tdate', 'tid', 'torder')
-
-
-def map_sort_option(val):
-    """This function takes a sort parameter and validates and maps it for use
-    in an order_by clause.
-    """
-    if val not in VALID_SORT_OPTIONS:
-        return ''
-    if val in ('frm', '-frm'):
-        val = val + '_name'    # use just email portion of from
-    return val
 
 
 # --------------------------------------------------------
@@ -241,14 +225,10 @@ class AdvancedSearchForm(FacetedSearchForm):
         if facets:
             return facets
 
-        # if settings.DEBUG:
-        #    messages.info(self.request,'Facets not in cache')
-
         # calculating facet_counts on large results sets is too costly so skip it
         # If you call results.count() before results.facet_counts() the facet_counts
         # are corrupted in Xapian backend.  The solution is to clone the query and
         # call counts on that
-        # TODO: this might also be implemented as a timeout
 
         temp = sqs._clone()
         count = temp.count()
@@ -313,7 +293,6 @@ class AdvancedSearchForm(FacetedSearchForm):
         """
         # for now if search form doesn't validate return empty results
         if not self.is_valid():
-            # TODO: messages.warning(self.request, 'invalid search parameters')
             return self.no_query_found()
 
         self.f_list = self.cleaned_data['f_list']
@@ -352,23 +331,13 @@ class AdvancedSearchForm(FacetedSearchForm):
         # grouping and sorting  -----------------------------------
         # perform this step last because other operations, if they clone the
         # SearchQuerySet, cause the query to be re-run which loses custom sort order
-        so = map_sort_option(self.cleaned_data.get('so'))
-        sso = map_sort_option(self.cleaned_data.get('sso'))
-        gbt = self.cleaned_data.get('gbt')
-        sort_values = [v for v in (so, sso) if v]
-
-        if gbt:
-            sqs = group_by_thread(sqs, so, sso, reverse=True)
-        elif so:
-            sqs = sqs.order_by(*sort_values)
-        else:
-            sqs = sqs.order_by(DEFAULT_SORT)
+        fields = get_order_fields(self.cleaned_data)
+        sqs = sqs.order_by(*fields)
 
         # save query in cache with random id for security
         queryid = generate_queryid()
         sqs.query_string = self.request.META['QUERY_STRING']
         sqs.queryid = queryid
-        # logger.info('Queryid:%s' % queryid)
         cache.set(queryid, sqs, 7200)           # 2 hours
 
         logger.info('Backend Query: %s' % sqs.query.build_query())

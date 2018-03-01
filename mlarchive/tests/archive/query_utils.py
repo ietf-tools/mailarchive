@@ -9,7 +9,7 @@ from django.urls import reverse
 from factories import EmailListFactory
 
 from mlarchive.archive.query_utils import (clean_queryid, generate_queryid, get_cached_query,
-    get_filter_params, query_is_listname, parse_query)
+    get_filter_params, query_is_listname, parse_query, map_sort_option)
 from mlarchive.utils.test_utils import get_request
 
 
@@ -42,6 +42,12 @@ def test_get_filter_params():
     assert get_filter_params(QueryDict('f_from=joe')) == ['f_from']
     assert get_filter_params(QueryDict('f_list=pub&f_from=joe')) == ['f_list', 'f_from']
     assert get_filter_params(QueryDict('f_list=')) == []
+
+
+def test_map_sort_option():
+    assert map_sort_option('invalid') == ''
+    assert map_sort_option('frm') == 'frm_name'
+    assert map_sort_option('-frm') == '-frm_name'
 
 
 @pytest.mark.django_db(transaction=True)

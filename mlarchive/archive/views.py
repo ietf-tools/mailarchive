@@ -79,7 +79,8 @@ class CustomSearchView(SearchView):
         extra['query_string'] = query_string
         extra['results_per_page'] = settings.HAYSTACK_SEARCH_RESULTS_PER_PAGE
         extra['queryset_offset'] = str(self.page.start_index() - 1)
-
+        extra['count'] = self.results.count()
+        
         # export links
         extra['anonymous_export_limit'] = settings.ANONYMOUS_EXPORT_LIMIT
         extra['export_mbox'] = reverse('archive_export', kwargs={'type': 'mbox'}) + query_string
@@ -183,8 +184,6 @@ class CustomBrowseView(CustomSearchView):
             except Message.DoesNotExist:
                 raise Http404("No such message!")
 
-            self.results_count = Message.objects.filter(email_list__name=self.list_name).count()
-
             if 'gbt' in self.request.GET:
                 thread = index_message.thread
                 while len(results) < self.results_per_page and thread:
@@ -202,7 +201,8 @@ class CustomBrowseView(CustomSearchView):
         extra = super(CustomBrowseView, self).extra_context()
         extra['browse_list'] = self.list_name
         extra['queryset_offset'] = '200'
-
+        extra['count'] = Message.objects.filter(email_list__name=self.list_name).count()
+        
         return extra
 
 # --------------------------------------------------

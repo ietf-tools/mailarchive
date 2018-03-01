@@ -92,8 +92,10 @@
                                 <li><a id="modify-search" href="{{ modify_search_url }}" title="Modify Search"><span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span></a></li>
                             {% endif %}
                             <!-- <li><a id="clear-sort" href="#">Clear Sort</a></li> -->
-                            <li{% if not group_by_thread %} class="active"{% endif %}><a href="{{ view_date_url }}">Date</a></li>
-                            <li{% if group_by_thread %} class="active"{% endif %}><a id="gbt-link" href="{{ view_thread_url }}">Thread</a></li>
+                            {% if browse_list %}
+                                <li{% if not group_by_thread %} class="active"{% endif %}><a href="{{ view_date_url }}">Date</a></li>
+                                <li{% if group_by_thread %} class="active"{% endif %}><a id="gbt-link" href="{{ view_thread_url }}">Thread</a></li>
+                            {% endif %}
                         </ul>
                         
                         <ul class="nav navbar-nav navbar-right">
@@ -162,7 +164,7 @@
                     </div> <!-- msg-list -->
 
                     <div id="msg-list-controls">
-                        <div id="message-count" class="list-control">{{ page.paginator.count }} Messages</div>
+                        <div id="message-count" class="list-control">{{ count }} Messages</div>
                         <div class="list-control page-nav">
                             {% if page.has_previous %}<a class="pull-left" href="{{ previous_page_url }}">Previous</a>{% endif %}
                             <span class="current-page">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>

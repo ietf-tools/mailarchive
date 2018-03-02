@@ -7,10 +7,11 @@ from django.test.client import RequestFactory
 from django.urls import reverse
 from factories import UserFactory
 from haystack.query import SearchQuerySet
-from mlarchive.archive.forms import AdvancedSearchForm, get_base_query, get_cache_key
+from mlarchive.archive.forms import AdvancedSearchForm, get_base_query, get_cache_key, group_by_thread
 from pyquery import PyQuery
 
 from mlarchive.archive.models import Message
+
 
 def test_get_base_query():
     qd = QueryDict('?q=database&f_list=saag&so=date')
@@ -51,9 +52,10 @@ def test_get_cache_key():
 @pytest.mark.django_db(transaction=True)
 def test_group_by_thread(messages):
     sqs = SearchQuerySet().filter(email_list__in=['pubone'])
-    sqs = sqs.order_by('tdate', 'date')
+    sqs = group_by_thread(sqs, None, None, reverse=True)
     print '{}'.format([(x.msgid, x.tdate, x.date) for x in sqs])
-    assert [x.msgid for x in sqs] == ['a01', 'a04', 'a02', 'a03']       # assert grouped by thread order
+    assert [x.msgid for x in sqs] == ['a02', 'a03', 'a01', 'a04']       # assert grouped by thread order
+
 
 # @pytest.mark.django_db(transaction=True)
 # def test_sort_by_subject(messages):
@@ -160,7 +162,7 @@ def test_asf_search_qdr(client, messages):
     for m in Message.objects.all():
         print m.msgid, m.date
     # message from yesterday may not be included due to test timing
-    assert len(results) in [4,5]
+    assert len(results) in [4, 5]
 
 
 @pytest.mark.django_db(transaction=True)

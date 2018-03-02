@@ -123,9 +123,10 @@ def index_resource():
     call_command('update_index', stdout=content)
     print content.read()
 
-    def fin():
-        call_command('clear_index', noinput=True, stdout=content)
-        print content.read()
+    yield
+
+    call_command('clear_index', interactive=False, stdout=content)
+    print content.read()
 
 
 @pytest.fixture()
@@ -133,6 +134,7 @@ def messages(index_resource):
     """Load some messages into db and index for testing"""
     if not Message.objects.first():
         load_db()
+    yield Message.objects.all()
 
 
 @pytest.fixture()
@@ -145,7 +147,7 @@ def thread_messages():
 
 @pytest.fixture()
 def thread_messages_db_only():
-    public = EmailListFactory.create(name='pubone')
+    public = EmailListFactory.create(name='public')
     athread = ThreadFactory.create(date=datetime.datetime(2017, 1, 1))
     bthread = ThreadFactory.create(date=datetime.datetime(2017, 2, 1))
     cthread = ThreadFactory.create(date=datetime.datetime(2017, 3, 1))

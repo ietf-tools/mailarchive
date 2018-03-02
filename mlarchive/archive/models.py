@@ -142,8 +142,8 @@ class Message(models.Model):
     thread_order = models.IntegerField(default=0)
     to = models.TextField(blank=True, default='')
     updated = models.DateTimeField(auto_now=True)
-    date_index_page = models.IntegerField(default=0)
-    thread_index_page = models.IntegerField(default=0)
+    date_index_page = models.CharField(max_length=64, default='')
+    thread_index_page = models.CharField(max_length=64, default='')
 
     def __unicode__(self):
         return self.msgid
@@ -244,19 +244,11 @@ class Message(models.Model):
 
     def get_static_date_index_url(self):
         url = reverse('archive_browse_list', kwargs={'list_name': self.email_list.name})
-        if self.date_index_page == 0:
-            filename = 'maillist.html'
-        else:
-            filename = 'mail{page:04d}.html'.format(page=self.date_index_page)
-        return url + '{filename}#{fragment}'.format(filename=filename, fragment=self.hashcode.rstrip('='))
+        return url + '{filename}#{fragment}'.format(filename=self.date_index_page, fragment=self.hashcode.rstrip('='))
 
     def get_static_thread_index_url(self):
         url = reverse('archive_browse_list', kwargs={'list_name': self.email_list.name})
-        if self.thread_index_page == 0:
-            filename = 'threadlist.html'
-        else:
-            filename = 'thread{page:04d}.html'.format(page=self.thread_index_page)
-        return url + '{filename}#{fragment}'.format(filename=filename, fragment=self.hashcode.rstrip('='))
+        return url + '{filename}#{fragment}'.format(filename=self.thread_index_page, fragment=self.hashcode.rstrip('='))
 
     def get_file_path(self):
         return os.path.join(

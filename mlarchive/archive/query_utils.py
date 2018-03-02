@@ -19,6 +19,7 @@ VALID_SORT_OPTIONS = ('frm', '-frm', 'date', '-date', 'email_list', '-email_list
                       'subject', '-subject')
 
 DEFAULT_SORT = getattr(settings, 'ARCHIVE_DEFAULT_SORT', '-date')
+THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
 
 # --------------------------------------------------
 # Functions handle URL parameters
@@ -119,7 +120,7 @@ def get_qdr_time(val):
 def get_order_fields(params):
     """Returns the list of fields to use in queryset ordering"""
     if params.get('gbt'):
-        return ('-thread__date', 'thread_id', 'thread_order')
+        return (THREAD_SORT_FIELDS)
 
     # default sort order is date descending
     so = map_sort_option(params.get('so', DEFAULT_SORT))

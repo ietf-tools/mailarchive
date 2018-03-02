@@ -1,5 +1,6 @@
 import codecs
 import json
+import math
 import os
 import shutil
 from collections import OrderedDict
@@ -12,6 +13,8 @@ from django.template.loader import render_to_string
 
 from mlarchive.archive.models import EmailList, Message
 from mlarchive.utils.test_utils import get_search_backend
+
+THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
 
 # --------------------------------------------------
 # Helper Functions
@@ -84,6 +87,26 @@ def jsonapi(fn):
     return to_json
 
 
+def update_static_index(elist):
+    """Update static index pages for list.  Find unindexed messages, date_index_page == 0,
+    and build all pages necessary"""
+    oldest = elist.message_set.filter(date_index_page='').order_by('date').first()
+    if not oldest:
+        return
+    older = elist.message_set.filter(date__lte=oldest.date)
+    page = int(math.ceil(older.count() / float(settings.STATIC_INDEX_MESSAGES_PER_PAGE)))
+    build_date_pages(elist, start=page)
+
+    messages = elist.message_set.filter(thread_index_page='').order_by(*THREAD_SORT_FIELDS)
+    messages.reverse()
+    for m in messages: print m.date, m.thread
+    oldest = messages.first()
+    older = elist.message_set.filter(thread__date__lte=oldest.thread.date)
+    page = int(math.ceil(older.count() / float(settings.STATIC_INDEX_MESSAGES_PER_PAGE)))
+    # assert False, (oldest.date, older, page)
+    build_thread_pages(elist, start=page)
+
+
 def rebuild_static_index(elist=None):
     """Rebuilds static index pages for all public lists"""
     assert 'static' in settings.STATIC_INDEX_DIR    # extra precaution before removing
@@ -114,20 +137,18 @@ def build_index_page(elist):
         index_file.write(content)
 
 
-def build_date_pages(elist):
+def build_date_pages(elist, start=1):
     messages = elist.message_set.order_by('date')
     paginator = Paginator(messages, settings.STATIC_INDEX_MESSAGES_PER_PAGE)
-    for page_number in paginator.page_range:
+    for page_number in xrange(start, paginator.num_pages + 1):
         page = paginator.page(page_number)
         if page_number == paginator.num_pages:
             filename = 'maillist.html'
-            date_index_page = 0
         else:
             filename = 'mail{page_number:04d}.html'.format(page_number=page_number)
-            date_index_page = page_number
 
         queryset = Message.objects.filter(id__in=[m.id for m in page.object_list])
-        queryset.update(date_index_page=date_index_page)
+        queryset.update(date_index_page=filename)
 
         path = os.path.join(settings.STATIC_INDEX_DIR, elist.name, filename)
         content = render_to_string('archive/static_index_date.html', {'page': page})
@@ -135,21 +156,19 @@ def build_date_pages(elist):
             static_file.write(content)
 
 
-def build_thread_pages(elist):
-    messages = list(elist.message_set.order_by('-thread__date', 'thread__id', 'thread_order'))
+def build_thread_pages(elist, start=1):
+    messages = list(elist.message_set.order_by(*THREAD_SORT_FIELDS))
     messages.reverse()
     paginator = Paginator(messages, settings.STATIC_INDEX_MESSAGES_PER_PAGE)
-    for page_number in paginator.page_range:
+    for page_number in xrange(start, paginator.num_pages + 1):
         page = paginator.page(page_number)
         if page_number == paginator.num_pages:
             filename = 'threadlist.html'
-            thread_index_page = 0
         else:
             filename = 'thread{page_number:04d}.html'.format(page_number=page_number)
-            thread_index_page = page_number
 
         queryset = Message.objects.filter(id__in=[m.id for m in page.object_list])
-        queryset.update(thread_index_page=thread_index_page)
+        queryset.update(thread_index_page=filename)
 
         path = os.path.join(settings.STATIC_INDEX_DIR, elist.name, filename)
         content = render_to_string('archive/static_index_thread.html', {'page': page})

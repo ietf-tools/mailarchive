@@ -12,24 +12,21 @@ import shutil
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ajax_admin_action(client):
-    UserFactory.create(is_superuser=True)
+def test_ajax_admin_action(admin_client):
     elist = EmailListFactory.create(name='public')
     msg = MessageFactory.create(email_list=elist)
-    client.login(username='admin', password='admin')
     url = reverse('ajax_admin_action')
     data = {'action': 'remove_selected', 'ids': '%s' % msg.pk}
-    response = client.post(url, data)
+    response = admin_client.post(url, data)
     assert response.status_code == 200
     assert Message.objects.count() == 0
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ajax_get_msg(client):
+def test_ajax_get_msg(client, admin_client, admin_user):
     publist = EmailListFactory.create(name='public')
     prilist = EmailListFactory.create(name='private', private=True)
-    user = UserFactory.create(is_superuser=True)
-    prilist.members.add(user)
+    prilist.members.add(admin_user)
     thread = ThreadFactory.create()
     msg = MessageFactory.create(email_list=publist, thread=thread, hashcode='00001')
     primsg = MessageFactory.create(email_list=prilist, thread=thread, hashcode='00002')
@@ -50,9 +47,8 @@ def test_ajax_get_msg(client):
     assert response.status_code == 403
 
     # test authorized access to restricted Message
-    assert client.login(username='admin', password='admin')
     url = '%s/?id=%s' % (reverse('ajax_get_msg'), primsg.pk)
-    response = client.get(url)
+    response = admin_client.get(url)
     assert response.status_code == 200
 
 
@@ -104,7 +100,7 @@ def test_ajax_get_messages(client, messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_ajax_get_messages_browse(client, messages):
-    message = Message.objects.filter(email_list__name='pubone').order_by('-date').first()
+    message = messages.filter(email_list__name='pubone').order_by('-date').first()
     url = '{}/?qid=&referenceitem=1&browselist=pubone&referenceid={}&gbt=&direction=next'.format(
         reverse('ajax_messages'), message.pk)
     response = client.get(url)
@@ -115,7 +111,7 @@ def test_ajax_get_messages_browse(client, messages):
 @pytest.mark.django_db(transaction=True)
 def test_ajax_get_messages_browse_private_unauth(client, messages):
     '''Test that unauthorized person cannot retrieve private messages'''
-    message = Message.objects.filter(email_list__name='private').order_by('-date').first()
+    message = messages.filter(email_list__name='private').order_by('-date').first()
     url = '{}/?qid=&referenceitem=1&browselist=private&referenceid={}&gbt=&direction=next'.format(
         reverse('ajax_messages'), message.pk)
     response = client.get(url)
@@ -148,7 +144,7 @@ def test_get_query_results(client, messages):
     q = PyQuery(response.content)
     qid = q('.msg-list').attr('data-queryid')
     query = cache.get(qid)
-    messages = Message.objects.filter(email_list__name='pubthree').order_by('-date')
+    messages = messages.filter(email_list__name='pubthree').order_by('-date')
     results = get_query_results(query=query, referenceitem=10, direction='next')
     # assert we get the remaining messages ordered by date descending
     assert len(results) == 11
@@ -158,7 +154,7 @@ def test_get_query_results(client, messages):
 @pytest.mark.django_db(transaction=True)
 def test_get_browse_results(client, messages):
     '''Simple test of high level function'''
-    message = Message.objects.filter(email_list__name='pubthree').order_by('-date').first()
+    message = messages.filter(email_list__name='pubthree').order_by('-date').first()
     results = get_browse_results(referenceid=message.pk, direction='next', gbt=None)
     assert results
 
@@ -173,7 +169,7 @@ def test_get_browse_results_gbt(client, thread_messages_db_only):
 
 @pytest.mark.django_db(transaction=True)
 def test_get_browse_results_date(client, messages):
-    messages = Message.objects.filter(email_list__name='pubthree').order_by('-date')
+    messages = messages.filter(email_list__name='pubthree').order_by('-date')
     results = get_browse_results_date(reference_message=messages[9], direction='next')
     print messages.count()
     assert len(results) == 11

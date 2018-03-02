@@ -84,14 +84,12 @@ def test_get_export_limit_url(client, messages, settings):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_get_export_anonymous_limit(client, thread_messages, settings):
+def test_get_export_anonymous_limit(client, admin_client, thread_messages, settings):
     settings.ANONYMOUS_EXPORT_LIMIT = 1
-    UserFactory.create(is_superuser=True)
     url = '%s?%s' % (reverse('archive_export', kwargs={'type': 'mbox'}), 'q=anvil')
     response = client.get(url)
     assert response.status_code == 302
-    assert client.login(username='admin', password='admin')
-    response = client.get(url)
+    response = admin_client.get(url)
     assert response.status_code == 200
 
 

@@ -27,71 +27,59 @@ def load_message(filename, listname='public'):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_admin(client):
+def test_admin(client, admin_client):
     "Admin Test"
     url = reverse('archive_admin')
     response = client.get(url)
     assert response.status_code == 403
-    UserFactory.create(is_superuser=True)
-    assert client.login(username='admin', password='admin')
-    response = client.get(url)
+    response = admin_client.get(url)
     assert response.status_code == 200
 
 
 @pytest.mark.django_db(transaction=True)
-def test_admin_search_msgid(client, messages):
-    msg = Message.objects.first()
-    UserFactory.create(is_superuser=True)
-    assert client.login(username='admin', password='admin')
+def test_admin_search_msgid(admin_client, messages):
+    msg = messages.first()
     url = reverse('archive_admin') + '?msgid=' + msg.msgid
-    response = client.get(url)
+    response = admin_client.get(url)
     assert response.status_code == 200
     results = response.context['results']
     assert msg in [r.object for r in results]
 
 
 @pytest.mark.django_db(transaction=True)
-def test_admin_search_subject(client, messages):
-    msg = Message.objects.first()
-    UserFactory.create(is_superuser=True)
-    assert client.login(username='admin', password='admin')
+def test_admin_search_subject(admin_client, messages):
+    msg = messages.first()
     url = reverse('archive_admin') + '?subject=message'
-    response = client.get(url)
+    response = admin_client.get(url)
     assert response.status_code == 200
     results = response.context['results']
     assert msg in [r.object for r in results]
 
 
 @pytest.mark.django_db(transaction=True)
-def test_admin_search_date(client, messages):
-    msg = Message.objects.first()
-    UserFactory.create(is_superuser=True)
-    assert client.login(username='admin', password='admin')
+def test_admin_search_date(admin_client, messages):
+    msg = messages.first()
     url = reverse('archive_admin') + '?start_date=' + msg.date.strftime("%Y-%m-%d")
-    response = client.get(url)
+    response = admin_client.get(url)
     assert response.status_code == 200
     results = response.context['results']
     assert msg in [r.object for r in results]
 
 
 @pytest.mark.django_db(transaction=True)
-def test_admin_search_list(client, messages):
-    msg = Message.objects.first()
-    UserFactory.create(is_superuser=True)
-    assert client.login(username='admin', password='admin')
+def test_admin_search_list(admin_client, messages):
+    msg = messages.first()
     url = reverse('archive_admin') + '?email_list=' + msg.email_list.name
-    response = client.get(url)
+    response = admin_client.get(url)
     assert response.status_code == 200
     results = response.context['results']
     assert msg in [r.object for r in results]
 
 
 @pytest.mark.django_db(transaction=True)
-def test_admin_no_action(client, messages):
-    UserFactory.create(is_superuser=True)
-    assert client.login(username='admin', password='admin')
+def test_admin_no_action(admin_client, messages):
     url = reverse('archive_admin')
-    response = client.post(url, {'select-across': 0, 'index': 0})
+    response = admin_client.post(url, {'select-across': 0, 'index': 0})
     assert response.status_code == 200
 
 
@@ -113,24 +101,20 @@ def test_admin_search_from(client,messages):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_admin_console(client):
+def test_admin_console(client, admin_client):
     url = reverse('archive_admin_console')
     response = client.get(url)
     assert response.status_code == 403
-    UserFactory.create(is_superuser=True)
-    assert client.login(username='admin', password='admin')
-    response = client.get(url)
+    response = admin_client.get(url)
     assert response.status_code == 200
 
 
 @pytest.mark.django_db(transaction=True)
-def test_admin_guide(client):
+def test_admin_guide(client, admin_client):
     url = reverse('archive_admin_guide')
     response = client.get(url)
     assert response.status_code == 403
-    UserFactory.create(is_superuser=True)
-    assert client.login(username='admin', password='admin')
-    response = client.get(url)
+    response = admin_client.get(url)
     assert response.status_code == 200
 
 
@@ -180,7 +164,7 @@ def test_browse_query(client, messages):
 @pytest.mark.django_db(transaction=True)
 def test_browse_query_gbt(client, messages):
     url = reverse('archive_browse_list', kwargs={'list_name': 'apple'}) + '?gbt=1'
-    messages = Message.objects.filter(email_list__name='apple').order_by('thread_order')
+    messages = messages.filter(email_list__name='apple').order_by('thread_order')
     response = client.get(url)
     assert response.status_code == 200
     assert len(response.context['results']) == 6
@@ -261,14 +245,12 @@ def test_legacy_message(client):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_logout(client):
-    UserFactory.create(is_superuser=True)
-    assert client.login(username='admin', password='admin')
-    assert SESSION_KEY in client.session
+def test_logout(admin_client):
+    assert SESSION_KEY in admin_client.session
     url = reverse('archive_logout')
-    response = client.get(url, follow=True)
+    response = admin_client.get(url, follow=True)
     assert response.status_code == 200
-    assert SESSION_KEY not in client.session
+    assert SESSION_KEY not in admin_client.session
 
 
 @pytest.mark.django_db(transaction=True)

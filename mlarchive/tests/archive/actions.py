@@ -8,12 +8,10 @@ from mlarchive.utils.test_utils import get_request
 
 
 @pytest.mark.django_db(transaction=True)
-def test_remove_selected(client):
+def test_remove_selected(admin_user):
     elist = EmailListFactory.create(name='public')
     thread = ThreadFactory.create()
     msg = MessageFactory.create(email_list=elist, thread=thread)
-    user = UserFactory.create(is_superuser=True)
-    assert client.login(username='admin', password='admin')
 
     # create message file
     path = msg.get_file_path()
@@ -29,7 +27,7 @@ def test_remove_selected(client):
 
     query = Message.objects.all()
     assert query.count() == 1
-    request = get_request(user=user)
+    request = get_request(user=admin_user)
     result = remove_selected(request, query)
 
     assert result.status_code == 302
@@ -39,16 +37,14 @@ def test_remove_selected(client):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_not_spam(client):
+def test_not_spam(admin_user):
     elist = EmailListFactory.create(name='public')
     thread = ThreadFactory.create()
     msg = MessageFactory.create(email_list=elist, thread=thread, spam_score=1)
-    user = UserFactory.create(is_superuser=True)
-    assert client.login(username='admin', password='admin')
 
     query = Message.objects.all()
     assert query.count() == 1
-    request = get_request(user=user)
+    request = get_request(user=admin_user)
     not_spam(request, query)
 
     msg = Message.objects.first()

@@ -103,7 +103,7 @@ def test_unauth_search(client, messages):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_admin_access(client):
+def test_admin_access(client, admin_client):
     '''Test that only superusers see admin link and have access to admin pages'''
     url = reverse('archive')
     # anonymous user
@@ -112,25 +112,21 @@ def test_admin_access(client):
     q = PyQuery(response.content)
     assert len(q('a[href="/arch/admin"]')) == 0
     # admin user
-    UserFactory.create(is_superuser=True)
-    assert client.login(username='admin', password='admin')
-    response = client.get(url)
+    response = admin_client.get(url)
     assert response.status_code == 200
     q = PyQuery(response.content)
     assert len(q('a[href="/arch/admin/"]')) == 1
 
 
 @pytest.mark.django_db(transaction=True)
-def test_console_access(client):
+def test_console_access(client, admin_client):
     '''Test that only superusers have access to console page'''
     url = reverse('archive_admin_console')
     # anonymous user
     response = client.get(url)
     assert response.status_code == 403
     # admin user
-    UserFactory.create(is_superuser=True)
-    assert client.login(username='admin', password='admin')
-    response = client.get(url)
+    response = admin_client.get(url)
     assert response.status_code == 200
 
 
@@ -239,7 +235,7 @@ def test_queries_email_list_with_hyphen(client, messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_queries_to_param(client, messages):
-    print [m.msgid for m in Message.objects.all()]
+    print [m.msgid for m in messages]
     url = reverse('archive_search') + '?to=to@amsl.com'
     response = client.get(url)
     assert response.status_code == 200
@@ -269,7 +265,7 @@ def test_queries_subject_param(client, messages):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_queries_msgid_field(client, messages):
+def test_queries_msgid_param(client, messages):
     msgid = Message.objects.first().msgid
     url = reverse('archive_search') + '?msgid={}'.format(msgid)
     response = client.get(url)
@@ -280,7 +276,7 @@ def test_queries_msgid_field(client, messages):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_queries_spam_score_field(client, messages):
+def test_queries_spam_score_param(client, messages):
     url = reverse('archive_search') + '?spam_score=1'
     response = client.get(url)
     assert response.status_code == 200
@@ -360,7 +356,7 @@ def test_odd_queries(client):
 @pytest.mark.django_db(transaction=True)
 def test_queries_bad_qid(client, messages):
     'Test malicious query'
-    message = Message.objects.first()
+    message = messages.first()
     url = message.get_absolute_url() + "/%3fqid%3ddf6d7ccfedface723ffb184a6f52bab3'+order+by+1+--+;"
     response = client.get(url)
     assert response.status_code == 404
@@ -420,7 +416,7 @@ def test_queries_draft_partial(client, messages):
 @pytest.mark.django_db(transaction=True)
 def test_queries_pagination(client, messages):
     # verify pre-conditions
-    message_count = Message.objects.filter(email_list__name='pubthree').count()
+    message_count = messages.filter(email_list__name='pubthree').count()
     assert message_count == 21
     # test page=2
     url = reverse('archive_search') + '?email_list=pubthree&page=2'

@@ -11,15 +11,13 @@ from mlarchive.archive.signals import _get_lists_as_xml
 
 
 @pytest.mark.django_db(transaction=True)
-def test_clear_session(client):
+def test_clear_session(client, admin_client):
     url = reverse('archive_browse')
     client.get(url)
     assert 'noauth' in client.session
-    UserFactory.create(is_superuser=True)
-    assert client.login(username='admin', password='admin')
     url = reverse('archive')
-    client.get(url)
-    assert 'noauth' not in client.session
+    admin_client.get(url)
+    assert 'noauth' not in admin_client.session
 
 
 @pytest.mark.django_db(transaction=True)

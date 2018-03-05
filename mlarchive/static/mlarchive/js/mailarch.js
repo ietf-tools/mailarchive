@@ -745,6 +745,7 @@ var mailarch = {
 
 
 $(function() {
+    $.cookie.defaults.path = '/';
     mailarch.init();
 });
 

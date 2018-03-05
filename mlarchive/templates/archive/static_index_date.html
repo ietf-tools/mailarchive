@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% block title %}{{ page.0.email_list.name }} Discussion Archive - Date Index{% endblock %}
 
 {% block content %}
 
     <div id="static-page" class="container-fluid">
+        <h3>{{ page.0.email_list.name }} Discussion Archive - Date Index</h3>
         {% with prefix="mail" %}
             {% include "includes/static_index_nav.html" %}
         {% endwith %}

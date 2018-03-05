@@ -668,19 +668,19 @@ table.msg-list-header-table th a.btn {
     width: 15px;
 }
 
-#msg-list.legacy .subj-col span {
+#msg-list.no-preview .subj-col span {
     display: none;
 }
 
-#msg-list.legacy .subj-col a {
+#msg-list.no-preview .subj-col a {
     display: table-cell;
 }
 
-#msg-list.legacy .subj-col a:visited {
+#msg-list.no-preview .subj-col a:visited {
     color: #551A8B;
 }
 
-#msg-list.legacy .xtd {
+#msg-list.no-preview .xtd {
     padding-bottom: 2px;
     padding-top: 2px;
 }
@@ -885,7 +885,7 @@ table.msg-list-header-table th a.btn {
         border-top: 1px solid #dddddd;
     }
 
-    #msg-list.legacy .xtable:not(.thread-sorted) .xtr.date-border .xtd{
+    #msg-list.no-preview .xtable:not(.thread-sorted) .xtr.date-border .xtd{
         border-top: 1px solid #585858;
     }
 

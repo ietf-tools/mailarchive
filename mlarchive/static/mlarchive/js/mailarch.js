@@ -89,6 +89,7 @@ var mailarch = {
         mailarch.$togglePreviewLink.on('click', mailarch.togglePreview);
         mailarch.$window.resize(mailarch.handleResize);
         if(mailarch.showPreview){
+            //mailarch.doShowPreview();
             mailarch.$msgList.on('keydown', mailarch.messageNav);
             mailarch.$msgTable.on('click','.xtr', mailarch.selectRow);
             mailarch.$msgTable.on('dblclick','.xtr', mailarch.gotoMessage);
@@ -101,6 +102,7 @@ var mailarch = {
     // SECONDARY FUNCTIONS ====================================
     
     addBorder: function(start, end) {
+        return true;    // disabled for now
         // end is optional like slice
         if (mailarch.isDateOrdered && !mailarch.showPreview) {
             mailarch.ifChanged('date-col', 'date-border', start, end);
@@ -372,6 +374,8 @@ var mailarch = {
         }
         if (!mailarch.showPreview) {
             mailarch.doHidePreview(false);   // don't animate
+        } else {
+            mailarch.$msgList.removeClass('no-preview');
         }
     },
 
@@ -552,7 +556,7 @@ var mailarch = {
         mailarch.$pageCount.addClass('visible-xs-inline-block');
 
         if(!mailarch.isSmallViewport() && mailarch.showPreview) {
-            mailarch.$msgList.removeClass('legacy');
+            mailarch.$msgList.removeClass('no-preview');
         }
         
         // Show progressive elements
@@ -709,6 +713,11 @@ var mailarch = {
             mailarch.$viewPane.show();
             mailarch.$splitterPane.show();
         });
+        mailarch.$msgList.on('keydown', mailarch.messageNav);
+        mailarch.$msgTable.on('click','.xtr', mailarch.selectRow);
+        mailarch.$msgTable.on('dblclick','.xtr', mailarch.gotoMessage);
+        mailarch.$msgList.removeClass('no-preview');
+        mailarch.initMessageList();
     },
 
     doHidePreview: function(doAnimation) {
@@ -724,6 +733,12 @@ var mailarch = {
         } else {
             mailarch.$listPane.animate({height:height});
         }
+        mailarch.$msgList.off('keydown', mailarch.messageNav);
+        mailarch.$msgTable.off('click','.xtr', mailarch.selectRow);
+        mailarch.$msgTable.off('dblclick','.xtr', mailarch.gotoMessage);
+        mailarch.$msgList.addClass('no-preview');
+        mailarch.$msgTable.find('.xtr').removeClass('row-selected');
+        mailarch.addBorder(0);
         mailarch.handleResize();
     }
 }

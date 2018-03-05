@@ -3,13 +3,15 @@ import os
 import shutil
 import subprocess
 
+from celery.task import task
 from django.conf import settings
 from django.contrib.auth.signals import user_logged_in
 from django.core.cache import cache
 from django.dispatch import receiver
-from django.db.models.signals import pre_delete, post_delete, post_save
+from django.db.models.signals import pre_delete, post_delete, post_save, post_init
 
 from mlarchive.archive.models import Message, EmailList
+from mlarchive.archive.utils import update_static_index
 
 logger = logging.getLogger('mlarchive.custom')
 
@@ -112,3 +114,14 @@ def _get_lists_as_xml():
         lines.append("  </shared_root>")
     lines.append("</ms_config>")
     return "\n".join(lines)
+
+
+@task
+def call_update_static_index(email_list_pk):
+    email_list = EmailList.objects.get(pk=email_list_pk)
+    update_static_index(email_list)
+
+
+@receiver(post_init, sender=Message)
+def _message_create(sender, instance, **kwargs):
+    call_update_static_index.delay(instance.email_list.pk)

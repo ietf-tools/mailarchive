@@ -4,6 +4,8 @@ from __future__ import unicode_literals
 import datetime
 import os
 import pytest
+import subprocess
+
 from factories import EmailListFactory, ThreadFactory, MessageFactory
 from StringIO import StringIO
 from django.conf import settings
@@ -220,3 +222,23 @@ def query_messages(data_dir):
     call_command('load', path, listname='acme', summary=True, stdout=content)
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'query_star.mail')
     call_command('load', path, listname='star', summary=True, stdout=content)
+
+
+# --------------------------------------------------
+# Celery Fixtures
+# --------------------------------------------------
+
+@pytest.fixture()
+def celery_service():
+    try:
+        subprocess.check_call(['celery', 'status'])
+    except subprocess.CalledProcessError:
+        pytest.skip('No Celery service found')
+
+
+@pytest.fixture(scope='session')
+def celery_config():
+    return {
+        'broker_url': 'amqp://',
+        #'result_backend': 'redis://'
+    }

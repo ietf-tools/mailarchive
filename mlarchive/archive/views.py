@@ -172,6 +172,9 @@ class CustomBrowseView(CustomSearchView):
     def get_results(self):
         """Gets a small set of results from the database rather than the search index"""
         email_list = get_object_or_404(EmailList, name=self.list_name)
+        if self.query:
+            return self.form.search(email_list=email_list)
+
         fields = get_order_fields(self.request.GET)
         results = email_list.message_set.order_by(*fields)
 
@@ -199,7 +202,10 @@ class CustomBrowseView(CustomSearchView):
         extra = super(CustomBrowseView, self).extra_context()
         extra['browse_list'] = self.list_name
         extra['queryset_offset'] = '200'
-        extra['count'] = Message.objects.filter(email_list__name=self.list_name).count()
+        if self.query:
+            extra['count'] = self.results.count()
+        else:
+            extra['count'] = Message.objects.filter(email_list__name=self.list_name).count()
 
         # export links
         new_query = self.request.GET.copy()

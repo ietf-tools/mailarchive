@@ -155,10 +155,10 @@ def test_browse_list_bogus_index(client, messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_browse_query(client, messages):
-    url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?q=hello'
+    url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?q=invitation'
     response = client.get(url)
     assert response.status_code == 200
-    assert len(response.context['results']) == 4
+    assert len(response.context['results']) == 2
 
 
 @pytest.mark.django_db(transaction=True)

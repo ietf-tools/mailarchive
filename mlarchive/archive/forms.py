@@ -286,7 +286,7 @@ class AdvancedSearchForm(FacetedSearchForm):
 
         return self.searchqueryset
 
-    def search(self):
+    def search(self, email_list=None):
         """Custom search function.  This completely overrides the parent
         search().  Returns a SearchQuerySet object.
         """
@@ -297,7 +297,10 @@ class AdvancedSearchForm(FacetedSearchForm):
         self.f_list = self.cleaned_data['f_list']
         self.f_from = self.cleaned_data['f_from']
         self.q = parse_query(self.request)
-        self.kwargs = get_kwargs(self.cleaned_data)
+        data = self.cleaned_data
+        if email_list:
+            data['email_list'] = [email_list.name]
+        self.kwargs = get_kwargs(data)
 
         # return empty queryset if no parameters passed
         if not (self.q or self.kwargs):

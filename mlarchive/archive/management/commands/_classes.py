@@ -765,7 +765,7 @@ class MessageWrapper(object):
                 return messages[0].thread
 
         # return a new thread
-        return Thread.objects.create(date=self.date)
+        return Thread.objects.create(date=self.date, email_list=self.email_list)
 
     def get_thread_from_header(self, value):
         """Returns the thread given text containing message ids"""

@@ -36,8 +36,8 @@ def load_db():
     pubtwo = EmailListFactory.create(name='pubtwo')
     pubthree = EmailListFactory.create(name='pubthree')
     private = EmailListFactory.create(name='private', private=True)
-    athread = ThreadFactory.create(date=datetime.datetime(2013, 1, 1))
-    bthread = ThreadFactory.create(date=datetime.datetime(2013, 2, 1))
+    athread = ThreadFactory.create(date=datetime.datetime(2013, 1, 1), email_list=pubone)
+    bthread = ThreadFactory.create(date=datetime.datetime(2013, 2, 1), email_list=pubone)
     MessageFactory.create(email_list=pubone,
                           frm='Björn',
                           thread=athread,
@@ -74,7 +74,7 @@ def load_db():
     # add thread view messages
     # NOTE: thread_order 1 has later date
     apple = EmailListFactory.create(name='apple')
-    cthread = ThreadFactory.create(date=datetime.datetime(2017, 1, 1))
+    cthread = ThreadFactory.create(date=datetime.datetime(2017, 1, 1), email_list=apple)
     MessageFactory.create(email_list=apple,
                           thread=cthread,
                           subject='New Topic',

@@ -120,7 +120,7 @@ def test_ajax_get_messages_browse_private_unauth(client, messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_ajax_get_messages_browse_gbt(client, messages):
-    threads = Thread.objects.filter(first__email_list__name='pubone').order_by('-date')
+    threads = Thread.objects.filter(email_list__name='pubone').order_by('-date')
     messages = threads[1].message_set.all().order_by('thread_order')
     last_message = threads[0].message_set.all().order_by('thread_order').last()
     url = '{}/?qid=&referenceitem=1&browselist=pubone&referenceid={}&gbt=1&direction=next'.format(

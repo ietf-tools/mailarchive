@@ -47,14 +47,11 @@ def get_message_prefer_list(msgid, email_list):
 
 
 class Thread(models.Model):
-    first = models.ForeignKey(
-        'Message',
-        on_delete=models.SET_NULL,
-        related_name='thread_key',
-        blank=True,
-        null=True)  # first message in thread, by date
     date = models.DateTimeField(db_index=True)     # date of first message
-
+    email_list = models.ForeignKey('EmailList', db_index=True, on_delete=models.CASCADE, null=True)
+    # first message in thread, by date
+    first = models.ForeignKey('Message', on_delete=models.SET_NULL, related_name='thread_key', blank=True, null=True)
+    
     def __unicode__(self):
         return str(self.id)
 
@@ -75,11 +72,11 @@ class Thread(models.Model):
 
     def get_next(self):
         """Returns next thread in the list"""
-        return Thread.objects.filter(first__email_list=self.first.email_list, date__gt=self.date).order_by('date').first()
+        return Thread.objects.filter(email_list=self.email_list, date__gt=self.date).order_by('date').first()
 
     def get_previous(self):
         """Returns previous thread in the list"""
-        return Thread.objects.filter(first__email_list=self.first.email_list, date__lt=self.date).order_by('-date').first()
+        return Thread.objects.filter(email_list=self.email_list, date__lt=self.date).order_by('-date').first()
 
 
 class EmailList(models.Model):
@@ -332,7 +329,7 @@ class Message(models.Model):
 
         next_thread = Thread.objects.filter(
             date__gt=self.thread.date,
-            first__email_list=self.email_list).order_by('date').first()
+            email_list=self.email_list).order_by('date').first()
         if next_thread:
             return next_thread.message_set.order_by('thread_order').first()
         else:
@@ -355,7 +352,7 @@ class Message(models.Model):
 
         previous_thread = Thread.objects.filter(
             date__lt=self.thread.date,
-            first__email_list=self.email_list).order_by('date').last()
+            email_list=self.email_list).order_by('date').last()
         if previous_thread:
             return previous_thread.message_set.order_by('thread_order').first()
         else:

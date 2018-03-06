@@ -174,7 +174,7 @@ def test_message_next_in_thread(client):
     '''Test that message.next_in_thread returns the next message in the
     thread'''
     elist = EmailListFactory.create()
-    thread = ThreadFactory.create()
+    thread = ThreadFactory.create(email_list=elist)
     message1 = MessageFactory.create(
         email_list=elist,
         thread=thread,
@@ -209,7 +209,7 @@ def test_message_previous_in_thread_same_thread(client):
     '''Test that message.next_in_thread returns the next message in the
     thread'''
     elist = EmailListFactory.create()
-    thread = ThreadFactory.create()
+    thread = ThreadFactory.create(email_list=elist)
     message1 = MessageFactory.create(
         email_list=elist,
         thread=thread,
@@ -229,8 +229,8 @@ def test_message_previous_in_thread_different_thread(client):
     '''Test that message.next_in_thread returns the next message in the
     thread'''
     elist = EmailListFactory.create()
-    thread1 = ThreadFactory.create(date=datetime.datetime(2016, 1, 1))
-    thread2 = ThreadFactory.create(date=datetime.datetime(2016, 1, 10))
+    thread1 = ThreadFactory.create(date=datetime.datetime(2016, 1, 1), email_list=elist)
+    thread2 = ThreadFactory.create(date=datetime.datetime(2016, 1, 10), email_list=elist)
     message1 = MessageFactory.create(
         email_list=elist,
         thread=thread1,

@@ -145,6 +145,11 @@ class Message(models.Model):
     date_index_page = models.CharField(max_length=64, default='')
     thread_index_page = models.CharField(max_length=64, default='')
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['email_list', 'date']),
+        ]
+
     def __unicode__(self):
         return self.msgid
 
@@ -298,7 +303,7 @@ class Message(models.Model):
     def get_thread_snippet(self):
         """Returns all messages of the thread as an HTML snippet"""
         context = {
-            'messages': self.thread.message_set.all(),
+            'messages': self.thread.message_set.all().select_related(),
             'msg': self,
         }
         return render_to_string('archive/thread_snippet.html', context)
@@ -337,9 +342,8 @@ class Message(models.Model):
         """Return the previous message in the list, ordered by date ascending"""
         messages = Message.objects
         messages = messages.filter(email_list=self.email_list,
-            date__lte=self.date)
-        messages = messages.order_by('date', 'id')
-        messages = messages.exclude(id=self.id)
+            date__lt=self.date)
+        messages = messages.order_by('date')
         return messages.last()
 
     def previous_in_thread(self):

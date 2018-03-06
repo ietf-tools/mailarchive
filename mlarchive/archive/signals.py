@@ -58,11 +58,23 @@ def _message_remove(sender, instance, **kwargs):
 
 
 @receiver(post_save, sender=Message)
-def _message_save(sender, instance, **kwargs):
+def _update_thread(sender, instance, **kwargs):
     """When messages are saved, udpate thread info
     """
     if not instance.thread.first or instance.date < instance.thread.date:
         instance.thread.set_first(instance)
+
+
+@receiver(post_save, sender=Message)
+def _update_index(sender, instance, created, **kwargs):
+    if created:
+        call_update_static_index.delay(instance.email_list.pk)
+
+
+@task
+def call_update_static_index(email_list_pk):
+    email_list = EmailList.objects.get(pk=email_list_pk)
+    update_static_index(email_list)
 
 
 @receiver(post_save, sender=EmailList)
@@ -115,13 +127,3 @@ def _get_lists_as_xml():
     lines.append("</ms_config>")
     return "\n".join(lines)
 
-
-@task
-def call_update_static_index(email_list_pk):
-    email_list = EmailList.objects.get(pk=email_list_pk)
-    update_static_index(email_list)
-
-
-@receiver(post_init, sender=Message)
-def _message_create(sender, instance, **kwargs):
-    call_update_static_index.delay(instance.email_list.pk)

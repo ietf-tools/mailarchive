@@ -36,4 +36,6 @@ urlpatterns = [
     # test pages ----------------
     # (r'^layout/$', TemplateView.as_view(template_name="archive/layout.html")),
     # (r'^test/$', TemplateView.as_view(template_name="archive/test.html")),
+    # url(r'^test/msg/(?P<pk>[0-9]+)/$', views.MessageDetailView.as_view(), name='archive_test_blob'),
+    # url(r'^msgx/(?P<list_name>[a-z0-9_\-\+]+)/(?P<id>[a-zA-Z0-9_\-]+)(=)?(/)?$', views.detailx, name='archive_detailx'),
 ]

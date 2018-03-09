@@ -5,6 +5,7 @@ from collections import OrderedDict
 from django import forms
 from django.conf import settings
 from django.core.cache import cache
+from django.utils.decorators import method_decorator
 from django.utils.http import urlencode
 from haystack.forms import FacetedSearchForm
 
@@ -12,6 +13,7 @@ from mlarchive.archive.query_utils import (get_kwargs, generate_queryid, get_fil
     parse_query, get_base_query, get_order_fields)
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
+from mlarchive.utils.decorators import log_timing
 
 import logging
 logger = logging.getLogger('mlarchive.custom')
@@ -166,6 +168,7 @@ class LowerCaseModelMultipleChoiceField(forms.ModelMultipleChoiceField):
         return super(LowerCaseModelMultipleChoiceField, self).prepare_value(value)
 
 
+@method_decorator(log_timing, name='get_facets')
 class AdvancedSearchForm(FacetedSearchForm):
     # start_date = forms.DateField(required=False,
     #        widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
@@ -219,7 +222,6 @@ class AdvancedSearchForm(FacetedSearchForm):
         NOTE: this function expects to receive the query that has not yet applied
         filters.
         """
-        # first check the cache
         cache_key = get_cache_key(self.request)
         facets = cache.get(cache_key)
         if facets:
@@ -227,11 +229,11 @@ class AdvancedSearchForm(FacetedSearchForm):
 
         # calculating facet_counts on large results sets is too costly so skip it
         # If you call results.count() before results.facet_counts() the facet_counts
-        # are corrupted in Xapian backend.  The solution is to clone the query and
-        # call counts on that
+        # are corrupted in Xapian backend.
 
         temp = sqs._clone()
         count = temp.count()
+        facets = {'fields': {}, 'dates': {}, 'queries': {}}
 
         if 0 < count < settings.FILTER_CUTOFF:
             clone = sqs._clone()
@@ -242,19 +244,15 @@ class AdvancedSearchForm(FacetedSearchForm):
             if not filters:
                 facets = sqs.facet_counts()
 
-            # if f_list run base and filtered
             elif filters == ['f_list']:
                 base = sqs.facet_counts()
                 filtered = sqs.filter(email_list__in=self.f_list).facet_counts()
-                # swap out frm_name counts
                 base['fields']['frm_name'] = filtered['fields']['frm_name']
                 facets = base
 
-            # if f_from run base and filtered
             elif filters == ['f_from']:
                 base = sqs.facet_counts()
                 filtered = sqs.filter(frm_name__in=self.f_from).facet_counts()
-                # swap out email_list counts
                 base['fields']['email_list'] = filtered['fields']['email_list']
                 facets = base
 
@@ -263,16 +261,11 @@ class AdvancedSearchForm(FacetedSearchForm):
                 copy = sqs._clone()
                 frm_count = sqs.filter(frm_name__in=self.f_from).facet_counts()
                 list_count = copy.filter(email_list__in=self.f_list).facet_counts()
-                facets = {'fields': {}, 'dates': {}, 'queries': {}}
                 facets['fields']['email_list'] = frm_count['fields']['email_list']
                 facets['fields']['frm_name'] = list_count['fields']['frm_name']
 
-            # sort facets by name
             for field in facets['fields']:
                 facets['fields'][field].sort()  # sort by name
-
-        else:
-            facets = facets = {'fields': {}, 'dates': {}, 'queries': {}}
 
         # save in cache
         cache.set(cache_key, facets)
@@ -308,7 +301,7 @@ class AdvancedSearchForm(FacetedSearchForm):
 
         sqs = self.process_query()
 
-        # handle URL parameters ------------------------------------
+        # handle URL parameters -----------------------------------
         if self.kwargs:
             sqs = sqs.filter(**self.kwargs)
 

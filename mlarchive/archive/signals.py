@@ -11,7 +11,7 @@ from django.dispatch import receiver
 from django.db.models.signals import pre_delete, post_delete, post_save, post_init
 
 from mlarchive.archive.models import Message, EmailList
-from mlarchive.archive.utils import update_static_index
+from mlarchive.archive.views_static import update_static_index
 
 logger = logging.getLogger('mlarchive.custom')
 

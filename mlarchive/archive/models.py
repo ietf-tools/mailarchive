@@ -51,7 +51,7 @@ class Thread(models.Model):
     email_list = models.ForeignKey('EmailList', db_index=True, on_delete=models.CASCADE, null=True)
     # first message in thread, by date
     first = models.ForeignKey('Message', on_delete=models.SET_NULL, related_name='thread_key', blank=True, null=True)
-    
+
     def __unicode__(self):
         return str(self.id)
 

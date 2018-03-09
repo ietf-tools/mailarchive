@@ -212,6 +212,7 @@ def data_dir(tmp_dir, settings, autouse=True):
     DATA_ROOT = tmp_dir
     settings.DATA_ROOT = DATA_ROOT
     settings.ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
+    settings.STATIC_INDEX_DIR = os.path.join(DATA_ROOT, 'static')
 
 
 @pytest.fixture()
@@ -224,9 +225,19 @@ def query_messages(data_dir):
     call_command('load', path, listname='star', summary=True, stdout=content)
 
 
+@pytest.fixture()
+def static_dir(data_dir):
+    path = os.path.join(settings.STATIC_INDEX_DIR, 'pubone')
+    if not os.path.isdir(path):
+        os.makedirs(path)
+    yield settings.STATIC_INDEX_DIR
+    # teardown
+
+
 # --------------------------------------------------
 # Celery Fixtures
 # --------------------------------------------------
+
 
 @pytest.fixture()
 def celery_service():

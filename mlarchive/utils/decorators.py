@@ -54,6 +54,7 @@ def check_list_access(func):
             if not request.user.is_authenticated() or not email_list.members.filter(id=request.user.id):
                 raise PermissionDenied
 
+        kwargs['email_list'] = email_list
         return func(request, *args, **kwargs)
 
     return wraps(func)(wrapper)
@@ -115,11 +116,12 @@ def log_timing(func):
     This is a decorator that logs the time it took to complete the decorated function.
     Handy for performance testing
     '''
+    @wraps(func)
     def wrapper(*arg):
         t1 = time.time()
         res = func(*arg)
         t2 = time.time()
-        logger.info('%s took %0.3f ms' % (func.func_name, (t2 - t1) * 1000.0))
+        logger.info('%s took %0.3f ms' % (func.__name__, (t2 - t1) * 1000.0))
         return res
     return wrapper
 

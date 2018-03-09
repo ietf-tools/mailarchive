@@ -1,11 +1,10 @@
 
 import os
 
-
 from django.core.management.base import BaseCommand, CommandError
 
 from mlarchive.archive.models import EmailList
-from mlarchive.archive.utils import rebuild_static_index
+from mlarchive.archive.views_static import rebuild_static_index
 
 import logging
 logger = logging.getLogger('mlarchive.custom')
@@ -21,7 +20,7 @@ logger = logging.getLogger('mlarchive.custom')
 
 
 class Command(BaseCommand):
-    help = 'Imports message(s) into the archive'
+    help = 'Rebuild static index pages'
 
     def add_arguments(self, parser):
         parser.add_argument('-l', '--listname', dest='listname',

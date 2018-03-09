@@ -519,6 +519,11 @@ nav.navbar {
     width: 100%;
 }
 
+input[type="search"]::-webkit-search-cancel-button {
+  /*Bootstrap 3 override*/
+  -webkit-appearance: searchfield-cancel-button;
+}
+
 #msg-components {
     float: left;
     width: calc(100% - 250px);
@@ -767,6 +772,7 @@ table.msg-list-header-table th a.btn {
 #toggle-preview {
     float: right;
 }
+
 
 /* Responsive Styling
    ========================================================================== */

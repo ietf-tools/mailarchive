@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.test.client import RequestFactory
 
-from mlarchive.archive.utils import get_noauth, get_lists, get_lists_for_user, rebuild_static_index, update_static_index
+from mlarchive.archive.utils import get_noauth, get_lists, get_lists_for_user
 from mlarchive.utils.test_utils import get_request
 
 
@@ -48,48 +48,3 @@ def test_get_lists_for_user(admin_user):
     assert private2 not in lists
 
 
-@pytest.mark.django_db(transaction=True)
-def test_rebuild_static_index(messages):
-    rebuild_static_index()
-    assert 'pubone' in os.listdir(settings.STATIC_INDEX_DIR)
-    assert 'index.html' in os.listdir(os.path.join(settings.STATIC_INDEX_DIR, 'pubone'))
-    assert 'maillist.html' in os.listdir(os.path.join(settings.STATIC_INDEX_DIR, 'pubone'))
-    assert 'threadlist.html' in os.listdir(os.path.join(settings.STATIC_INDEX_DIR, 'pubone'))
-
-
-@pytest.mark.django_db(transaction=True)
-def test_update_static_index_thread(settings):
-    settings.STATIC_INDEX_MESSAGES_PER_PAGE = 10
-    today = datetime.datetime.today()
-    public = EmailListFactory.create(name='public')
-    date = datetime.datetime(2013, 2, 1)
-    old_thread = ThreadFactory.create(date=date)
-    MessageFactory.create(email_list=public, date=date, thread=old_thread)
-    for num in xrange(35):
-        MessageFactory.create(email_list=public, date=today - datetime.timedelta(days=num))
-    rebuild_static_index()
-    assert len(os.listdir(os.path.join(settings.STATIC_INDEX_DIR, 'public'))) == 9
-    MessageFactory.create(email_list=public, subject="tribulations", date=today, thread=old_thread)
-    # for m in public.message_set.all(): print m.date, m.thread.date, m.thread_index_page
-    update_static_index(public)
-    path = os.path.join(settings.STATIC_INDEX_DIR, 'public', 'thread0001.html')
-    with open(path) as f:
-        data = f.read()
-    assert 'tribulations' in data
-
-
-@pytest.mark.django_db(transaction=True)
-def test_update_static_index_date(settings):
-    settings.STATIC_INDEX_MESSAGES_PER_PAGE = 10
-    today = datetime.datetime.today()
-    public = EmailListFactory.create(name='public')
-    for num in xrange(35):
-        MessageFactory.create(email_list=public, date=today - datetime.timedelta(days=num))
-    rebuild_static_index()
-    assert len(os.listdir(os.path.join(settings.STATIC_INDEX_DIR, 'public'))) == 9
-    MessageFactory.create(email_list=public, subject="tribulations", date=today - datetime.timedelta(days=10))
-    update_static_index(public)
-    path = os.path.join(settings.STATIC_INDEX_DIR, 'public', 'mail0003.html')
-    with open(path) as f:
-        data = f.read()
-    assert 'tribulations' in data

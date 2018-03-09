@@ -8,6 +8,7 @@ from django.conf import settings
 from django.contrib.auth import logout
 from django.utils.decorators import method_decorator
 from django.forms.formsets import formset_factory
+from django.views.generic.detail import DetailView
 from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
@@ -161,27 +162,27 @@ class CustomBrowseView(CustomSearchView):
     def __name__(self):
         return "CustomBrowseView"
 
-    def __call__(self, request, list_name):
+    def __call__(self, request, list_name, email_list):
         is_legacy_on = True if request.COOKIES.get('isLegacyOn') == 'true' else False
         if is_legacy_on:
             return redirect('./maillist.html')
 
         self.list_name = list_name
+        self.email_list = email_list
         return super(CustomBrowseView, self).__call__(request)
 
     def get_results(self):
         """Gets a small set of results from the database rather than the search index"""
-        email_list = get_object_or_404(EmailList, name=self.list_name)
         if self.query:
-            return self.form.search(email_list=email_list)
+            return self.form.search(email_list=self.email_list)
 
         fields = get_order_fields(self.request.GET)
-        results = email_list.message_set.order_by(*fields)
+        results = self.email_list.message_set.order_by(*fields)
 
         self.index = self.request.GET.get('index')
         if self.index:
             try:
-                index_message = Message.objects.get(email_list__name=self.list_name, hashcode=self.index + '=')
+                index_message = Message.objects.get(email_list=self.email_list, hashcode=self.index + '=')
             except Message.DoesNotExist:
                 raise Http404("No such message!")
 
@@ -192,8 +193,8 @@ class CustomBrowseView(CustomSearchView):
                     thread = thread.get_previous()  # default ordering is descending by thread date
             else:
                 results = Message.objects.filter(
-                    email_list__name=self.list_name,
-                    date__lte=index_message.date).order_by('-date')[:self.results_per_page]
+                    email_list=self.email_list,
+                    date__lte=index_message.date).order_by('-date').select_related()[:self.results_per_page]
 
         return results
 
@@ -441,4 +442,41 @@ def main(request):
     return render(request, 'archive/main.html', {
         'form': form,
         'lists': get_lists_for_user(request),
+    })
+
+
+class MessageDetailView(DetailView):
+
+    model = Message
+
+
+@pad_id
+@check_access
+def detailx(request, list_name, id, msg):
+    """Displays the requested message.
+    NOTE: the "msg" argument is a Message object added by the check_access decorator
+    """
+    is_legacy_on = True if request.COOKIES.get('isLegacyOn') == 'true' else False
+    queryid, sqs = get_cached_query(request)
+
+    if sqs and not is_legacy_on:
+        previous_in_search, next_in_search = get_query_neighbors(query=sqs, message=msg)
+        search_url = reverse('archive_search') + '?' + sqs.query_string
+    else:
+        previous_in_search = None
+        next_in_search = None
+        queryid = None
+        search_url = None
+
+    return render(request, 'archive/detail.html', {
+        'msg': msg,
+        # cache items for use in template
+        'next_in_list': '',
+        'next_in_thread': '',
+        'next_in_search': '',
+        'previous_in_list': '',
+        'previous_in_thread': '',
+        'previous_in_search': '',
+        'queryid': queryid,
+        'search_url': search_url,
     })

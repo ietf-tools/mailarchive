@@ -51,8 +51,9 @@ def update_static_index(elist):
 
 
 def rebuild_static_index(elist=None, resume=False):
-    """Rebuilds static index pages for public lists.  If resume is True start full rebuild at
-    given list"""
+    """Rebuilds static index pages for public lists.
+    elist: rebuild specified list only
+    resume: start full rebuild at given list"""
     assert 'static' in settings.STATIC_INDEX_DIR    # extra precaution before removing
     if elist and not resume:
         path = os.path.join(settings.STATIC_INDEX_DIR, elist.name)

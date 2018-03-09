@@ -162,7 +162,7 @@ def test_browse_query(client, messages):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_browse_query_gbt(client, messages):
+def test_browse_gbt(client, messages):
     url = reverse('archive_browse_list', kwargs={'list_name': 'apple'}) + '?gbt=1'
     messages = messages.filter(email_list__name='apple').order_by('thread_order')
     response = client.get(url)

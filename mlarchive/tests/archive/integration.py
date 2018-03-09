@@ -285,6 +285,26 @@ def test_queries_spam_score_param(client, messages):
     assert results[0].spam_score == 1
 
 
+@pytest.mark.django_db(transaction=True)
+def test_queries_gbt_param(client, messages):
+    url = reverse('archive_search') + '?email_list=pubone&gbt=1'
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert len(results) == 4
+    assert [x.object.msgid for x in results] == ['a02', 'a03', 'a01', 'a04']       # assert grouped by thread order
+
+
+@pytest.mark.django_db(transaction=True)
+def test_queries_so_param(client, messages):
+    assert False
+
+
+@pytest.mark.django_db(transaction=True)
+def test_queries_sso_param(client, messages):
+    assert False
+
+
 # --------------------------------------------------
 # Boolean Queries
 # --------------------------------------------------
@@ -472,6 +492,7 @@ def test_queries_draft_name(client, messages):
     results = response.context['results']
     assert len(results) == 1
     assert 'draft-ietf-dnssec-secops' in results[0].subject
+
 
 # --------------------------------------------------
 # Elastic Specific Tests

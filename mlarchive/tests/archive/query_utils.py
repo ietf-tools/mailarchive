@@ -10,7 +10,7 @@ from factories import EmailListFactory
 
 from mlarchive.archive.query_utils import (clean_queryid, generate_queryid, get_cached_query,
     get_filter_params, query_is_listname, parse_query, map_sort_option, get_order_fields,
-    THREAD_SORT_FIELDS, DEFAULT_SORT)
+    DB_THREAD_SORT_FIELDS, IDX_THREAD_SORT_FIELDS, DEFAULT_SORT)
 from mlarchive.utils.test_utils import get_request
 
 
@@ -84,7 +84,8 @@ def test_get_order_fields():
     assert get_order_fields({'q': 'term'}) == [DEFAULT_SORT]
     assert get_order_fields({'q': 'term', 'so': u''}) == [DEFAULT_SORT]                         # empty param, "?q=term&so="
     assert get_order_fields({'q': 'term', 'so': 'date'}) == ['date']
-    assert get_order_fields({'q': 'term', 'gbt': '1'}) == THREAD_SORT_FIELDS
-    assert get_order_fields({'q': 'term', 'gbt': '1', 'so': 'date'}) == THREAD_SORT_FIELDS      # gbt takes precedence
+    assert get_order_fields({'q': 'term', 'gbt': '1'}) == IDX_THREAD_SORT_FIELDS
+    assert get_order_fields({'q': 'term', 'gbt': '1'}, db=True) == DB_THREAD_SORT_FIELDS
+    assert get_order_fields({'q': 'term', 'gbt': '1', 'so': 'date'}) == IDX_THREAD_SORT_FIELDS      # gbt takes precedence
     assert get_order_fields({'q': 'term', 'so': 'date', 'sso': 'subject'}) == ['date', 'subject']
     assert get_order_fields({'q': 'term', 'so': 'frm'}) == ['frm_name']                         # frm gets mapped

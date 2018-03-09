@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+'''
+This module contains pytest fixtures
+'''
+
 from __future__ import unicode_literals
 
 import datetime
@@ -41,11 +45,13 @@ def load_db():
     MessageFactory.create(email_list=pubone,
                           frm='Björn',
                           thread=athread,
+                          thread_order=0,
                           subject='Another message about RFC6759',
                           msgid='a01',
                           date=datetime.datetime(2013, 1, 1))
     MessageFactory.create(email_list=pubone,
                           thread=bthread,
+                          thread_order=0,
                           subject='BBQ Invitation',
                           base_subject=get_base_subject('BBQ Invitation'),
                           date=datetime.datetime(2013, 2, 1),
@@ -53,12 +59,14 @@ def load_db():
                           to='to@amsl.com')
     MessageFactory.create(email_list=pubone,
                           thread=bthread,
+                          thread_order=1,
                           subject='Re: draft-ietf-dnssec-secops',
                           base_subject=get_base_subject('Re: draft-ietf-dnssec-secops'),
                           msgid='a03',
                           date=datetime.datetime(2013, 3, 1))
     MessageFactory.create(email_list=pubone,
                           thread=athread,
+                          thread_order=1,
                           frm='larry@amsl.com',
                           subject='[RE] BBQ Invitation things',
                           base_subject=get_base_subject('[RE] BBQ Invitation things'),
@@ -127,7 +135,7 @@ def index_resource():
 
     yield
 
-    call_command('clear_index', interactive=False, stdout=content)
+    # call_command('clear_index', interactive=False, stdout=content)
     print content.read()
 
 

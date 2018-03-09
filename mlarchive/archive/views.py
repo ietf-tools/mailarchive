@@ -176,7 +176,7 @@ class CustomBrowseView(CustomSearchView):
         if self.query:
             return self.form.search(email_list=self.email_list)
 
-        fields = get_order_fields(self.request.GET)
+        fields = get_order_fields(self.request.GET, db=True)
         results = self.email_list.message_set.order_by(*fields)
 
         self.index = self.request.GET.get('index')

@@ -19,7 +19,8 @@ VALID_SORT_OPTIONS = ('frm', '-frm', 'date', '-date', 'email_list', '-email_list
                       'subject', '-subject')
 
 DEFAULT_SORT = getattr(settings, 'ARCHIVE_DEFAULT_SORT', '-date')
-THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
+DB_THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
+IDX_THREAD_SORT_FIELDS = ('-tdate', 'tid', 'torder')
 
 # --------------------------------------------------
 # Functions handle URL parameters
@@ -117,10 +118,16 @@ def get_qdr_time(val):
         return now - timedelta(days=365)
 
 
-def get_order_fields(params):
-    """Returns the list of fields to use in queryset ordering"""
+def get_order_fields(params, db=False):
+    """Returns the list of fields to use in queryset ordering.
+    db: use databse sort fields
+    TODO: synchronize index and database sort fields
+    """
     if params.get('gbt'):
-        return (THREAD_SORT_FIELDS)
+        if db:
+            return DB_THREAD_SORT_FIELDS
+        else:
+            return IDX_THREAD_SORT_FIELDS
 
     # default sort order is date descending
     so = map_sort_option(params.get('so', DEFAULT_SORT))

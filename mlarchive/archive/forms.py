@@ -65,13 +65,6 @@ def get_cache_key(request):
     return m.hexdigest()
 
 
-def group_by_thread(qs, so, sso, reverse=False):
-    """Return a SearchQuerySet grouped by thread, ordered as follows:
-    Top level threads ordered by date descending.  Sub-threads by date
-    ascending"""
-    return qs.order_by('-tdate', 'tid', 'torder')
-
-
 # --------------------------------------------------------
 # Fields
 # --------------------------------------------------------

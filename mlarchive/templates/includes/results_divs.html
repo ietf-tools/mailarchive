@@ -6,7 +6,7 @@
         </div>
         <div class="xtd from-col">{{ result.frm_name|truncatechars:35 }}</div>
         <div class="xtd date-col">{{ result.date|date:"Y-m-d" }}</div>
-        <div class="xtd list-col">{{ result.email_list.name }}</div>
+        <div class="xtd list-col{% if browse_list %} hidden{% endif %}">{{ result.email_list.name }}</div>
         <div class="xtd score-col hidden">{{ result.score }}</div>
         <div class="xtd url-col hidden">{{ result.get_absolute_url }}</div>
         <div class="xtd id-col hidden">{{ result.id }}</div>

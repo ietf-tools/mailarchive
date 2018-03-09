@@ -54,7 +54,7 @@ def ajax_messages(request):
     firstitem: return set of messages before firstitem
     """
     queryid, query = get_cached_query(request)
-    browselist = request.GET.get('browselist')   # comes from check_browse_list()
+    browselist = request.GET.get('browselist')
     referenceitem = int(request.GET.get('referenceitem', 0))
     referenceid = request.GET.get('referenceid')
     direction = request.GET.get('direction')
@@ -72,7 +72,7 @@ def ajax_messages(request):
     if not results:
         return HttpResponse(status=204)     # No Content
 
-    return render(request, 'includes/results_divs.html', {'results': results})
+    return render(request, 'includes/results_divs.html', {'results': results, 'browse_list': browselist})
 
 
 def get_query_results(query, referenceitem, direction):

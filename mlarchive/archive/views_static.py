@@ -42,7 +42,7 @@ def update_static_index(elist):
 
     messages = elist.message_set.filter(thread_index_page='').order_by(*THREAD_SORT_FIELDS)
     messages.reverse()
-    for m in messages: print m.date, m.thread
+    # for m in messages: print m.date, m.thread
     oldest = messages.first()
     older = elist.message_set.filter(thread__date__lte=oldest.thread.date)
     page = int(math.ceil(older.count() / float(settings.STATIC_INDEX_MESSAGES_PER_PAGE)))
@@ -50,15 +50,18 @@ def update_static_index(elist):
     build_thread_pages(elist, start=page)
 
 
-def rebuild_static_index(elist=None):
-    """Rebuilds static index pages for all public lists"""
+def rebuild_static_index(elist=None, resume=False):
+    """Rebuilds static index pages for public lists.  If resume is True start full rebuild at
+    given list"""
     assert 'static' in settings.STATIC_INDEX_DIR    # extra precaution before removing
-    if elist:
+    if elist and not resume:
+        path = os.path.join(settings.STATIC_INDEX_DIR, elist.name)
         assert not elist.private
         elists = [elist]
-        path = os.path.join(settings.STATIC_INDEX_DIR, elist.name)
         if os.path.exists(path):
             shutil.rmtree(path)
+    elif elist and resume:
+        elists = EmailList.objects.filter(private=False, name__gte=elist.name).order_by('name')
     else:
         elists = EmailList.objects.filter(private=False).order_by('name')
         if os.path.exists(settings.STATIC_INDEX_DIR):
@@ -66,7 +69,9 @@ def rebuild_static_index(elist=None):
         os.mkdir(settings.STATIC_INDEX_DIR)
 
     for elist in elists:
-        os.mkdir(os.path.join(settings.STATIC_INDEX_DIR, elist.name))
+        path = os.path.join(settings.STATIC_INDEX_DIR, elist.name)
+        if not os.path.isdir(path):
+            os.mkdir(path)
         build_index_page(elist)
         build_date_pages(elist)
         build_thread_pages(elist)

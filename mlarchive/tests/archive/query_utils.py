@@ -9,7 +9,8 @@ from django.urls import reverse
 from factories import EmailListFactory
 
 from mlarchive.archive.query_utils import (clean_queryid, generate_queryid, get_cached_query,
-    get_filter_params, query_is_listname, parse_query, map_sort_option)
+    get_filter_params, query_is_listname, parse_query, map_sort_option, get_order_fields,
+    THREAD_SORT_FIELDS, DEFAULT_SORT)
 from mlarchive.utils.test_utils import get_request
 
 
@@ -77,3 +78,13 @@ def test_parse_query():
     request = factory.get(
         '/arch/search/?as=1&nojs-query-0-field=text&nojs-query-0-qualifier=contains&nojs-query-0-value=dummy&nojs-not-0-field=from&nojs-not-0-qualifier=contains&nojs-not-0-value=jones')  # noqa
     assert parse_query(request) == 'text:(dummy) -from:(jones)'
+
+
+def test_get_order_fields():
+    assert get_order_fields({'q': 'term'}) == [DEFAULT_SORT]
+    assert get_order_fields({'q': 'term', 'so': u''}) == [DEFAULT_SORT]                         # empty param, "?q=term&so="
+    assert get_order_fields({'q': 'term', 'so': 'date'}) == ['date']
+    assert get_order_fields({'q': 'term', 'gbt': '1'}) == THREAD_SORT_FIELDS
+    assert get_order_fields({'q': 'term', 'gbt': '1', 'so': 'date'}) == THREAD_SORT_FIELDS      # gbt takes precedence
+    assert get_order_fields({'q': 'term', 'so': 'date', 'sso': 'subject'}) == ['date', 'subject']
+    assert get_order_fields({'q': 'term', 'so': 'frm'}) == ['frm_name']                         # frm gets mapped

@@ -326,7 +326,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         # grouping and sorting  -----------------------------------
         # perform this step last because other operations, if they clone the
         # SearchQuerySet, cause the query to be re-run which loses custom sort order
-        fields = get_order_fields(self.cleaned_data)
+        fields = get_order_fields(self.request.GET)
         sqs = sqs.order_by(*fields)
 
         # save query in cache with random id for security

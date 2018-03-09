@@ -125,7 +125,8 @@ def get_order_fields(params):
     # default sort order is date descending
     so = map_sort_option(params.get('so', DEFAULT_SORT))
     sso = map_sort_option(params.get('sso'))
-    return [v for v in (so, sso) if v]
+    fields = [v for v in (so, sso) if v]
+    return fields if fields else [DEFAULT_SORT]
 
 
 def map_sort_option(val):

@@ -1,7 +1,7 @@
 import os
 import pytest
 
-from factories import EmailListFactory, ThreadFactory, MessageFactory, UserFactory
+from factories import EmailListFactory, ThreadFactory, MessageFactory
 from mlarchive.archive.actions import remove_selected, not_spam
 from mlarchive.archive.models import Message
 from mlarchive.utils.test_utils import get_request

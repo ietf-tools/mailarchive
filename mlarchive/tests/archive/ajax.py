@@ -99,6 +99,18 @@ def test_ajax_get_messages(client, messages):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_ajax_messages_security(client, messages):
+    '''Test request that includes reference to a private message but public list, fails'''
+    messages = messages.filter(email_list__name='private').order_by('-date')
+    message = messages.first()
+    assert messages.count() > 1
+    url = '{}/?qid=&referenceitem=1&browselist=pubone&referenceid={}&gbt=&direction=next'.format(
+        reverse('ajax_messages'), message.pk)
+    response = client.get(url)
+    assert response.status_code == 204
+
+
+@pytest.mark.django_db(transaction=True)
 def test_ajax_get_messages_browse(client, messages):
     message = messages.filter(email_list__name='pubone').order_by('-date').first()
     url = '{}/?qid=&referenceitem=1&browselist=pubone&referenceid={}&gbt=&direction=next'.format(
@@ -127,11 +139,22 @@ def test_ajax_get_messages_browse_gbt(client, messages):
         reverse('ajax_messages'), last_message.pk)
     response = client.get(url)
     assert response.status_code == 200
-    assert len(response.context['results']) == messages.count()
-
     # assert proper order
-    print [(m.pk, m.thread_order) for m in messages]
+    print len(messages), threads[0].get_previous(), threads[1].get_previous()
+    print [(m.pk, m.date, m.thread, m.thread_order) for m in Message.objects.filter(email_list__name='pubone')]
     assert [r.pk for r in response.context['results']] == [m.pk for m in messages]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_ajax_get_messages_browse_so(client, messages):
+    messages = messages.filter(email_list__name='apple').order_by('frm')
+    last_message = messages[2]
+    url = '{}/?qid=&referenceitem=3&browselist=apple&referenceid={}&so=frm&direction=next'.format(
+        reverse('ajax_messages'), last_message.pk)
+    response = client.get(url)
+    assert response.status_code == 200
+    # assert proper order
+    assert [r.pk for r in response.context['results']] == [m.pk for m in messages[3:]]
 
 
 @pytest.mark.django_db(transaction=True)
@@ -155,7 +178,7 @@ def test_get_query_results(client, messages):
 def test_get_browse_results(client, messages):
     '''Simple test of high level function'''
     message = messages.filter(email_list__name='pubthree').order_by('-date').first()
-    results = get_browse_results(referenceid=message.pk, direction='next', gbt=None)
+    results = get_browse_results(reference_message=message, direction='next', gbt=None)
     assert results
 
 

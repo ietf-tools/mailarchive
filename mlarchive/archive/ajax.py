@@ -6,7 +6,7 @@ from django.template.loader import render_to_string
 from mlarchive.archive import actions
 from mlarchive.archive.utils import jsonapi
 from mlarchive.archive.models import Message
-from mlarchive.archive.query_utils import get_cached_query
+from mlarchive.archive.query_utils import get_cached_query, get_order_fields
 from mlarchive.utils.decorators import check_access, superuser_only, check_ajax_list_access
 
 
@@ -49,9 +49,9 @@ def ajax_get_msg(request, msg):
 
 @check_ajax_list_access
 def ajax_messages(request):
-    """Ajax function to retrieve more messages from queryset.  Expects one of two args:
-    lastitem: return set of messages after lastitem
-    firstitem: return set of messages before firstitem
+    """Ajax function to retrieve more messages from queryset.
+    referenceitem: index of the last/first message displayed
+    referenceid: message.pk of last/first message displayed
     """
     queryid, query = get_cached_query(request)
     browselist = request.GET.get('browselist')
@@ -59,12 +59,24 @@ def ajax_messages(request):
     referenceid = request.GET.get('referenceid')
     direction = request.GET.get('direction')
     gbt = request.GET.get('gbt')
-    results = []
+    order_fields = get_order_fields(request.GET, use_db=True)
+
+    if queryid and not query:
+        return HttpResponse(status=404)
+
+    if not query:
+        try:
+            reference_message = Message.objects.get(pk=referenceid, email_list__name=browselist)
+        except Message.DoesNotExist:
+            return HttpResponse(status=204)
 
     if query:
         results = get_query_results(query, referenceitem, direction)
+    elif browselist and not gbt and order_fields != ['-date']:
+        query = Message.objects.filter(email_list__name=browselist).order_by(*order_fields)
+        results = get_query_results(query, referenceitem, direction)
     elif browselist:
-        results = get_browse_results(referenceid, direction, gbt)
+        results = get_browse_results(reference_message, direction, gbt)
     else:
         # TODO or fail?, signal to reload query
         return HttpResponse(status=404)     # Request Timeout (query gone from cache)
@@ -86,9 +98,8 @@ def get_query_results(query, referenceitem, direction):
         return query[start:referenceitem]
 
 
-def get_browse_results(referenceid, direction, gbt):
+def get_browse_results(reference_message, direction, gbt):
     '''Call appropriate low-level function based on group-by-thread (gbt)'''
-    reference_message = Message.objects.get(pk=referenceid)
     if gbt:
         return get_browse_results_gbt(reference_message, direction)
     else:

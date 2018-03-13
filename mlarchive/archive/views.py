@@ -6,6 +6,7 @@ from operator import itemgetter
 
 from django.conf import settings
 from django.contrib.auth import logout
+from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django.forms.formsets import formset_factory
 from django.views.generic.detail import DetailView
@@ -20,7 +21,7 @@ from haystack.forms import SearchForm
 from mlarchive.utils.decorators import check_access, superuser_only, pad_id, log_timing, check_list_access
 from mlarchive.archive import actions
 from mlarchive.archive.query_utils import (get_kwargs, get_cached_query, query_is_listname,
-    parse_query_string, get_order_fields)
+    parse_query_string, get_order_fields, generate_queryid)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     get_query_neighbors, get_query_string, get_lists_for_user)
 
@@ -176,7 +177,7 @@ class CustomBrowseView(CustomSearchView):
         if self.query:
             return self.form.search(email_list=self.email_list)
 
-        fields = get_order_fields(self.request.GET, db=True)
+        fields = get_order_fields(self.request.GET, use_db=True)
         results = self.email_list.message_set.order_by(*fields)
 
         self.index = self.request.GET.get('index')
@@ -187,6 +188,7 @@ class CustomBrowseView(CustomSearchView):
                 raise Http404("No such message!")
 
             if 'gbt' in self.request.GET:
+                results = []
                 thread = index_message.thread
                 while len(results) < self.results_per_page and thread:
                     results.extend(thread.message_set.order_by('thread_order'))

@@ -118,31 +118,31 @@ def get_qdr_time(val):
         return now - timedelta(days=365)
 
 
-def get_order_fields(params, db=False):
+def get_order_fields(params, use_db=False):
     """Returns the list of fields to use in queryset ordering.
-    db: use databse sort fields
+    use_db: use database sort fields, as opposed to index sort fields
     TODO: synchronize index and database sort fields
     """
     if params.get('gbt'):
-        if db:
+        if use_db:
             return DB_THREAD_SORT_FIELDS
         else:
             return IDX_THREAD_SORT_FIELDS
 
     # default sort order is date descending
-    so = map_sort_option(params.get('so', DEFAULT_SORT))
-    sso = map_sort_option(params.get('sso'))
+    so = map_sort_option(params.get('so', DEFAULT_SORT), use_db)
+    sso = map_sort_option(params.get('sso'), use_db)
     fields = [v for v in (so, sso) if v]
     return fields if fields else [DEFAULT_SORT]
 
 
-def map_sort_option(val):
+def map_sort_option(val, use_db=False):
     """This function takes a sort parameter and validates and maps it for use
     in an order_by clause.
     """
     if val not in VALID_SORT_OPTIONS:
         return ''
-    if val in ('frm', '-frm'):
+    if val in ('frm', '-frm') and not use_db:
         val = val + '_name'    # use just email portion of from
     return val
 

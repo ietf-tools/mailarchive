@@ -187,12 +187,17 @@ var mailarch = {
         }
         var queryid = mailarch.$msgList.data('queryid');
         var browselist = mailarch.$msgList.data('browse-list');
-        var gbt = mailarch.$msgList.data('gbt');
         var referenceId = $("#msg-list .xtr:last .id-col").text();
+        var data = $.extend({ "qid": queryid,
+                     "referenceitem": mailarch.lastItem,
+                     "browselist": browselist,
+                     "referenceid": referenceId,
+                     "direction": "next"
+        }, mailarch.urlParams);
         var request = $.ajax({
             "type": "GET",
             "url": "/arch/ajax/messages/",
-            "data": { "qid": queryid, "referenceitem": mailarch.lastItem, "browselist": browselist, "referenceid": referenceId, "gbt": gbt, "direction": "next" }
+            "data": data
         });
         mailarch.ajaxRequestSent = true;
         request.done(function(data, testStatus, xhr) {
@@ -224,12 +229,17 @@ var mailarch = {
         var queryid = mailarch.$msgList.data('queryid');
         var referenceItem = mailarch.$msgList.data('queryset-offset');
         var browselist = mailarch.$msgList.data('browse-list');
-        var gbt = mailarch.$msgList.data('gbt');
         var referenceId = $("#msg-list .xtr:first .id-col").text();
+        var data = $.extend({ "qid": queryid,
+                     "referenceitem": referenceItem,
+                     "browselist": browselist,
+                     "referenceid": referenceId,
+                     "direction": "previous"
+        }, mailarch.urlParams);
         var request = $.ajax({
             "type": "GET",
             "url": "/arch/ajax/messages/",
-            "data": { "qid": queryid, "referenceitem": referenceItem, "browselist": browselist, "referenceid": referenceId, "gbt": gbt, "direction": "previous" }
+            "data": data
         });
         request.done(function(data, testStatus, xhr) {
             if(xhr.status == 200){

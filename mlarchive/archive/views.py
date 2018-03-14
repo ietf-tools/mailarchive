@@ -80,7 +80,11 @@ class CustomSearchView(SearchView):
         extra['query_string'] = query_string
         extra['results_per_page'] = settings.HAYSTACK_SEARCH_RESULTS_PER_PAGE
         extra['queryset_offset'] = str(self.page.start_index() - 1)
-        extra['count'] = self.results.count()
+        # Review
+        if isinstance(self.results, list):
+            extra['count'] = len(self.results)
+        else:
+            extra['count'] = self.results.count()
 
         # export links
         extra['anonymous_export_limit'] = settings.ANONYMOUS_EXPORT_LIMIT

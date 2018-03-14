@@ -91,7 +91,7 @@
                     <div class="collapse navbar-collapse" id="myNavbar">
                         <ul class="nav navbar-nav navbar-left">
                             {% if modify_search_url %}
-                                <li><a id="modify-search" href="{{ modify_search_url }}" title="Modify Search"><span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span></a></li>
+                                <li><a id="modify-search" href="{{ modify_search_url }}" title="Modify Search">{% if browse_list %}<span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>{% else %}Modify Search{% endif %}</a></li>
                             {% endif %}
                             <!-- <li><a id="clear-sort" href="#">Clear Sort</a></li> -->
                             {% if browse_list %}

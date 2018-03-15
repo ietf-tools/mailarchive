@@ -85,8 +85,6 @@ def get_kwargs(data):
             kwargs['email_list__in'] = data['email_list']
     if data.get('frm'):
         kwargs['frm__contains'] = data['frm']   # use __contains for faceted(keyword) field
-    if data.get('qdr') and data['qdr'] not in ('a', 'c'):
-        kwargs['date__gte'] = get_qdr_time(data['qdr'])
     if data.get('subject'):
         kwargs['subject'] = data['subject']
     if data.get('spam'):
@@ -96,8 +94,16 @@ def get_kwargs(data):
         kwargs['spam_score__in'] = bits
     if data.get('to'):
         kwargs['to'] = data['to']
+    kwargs.update(get_qdr_kwargs(data))
 
     return kwargs
+
+
+def get_qdr_kwargs(data):
+    qdr_kwargs = {}
+    if data.get('qdr') and data['qdr'] not in ('a', 'c'):
+        qdr_kwargs['date__gte'] = get_qdr_time(data['qdr'])
+    return qdr_kwargs
 
 
 def get_qdr_time(val):

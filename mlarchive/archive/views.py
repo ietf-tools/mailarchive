@@ -20,7 +20,7 @@ from haystack.forms import SearchForm
 
 from mlarchive.utils.decorators import check_access, superuser_only, pad_id, log_timing, check_list_access
 from mlarchive.archive import actions
-from mlarchive.archive.query_utils import (get_kwargs, get_cached_query, query_is_listname,
+from mlarchive.archive.query_utils import (get_kwargs, get_qdr_kwargs, get_cached_query, query_is_listname,
     parse_query_string, get_order_fields, generate_queryid)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     get_query_neighbors, get_query_string, get_lists_for_user)
@@ -174,6 +174,7 @@ class CustomBrowseView(CustomSearchView):
 
         self.list_name = list_name
         self.email_list = email_list
+        self.kwargs = {}
         return super(CustomBrowseView, self).__call__(request)
 
     def get_results(self):
@@ -183,6 +184,9 @@ class CustomBrowseView(CustomSearchView):
 
         fields = get_order_fields(self.request.GET, use_db=True)
         results = self.email_list.message_set.order_by(*fields)
+        self.kwargs = get_qdr_kwargs(self.request.GET)
+        if self.kwargs:
+            results = results.filter(**self.kwargs)
 
         self.index = self.request.GET.get('index')
         if self.index:
@@ -209,7 +213,7 @@ class CustomBrowseView(CustomSearchView):
         extra = super(CustomBrowseView, self).extra_context()
         extra['browse_list'] = self.list_name
         extra['queryset_offset'] = '200'
-        if self.query:
+        if self.query or self.kwargs:
             extra['count'] = self.results.count()
         else:
             extra['count'] = Message.objects.filter(email_list__name=self.list_name).count()

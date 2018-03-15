@@ -184,6 +184,24 @@ def test_browse_legacy_mode(client):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_browse_qdr(client, messages):
+    url = reverse('archive_browse_list', kwargs={'list_name': 'pubthree'}) + '?qdr=d'
+    response = client.get(url)
+    assert response.status_code == 200
+    assert len(response.context['results']) == 1
+
+    url = reverse('archive_browse_list', kwargs={'list_name': 'pubthree'}) + '?qdr=w'
+    response = client.get(url)
+    assert response.status_code == 200
+    assert len(response.context['results']) == 7
+
+    url = reverse('archive_browse_list', kwargs={'list_name': 'pubthree'}) + '?qdr=m'
+    response = client.get(url)
+    assert response.status_code == 200
+    assert len(response.context['results']) == 20
+
+
+@pytest.mark.django_db(transaction=True)
 def test_detail(client):
     elist = EmailListFactory.create()
     msg = MessageFactory.create(email_list=elist)

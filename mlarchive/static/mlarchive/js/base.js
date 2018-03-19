@@ -39,6 +39,9 @@ var base = {
             if(typeof mailarchDetails !== 'undefined'){
                 mailarchDetails.legacyOff();
             }
+            if(typeof mailarchStaticIndex !== 'undefined'){
+                mailarchStaticIndex.legacyOff();
+            }
         } else {
             base.isLegacyOn = true;
             $.cookie('isLegacyOn','true', { expires: 5*365, path: '/'});

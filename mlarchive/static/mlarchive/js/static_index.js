@@ -1,3 +1,13 @@
+
+var mailarchStaticIndex = {
+    legacyOff: function() {
+        var pathname = window.location.pathname; 
+        var parts = pathname.split('/');
+        var url = '/' + parts.slice(1,-1).join('/');
+        window.location.replace(url);
+    },
+}
+
 // add scroll offset to fragment target (if there is one)
 function delayedFragmentTargetOffset(){
     var offset = $(':target').offset();

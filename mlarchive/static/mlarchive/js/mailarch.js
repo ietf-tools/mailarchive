@@ -446,7 +446,7 @@ var mailarch = {
         }
     },
     
-    /*
+/*
     legacyOff: function() {
         if(!mailarch.showFilters){
             mailarch.toggleFilters();
@@ -460,7 +460,7 @@ var mailarch = {
         mailarch.$msgTable.on('dblclick','.xtr', mailarch.gotoMessage);
         mailarch.initMessageList();
     },
-    
+
     legacyOn: function() {
         if(mailarch.showFilters){
             mailarch.toggleFilters();
@@ -475,7 +475,12 @@ var mailarch = {
         mailarch.$msgTable.find('.xtr').removeClass('row-selected');
         mailarch.addBorder(0);
     },
-    */
+*/
+    legacyOn: function() {
+        var pathname = window.location.pathname; 
+        var url = pathname + 'index.html'
+        window.location.replace(url);
+    },
 
     // given the row of the msg list, load the message text in the msg view pane
     loadMessage: function(row) {

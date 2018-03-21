@@ -694,7 +694,6 @@ table.msg-list-header-table th a.btn {
     display: none;
 }
 
-
 #splitter-pane {
     background-position: 50%;
     background-repeat: no-repeat;
@@ -767,6 +766,18 @@ table.msg-list-header-table th a.btn {
 
 #message-count {
     float: left;
+}
+
+.progress {background: rgba(245, 245, 245, 1); border: 0px solid rgba(245, 245, 245, 1); border-radius: 4px; height: 15px;}
+.progress-bar-custom {background: rgba(51, 122, 183, 1);} 
+.progress-striped .progress-bar-custom {background-color: rgba(51, 122, 183, 1); background-image: -webkit-gradient(linear,0 100%,100% 0,color-stop(0.25,rgba(255, 255, 255, 0.15),color-stop(0.25,transparent),color-stop(0.5,transparent),color-stop(0.5,rgba(255, 255, 255, 0.15)),color-stop(0.75,rgba(255, 255, 255, 0.15)),color-stop(0.75,transparent),to(transparent))); background-image: -webkit-linear-gradient(45deg,rgba(255, 255, 255, 0.15) 25%,transparent 25%,transparent 50%,rgba(255, 255, 255, 0.15) 50%,rgba(255, 255, 255, 0.15) 75%,transparent 75%,transparent); background-image: linear-gradient(45deg,rgba(255, 255, 255, 0.15) 25%,transparent 25%,transparent 50%,rgba(255, 255, 255, 0.15) 50%,rgba(255, 255, 255, 0.15) 75%,transparent 75%,transparent); background-size: 40px 40px;}
+
+.progress {
+    display: none;
+    width: calc(100% - 350px);
+    float: left;
+    margin-left: 80px;
+    margin-top: 2px;
 }
 
 #toggle-preview {

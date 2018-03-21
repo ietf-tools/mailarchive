@@ -55,6 +55,7 @@ var mailarch = {
         mailarch.$moreLinks = $('.more-link');
         mailarch.$msgLinks = $('a.msg-detail');
         mailarch.$msgList = $('.msg-list');
+        mailarch.$msgListProgress = $('#msg-list-controls .progress');
         mailarch.$msgTable = $('.msg-table');
         mailarch.$msgTableTbody = this.$msgTable.find('.xtbody');
         mailarch.$pageCount = $('.page-nav .current-page');
@@ -200,8 +201,8 @@ var mailarch = {
             "data": data
         });
         mailarch.ajaxRequestSent = true;
+        mailarch.$msgListProgress.show();
         request.done(function(data, testStatus, xhr) {
-            mailarch.ajaxRequestSent = false;
             if(xhr.status == 200){
                 var before = mailarch.$msgTableTbody.find(".xtr").length;
                 mailarch.$msgTableTbody.append(data);
@@ -218,6 +219,10 @@ var mailarch = {
                 // server returns a 404 when query has expired from cache
                 window.location.reload();
             }
+        });
+        request.always(function(data, testStatus, xhr) {
+            mailarch.ajaxRequestSent = false;
+            mailarch.$msgListProgress.hide();
         });
     },
 
@@ -241,6 +246,8 @@ var mailarch = {
             "url": "/arch/ajax/messages/",
             "data": data
         });
+        mailarch.ajaxRequestSent = true;
+        mailarch.$msgListProgress.show();
         request.done(function(data, testStatus, xhr) {
             if(xhr.status == 200){
                 // NOTE: when prepending data scrollTop stays at zero
@@ -263,6 +270,10 @@ var mailarch = {
                 // server returns a 404 when query has expired from cache
                 window.location.reload();
             }
+        });
+        request.always(function(data, testStatus, xhr) {
+            mailarch.ajaxRequestSent = false;
+            mailarch.$msgListProgress.hide();
         });
     },
 

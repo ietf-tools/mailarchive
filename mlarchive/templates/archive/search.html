@@ -167,6 +167,10 @@
 
                     <div id="msg-list-controls">
                         <div id="message-count" class="list-control">{{ count }} Messages</div>
+                        <div class="progress progress-striped active">
+                            <div class="progress-bar progress-bar-custom" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:100%">
+                            </div>
+                        </div>
                         <div class="list-control page-nav">
                             {% if page.has_previous %}<a class="pull-left" href="{{ previous_page_url }}">Previous</a>{% endif %}
                             <span class="current-page">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>

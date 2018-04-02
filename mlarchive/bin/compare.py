@@ -1,6 +1,10 @@
 #!/usr/bin/python
 '''
 Compare legacy archive with new archive and report descrepencies
+
+Example:
+./compare --start=2018-01-15T00:00:00
+
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
@@ -54,6 +58,7 @@ def main():
                         required=True,
                         help="enter the date to start comparison YYYY-MM-DDTHH:MM:SS")
     parser.add_argument('-e', '--end', help="enter the date to end comparison YYYY-MM-DDTHH:MM:SS")
+    parser.add_argument('--list', help='restrict comparison to specified list')
     parser.add_argument('-l', '--load', action='store_true', help='import missing messages')
     args = parser.parse_args()
     
@@ -65,7 +70,12 @@ def main():
         end_date = datetime.datetime.now() + datetime.timedelta(days=7)
     compstring = start_date.strftime('%Y-%m')
     
-    for file in all_mboxs():
+    if args.list:
+        listnames = [args.list]
+    else:
+        listnames = None
+
+    for file in all_mboxs(listnames):
         basename = os.path.basename(file)
         if basename[:7] >= compstring:
             statinfo = os.stat(file)

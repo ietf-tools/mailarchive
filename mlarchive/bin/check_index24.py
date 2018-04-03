@@ -22,14 +22,14 @@ logging.basicConfig(filename=logpath,level=logging.DEBUG)
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Check that yesterdays messages are indexed')
+    parser = argparse.ArgumentParser(description='Check that messages are indexed')
+    parser.add_argument('--age', type=int, default=24, help="Check messages this many hours old.  Default is 24.")
     parser.add_argument('-f','--fix',help="perform fix",action='store_true')
     args = parser.parse_args()
     
-    today = datetime.datetime.now()
-    yesterday =  today - datetime.timedelta(days=1)
-    start = yesterday.replace(hour=0,minute=0,second=0,microsecond=0)
-    end = today.replace(hour=0,minute=0,second=0,microsecond=0)
+    now = datetime.datetime.now()
+    start = now - datetime.timedelta(hours=args.age)
+    end = now - datetime.timedelta(minutes=1)
     count = 0
     stat = {}
     messages = Message.objects.filter(updated__gte=start,updated__lt=end)

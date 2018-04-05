@@ -14,8 +14,7 @@
         <ul class="static-index">
         {% for message in page reversed %}
             <li class="depth-{{ message.thread_depth|max_depth }}">
-                <a id="{{ message.hashcode|slice:':-1' }}" href="{{ message.get_absolute_url }}">{{ message.subject }}</a>
-                <span class="name-col">{{ message.frm_name }}</span>
+                <a id="{{ message.hashcode|slice:':-1' }}" href="{{ message.get_absolute_url }}">{{ message.subject }}</a>, <em>{{ message.frm_name }}</em>
             </li>
         {% endfor %}
         </ul>

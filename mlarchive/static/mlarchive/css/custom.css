@@ -286,6 +286,10 @@ ul.browse_list li {
    Static Index
    ========================================================================== */
 
+#static-page {
+    line-height: 1.2;
+}
+
 .static-index li {
     list-style: none outside none;
 }
@@ -294,7 +298,7 @@ ul.browse_list li {
     margin-left: 1em;
 }
 
-.static-index h4 {
+.static-index strong {
     margin: 4px 0 4px -10px;
 }
 

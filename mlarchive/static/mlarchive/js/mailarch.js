@@ -487,10 +487,19 @@ var mailarch = {
         mailarch.addBorder(0);
     },
 */
+
+    legacyOff: function() {
+        var legacyOffUrl = mailarch.$msgList.data('legacy-off-url');
+        if(legacyOffUrl) {
+            window.location.replace(legacyOffUrl);
+        }
+    },
+
     legacyOn: function() {
-        var pathname = window.location.pathname; 
-        var url = pathname + 'index.html'
-        window.location.replace(url);
+        var legacyOnUrl = mailarch.$msgList.data('legacy-on-url');
+        if(legacyOnUrl) {
+            window.location.replace(legacyOnUrl);
+        }
     },
 
     // given the row of the msg list, load the message text in the msg view pane

@@ -1,42 +1,44 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static archive_extras %}
 
-{% block title %}{{ page.0.email_list.name }} Discussion Archive - Date Index{% endblock %}
+{% block title %}{{ email_list.name }} Discussion Archive - {% if group_by_thread %}Thread{% else %}Date{% endif %} Index - {{ date_string }}{% endblock %}
 
 {% block content %}
 
     <div id="static-page" class="container-fluid">
-        <h3>{{ page.0.email_list.name }} Discussion Archive - Date Index</h3>
-        {% with prefix="mail" %}
-            {% include "includes/static_index_nav.html" %}
-        {% endwith %}
+        <h3>{{ email_list.name }} Discussion Archive - {% if group_by_thread %}Thread{% else %}Date{% endif %} Index - {{ date_string }}</h3>
 
-        <ul class="static-index">
-        {% for message in page reversed %}
-            {% with date=message.date|date:"M d Y" %}
-                {% ifchanged %}<strong>{{ date }}</strong>{% endifchanged %}
-                <li>
+        {% include "includes/static_index_nav.html" %}
+
+        <ul class="static-index" data-legacy-off-url="{{ legacy_off_url }}">
+        {% for message in queryset %}
+            {% if group_by_thread %}
+                <li class="depth-{{ message.thread_depth|max_depth }}">
                     <a id="{{ message.hashcode|slice:':-1' }}" href="{{ message.get_absolute_url }}">{{ message.subject }}</a>, <em>{{ message.frm_name }}</em>
                 </li>
-            {% endwith %}
+            {% else %}
+                {% with date=message.date|date:"M d Y" %}
+                    {% ifchanged %}<strong>{{ date }}</strong>{% endifchanged %}
+                    <li>
+                        <a id="{{ message.hashcode|slice:':-1' }}" href="{{ message.get_absolute_url }}">{{ message.subject }}</a>, <em>{{ message.frm_name }}</em>
+                    </li>
+                {% endwith %}
+            {% endif %}        
+        {% empty %}
+            <li>No messages</li>
         {% endfor %}
         </ul>
+        <hr>
 
-        {% with prefix="mail" %}
-            {% include "includes/static_index_nav.html" %}
-        {% endwith %}
+        {% include "includes/static_index_nav.html" %}
+
     </div> <!-- static-page -->
 
 {% endblock %}
 
-
-{% block footer %}
-  {% with extra_class="scrolling" %}
-    {% include "includes/footer.html" %}
-  {% endwith %}
-{% endblock %}
-
+{% block footer %}{% endblock %}
 
 {% block js %}
 <script type="text/javascript" src="{% static 'mlarchive/js/static_index.js' %}"></script>
 {% endblock %}
+

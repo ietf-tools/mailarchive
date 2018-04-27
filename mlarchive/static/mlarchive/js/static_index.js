@@ -1,10 +1,10 @@
 
 var mailarchStaticIndex = {
     legacyOff: function() {
-        var pathname = window.location.pathname; 
-        var parts = pathname.split('/');
-        var url = '/' + parts.slice(1,-1).join('/');
-        window.location.replace(url);
+        var legacyOffUrl = $('.static-index').data('legacy-off-url');
+        if(legacyOffUrl) {
+            window.location.replace(legacyOffUrl);
+        }
     },
 }
 

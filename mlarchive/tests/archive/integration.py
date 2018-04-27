@@ -55,7 +55,7 @@ def test_auth_browse(client):
     response = client.get(url)
     assert response.status_code == 200
     q = PyQuery(response.content)
-    print response.context
+    print response.content
     assert len(q('#private-lists li')) == 1
 
 
@@ -297,12 +297,22 @@ def test_queries_gbt_param(client, messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_queries_so_param(client, messages):
-    assert False
+    url = reverse('archive_search') + '?email_list=pubone&so=frm'
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert len(results) == 4
+    assert [x.object.msgid for x in results] == ['a03', 'a01', 'a04', 'a02']
 
 
 @pytest.mark.django_db(transaction=True)
 def test_queries_sso_param(client, messages):
-    assert False
+    url = reverse('archive_search') + '?email_list=pubone&so=email_list&sso=frm'
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert len(results) == 4
+    assert [x.object.msgid for x in results] == ['a03', 'a01', 'a04', 'a02']
 
 
 # --------------------------------------------------

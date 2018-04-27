@@ -28,7 +28,9 @@ import re
 import sys
 import time
 from dateutil.parser import parse
+from dateutil.relativedelta import relativedelta
 
+from django.db.models import Count
 from haystack.query import SearchQuerySet
 from mlarchive.archive.models import *
 from mlarchive.archive.thread import compute_thread
@@ -579,6 +581,61 @@ def unicode():
                 if not is_ascii(message[header]):
                     print "Message: {},   {}:{}".format(msg.pk,header,message[header])
                     return
+
+
+def month_count():
+    """For current lists print total messages per month for last year"""
+    now = datetime.datetime.now()
+    for elist in EmailList.objects.filter(private=False).order_by('name'):
+        end = datetime.datetime(now.year, 1, 1)
+        if elist.message_set.filter(date__gte=end):
+            for n in range(1, 13):
+                start = end - relativedelta(months=1)
+                count = elist.message_set.filter(date__gte=start, date__lt=end).count()
+                print "{} {}: {}".format(elist.name, start.strftime("%Y %b"), count)
+                end = start
+
+
+def index_test(year_min):
+    """Show message breakdown using scheme, lists with < year_min messages / year get
+    year page, otherwise monthly"""
+    now = datetime.datetime.now()
+    active_lists = []
+    month100 = 0
+    for elist in EmailList.objects.filter(private=False).order_by('name'):
+        end = datetime.datetime(now.year, 1, 1)
+        start = end - relativedelta(years=1)
+        if elist.message_set.filter(date__gte=end).count() > 0:
+            active_lists.append(elist)
+            year_count = elist.message_set.filter(date__gte=start, date__lt=end).count()
+            if year_count < int(year_min):
+                # do year page
+                print "{} {}: {}".format(elist.name, start.strftime("%Y"), year_count)
+            else:
+                # otherwise monthly pages
+                for n in range(1, 13):
+                    start = end - relativedelta(months=1)
+                    count = elist.message_set.filter(date__gte=start, date__lt=end).count()
+                    print "{} {}: {}".format(elist.name, start.strftime("%Y %b"), count)
+                    if count < 100:
+                        month100 += 1
+                    end = start
+
+    print "Year Minimum: {}".format(year_min)
+    print "Total active lists: {}".format(len(active_lists))
+    print "Monthly pages < 100: {}".format(month100)
+
+
+def year_max():
+    """Find email lists with largest message count per year"""
+    maximum = 0
+    elists = EmailList.objects.annotate(num=Count('message')).order_by('-num')
+    for elist in elists[:25]:
+        for year in range(2008, 2018):
+            count = elist.message_set.filter(date__year=year).count()
+            if count > maximum:
+                maximum = count
+                print "{}:{}:{}".format(elist.name, year, count)
 
 
 # ---------------------------------------------------------

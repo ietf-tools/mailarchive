@@ -253,6 +253,7 @@ DATA_ROOT = '/a/mailarch/data'
 ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
 STATIC_INDEX_DIR = os.path.join(DATA_ROOT, 'static')
 STATIC_INDEX_MESSAGES_PER_PAGE = 500
+STATIC_INDEX_YEAR_MINIMUM = 750
 CONSOLE_STATS_FILE = os.path.join(DATA_ROOT, 'log/console.json')
 EXPORT_LIMIT = 50000            # maximum number of messages we will export
 ANONYMOUS_EXPORT_LIMIT = 250    # maximum number of messages a non-logged in user can export
@@ -266,6 +267,7 @@ SEARCH_SCROLL_BUFFER_SIZE = HAYSTACK_SEARCH_RESULTS_PER_PAGE
 TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
 USE_EXTERNAL_PROCESSOR = False
 MAX_THREAD_DEPTH = 6
+THREAD_ORDER_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
 
 # spam_score bits
 MARK_BITS = {'NON_ASCII_HEADER': 0b0001,
@@ -294,8 +296,15 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
         'LOCATION': '127.0.0.1:11211',
         'TIMEOUT': 300,
+    },
+    'disk': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/var/tmp/django_cache',
+        'TIMEOUT': 300,
     }
 }
+CACHE_MIDDLEWARE_KEY_PREFIX = 'arch'
+CACHE_MIDDLEWARE_ALIAS = 'disk'
 
 # Celery Settings
 CELERY_BROKER_URL = 'amqp://'

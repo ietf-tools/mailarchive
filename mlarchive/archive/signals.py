@@ -16,6 +16,10 @@ from mlarchive.archive.views_static import update_static_index
 logger = logging.getLogger('mlarchive.custom')
 
 
+# --------------------------------------------------
+# Signal Handlers
+# --------------------------------------------------
+
 @receiver([post_save, post_delete], sender=EmailList)
 def _clear_lists_cache(sender, instance, **kwargs):
     """If EmailList object is saved or deleted remove the list_info cache entry
@@ -71,15 +75,24 @@ def _update_index(sender, instance, created, **kwargs):
         call_update_static_index.delay(instance.email_list.pk)
 
 
+@receiver(post_save, sender=EmailList)
+def _list_save_handler(sender, instance, **kwargs):
+    _export_lists()
+
+# --------------------------------------------------
+# Celery Tasks
+# --------------------------------------------------
+
+
 @task
 def call_update_static_index(email_list_pk):
     email_list = EmailList.objects.get(pk=email_list_pk)
     update_static_index(email_list)
 
 
-@receiver(post_save, sender=EmailList)
-def _list_save_handler(sender, instance, **kwargs):
-    _export_lists()
+# --------------------------------------------------
+# Helpers
+# --------------------------------------------------
 
 
 def _export_lists():

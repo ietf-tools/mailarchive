@@ -42,7 +42,7 @@ def check_access(func):
 def check_list_access(func):
     """
     This decorator checks that the user making the request has access to the
-    list being requested.
+    list being requested.  Expects list_name as an argument.
     """
     def wrapper(request, *args, **kwargs):
         try:

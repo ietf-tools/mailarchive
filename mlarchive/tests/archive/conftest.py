@@ -50,6 +50,7 @@ def load_db():
                           msgid='a01',
                           date=datetime.datetime(2013, 1, 1))
     MessageFactory.create(email_list=pubone,
+                          frm='Zach <zach@example.com>',
                           thread=bthread,
                           thread_order=0,
                           subject='BBQ Invitation',
@@ -58,6 +59,7 @@ def load_db():
                           msgid='a02',
                           to='to@amsl.com')
     MessageFactory.create(email_list=pubone,
+                          frm='Arnold <arnold@example.com>',
                           thread=bthread,
                           thread_order=1,
                           subject='Re: draft-ietf-dnssec-secops',
@@ -213,6 +215,24 @@ def thread_messages_db_only():
         thread.set_first()
 
 
+@pytest.fixture()
+def static_list():
+    """Load messages over multiple years for testing static index pages.
+    Use STATIC_INDEX_YEAR_MINIMUM = 20 in tests
+    """
+    public = EmailListFactory.create(name='public')
+    date = datetime.datetime(2015, 6, 30)
+    for n in range(15):
+        MessageFactory.create(email_list=public, date=date - datetime.timedelta(days=n))
+    date = datetime.datetime(2017, 12, 30)
+    for n in range(25):
+        MessageFactory.create(email_list=public, date=date - datetime.timedelta(days=n))
+    # set thread.first
+    for thread in Thread.objects.all():
+        thread.email_list = public
+        thread.set_first()
+    yield public
+
 @pytest.fixture(scope='session')
 def tmp_dir(tmpdir_factory):
     """Create temporary directory for this test run"""
@@ -241,7 +261,7 @@ def query_messages(data_dir):
 
 @pytest.fixture()
 def static_dir(data_dir):
-    path = os.path.join(settings.STATIC_INDEX_DIR, 'pubone')
+    path = os.path.join(settings.STATIC_INDEX_DIR, 'public')
     if not os.path.isdir(path):
         os.makedirs(path)
     yield settings.STATIC_INDEX_DIR

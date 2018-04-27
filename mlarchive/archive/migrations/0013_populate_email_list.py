@@ -6,12 +6,21 @@ from django.db import migrations
 
 
 def set_email_list(apps, schema_editor):
-    '''Traverse all message records, read in_reply_to_value and
-    populate in_reply_to FK'''
+    '''Traverse all threads and populate email_list field'''
+    # first delete empty threads
     Thread = apps.get_model("archive", "Thread")
     for thread in Thread.objects.all():
-        thread.email_list = thread.first.email_list
-        thread.save() 
+        if thread.first:
+            thread.email_list = thread.first.email_list
+            thread.save()
+        else:
+            if thread.message_set.count() > 0:
+                first = thread.message_set.order_by('date').first()
+                thread.first = first
+                thread.email_list = thread.first.email_list
+                thread.save()
+            else:
+                thread.delete()
 
 
 def reverse_set_email_list(apps, schema_editor):

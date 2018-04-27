@@ -1,4 +1,5 @@
 from email.utils import parseaddr
+import datetime
 import logging
 import os
 import re
@@ -40,6 +41,12 @@ def get_message_prefer_list(msgid, email_list):
         return Message.objects.get(msgid=msgid, email_list=email_list)
     except Message.DoesNotExist:
         return Message.objects.filter(msgid=msgid).first()
+
+
+def is_small_year(email_list, year):
+    count = Message.objects.filter(email_list=email_list, date__year=year).count()
+    return count < settings.STATIC_INDEX_YEAR_MINIMUM
+
 
 # --------------------------------------------------
 # Models
@@ -245,12 +252,30 @@ class Message(models.Model):
         return base + fragment
 
     def get_static_date_index_url(self):
-        url = reverse('archive_browse_list', kwargs={'list_name': self.email_list.name})
-        return url + '{filename}#{fragment}'.format(filename=self.date_index_page, fragment=self.hashcode.rstrip('='))
+        date = '{}-{:02d}'.format(self.date.year, self.date.month)
+        url = reverse('archive_browse_static_date', kwargs={'list_name': self.email_list.name, 'date': date, 'prefix': ''})
+        return url + '#{fragment}'.format(fragment=self.hashcode.rstrip('='))
 
     def get_static_thread_index_url(self):
-        url = reverse('archive_browse_list', kwargs={'list_name': self.email_list.name})
-        return url + '{filename}#{fragment}'.format(filename=self.thread_index_page, fragment=self.hashcode.rstrip('='))
+        date = '{}-{:02d}'.format(self.thread.date.year, self.thread.date.month)
+        url = reverse('archive_browse_static_date', kwargs={'list_name': self.email_list.name, 'date': date, 'prefix': 'thread'})
+        return url + '#{fragment}'.format(fragment=self.hashcode.rstrip('='))
+
+    def get_static_date_page_url(self):
+        today = datetime.datetime.today()
+        if self.date.year < today.year and is_small_year(self.email_list, self.date.year):
+            date = date = '{}'.format(self.date.year)
+        else:
+            date = '{}-{:02d}'.format(self.date.year, self.date.month)
+        return reverse('archive_browse_static_date', kwargs={'list_name': self.email_list.name, 'date': date, 'prefix': ''})
+
+    def get_static_thread_page_url(self):
+        today = datetime.datetime.today()
+        if self.thread.date.year < today.year and is_small_year(self.email_list, self.thread.date.year):
+            date = '{}'.format(self.thread.date.year)
+        else:
+            date = '{}-{:02d}'.format(self.thread.date.year, self.thread.date.month)
+        return reverse('archive_browse_static_date', kwargs={'list_name': self.email_list.name, 'date': date, 'prefix': 'thread'})
 
     def get_file_path(self):
         return os.path.join(

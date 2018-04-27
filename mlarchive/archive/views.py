@@ -1,19 +1,24 @@
 import datetime
 import json
 import os
+import re
 import urllib
 from operator import itemgetter
+from collections import namedtuple
 
 from django.conf import settings
 from django.contrib.auth import logout
 from django.core.cache import cache
+from django.utils.cache import get_cache_key
 from django.utils.decorators import method_decorator
 from django.forms.formsets import formset_factory
+from django.views.decorators.cache import cache_page
 from django.views.generic.detail import DetailView
 from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.utils.cache import add_never_cache_headers
 from haystack.views import SearchView
 from haystack.query import SearchQuerySet
 from haystack.forms import SearchForm
@@ -30,6 +35,76 @@ from forms import AdminForm, AdminActionForm, AdvancedSearchForm, BrowseForm, Ru
 
 import logging
 logger = logging.getLogger('mlarchive.custom')
+
+THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
+DATE_PATTERN = re.compile(r'(?P<year>\d{4})(?:-(?P<month>\d{2}))?')
+TimePeriod = namedtuple('TimePeriod', 'year, month')
+
+# --------------------------------------------------
+# Helpers
+# --------------------------------------------------
+
+def add_nav_urls(context):
+    """Update context dictionary with next_page and previous_page urls"""
+    if context['group_by_thread']:
+        previous_message, next_message = get_thread_endpoints(context['email_list'], context['time_period'])
+        next_page = next_message.get_static_thread_page_url() if next_message else ''
+        previous_page = previous_message.get_static_thread_page_url() if previous_message else ''
+        context.update({'next_page': next_page, 'previous_page': previous_page})
+    else:
+        previous_message, next_message = get_date_endpoints(context['email_list'], context['time_period'])
+        next_page = next_message.get_static_date_page_url() if next_message else ''
+        previous_page = previous_message.get_static_date_page_url() if previous_message else ''
+        context.update({'next_page': next_page, 'previous_page': previous_page})
+
+
+def get_thread_endpoints(email_list, time_period):
+    """Returns previous top thread message before time_period, and next message after time_period
+    for given list
+    """
+    this_period, next_period = get_this_next_periods(time_period)
+    next_thread = email_list.thread_set.filter(date__gte=next_period).order_by('date').first()
+    next_message = next_thread.first if next_thread else None
+    previous_thread = email_list.thread_set.filter(date__lt=this_period).order_by('date').last()
+    previous_message = previous_thread.first if previous_thread else None
+    return (previous_message, next_message)
+
+
+def get_date_endpoints(email_list, time_period):
+    """Returns previous message before time_period, and next message after time_period
+    for given list
+    """
+    this_period, next_period = get_this_next_periods(time_period)
+    next_message = email_list.message_set.filter(date__gte=next_period).order_by('date').first()
+    previous_message = email_list.message_set.filter(date__lt=this_period).order_by('date').last()
+    return (previous_message, next_message)
+
+
+def get_this_next_periods(time_period):
+    """Given a time_period tuple, returns a tuple of the first date in that period and
+    the first date in the next period, where period is a month or year, based
+    on the string provided.  For example, 2017-04 returns the dates:
+    (datetime(2017,4,1), datetime(2017,5,1))
+    """
+    if time_period.month:
+        this_period = datetime.datetime(time_period.year, time_period.month, 1)
+        next_period = add_one_month(this_period)
+    else:
+        this_period = datetime.datetime(time_period.year, 1, 1)
+        next_period = this_period + datetime.timedelta(days=365)
+    return (this_period, next_period)
+
+
+def add_one_month(dt0):
+    dt1 = dt0.replace(day=1)
+    dt2 = dt1 + datetime.timedelta(days=32)
+    dt3 = dt2.replace(day=1)
+    return dt3
+
+
+def is_small_year(email_list, year):
+    count = Message.objects.filter(email_list=email_list, date__year=year).count()
+    return count < settings.STATIC_INDEX_YEAR_MINIMUM
 
 
 # --------------------------------------------------
@@ -170,7 +245,7 @@ class CustomBrowseView(CustomSearchView):
     def __call__(self, request, list_name, email_list):
         is_legacy_on = True if request.COOKIES.get('isLegacyOn') == 'true' else False
         if is_legacy_on:
-            return redirect('./maillist.html')
+            return redirect('archive_browse_static', list_name=list_name, prefix='')
 
         self.list_name = list_name
         self.email_list = email_list
@@ -224,6 +299,9 @@ class CustomBrowseView(CustomSearchView):
         extra['export_mbox'] = reverse('archive_export', kwargs={'type': 'mbox'}) + '?' + new_query.urlencode()
         extra['export_maildir'] = reverse('archive_export', kwargs={'type': 'maildir'}) + '?' + new_query.urlencode()
         extra['export_url'] = reverse('archive_export', kwargs={'type': 'url'}) + '?' + new_query.urlencode()
+
+        extra['legacy_off_url'] = reverse('archive_browse_list', kwargs={'list_name': self.list_name})
+        extra['legacy_on_url'] = reverse('archive_browse_static', kwargs={'list_name': self.list_name, 'prefix': ''})
 
         return extra
 
@@ -350,6 +428,7 @@ def advsearch(request):
     })
 
 
+#@cache_page(600, cache='disk')
 def browse(request):
     """Presents a list of Email Lists the user has access to.  There are
     separate sections for private, active and inactive.
@@ -375,6 +454,90 @@ def browse(request):
     })
 
 
+@check_list_access
+def browse_static(request, list_name, prefix, date, email_list):
+    """Return legacy style index page"""
+    today = datetime.datetime.today()
+    match = DATE_PATTERN.match(date)
+    if match:
+        year = match.groupdict()['year']
+        month = match.groupdict()['month']
+    else:
+        raise Http404("Invalid URL")
+
+    time_period = TimePeriod(int(year), int(month) if month else None)
+
+    if prefix == 'thread':
+        filters = get_thread_filters(year, month)
+        order_fields = settings.THREAD_ORDER_FIELDS
+        group_by_thread = True
+    else:
+        filters = get_date_filters(year, month)
+        order_fields = ('-date',)
+        group_by_thread = False
+    
+    queryset = email_list.message_set.filter(**filters).order_by(*order_fields)
+
+    # client-side redirects
+    if month and int(year) < today.year and is_small_year(email_list, int(year)):
+        url = reverse('archive_browse_static_date', kwargs={'list_name': list_name, 'prefix': prefix, 'date': year})
+        return render(request, 'archive/refresh.html', {'url': url})
+
+    if not month and queryset.count() > 0 and (year == today.year or not is_small_year(email_list, int(year))):
+        date = queryset.last().date
+        url = reverse('archive_browse_static_date', kwargs={'list_name': list_name, 'prefix': prefix, 'date': '{}-{:02d}'.format(date.year, date.month)})
+        return render(request, 'archive/refresh.html', {'url': url})
+
+    # make date string
+    if month:
+        date = datetime.datetime(int(year),int(month),1)
+        date_string = date.strftime('%b %Y')
+    else:
+        date = datetime.datetime(int(year),1,1)
+        date_string = date.strftime('%Y')
+
+    context = dict(email_list=email_list, 
+                   queryset=queryset,
+                   group_by_thread=group_by_thread,
+                   time_period=time_period,
+                   date_string=date_string,
+                   legacy_off_url=reverse('archive_browse_list',
+                   kwargs={'list_name': list_name}))
+
+    add_nav_urls(context)
+    response = render(request, 'archive/static_index_date.html', context)
+    if email_list.private:
+        add_never_cache_headers(response)
+
+    return response
+
+def browse_static_redirect(request, list_name, prefix):
+    email_list = get_object_or_404(EmailList, name=list_name)
+    last_message = email_list.message_set.order_by('-date').first()
+    if prefix == 'thread':
+        url = last_message.get_static_thread_page_url()
+    else:
+        url = last_message.get_static_date_page_url()
+    return redirect(url)
+
+
+def get_thread_filters(year, month):
+    """Returns dictionary of Queryset filters based on date values, month may be None"""
+    filters = {'thread__date__year': year}
+    if month:
+        filters['thread__date__month'] = month
+    return filters
+
+
+def get_date_filters(year, month):
+    """Returns dictionary of Queryset filters based on datestring YYYY or YYYY-MM"""
+    filters = {'date__year': year}
+    if month:
+        filters['date__month'] = month
+    return filters
+
+
+#@cache_page(60 * 60 * 24, cache='disk')
 @pad_id
 @check_access
 def detail(request, list_name, id, msg):
@@ -394,6 +557,39 @@ def detail(request, list_name, id, msg):
         search_url = None
 
     return render(request, 'archive/detail.html', {
+        'msg': msg,
+        # cache items for use in template
+        'next_in_list': msg.next_in_list(),
+        'next_in_thread': msg.next_in_thread(),
+        'next_in_search': next_in_search,
+        'previous_in_list': msg.previous_in_list(),
+        'previous_in_thread': msg.previous_in_thread(),
+        'previous_in_search': previous_in_search,
+        'queryid': queryid,
+        'search_url': search_url,
+    })
+
+
+# @cache_page(60 * 60 * 24, cache='disk')
+@pad_id
+@check_access
+def detail_classic(request, list_name, id, msg):
+    """Displays the requested message.
+    NOTE: the "msg" argument is a Message object added by the check_access decorator
+    """
+    is_legacy_on = True if request.COOKIES.get('isLegacyOn') == 'true' else False
+    queryid, sqs = get_cached_query(request)
+
+    if sqs and not is_legacy_on:
+        previous_in_search, next_in_search = get_query_neighbors(query=sqs, message=msg)
+        search_url = reverse('archive_search') + '?' + sqs.query_string
+    else:
+        previous_in_search = None
+        next_in_search = None
+        queryid = None
+        search_url = None
+
+    return render(request, 'archive/detail_classic.html', {
         'msg': msg,
         # cache items for use in template
         'next_in_list': msg.next_in_list(),

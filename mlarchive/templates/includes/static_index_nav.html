@@ -1,25 +1,21 @@
 
 
-    {% if page.has_next %}
-        {% if page.next_page_number == page.paginator.num_pages %}
-            [<a href="{{ prefix }}list.html">Newer Messages</a>]
-        {% else %}
-            [<a href="{{ prefix }}{{ page.next_page_number|stringformat:"04d" }}.html">[Newer Messages]</a>]
-        {% endif %}
+    {% if next_page %}
+        [<a class="next" href="{{ next_page }}">Newer Messages</a>]
     {% else %}
         [Newer Messages]
     {% endif %}
 
-    {% if page.has_previous %}
-        [<a href="{{ prefix }}{{ page.previous_page_number|stringformat:"04d" }}.html">[Older Messages]</a>]
+    {% if previous_page %}
+        [<a class="previous" href="{{ previous_page }}">Older Messages</a>]
     {% else %}
         [Older Messages]
     {% endif %}
 
-    {% if prefix == "mail" %}
-      [<a href="threadlist.html">Thread Index</a>]
+    {% if group_by_thread %}
+      [<a href="{% url "archive_browse_static" list_name=email_list.name prefix="" %}">Date Index</a>]
     {% else %}
-      [<a href="maillist.html">Date Index</a>]
+      [<a href="{% url "archive_browse_static" list_name=email_list.name prefix="thread" %}">Thread Index</a>]
     {% endif %}
 
     <br>

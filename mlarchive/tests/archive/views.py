@@ -1,3 +1,4 @@
+import datetime
 import os
 import pytest
 
@@ -7,7 +8,10 @@ from django.urls import reverse
 from factories import EmailListFactory, MessageFactory, UserFactory
 from mlarchive.archive.models import Message
 from mlarchive.archive.management.commands import _classes
+from mlarchive.archive.views import (TimePeriod, add_nav_urls, is_small_year,
+    add_one_month, get_this_next_periods, get_date_endpoints, get_thread_endpoints)
 from pyquery import PyQuery
+
 
 # --------------------------------------------------
 # Helper Functions
@@ -20,6 +24,71 @@ def load_message(filename, listname='public'):
     with open(path) as f:
         data = f.read()
     _classes.archive_message(data, listname)
+
+
+def assert_href(content, selector, value):
+    q = PyQuery(content)
+    assert q(selector).attr('href') == value
+
+
+@pytest.mark.django_db(transaction=True)
+def test_add_nav_urls(static_list, settings):
+    settings.STATIC_INDEX_YEAR_MINIMUM = 20
+    time_period = TimePeriod(year=2016, month=None)
+    context = dict(group_by_thread=False, time_period=time_period, email_list=static_list)
+    add_nav_urls(context)
+    assert '2015' in context['previous_page'] 
+    assert '2017-12' in context['next_page']
+    context['time_period'] = TimePeriod(year=2015, month=06)
+    add_nav_urls(context)
+    assert context['previous_page'] == ''
+    context['time_period'] = TimePeriod(year=2017, month=12)
+    add_nav_urls(context)
+    assert context['next_page'] == ''
+
+
+@pytest.mark.django_db(transaction=True)
+def test_is_small_year(static_list, settings):
+    settings.STATIC_INDEX_YEAR_MINIMUM = 20
+    assert is_small_year(static_list, '2015') is True
+    assert is_small_year(static_list, '2017') is False
+
+
+@pytest.mark.django_db(transaction=True)
+def test_get_thread_endpoints(static_list):
+    time_period = TimePeriod(year=2016, month=6)
+    previous_message, next_message = get_thread_endpoints(static_list, time_period)
+    assert previous_message == static_list.message_set.filter(thread__date__year=2015).order_by('date').last()
+    assert next_message == static_list.message_set.filter(thread__date__year=2017).order_by('date').first()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_get_date_endpoints(static_list):
+    time_period = TimePeriod(year=2016, month=6)
+    previous_message, next_message = get_date_endpoints(static_list, time_period)
+    assert previous_message == static_list.message_set.filter(date__year=2015).order_by('date').last()
+    assert next_message == static_list.message_set.filter(date__year=2017).order_by('date').first()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_get_this_next_periods(static_list):
+    time_period = TimePeriod(year=2017, month=4)
+    assert get_this_next_periods(time_period) == (
+        datetime.datetime(2017,4,1),
+        datetime.datetime(2017,5,1))
+    time_period = TimePeriod(year=2017, month=None)
+    assert get_this_next_periods(time_period) == (
+        datetime.datetime(2017,1,1),
+        datetime.datetime(2018,1,1))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_add_one_month():
+    date = datetime.datetime(2018,1,1)
+    assert add_one_month(date) == datetime.datetime(2018,2,1)
+    date = datetime.datetime(2018,12,1)
+    assert add_one_month(date) == datetime.datetime(2019,1,1)
+
 
 # --------------------------------------------------
 # Tests
@@ -180,7 +249,7 @@ def test_browse_legacy_mode(client):
     client.cookies['isLegacyOn'] = 'true'
     response = client.get(url)
     assert response.status_code == 302
-    assert response['location'] == './maillist.html'
+    assert response['location'] == reverse('archive_browse_static', kwargs={'list_name': elist.name, 'prefix': ''})
 
 
 @pytest.mark.django_db(transaction=True)
@@ -199,6 +268,110 @@ def test_browse_qdr(client, messages):
     response = client.get(url)
     assert response.status_code == 200
     assert len(response.context['results']) == 20
+
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_static(client, static_list):
+    url = reverse('archive_browse_static_date', kwargs={'list_name': static_list.name, 'prefix': '', 'date': '2017'})
+    response = client.get(url)
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_static_unauthorized(client):
+    today = datetime.datetime.today()
+    elist = EmailListFactory.create(name='private', private=True)
+    message = MessageFactory.create(email_list=elist, date=today)
+    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'prefix': '', 'date': today.year})
+    response = client.get(url)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_static_cache_headers_private(admin_client):
+    '''Ensure private lists include Cache-Control: private header'''
+    today = datetime.datetime.today()
+    elist = EmailListFactory.create(name='private', private=True)
+    message = MessageFactory.create(email_list=elist, date=today)
+    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'prefix': '', 'date': today.year})
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    assert 'no-cache' in response.get('Cache-Control')
+
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_static_cache_headers_public(client):
+    '''Ensure private lists include Cache-Control: private header'''
+    today = datetime.datetime.today()
+    elist = EmailListFactory.create()
+    message = MessageFactory.create(email_list=elist, date=today)
+    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'prefix': '', 'date': today.year})
+    response = client.get(url)
+    assert response.status_code == 200
+    cache_control = response.get('Cache-Control')
+    assert cache_control is None or 'no-cache' not in cache_control
+
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_static_small_year_year(client, static_list, settings):
+    settings.STATIC_INDEX_YEAR_MINIMUM = 20
+    url = reverse('archive_browse_static_date', kwargs={'list_name': static_list.name, 'prefix': '', 'date': '2015'})
+    response = client.get(url)
+    assert response.status_code == 200
+    print response.content
+    q = PyQuery(response.content)
+    assert len(q('ul.static-index li')) == 15
+
+    # no messages
+    # assert 'No messages' in content
+    # assert_href(content, 'a.next', '2017-12')
+    # assert_href(content, 'a.previous', '2015')
+    # < STATIC_INDEX_YEAR_MINIMUM
+    # q = PyQuery(content)
+    # assert len(q('ul.static-index li')) == 15
+    # assert_href(content, 'a.next', '2017-12')
+    # assert len(q('a.previous')) == 0
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_static_small_year_month(client, static_list, settings):
+    settings.STATIC_INDEX_YEAR_MINIMUM = 20
+    url = reverse('archive_browse_static_date', kwargs={'list_name': static_list.name, 'prefix': '', 'date': '2015-06'})
+    response = client.get(url)
+    assert response.status_code == 200
+    assert 'http-equiv="refresh"' in response.content
+    assert 'public/2015' in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_static_small_year_current(client, settings):
+    settings.STATIC_INDEX_YEAR_MINIMUM = 20
+    today = datetime.datetime.today()
+    current_year = today.year
+    elist = EmailListFactory.create()
+    message = MessageFactory.create(email_list=elist, date=today)
+    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'prefix': '', 'date': '{}-{:02d}'.format(today.year, today.month)})
+    response = client.get(url)
+    assert response.status_code == 200
+    assert message.subject in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_static_big_year_year(client, static_list, settings):
+    settings.STATIC_INDEX_YEAR_MINIMUM = 20
+    url = reverse('archive_browse_static_date', kwargs={'list_name': static_list.name, 'prefix': '', 'date': '2017'})
+    response = client.get(url)
+    assert response.status_code == 200
+    assert 'http-equiv="refresh"' in response.content
+    assert 'public/2017-12' in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_static_redirect(client, static_list, settings):
+    settings.STATIC_INDEX_YEAR_MINIMUM = 20
+    url = reverse('archive_browse_static', kwargs={'list_name': static_list.name, 'prefix': ''})
+    response = client.get(url)
+    assert response.status_code == 302
+    assert response['location'] == reverse('archive_browse_static_date', kwargs={'list_name': static_list.name, 'prefix': '', 'date': '2017-12'})
 
 
 @pytest.mark.django_db(transaction=True)

@@ -27,7 +27,7 @@ var base = {
         }
     },
 
-    toggleLegacy: function() {
+    toggleLegacy: function(event) {
         event.preventDefault();
         if(base.isLegacyOn) {
             base.isLegacyOn = false;

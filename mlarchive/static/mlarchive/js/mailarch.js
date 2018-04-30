@@ -701,7 +701,7 @@ var mailarch = {
         mailarch.doSearch();
     },
     
-    toggleFilters: function() {
+    toggleFilters: function(event) {
         event.preventDefault();
         if(mailarch.showFilters) {
             mailarch.doHideFilters();
@@ -730,16 +730,16 @@ var mailarch = {
         mailarch.setHeaderWidths();
     },
 
-    togglePreview: function(doAnimation) {
+    togglePreview: function(event) {
         event.preventDefault();
         if(mailarch.showPreview) {
-            mailarch.doHidePreview(doAnimation);
+            mailarch.doHidePreview(event);
         } else {
-            mailarch.doShowPreview(doAnimation);
+            mailarch.doShowPreview(event);
         }
     },
 
-    doShowPreview: function(doAnimation) {
+    doShowPreview: function(event) {
         mailarch.showPreview = true;
         $.cookie('showpreview','true');
         mailarch.$togglePreviewIcon.addClass("fa-chevron-down");
@@ -755,7 +755,7 @@ var mailarch = {
         mailarch.initMessageList();
     },
 
-    doHidePreview: function(doAnimation) {
+    doHidePreview: function(event) {
         var height = mailarch.getMaxListPaneHeight();
         mailarch.showPreview = false;
         $.cookie('showpreview','false');
@@ -763,10 +763,10 @@ var mailarch = {
         mailarch.$togglePreviewIcon.addClass("fa-chevron-up");
         mailarch.$viewPane.hide();
         mailarch.$splitterPane.hide();
-        if (doAnimation == false){
-            mailarch.$listPane.height(height);
-        } else {
+        if (event.type == 'click'){
             mailarch.$listPane.animate({height:height});
+        } else {
+            mailarch.$listPane.height(height);
         }
         mailarch.$msgList.off('keydown', mailarch.messageNav);
         mailarch.$msgTable.off('click','.xtr', mailarch.selectRow);

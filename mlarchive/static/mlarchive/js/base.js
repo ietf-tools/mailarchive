@@ -23,7 +23,7 @@ var base = {
 
     initLegacy: function() {
         if(base.isLegacyOn) {
-            base.$toggleLegacyLink.text("Legacy Mode Off");
+            base.$toggleLegacyLink.text("Turn Legacy Mode Off");
         }
     },
 
@@ -32,7 +32,7 @@ var base = {
         if(base.isLegacyOn) {
             base.isLegacyOn = false;
             $.cookie('isLegacyOn','false', { expires: 5*365, path: '/'});
-            base.$toggleLegacyLink.text("Legacy Mode On");
+            base.$toggleLegacyLink.text("Turn Legacy Mode On");
             if(typeof mailarch !== 'undefined'){
                 mailarch.legacyOff();
             }
@@ -45,7 +45,7 @@ var base = {
         } else {
             base.isLegacyOn = true;
             $.cookie('isLegacyOn','true', { expires: 5*365, path: '/'});
-            base.$toggleLegacyLink.text("Legacy Mode Off");
+            base.$toggleLegacyLink.text(" Turn Legacy Mode Off");
             if(typeof mailarch !== 'undefined'){
                 mailarch.legacyOn();
             }

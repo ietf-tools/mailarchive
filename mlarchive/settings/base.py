@@ -134,6 +134,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.admin',
     'django.contrib.admindocs',
+    'django.contrib.humanize',
     'bootstrap3',
     'celery_haystack',
     'haystack',
@@ -255,7 +256,7 @@ STATIC_INDEX_DIR = os.path.join(DATA_ROOT, 'static')
 STATIC_INDEX_MESSAGES_PER_PAGE = 500
 STATIC_INDEX_YEAR_MINIMUM = 750
 CONSOLE_STATS_FILE = os.path.join(DATA_ROOT, 'log/console.json')
-EXPORT_LIMIT = 50000            # maximum number of messages we will export
+EXPORT_LIMIT = 5000             # maximum number of messages we will export
 ANONYMOUS_EXPORT_LIMIT = 250    # maximum number of messages a non-logged in user can export
 FILTER_CUTOFF = 5000            # maximum results for which we'll provide filter options
 LOG_FILE = os.path.join(DATA_ROOT, 'log/mlarchive.log')

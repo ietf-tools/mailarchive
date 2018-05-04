@@ -253,12 +253,12 @@ class Message(models.Model):
 
     def get_static_date_index_url(self):
         date = '{}-{:02d}'.format(self.date.year, self.date.month)
-        url = reverse('archive_browse_static_date', kwargs={'list_name': self.email_list.name, 'date': date, 'prefix': ''})
+        url = reverse('archive_browse_static_date', kwargs={'list_name': self.email_list.name, 'date': date})
         return url + '#{fragment}'.format(fragment=self.hashcode.rstrip('='))
 
     def get_static_thread_index_url(self):
         date = '{}-{:02d}'.format(self.thread.date.year, self.thread.date.month)
-        url = reverse('archive_browse_static_date', kwargs={'list_name': self.email_list.name, 'date': date, 'prefix': 'thread'})
+        url = reverse('archive_browse_static_thread', kwargs={'list_name': self.email_list.name, 'date': date})
         return url + '#{fragment}'.format(fragment=self.hashcode.rstrip('='))
 
     def get_static_date_page_url(self):
@@ -267,7 +267,7 @@ class Message(models.Model):
             date = date = '{}'.format(self.date.year)
         else:
             date = '{}-{:02d}'.format(self.date.year, self.date.month)
-        return reverse('archive_browse_static_date', kwargs={'list_name': self.email_list.name, 'date': date, 'prefix': ''})
+        return reverse('archive_browse_static_date', kwargs={'list_name': self.email_list.name, 'date': date})
 
     def get_static_thread_page_url(self):
         today = datetime.datetime.today()
@@ -275,7 +275,7 @@ class Message(models.Model):
             date = '{}'.format(self.thread.date.year)
         else:
             date = '{}-{:02d}'.format(self.thread.date.year, self.thread.date.month)
-        return reverse('archive_browse_static_date', kwargs={'list_name': self.email_list.name, 'date': date, 'prefix': 'thread'})
+        return reverse('archive_browse_static_thread', kwargs={'list_name': self.email_list.name, 'date': date})
 
     def get_file_path(self):
         return os.path.join(

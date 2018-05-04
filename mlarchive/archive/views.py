@@ -8,6 +8,7 @@ from collections import namedtuple
 
 from django.conf import settings
 from django.contrib.auth import logout
+from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.utils.cache import get_cache_key
 from django.utils.decorators import method_decorator
@@ -19,6 +20,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.cache import add_never_cache_headers
+from django.views.generic import View
 from haystack.views import SearchView
 from haystack.query import SearchQuerySet
 from haystack.forms import SearchForm
@@ -28,7 +30,7 @@ from mlarchive.archive import actions
 from mlarchive.archive.query_utils import (get_kwargs, get_qdr_kwargs, get_cached_query, query_is_listname,
     parse_query_string, get_order_fields, generate_queryid)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
-    get_query_neighbors, get_query_string, get_lists_for_user)
+    get_query_neighbors, get_query_string, get_lists_for_user, get_random_token)
 
 from models import EmailList, Message
 from forms import AdminForm, AdminActionForm, AdvancedSearchForm, BrowseForm, RulesForm
@@ -162,10 +164,15 @@ class CustomSearchView(SearchView):
             extra['count'] = self.results.count()
 
         # export links
+        token = get_random_token(length=16)
+        new_query = self.request.GET.copy()
+        new_query['token'] = token
+        extra['export_token'] = token
         extra['anonymous_export_limit'] = settings.ANONYMOUS_EXPORT_LIMIT
-        extra['export_mbox'] = reverse('archive_export', kwargs={'type': 'mbox'}) + query_string
-        extra['export_maildir'] = reverse('archive_export', kwargs={'type': 'maildir'}) + query_string
-        extra['export_url'] = reverse('archive_export', kwargs={'type': 'url'}) + query_string
+        extra['export_limit'] = settings.EXPORT_LIMIT
+        extra['export_mbox'] = reverse('archive_export', kwargs={'type': 'mbox'}) + '?' + new_query.urlencode()
+        extra['export_maildir'] = reverse('archive_export', kwargs={'type': 'maildir'}) + '?' + new_query.urlencode()
+        extra['export_url'] = reverse('archive_export', kwargs={'type': 'url'}) + '?' + new_query.urlencode()
 
         # modify search link
         if 'as' in self.request.GET:
@@ -245,7 +252,7 @@ class CustomBrowseView(CustomSearchView):
     def __call__(self, request, list_name, email_list):
         is_legacy_on = True if request.COOKIES.get('isLegacyOn') == 'true' else False
         if is_legacy_on:
-            return redirect('archive_browse_static', list_name=list_name, prefix='')
+            return redirect('archive_browse_static', list_name=list_name)
 
         self.list_name = list_name
         self.email_list = email_list
@@ -294,16 +301,117 @@ class CustomBrowseView(CustomSearchView):
             extra['count'] = Message.objects.filter(email_list__name=self.list_name).count()
 
         # export links
+        token = get_random_token(length=16)
         new_query = self.request.GET.copy()
         new_query['email_list'] = self.list_name
+        new_query['token'] = token
+        extra['export_token'] = token
+        extra['export_limit'] = settings.EXPORT_LIMIT
         extra['export_mbox'] = reverse('archive_export', kwargs={'type': 'mbox'}) + '?' + new_query.urlencode()
         extra['export_maildir'] = reverse('archive_export', kwargs={'type': 'maildir'}) + '?' + new_query.urlencode()
         extra['export_url'] = reverse('archive_export', kwargs={'type': 'url'}) + '?' + new_query.urlencode()
 
         extra['legacy_off_url'] = reverse('archive_browse_list', kwargs={'list_name': self.list_name})
-        extra['legacy_on_url'] = reverse('archive_browse_static', kwargs={'list_name': self.list_name, 'prefix': ''})
+        extra['legacy_on_url'] = reverse('archive_browse_static', kwargs={'list_name': self.list_name})
 
         return extra
+
+
+@method_decorator(check_list_access, name='dispatch')
+class BaseStaticIndexView(View):
+    list_name = None
+    date = None
+    email_list = None
+    year_filter = None
+    month_filter = None
+    queryset = None
+    month = None
+    year = None
+
+    def get_filters(self):
+        """Returns dictionary of Queryset filters based on datestring YYYY or YYYY-MM"""
+        filters = {self.year_filter: self.year}
+        if self.month:
+            filters[self.month_filter] = self.month
+        return filters
+
+    def get_month_year(self, date):
+        match = DATE_PATTERN.match(date)
+        if match:
+            year = int(match.groupdict()['year'])
+            month = match.groupdict()['month']
+            if month:
+                month = int(month)
+        else:
+            raise Http404("Invalid URL")
+
+        return month, year
+
+    def get_date_string(self):
+        if self.month:
+            date = datetime.datetime(self.year, self.month ,1)
+            return date.strftime('%b %Y')
+        else:
+            date = datetime.datetime(self.year, 1, 1)
+            return date.strftime('%Y')
+
+    def get_client_side_redirect(self):
+        current_year = datetime.datetime.today().year
+        if self.month and self.year < current_year and is_small_year(self.kwargs['email_list'], self.year):
+            url = reverse(self.view_name, kwargs={'list_name': self.kwargs['list_name'], 'date': self.year})
+            return render(self.request, 'archive/refresh.html', {'url': url})
+
+        if not self.month and self.queryset.count() > 0 and (self.year == current_year or not is_small_year(self.kwargs['email_list'], self.year)):
+            date = self.queryset.last().date
+            url = reverse(self.view_name, kwargs={'list_name': self.kwargs['list_name'], 'date': '{}-{:02d}'.format(date.year, date.month)})
+            return render(self.request, 'archive/refresh.html', {'url': url})
+
+    def get_context_data(self):
+        context = dict(email_list=self.kwargs['email_list'], 
+               queryset=self.queryset,
+               group_by_thread=self.group_by_thread,
+               time_period=TimePeriod(year=self.year, month=self.month),
+               date_string=self.get_date_string(),
+               legacy_off_url=reverse('archive_browse_list', kwargs={'list_name': self.kwargs['list_name']}))
+
+        add_nav_urls(context)
+        return context
+
+    def render_to_response(self, context):
+        response = render(self.request, 'archive/static_index_date.html', context)
+        if self.kwargs['email_list'].private:
+            add_never_cache_headers(response)
+        return response
+
+    def get(self, request, **kwargs):
+        self.kwargs['email_list'] = kwargs['email_list']    # this was added by decorator
+        self.month, self.year = self.get_month_year(kwargs['date'])
+        self.filters = self.get_filters()
+        self.queryset = kwargs['email_list'].message_set.filter(**self.filters).order_by(*self.order_fields)
+
+        redirect = self.get_client_side_redirect()
+        if redirect:
+            return redirect
+
+        context = self.get_context_data()
+        return self.render_to_response(context)
+
+
+class DateStaticIndexView(BaseStaticIndexView):
+    year_filter = 'date__year'
+    month_filter = 'date__month'
+    order_fields = ['-date']
+    view_name = 'archive_browse_static_date'
+    group_by_thread = False
+
+
+class ThreadStaticIndexView(BaseStaticIndexView):
+    year_filter = 'thread__date__year'
+    month_filter = 'thread__date__month'
+    order_fields = settings.THREAD_ORDER_FIELDS
+    view_name = 'archive_browse_static_thread'
+    group_by_thread = True
+
 
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
@@ -428,7 +536,6 @@ def advsearch(request):
     })
 
 
-#@cache_page(600, cache='disk')
 def browse(request):
     """Presents a list of Email Lists the user has access to.  There are
     separate sections for private, active and inactive.
@@ -454,87 +561,16 @@ def browse(request):
     })
 
 
-@check_list_access
-def browse_static(request, list_name, prefix, date, email_list):
-    """Return legacy style index page"""
-    today = datetime.datetime.today()
-    match = DATE_PATTERN.match(date)
-    if match:
-        year = match.groupdict()['year']
-        month = match.groupdict()['month']
-    else:
-        raise Http404("Invalid URL")
-
-    time_period = TimePeriod(int(year), int(month) if month else None)
-
-    if prefix == 'thread':
-        filters = get_thread_filters(year, month)
-        order_fields = settings.THREAD_ORDER_FIELDS
-        group_by_thread = True
-    else:
-        filters = get_date_filters(year, month)
-        order_fields = ('-date',)
-        group_by_thread = False
-    
-    queryset = email_list.message_set.filter(**filters).order_by(*order_fields)
-
-    # client-side redirects
-    if month and int(year) < today.year and is_small_year(email_list, int(year)):
-        url = reverse('archive_browse_static_date', kwargs={'list_name': list_name, 'prefix': prefix, 'date': year})
-        return render(request, 'archive/refresh.html', {'url': url})
-
-    if not month and queryset.count() > 0 and (year == today.year or not is_small_year(email_list, int(year))):
-        date = queryset.last().date
-        url = reverse('archive_browse_static_date', kwargs={'list_name': list_name, 'prefix': prefix, 'date': '{}-{:02d}'.format(date.year, date.month)})
-        return render(request, 'archive/refresh.html', {'url': url})
-
-    # make date string
-    if month:
-        date = datetime.datetime(int(year),int(month),1)
-        date_string = date.strftime('%b %Y')
-    else:
-        date = datetime.datetime(int(year),1,1)
-        date_string = date.strftime('%Y')
-
-    context = dict(email_list=email_list, 
-                   queryset=queryset,
-                   group_by_thread=group_by_thread,
-                   time_period=time_period,
-                   date_string=date_string,
-                   legacy_off_url=reverse('archive_browse_list',
-                   kwargs={'list_name': list_name}))
-
-    add_nav_urls(context)
-    response = render(request, 'archive/static_index_date.html', context)
-    if email_list.private:
-        add_never_cache_headers(response)
-
-    return response
-
-def browse_static_redirect(request, list_name, prefix):
+def browse_static_redirect(request, list_name):
     email_list = get_object_or_404(EmailList, name=list_name)
     last_message = email_list.message_set.order_by('-date').first()
-    if prefix == 'thread':
-        url = last_message.get_static_thread_page_url()
-    else:
-        url = last_message.get_static_date_page_url()
-    return redirect(url)
+    return redirect(last_message.get_static_date_page_url())
 
 
-def get_thread_filters(year, month):
-    """Returns dictionary of Queryset filters based on date values, month may be None"""
-    filters = {'thread__date__year': year}
-    if month:
-        filters['thread__date__month'] = month
-    return filters
-
-
-def get_date_filters(year, month):
-    """Returns dictionary of Queryset filters based on datestring YYYY or YYYY-MM"""
-    filters = {'date__year': year}
-    if month:
-        filters['date__month'] = month
-    return filters
+def browse_static_thread_redirect(request, list_name):
+    email_list = get_object_or_404(EmailList, name=list_name)
+    last_message = email_list.message_set.order_by('-date').first()
+    return redirect(last_message.get_static_thread_page_url())
 
 
 #@cache_page(60 * 60 * 24, cache='disk')
@@ -603,9 +639,10 @@ def detail_classic(request, list_name, id, msg):
     })
 
 
+@login_required
 def export(request, type):
     """Takes a search query string and builds a gzipped tar archive of the messages
-    in the query results.  Two formats are supported: maildir and mbox.
+    in the query results.
     """
     # force sort order and run query
     data = request.GET.copy()
@@ -613,8 +650,11 @@ def export(request, type):
     data['sso'] = 'date'
     form = AdvancedSearchForm(data, load_all=False, request=request)
     sqs = form.search()
-
-    return get_export(sqs, type, request)
+    count = sqs.count()
+    response = get_export(sqs, type, request)
+    if data.get('token'):
+        response.set_cookie('downloadToken', data.get('token'))
+    return response
 
 
 def legacy_message(request, list_name, id):

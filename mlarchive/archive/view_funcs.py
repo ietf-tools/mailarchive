@@ -26,6 +26,9 @@ from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_lists_for_user
 from mlarchive.utils.encoding import to_str
 
+import logging
+logger = logging.getLogger('mlarchive.custom')
+
 contain_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\((?P<value>[^\)]+)\)')
 exact_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\"(?P<value>[^\"]+)\"')
 
@@ -219,6 +222,10 @@ def get_random_basename(prefix):
     )
 
 
+def get_random_token(length=32):
+    return ''.join([random.choice(string.ascii_letters + string.digits) for n in xrange(length)])
+
+
 def build_maildir_tar(sqs, tar, basename):
     """Returns tar file with messages from SearchQuerySet in maildir format"""
     for result in sqs:
@@ -246,6 +253,7 @@ def build_mbox_tar(sqs, tar, basename):
                                                     mbox_date + '.mbox'))
             os.remove(temp_path)
             fd, temp_path = tempfile.mkstemp()
+            # logger.info('creating export file: {}'.format(temp_path))
             mbox_file = os.fdopen(fd, 'w')
             mbox_date = date
             mbox_list = mlist

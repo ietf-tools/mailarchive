@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static archive_extras widget_tweaks %}
+{% load static humanize archive_extras widget_tweaks %}
 
 
 {% block title %}{% if browse_list %}{{ browse_list }}{% else %}{{ block.super }} Search Results{% endif %}{% endblock %}
@@ -101,18 +101,7 @@
                         </ul>
                         
                         <ul class="nav navbar-nav navbar-right">
-                            <li class="dropdown">
-                                {% if not user.is_authenticated and page.paginator.count > anonymous_export_limit %}
-                                <a href="#" class="dropdown-toggle disabled" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" title="Login to enable large exports">Export <span class="caret"></span></a>
-                                {% else %}
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Export <span class="caret"></span></a>
-                                {% endif %}
-                                <ul class="dropdown-menu">
-                                    <li><a href="{{ export_mbox }}">Mbox</a></li>
-                                    <li><a href="{{ export_maildir }}">Maildir</a></li>
-                                    <li><a href="{{ export_url }}">URLs</a></li>
-                                </ul>
-                            </li>
+                            <li><a href="#" data-toggle="modal" data-target="#exampleModalLong">Export</a></li>
                         </ul> <!-- nav navbar-nav -->
                         <form name="search-form" id="id_search_form" class="navbar-form navbar-right" method="get">
                             <div class="input-group">
@@ -155,7 +144,7 @@
                         </div>
                     {% endif %}
 
-                    <div id="msg-list" class="msg-list wrapper no-preview" tabindex="-1" data-results-per-page="{{ results_per_page }}" data-queryid="{{ queryid }}" data-queryset-offset="{{ queryset_offset }}" data-selected-offset="{{ selected_offset }}" data-browse-list="{{ browse_list|default_if_none:"" }}" data-gbt="{% if group_by_thread %}1{% endif %}"{% if browse_list %} data-legacy-off-url="{{ legacy_off_url }}" data-legacy-on-url="{{ legacy_on_url }}"{% endif %}>
+                    <div id="msg-list" class="msg-list wrapper no-preview" tabindex="-1" data-results-per-page="{{ results_per_page }}" data-queryid="{{ queryid }}" data-queryset-offset="{{ queryset_offset }}" data-selected-offset="{{ selected_offset }}" data-export-token="{{ export_token }}" data-browse-list="{{ browse_list|default_if_none:"" }}" data-gbt="{% if group_by_thread %}1{% endif %}"{% if browse_list %} data-legacy-off-url="{{ legacy_off_url }}" data-legacy-on-url="{{ legacy_on_url }}"{% endif %}>
                         <div class="table table-condensed msg-table xtable{% if group_by_thread %} thread-sorted{% endif %}">
                             <div class="xtbody">
                                 {% with page as results %}
@@ -187,6 +176,43 @@
         </div> <!-- msg-components -->
         <!-- debug_toolbar_here -->
     </div> <!-- msg-container -->
+
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModalLong" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLongTitle">Archive Export</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            
+            <div class="export-text">
+              {% if user.is_authenticated %}
+                {% if count > export_limit %}
+                  <p>Export is limited to {{ export_limit }} messages.</p>
+                {% else %}
+                  <p>Exporting {{ count|intcomma }} messages.  Select an export type.</p>
+                {% endif %}
+              {% else %}
+                <p>You must be logged in to export messages.</p>
+              {% endif %}
+            </div>
+            <div class="export-spinner">
+              <i class="fa fa-spinner fa-spin" style="font-size:48px"></i>
+            </div>
+          </div>
+          <div class="modal-footer">
+              <a class="btn btn-default export-link{% if not user.is_authenticated or count > export_limit %} disabled{% endif %}" href="{{ export_mbox }}">Mbox</a>
+              <a class="btn btn-default export-link{% if not user.is_authenticated or count > export_limit %} disabled{% endif %}" href="{{ export_maildir }}">Maildir</a>
+              <a class="btn btn-default export-link{% if not user.is_authenticated or count > export_limit %} disabled{% endif %}" href="{{ export_url }}">URLs</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
 {% endblock %}
 
 {% block footer %}{% endblock %}

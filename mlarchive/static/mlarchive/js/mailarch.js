@@ -24,6 +24,7 @@ var mailarch = {
     sortDefault: new Array(),
     scrollMargin: $('.xtr').height(),
     splitterHeight: $('#splitter-pane').height(),
+    timer_attempts: 300,
     
     // PRIMARY FUNCTIONS =====================================
     
@@ -45,6 +46,8 @@ var mailarch = {
         mailarch.$browseHeader = $('#browse-header');
         mailarch.$clearSort = $('#clear-sort');
         mailarch.$content = $('#content');
+        mailarch.$exportLinks = $('a.export-link');
+        mailarch.$exportSpinner = $('.export-spinner');
         mailarch.$filterPopups = $('.filter');
         mailarch.$filterOptions = $('input.facetchk[type=checkbox]');
         mailarch.$fromFilterClear = $('#from-filter-clear');
@@ -76,6 +79,7 @@ var mailarch = {
 
     bindEvents: function() {
         mailarch.$clearSort.on('click', mailarch.resetSort);
+        mailarch.$exportLinks.on('click', mailarch.doExport);
         mailarch.$filterPopups.on('blur', mailarch.closeFilterPopup);
         mailarch.$filterOptions.on('change', mailarch.applyFilter);
         mailarch.$fromFilterClear.on('click', mailarch.clearFromFilter);
@@ -694,6 +698,32 @@ var mailarch = {
         $('li.filter-option', container).show();
     },
     
+    doExport: function(event) {
+        $('.export-text').hide();
+        mailarch.$exportSpinner.show();
+        downloadToken = mailarch.$msgList.data('export-token');
+        $(document.body).css({'cursor' : 'wait'});
+
+        mailarch.downloadTimer = window.setInterval( function() {
+            var token = $.cookie("downloadToken");
+            if( (token == downloadToken) || (mailarch.timer_attempts == 0) ) {
+                mailarch.exportDone();
+            }
+            mailarch.timer_attempts--;
+        }, 1000 );
+
+    },
+
+    exportDone: function(event) {
+        $(document.body).css({'cursor' : 'default'});
+        window.clearInterval( mailarch.downloadTimer );
+        $.removeCookie('downloadToken')
+        mailarch.timer_attempts = 300;
+        $('#exampleModalLong').modal('toggle');
+        $('.export-text').show();
+        mailarch.$exportSpinner.hide();
+    },
+
     submitSearch: function(event) {
         event.preventDefault();
         mailarch.urlParams['q'] = mailarch.$q.val();

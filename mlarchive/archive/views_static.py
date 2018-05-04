@@ -102,23 +102,24 @@ def build_static_pages(elist, start=None):
         request = get_request()
         request.META['HTTP_HOST'] = 'mailarchive' + settings.ALLOWED_HOSTS[0]
         date = '{}'.format(year)
-        
+        date_view = views.DateStaticIndexView.as_view()
+        thread_view = views.ThreadStaticIndexView.as_view()
         # build date index page
-        response = views.browse_static(request, list_name=elist.name, prefix='', date=date)
+        response = date_view(request, list_name=elist.name, date=date)
         write_index(elist, date, response.content)
         
         # build thread index page
-        response = views.browse_static(request, list_name=elist.name, prefix='thread', date=date)
+        response = thread_view(request, list_name=elist.name, date=date)
         write_index(elist, 'thread' + date, response.content)
 
         for month in range(1, 13):
             month_date = '{}-{:02d}'.format(year, month)
             # build date index page
-            response = views.browse_static(request, list_name=elist.name, prefix='', date=month_date)
+            response = date_view(request, list_name=elist.name, date=month_date)
             write_index(elist, month_date, response.content)
             
             # build thread index page
-            response = views.browse_static(request, list_name=elist.name, prefix='thread', date=month_date)
+            response = thread_view(request, list_name=elist.name, date=month_date)
             write_index(elist, 'thread' + month_date, response.content)
             
             # break if reached month of last message

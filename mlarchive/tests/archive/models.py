@@ -32,7 +32,7 @@ def test_message_get_admin_url(client):
 @pytest.mark.django_db(transaction=True)
 def test_message_get_date_index_url(client):
     elist = EmailListFactory.create(name='public')
-    msg = MessageFactory.create(email_list=elist, date_index_page='mail0001.html')
+    msg = MessageFactory.create(email_list=elist)
     assert msg.get_date_index_url() == '/arch/browse/public/?index={hashcode}'.format(
         hashcode=msg.hashcode.strip('='))
 
@@ -40,7 +40,7 @@ def test_message_get_date_index_url(client):
 @pytest.mark.django_db(transaction=True)
 def test_message_get_thread_index_url(client):
     elist = EmailListFactory.create(name='public')
-    msg = MessageFactory.create(email_list=elist, thread_index_page='thread0001.html')
+    msg = MessageFactory.create(email_list=elist)
     assert msg.get_thread_index_url() == '/arch/browse/public/?gbt=1&index={hashcode}'.format(
         hashcode=msg.hashcode.strip('='))
 
@@ -59,7 +59,7 @@ def test_message_get_static_thread_index_url(client):
     date = datetime.datetime(2017,4,1)
     elist = EmailListFactory.create(name='public')
     msg = MessageFactory.create(email_list=elist, date=date)
-    assert msg.get_static_thread_index_url() == '/arch/browse/static/public/thread2017-04/#{hashcode}'.format(
+    assert msg.get_static_thread_index_url() == '/arch/browse/static/public/thread/2017-04/#{hashcode}'.format(
         hashcode=msg.hashcode.strip('='))
 
 

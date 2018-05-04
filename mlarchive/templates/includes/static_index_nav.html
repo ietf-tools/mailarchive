@@ -13,9 +13,9 @@
     {% endif %}
 
     {% if group_by_thread %}
-      [<a href="{% url "archive_browse_static" list_name=email_list.name prefix="" %}">Date Index</a>]
+      [<a href="{% url "archive_browse_static" list_name=email_list.name %}">Date Index</a>]
     {% else %}
-      [<a href="{% url "archive_browse_static" list_name=email_list.name prefix="thread" %}">Thread Index</a>]
+      [<a href="{% url "archive_browse_static_thread_redirect" list_name=email_list.name %}">Thread Index</a>]
     {% endif %}
 
     <br>

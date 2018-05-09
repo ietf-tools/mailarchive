@@ -206,6 +206,12 @@ class Message(models.Model):
             'list_name': self.email_list.name,
             'id': self.hashcode.rstrip('=')})
 
+    def get_absolute_url_with_host(self):
+        # strip padding, "=", to shorten URL
+        return settings.ARCHIVE_HOST_URL + reverse('archive_detail', kwargs={
+            'list_name': self.email_list.name,
+            'id': self.hashcode.rstrip('=')})
+
     def get_admin_url(self):
         return reverse('archive_admin') + '?' + urlencode(dict(msgid=self.msgid))
 
@@ -277,6 +283,10 @@ class Message(models.Model):
             date = '{}-{:02d}'.format(self.thread.date.year, self.thread.date.month)
         return reverse('archive_browse_static_thread', kwargs={'list_name': self.email_list.name, 'date': date})
 
+    def get_absolute_static_index_urls(self):
+        host_url = settings.ARCHIVE_HOST_URL
+        return [host_url + self.get_static_date_page_url(), host_url + self.get_static_thread_page_url()]
+
     def get_file_path(self):
         return os.path.join(
             settings.ARCHIVE_DIR,
@@ -339,8 +349,7 @@ class Message(models.Model):
     def next_in_list(self):
         """Return the next message in the list, ordered by date ascending"""
         messages = Message.objects
-        messages = messages.filter(email_list=self.email_list,
-            date__gte=self.date)
+        messages = messages.filter(email_list=self.email_list, date__gte=self.date)
         messages = messages.order_by('date', 'id')
         messages = messages.exclude(id=self.id)
         return messages.first()
@@ -363,8 +372,7 @@ class Message(models.Model):
     def previous_in_list(self):
         """Return the previous message in the list, ordered by date ascending"""
         messages = Message.objects
-        messages = messages.filter(email_list=self.email_list,
-            date__lt=self.date)
+        messages = messages.filter(email_list=self.email_list, date__lt=self.date)
         messages = messages.order_by('date')
         return messages.last()
 

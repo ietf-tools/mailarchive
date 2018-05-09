@@ -24,6 +24,7 @@ def get_secret(setting, secrets=secrets):
 
 
 SECRET_KEY = get_secret("SECRET_KEY")
+CLOUDFLARE_ZONE_ID = get_secret("CLOUDFLARE_ZONE_ID")
 
 DATABASES = {
     'default': {
@@ -250,6 +251,7 @@ ELASTICSEARCH_INDEX_MAPPINGS = {
 }
 
 # ARCHIVE SETTINGS
+ARCHIVE_HOST_URL = 'https://mailarchive.ietf.org'
 DATA_ROOT = '/a/mailarch/data'
 ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
 STATIC_INDEX_DIR = os.path.join(DATA_ROOT, 'static')
@@ -269,6 +271,7 @@ TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
 USE_EXTERNAL_PROCESSOR = False
 MAX_THREAD_DEPTH = 6
 THREAD_ORDER_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
+USING_CDN = True
 
 # spam_score bits
 MARK_BITS = {'NON_ASCII_HEADER': 0b0001,

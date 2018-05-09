@@ -296,8 +296,6 @@ def test_browse_static_cache_headers_private(admin_client):
     url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': '{}-{:02d}'.format(today.year, today.month)})
     response = admin_client.get(url)
     assert response.status_code == 200
-    print response.content
-    print response.items()
     assert 'no-cache' in response.get('Cache-Control')
 
 
@@ -417,6 +415,27 @@ def test_detail_admin_access(client):
     assert response.status_code == 200
     q = PyQuery(response.content)
     assert len(q('#admin-link')) == 1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_detail_cache_headers_public(client):
+    elist = EmailListFactory.create()
+    msg = MessageFactory.create(email_list=elist)
+    url = reverse('archive_detail', kwargs={'list_name': elist.name, 'id': msg.hashcode})
+    response = client.get(url)
+    assert response.status_code == 200
+    cache_control = response.get('Cache-Control')
+    assert cache_control is None or 'no-cache' not in cache_control
+
+
+@pytest.mark.django_db(transaction=True)
+def test_detail_cache_headers_private(admin_client):
+    elist = EmailListFactory.create(name='private', private=True)
+    msg = MessageFactory.create(email_list=elist)
+    url = reverse('archive_detail', kwargs={'list_name': elist.name, 'id': msg.hashcode})
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    assert 'no-cache' in response.get('Cache-Control')
 
 
 @pytest.mark.django_db(transaction=True)

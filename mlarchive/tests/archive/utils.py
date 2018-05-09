@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.test.client import RequestFactory
 
-from mlarchive.archive.utils import get_noauth, get_lists, get_lists_for_user
+from mlarchive.archive.utils import get_noauth, get_lists, get_lists_for_user, get_purge_cache_urls
 from mlarchive.utils.test_utils import get_request
 
 
@@ -48,3 +48,28 @@ def test_get_lists_for_user(admin_user):
     assert private2 not in lists
 
 
+@pytest.mark.django_db(transaction=True)
+def test_get_purge_cache_urls(messages):
+    message = messages.get(msgid='c02')
+    urls = get_purge_cache_urls(message)
+    assert urls
+    print urls
+    # previous in list
+    msg = messages.get(msgid='c01')
+    assert msg.get_absolute_url_with_host() in urls
+    # next in list
+    msg = messages.get(msgid='c03')
+    assert msg.get_absolute_url_with_host() in urls
+    # thread mate
+    msg = messages.get(msgid='c04')
+    assert msg.get_absolute_url_with_host() in urls
+    # date index page
+    index_urls = message.get_absolute_static_index_urls()
+    assert index_urls[0] in urls
+    # thread index page
+    assert index_urls[1] in urls
+    # self on create
+    assert message.get_absolute_url_with_host() not in urls
+    # self on delete
+    urls = get_purge_cache_urls(message, created=False)
+    assert message.get_absolute_url_with_host() in urls

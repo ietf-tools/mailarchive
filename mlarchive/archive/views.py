@@ -573,7 +573,6 @@ def browse_static_thread_redirect(request, list_name):
     return redirect(last_message.get_static_thread_page_url())
 
 
-#@cache_page(60 * 60 * 24, cache='disk')
 @pad_id
 @check_access
 def detail(request, list_name, id, msg):
@@ -592,7 +591,7 @@ def detail(request, list_name, id, msg):
         queryid = None
         search_url = None
 
-    return render(request, 'archive/detail.html', {
+    response = render(request, 'archive/detail.html', {
         'msg': msg,
         # cache items for use in template
         'next_in_list': msg.next_in_list(),
@@ -605,8 +604,11 @@ def detail(request, list_name, id, msg):
         'search_url': search_url,
     })
 
+    if msg.email_list.private:
+        add_never_cache_headers(response)
+    return response
 
-# @cache_page(60 * 60 * 24, cache='disk')
+
 @pad_id
 @check_access
 def detail_classic(request, list_name, id, msg):

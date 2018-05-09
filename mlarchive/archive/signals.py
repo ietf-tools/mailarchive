@@ -2,6 +2,9 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
+import CloudFlare
+import traceback
 
 from celery.task import task
 from django.conf import settings
@@ -11,6 +14,7 @@ from django.dispatch import receiver
 from django.db.models.signals import pre_delete, post_delete, post_save, post_init
 
 from mlarchive.archive.models import Message, EmailList
+from mlarchive.archive.utils import get_purge_cache_urls
 from mlarchive.archive.views_static import update_static_index
 
 logger = logging.getLogger('mlarchive.custom')
@@ -41,7 +45,7 @@ def _clear_session(sender, request, user, **kwargs):
 @receiver(pre_delete, sender=Message)
 def _message_remove(sender, instance, **kwargs):
     """When messages are removed, via the admin page, we need to move the message
-    archive file to the "_removed" directory
+    archive file to the "_removed" directory and purge the cache
     """
     path = instance.get_file_path()
     if not os.path.exists(path):
@@ -60,6 +64,10 @@ def _message_remove(sender, instance, **kwargs):
         next_in_thread = instance.thread.message_set.order_by('date')[1]
         instance.thread.set_first(next_in_thread)
 
+    # handle cache
+    if settings.SERVER_MODE == 'production' and settings.USING_CDN:
+        purge_files_from_cache(instance)
+
 
 @receiver(post_save, sender=Message)
 def _update_thread(sender, instance, **kwargs):
@@ -70,9 +78,9 @@ def _update_thread(sender, instance, **kwargs):
 
 
 @receiver(post_save, sender=Message)
-def _update_index(sender, instance, created, **kwargs):
-    if created:
-        call_update_static_index.delay(instance.email_list.pk)
+def _purge_cache(sender, instance, created, **kwargs):
+    if created and settings.SERVER_MODE == 'production' and settings.USING_CDN:
+        purge_files_from_cache(instance)
 
 
 @receiver(post_save, sender=EmailList)
@@ -84,6 +92,7 @@ def _list_save_handler(sender, instance, **kwargs):
 # --------------------------------------------------
 
 
+# TODO: not used currently
 @task
 def call_update_static_index(email_list_pk):
     email_list = EmailList.objects.get(pk=email_list_pk)
@@ -93,6 +102,18 @@ def call_update_static_index(email_list_pk):
 # --------------------------------------------------
 # Helpers
 # --------------------------------------------------
+
+
+def purge_files_from_cache(message, created=True):
+    """Purge file from Cloudflare cache"""
+    cf = CloudFlare.CloudFlare()
+    urls = get_purge_cache_urls(message, created)
+    try:
+        cf.zones.purge_cache.post(settings.CLOUDFLARE_ZONE_ID, data={'files': urls})
+        logger.info('purging cached urls: {}'.format(urls))
+    except CloudFlare.exceptions.CloudFlareAPIError as e:
+        traceback.print_exc(file=sys.stdout)
+        logger.error(e)
 
 
 def _export_lists():
@@ -139,4 +160,3 @@ def _get_lists_as_xml():
         lines.append("  </shared_root>")
     lines.append("</ms_config>")
     return "\n".join(lines)
-

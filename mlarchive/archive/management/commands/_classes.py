@@ -9,7 +9,9 @@ import pytz
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
+import traceback
 import uuid
 from collections import deque
 from email.utils import parsedate_tz, getaddresses, make_msgid
@@ -136,6 +138,7 @@ def archive_message(data, listname, private=False, save_failed=True):
         logger.error('Archive message failed [{0}]'.format(error.args))
         return 0
     except Exception as error:
+        traceback.print_exc(file=sys.stdout)
         logger.error('Archive message failed [{0}]'.format(error.args))
         if not save_failed:
             return 1

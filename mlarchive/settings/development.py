@@ -27,6 +27,7 @@ HAYSTACK_CONNECTIONS = {
 }
 
 # ARCHIVE SETTINGS
+ARCHIVE_HOST_URL = 'http://mailarchivetest.ietf.org'
 ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
 CONSOLE_STATS_FILE = os.path.join(DATA_ROOT, 'log', 'console.json')
 LOG_FILE = os.path.join(DATA_ROOT, 'log', 'mlarchive.log')

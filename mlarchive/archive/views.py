@@ -32,7 +32,7 @@ from mlarchive.archive.query_utils import (get_kwargs, get_qdr_kwargs, get_cache
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     get_query_neighbors, get_query_string, get_lists_for_user, get_random_token)
 
-from models import EmailList, Message
+from models import EmailList, Message, Thread
 from forms import AdminForm, AdminActionForm, AdvancedSearchForm, BrowseForm, RulesForm
 
 import logging
@@ -330,9 +330,9 @@ class BaseStaticIndexView(View):
 
     def get_filters(self):
         """Returns dictionary of Queryset filters based on datestring YYYY or YYYY-MM"""
-        filters = {self.year_filter: self.year}
+        filters = {'date__year': self.year}
         if self.month:
-            filters[self.month_filter] = self.month
+            filters['date__month'] = self.month
         return filters
 
     def get_month_year(self, date):
@@ -349,7 +349,7 @@ class BaseStaticIndexView(View):
 
     def get_date_string(self):
         if self.month:
-            date = datetime.datetime(self.year, self.month ,1)
+            date = datetime.datetime(self.year, self.month, 1)
             return date.strftime('%b %Y')
         else:
             date = datetime.datetime(self.year, 1, 1)
@@ -367,12 +367,12 @@ class BaseStaticIndexView(View):
             return render(self.request, 'archive/refresh.html', {'url': url})
 
     def get_context_data(self):
-        context = dict(email_list=self.kwargs['email_list'], 
-               queryset=self.queryset,
-               group_by_thread=self.group_by_thread,
-               time_period=TimePeriod(year=self.year, month=self.month),
-               date_string=self.get_date_string(),
-               legacy_off_url=reverse('archive_browse_list', kwargs={'list_name': self.kwargs['list_name']}))
+        context = dict(email_list=self.kwargs['email_list'],
+                       queryset=self.queryset,
+                       group_by_thread=self.group_by_thread,
+                       time_period=TimePeriod(year=self.year, month=self.month),
+                       date_string=self.get_date_string(),
+                       legacy_off_url=reverse('archive_browse_list', kwargs={'list_name': self.kwargs['list_name']}))
 
         add_nav_urls(context)
         return context
@@ -387,7 +387,14 @@ class BaseStaticIndexView(View):
         self.kwargs['email_list'] = kwargs['email_list']    # this was added by decorator
         self.month, self.year = self.get_month_year(kwargs['date'])
         self.filters = self.get_filters()
-        self.queryset = kwargs['email_list'].message_set.filter(**self.filters).order_by(*self.order_fields)
+        if self.group_by_thread:
+            # two-step query to avoid inefficient INNER JOIN
+            self.filters['email_list'] = self.kwargs['email_list']
+            threads = [t.id for t in Thread.objects.filter(**self.filters)]
+            self.queryset = kwargs['email_list'].message_set.filter(thread_id__in=threads).order_by(*self.order_fields)
+
+        else:
+            self.queryset = kwargs['email_list'].message_set.filter(**self.filters).order_by(*self.order_fields)
 
         redirect = self.get_client_side_redirect()
         if redirect:
@@ -398,16 +405,12 @@ class BaseStaticIndexView(View):
 
 
 class DateStaticIndexView(BaseStaticIndexView):
-    year_filter = 'date__year'
-    month_filter = 'date__month'
     order_fields = ['-date']
     view_name = 'archive_browse_static_date'
     group_by_thread = False
 
 
 class ThreadStaticIndexView(BaseStaticIndexView):
-    year_filter = 'thread__date__year'
-    month_filter = 'thread__date__month'
     order_fields = settings.THREAD_ORDER_FIELDS
     view_name = 'archive_browse_static_thread'
     group_by_thread = True

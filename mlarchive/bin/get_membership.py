@@ -23,6 +23,10 @@ from mlarchive.archive.signals import _list_save_handler, _export_lists
 from subprocess import CalledProcessError, check_output
 import hashlib
 import base64
+import re
+
+
+LIST_LISTS_PATTERN = re.compile(r'\s*([\w\-]*) - (.*)$')
 
 
 def lookup(address):
@@ -71,9 +75,13 @@ def main():
     post_save.disconnect(_list_save_handler,sender=EmailList)
     has_changed = False
     
-    known_lists = check_output([list_lists_cmd]).split()
-    #assert len(known_lists) > 100       # assert reasonable output
-    
+    known_lists = []
+    output = check_output([list_lists_cmd]).splitlines()
+    for line in output:
+        match = LIST_LISTS_PATTERN.match(line)
+        if match:
+            known_lists.append(match.groups()[0].lower())
+
     for mlist in EmailList.objects.filter(private=True,active=True):
         # skip lists that aren't managed by mailman
         if mlist.name not in known_lists:

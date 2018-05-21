@@ -226,6 +226,19 @@ def check_thread_order(start,fix=False):
                     print "Mismatch: pk={} index_order={} db_order={}".format(result.object.pk,result.torder,result.object.thread_order)
     print "Total: {}".format(total)
 
+
+def check_spam():
+    """Proceeding through the archive starting from most recent find spam, messages with
+    X-Spam-Level: ***** or more
+    """
+    for message in Message.objects.filter(date__year__gte=2014).order_by('-date'):
+        path = message.get_file_path()
+        with open(path) as file:
+            msg = email.message_from_file(file)
+        if msg['x-spam-level'] and msg['x-spam-level'].startswith('*****'):
+            print message.get_absolute_url(), message.date
+
+
 def date(start):
     """Calls get_date for every message in (old) archive.  Use 'start' argument
     to offset beginning of run"""

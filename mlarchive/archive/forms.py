@@ -299,7 +299,7 @@ class AdvancedSearchForm(FacetedSearchForm):
             sqs = sqs.filter(**self.kwargs)
 
         # private lists -------------------------------------------
-        sqs = sqs.exclude(email_list__in=get_noauth(self.request))
+        sqs = sqs.exclude(email_list__in=get_noauth(self.request.user))
 
         # faceting ------------------------------------------------
         # call this before running sorts or applying filters to queryset
@@ -358,7 +358,7 @@ class BrowseForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request')
         super(BrowseForm, self).__init__(*args, **kwargs)
-        self.fields['list'].queryset = EmailList.objects.exclude(name__in=get_noauth(self.request)).order_by('name')
+        self.fields['list'].queryset = EmailList.objects.exclude(name__in=get_noauth(self.request.user)).order_by('name')
         self.fields["list"].widget.attrs["placeholder"] = "List name"
 
 

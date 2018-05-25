@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('archive', '0010_add_index_fields'),
+        ('archive', '0009_set_on_delete'),
     ]
 
     operations = [

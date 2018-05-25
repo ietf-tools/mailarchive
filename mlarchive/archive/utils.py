@@ -2,7 +2,7 @@
 import json
 from collections import OrderedDict
 
-from django.core.cache import cache
+from django.core.cache import cache, caches
 from django.http import HttpResponse
 
 
@@ -16,25 +16,31 @@ THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
 # --------------------------------------------------
 
 
-def get_noauth(request):
-    """This function takes a request object and returns a list of private email list names
-    the user does NOT have access to, for use in an exclude().  The list is
-    stored in the request session to minimize database hits.
+def get_noauth(user):
+    """This function takes a User object and returns a list of private email list names
+    the user does NOT have access to, for use in an exclude().
     """
-    noauth = request.session.get('noauth', None)
-    if noauth:
-        return noauth
+    # noauth_cache = caches['noauth']
+    # if user.is_anonymous:
+    #     user_id = 0
+    # else:
+    #     user_id = user.id
 
-    if request.user.is_superuser:
+    # key = '{:04d}-noauth'.format(user_id)
+    # noauth = noauth_cache.get(key)
+    # if noauth is not None:
+    #     return noauth
+
+    if user.is_superuser:
         lists = []
-    elif request.user.is_authenticated:
-        lists = [x.name for x in EmailList.objects.filter(private=True).exclude(members=request.user)]
+    elif user.is_authenticated:
+        lists = [x.name for x in EmailList.objects.filter(private=True).exclude(members=user)]
     else:
         lists = [x.name for x in EmailList.objects.filter(private=True)]
     if get_search_backend() == 'xapian':
         lists = [x.replace('-', ' ') for x in lists]
-    request.session['noauth'] = lists
-    return request.session['noauth']
+    # noauth_cache.set(key, lists, 60 * 60 * 48)
+    return lists
 
 
 def get_lists():
@@ -60,16 +66,16 @@ def get_public_lists():
         return lists
 
 
-def get_lists_for_user(request):
+def get_lists_for_user(user):
     """Returns names of EmailLists the user has access to"""
-    if not request.user.is_authenticated:
+    if not user.is_authenticated:
         return get_public_lists()
 
-    if request.user.is_authenticated():
-        if request.user.is_superuser:
+    if user.is_authenticated():
+        if user.is_superuser:
             lists = get_lists()
         else:
-            lists = EmailList.objects.all().exclude(name__in=get_noauth(request))
+            lists = EmailList.objects.all().exclude(name__in=get_noauth(user))
             lists = OrderedDict([(k, None) for k in lists])
 
     return lists

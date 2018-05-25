@@ -1,14 +1,11 @@
-import datetime
-import os
+
 import pytest
-from factories import EmailListFactory, UserFactory, MessageFactory, ThreadFactory
+from factories import EmailListFactory, UserFactory
+from pyquery import PyQuery
 
-from django.conf import settings
+from django.core.cache import cache
 from django.contrib.auth.models import AnonymousUser
-from django.test.client import RequestFactory
-
 from mlarchive.archive.utils import get_noauth, get_lists, get_lists_for_user, get_purge_cache_urls
-from mlarchive.utils.test_utils import get_request
 
 
 @pytest.mark.django_db(transaction=True)
@@ -18,14 +15,34 @@ def test_get_noauth():
     private1 = EmailListFactory.create(name='private1', private=True)
     EmailListFactory.create(name='private2', private=True)
     private1.members.add(user)
-    factory = RequestFactory()
-    request = factory.get('/arch/search/?q=dummy')
-    request.user = user
-    setattr(request, 'session', {})
-    lists = get_noauth(request)
+    lists = get_noauth(user)
     assert len(lists) == 1
     assert lists == [u'private2']
 
+
+@pytest.mark.django_db(transaction=True)
+def test_get_noauth_updates(settings):
+    settings.CACHES = {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
+    user = UserFactory.create(username='noauth')
+    public = EmailListFactory.create(name='public')
+    private = EmailListFactory.create(name='private', private=True)
+    private.members.add(user)
+
+    if user.is_anonymous:
+        user_id = 0
+    else:
+        user_id = user.id
+
+    key = '{:04d}-noauth'.format(user_id)
+    print "key {}:{}".format(key, cache.get(key))
+    assert 'public' not in get_noauth(user)
+    print "key {}:{}".format(key, cache.get(key))
+    #assert cache.get(key) == []
+    public.private = True
+    public.save()
+    assert 'public' in get_noauth(user)
+    print "key {}:{}".format(key, cache.get(key))
+    #assert False
 
 @pytest.mark.django_db(transaction=True)
 def test_get_lists():
@@ -41,9 +58,9 @@ def test_get_lists_for_user(admin_user):
     user1 = UserFactory.create(username='user1')
     private1.members.add(user1)
     anonymous = AnonymousUser()
-    assert len(get_lists_for_user(get_request(user=admin_user))) == 3
-    assert len(get_lists_for_user(get_request(user=anonymous))) == 1
-    lists = get_lists_for_user(get_request(user=user1))
+    assert len(get_lists_for_user(admin_user)) == 3
+    assert len(get_lists_for_user(anonymous)) == 1
+    lists = get_lists_for_user(user1)
     assert private1 in lists
     assert private2 not in lists
 

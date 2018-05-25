@@ -146,8 +146,8 @@ class Message(models.Model):
     thread_order = models.IntegerField(default=0)
     to = models.TextField(blank=True, default='')
     updated = models.DateTimeField(auto_now=True)
-    date_index_page = models.CharField(max_length=64, default='')
-    thread_index_page = models.CharField(max_length=64, default='')
+    # date_index_page = models.CharField(max_length=64, default='')
+    # thread_index_page = models.CharField(max_length=64, default='')
 
     class Meta:
         indexes = [

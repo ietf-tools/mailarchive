@@ -11,16 +11,6 @@ from mlarchive.archive.signals import _get_lists_as_xml
 
 
 @pytest.mark.django_db(transaction=True)
-def test_clear_session(client, admin_client):
-    url = reverse('archive_browse')
-    client.get(url)
-    assert 'noauth' in client.session
-    url = reverse('archive')
-    admin_client.get(url)
-    assert 'noauth' not in admin_client.session
-
-
-@pytest.mark.django_db(transaction=True)
 def test_message_remove(client, thread_messages):
     message = Message.objects.first()
     path = message.get_file_path()

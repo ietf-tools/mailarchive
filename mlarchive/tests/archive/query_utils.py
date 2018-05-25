@@ -9,7 +9,7 @@ from django.urls import reverse
 from factories import EmailListFactory
 
 from mlarchive.archive.query_utils import (clean_queryid, generate_queryid, get_cached_query,
-    get_filter_params, query_is_listname, parse_query, map_sort_option, get_order_fields,
+    get_filter_params, get_browse_equivalent, parse_query, map_sort_option, get_order_fields,
     DB_THREAD_SORT_FIELDS, IDX_THREAD_SORT_FIELDS, DEFAULT_SORT)
 from mlarchive.utils.test_utils import get_request
 
@@ -52,17 +52,20 @@ def test_map_sort_option():
 
 
 @pytest.mark.django_db(transaction=True)
-def test_query_is_listname():
+def test_get_browse_equivalent():
     EmailListFactory.create(name='pubone')
     url = '%s?%s' % (reverse('archive_search'), 'q=pubone')
     request = get_request(url=url)
-    assert query_is_listname(request) is True
+    assert get_browse_equivalent(request) == 'pubone'
     url = '%s?%s' % (reverse('archive_search'), 'q=dummy')
     request = get_request(url=url)
-    assert query_is_listname(request) is False
+    assert get_browse_equivalent(request) is None
     url = '%s?%s' % (reverse('archive_search'), 'q=pubone&qdr=w')
     request = get_request(url=url)
-    assert query_is_listname(request) is False
+    assert get_browse_equivalent(request) is None
+    url = '%s?%s' % (reverse('archive_search'), 'email_list=pubone')
+    request = get_request(url=url)
+    assert get_browse_equivalent(request) == 'pubone'
 
 
 def test_parse_query():

@@ -32,16 +32,6 @@ def _clear_lists_cache(sender, instance, **kwargs):
     cache.delete('lists_public')
 
 
-@receiver(user_logged_in)
-def _clear_session(sender, request, user, **kwargs):
-    """Clear the cached session['noauth'] on login because it will change
-    if the user is a member of a private list.  No need to do this on
-    logout because logout() does a session flush
-    """
-    if 'noauth' in request.session:
-        del request.session['noauth']
-
-
 @receiver(pre_delete, sender=Message)
 def _message_remove(sender, instance, **kwargs):
     """When messages are removed, via the admin page, we need to move the message
@@ -85,7 +75,9 @@ def _purge_cache(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=EmailList)
 def _list_save_handler(sender, instance, **kwargs):
+    # _flush_noauth_cache(instance)
     _export_lists()
+
 
 # --------------------------------------------------
 # Celery Tasks
@@ -141,6 +133,11 @@ def _export_lists():
             logger.error(
                 'Error calling external command: {} ({})'.format(
                     command, error))
+
+
+def _flush_noauth_cache(email_list):
+    keys = ['{:04d}-noauth'.format(user.id) for user in email_list.members.all()]
+    cache.delete_many(keys)
 
 
 def _get_lists_as_xml():

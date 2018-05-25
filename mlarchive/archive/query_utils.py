@@ -190,9 +190,14 @@ def is_nojs_value(items):
         return False
 
 
-def query_is_listname(request):
-    query = request.GET.get('q', '')
-    if request.GET.keys() == ['q'] and len(query.split()) == 1 and query in get_lists():
-        return True
-    else:
-        return False
+def get_browse_equivalent(request):
+    """Returns the listname if the query params are the equivalent of a list browse:
+    /?q=[listname] or /?email_list=[listname]"""
+    if request.GET.keys() == ['q'] and request.GET.get('q') in get_lists():
+        return request.GET.get('q')
+    if request.GET.keys() == ['email_list'] and len(request.GET.getlist('email_list')) == 1:
+        return request.GET.get('email_list')
+
+
+def is_legacy_on(request):
+    return True if request.COOKIES.get('isLegacyOn') == 'true' else False

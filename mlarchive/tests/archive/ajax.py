@@ -65,7 +65,9 @@ def test_ajax_get_msg_thread_links(client, thread_messages):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ajax_get_messages(client, messages):
+def test_ajax_get_messages(client, messages, settings):
+    settings.CACHES = {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
+
     # run initial query to setup cache
     url = '%s/?email_list=pubone&email_list=pubtwo' % reverse('archive_search')
     response = client.get(url)
@@ -158,10 +160,12 @@ def test_ajax_get_messages_browse_so(client, messages):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_get_query_results(client, messages):
+def test_get_query_results(client, messages, settings):
+    settings.CACHES = {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
     # run initial query to setup cache
-    url = '%s/?email_list=pubthree' % reverse('archive_search')
+    url = '%s/?email_list=pubthree&so=-date' % reverse('archive_search')
     response = client.get(url)
+    print response.content
     assert response.status_code == 200
     assert len(response.context['results']) == settings.HAYSTACK_SEARCH_RESULTS_PER_PAGE
     q = PyQuery(response.content)

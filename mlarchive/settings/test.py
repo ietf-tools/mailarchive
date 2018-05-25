@@ -33,13 +33,7 @@ LOGGING['handlers']['archive-mail_file_handler']['filename'] = IMPORT_LOG_FILE
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'test-cache'
-    },
-    'disk': {
-        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/var/tmp/django_cache',
-        'TIMEOUT': 300,
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
     }
 }
 

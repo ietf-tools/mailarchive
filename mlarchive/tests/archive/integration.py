@@ -73,7 +73,7 @@ def test_not_logged_browse_private_list(client, messages):
 @pytest.mark.django_db(transaction=True)
 def test_not_logged_search(client, messages):
     '''Test that a not logged in user does not see private lists in search results'''
-    url = reverse('archive_search') + '?email_list=private'
+    url = reverse('archive_search') + '?email_list=private&so=-date'
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
@@ -83,7 +83,7 @@ def test_not_logged_search(client, messages):
 @pytest.mark.django_db(transaction=True)
 def test_not_logged_search_hypen(client, messages):
     '''Test that a not logged in user does not see private lists with hyphen in search results'''
-    url = reverse('archive_search') + '?email_list=private-ops'
+    url = reverse('archive_search') + '?email_list=private-ops&so=-date'
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
@@ -95,7 +95,7 @@ def test_unauth_search(client, messages):
     """Test that a logged in user does not see results from private lists they aren't a member of"""
     UserFactory.create(username='dummy')
     assert client.login(username='dummy', password='admin')
-    url = reverse('archive_search') + '?email_list=private'
+    url = reverse('archive_search') + '?email_list=private&so=-date'
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
@@ -217,7 +217,7 @@ def test_queries_email_list_field(client, messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_queries_email_list(client, messages):
-    url = reverse('archive_search') + '?email_list=pubone'
+    url = reverse('archive_search') + '?email_list=pubone&so=-date'
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
@@ -226,7 +226,7 @@ def test_queries_email_list(client, messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_queries_email_list_with_hyphen(client, messages):
-    url = reverse('archive_search') + '?email_list=dev-ops'
+    url = reverse('archive_search') + '?email_list=dev-ops&so=-date'
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']

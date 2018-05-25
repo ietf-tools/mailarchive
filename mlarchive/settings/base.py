@@ -112,6 +112,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'mlarchive.context_processors.server_mode',
                 'mlarchive.context_processors.revision_info',
+                'mlarchive.context_processors.legacy_mode_enabled',
             ],
         },
     },
@@ -264,6 +265,7 @@ FILTER_CUTOFF = 5000            # maximum results for which we'll provide filter
 LOG_FILE = os.path.join(DATA_ROOT, 'log/mlarchive.log')
 MAILMAN_DIR = '/usr/lib/mailman'
 SERVER_MODE = 'production'
+LEGACY_MODE_ENABLED = False
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # number of messages to load when scrolling search results
 SEARCH_SCROLL_BUFFER_SIZE = HAYSTACK_SEARCH_RESULTS_PER_PAGE
@@ -271,7 +273,7 @@ TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
 USE_EXTERNAL_PROCESSOR = False
 MAX_THREAD_DEPTH = 6
 THREAD_ORDER_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
-USING_CDN = True
+USING_CDN = False
 
 # spam_score bits
 MARK_BITS = {'NON_ASCII_HEADER': 0b0001,
@@ -300,13 +302,9 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
         'LOCATION': '127.0.0.1:11211',
         'TIMEOUT': 300,
-    },
-    'disk': {
-        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-        'LOCATION': '/var/tmp/django_cache',
-        'TIMEOUT': 300,
     }
 }
+
 CACHE_MIDDLEWARE_KEY_PREFIX = 'arch'
 CACHE_MIDDLEWARE_ALIAS = 'disk'
 

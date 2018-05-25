@@ -27,8 +27,8 @@ from haystack.forms import SearchForm
 
 from mlarchive.utils.decorators import check_access, superuser_only, pad_id, log_timing, check_list_access
 from mlarchive.archive import actions
-from mlarchive.archive.query_utils import (get_kwargs, get_qdr_kwargs, get_cached_query, query_is_listname,
-    parse_query_string, get_order_fields, generate_queryid)
+from mlarchive.archive.query_utils import (get_kwargs, get_qdr_kwargs, get_cached_query, get_browse_equivalent,
+    parse_query_string, get_order_fields, generate_queryid, is_legacy_on)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     get_query_neighbors, get_query_string, get_lists_for_user, get_random_token)
 
@@ -129,8 +129,12 @@ class CustomSearchView(SearchView):
         extra_context().  This is required because create_response() corrupts regular
         facet_counts().
         """
-        if query_is_listname(request):
-            return redirect('archive_browse_list', list_name=request.GET['q'])
+        browse_list = get_browse_equivalent(request)
+        if browse_list:
+            if is_legacy_on(request):
+                return redirect('archive_browse_static', list_name=browse_list)
+            else:
+                return redirect('archive_browse_list', list_name=browse_list)
 
         self.request = request
         self.form = self.build_form()
@@ -250,8 +254,7 @@ class CustomBrowseView(CustomSearchView):
         return "CustomBrowseView"
 
     def __call__(self, request, list_name, email_list):
-        is_legacy_on = True if request.COOKIES.get('isLegacyOn') == 'true' else False
-        if is_legacy_on:
+        if is_legacy_on(request):
             return redirect('archive_browse_static', list_name=list_name)
 
         self.list_name = list_name
@@ -692,7 +695,7 @@ def main(request):
 
     return render(request, 'archive/main.html', {
         'form': form,
-        'lists': get_lists_for_user(request),
+        'lists': get_lists_for_user(request.user),
     })
 
 

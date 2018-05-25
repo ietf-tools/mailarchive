@@ -18,3 +18,7 @@ def revision_info(request):
             'revision_num': __rev__[6:-2],
             'revision_id': __id__[5:-2],
             'version_num': __version__ }
+
+def legacy_mode_enabled(request):
+    'A context procesor that provides legacy_mode_enabled'
+    return {'legacy_mode_enabled': settings.LEGACY_MODE_ENABLED}

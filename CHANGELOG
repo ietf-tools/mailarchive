@@ -1,4 +1,10 @@
 
+mailarch (1.12.1) ietf; urgency=normal
+
+* Fix CloudFlare requirements 
+
+-- Ryan Cross <rcross@amsl.com>  29 May 2018 15:30:00 +0800
+
 mailarch (1.12.0) ietf; urgency=normal
 
 * Some refactoring.  Remove cache of noauth lislt, Fixes #1579

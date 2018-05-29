@@ -1,4 +1,36 @@
 
+mailarch (1.12.0) ietf; urgency=normal
+
+* Some refactoring.  Remove cache of noauth lislt, Fixes #1579
+
+* Add ordering and search to EmailList admin page
+
+* Add popup for export feature
+
+* Add Legacy Mode with list index pages
+
+* Add progress bar for message list updates
+
+* Add email_list field to Thread and refactor queries
+
+* Refactor hide preview functions
+
+* Refactor tests to use pytest-django helper, admin_client
+
+* Add utility bin scripts, audit.py and parse_log.py
+
+* Refactor sorting code
+
+* Refactor.  Add explicit /arch/browse/ URL path
+
+* Flake8 changes
+
+* Corrected virtualenv path for celeryd
+
+* Fix infinite scroll Ajax data.  Fixes #2446
+
+-- Ryan Cross <rcross@amsl.com>  29 May 2018 12:00:00 +0800
+
 mailarch (1.11.2) ietf; urgency=normal
 
  * Refactor slow queries with index parameter

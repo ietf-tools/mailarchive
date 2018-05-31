@@ -120,7 +120,7 @@ def get_browse_results_gbt(reference_message, direction):
         thread = reference_message.thread.get_next()
         while len(results) < buffer and thread:
             # prepend to results
-            results = thread.message_set.order_by('thread_order') + results
+            results = list(thread.message_set.order_by('thread_order')) + results
             thread = thread.get_next()
     return results
 

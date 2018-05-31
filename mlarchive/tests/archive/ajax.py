@@ -188,10 +188,16 @@ def test_get_browse_results(client, messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_get_browse_results_gbt(client, thread_messages_db_only):
+    # next
     message = Message.objects.get(msgid='x008')
     results = get_browse_results_gbt(reference_message=message, direction='next')
     assert len(results) == 5
     assert [r.msgid for r in results] == ['x004', 'x005', 'x001', 'x002', 'x003']
+    # previous
+    message = Message.objects.get(msgid='x005')
+    results = get_browse_results_gbt(reference_message=message, direction='previous')
+    assert len(results) == 3
+    assert [r.msgid for r in results] == ['x006', 'x007', 'x008']
 
 
 @pytest.mark.django_db(transaction=True)

@@ -94,3 +94,9 @@ class SpamStatusSpamInspector(SpamInspector):
     '''Checks for SpamStatus == Yes'''
     def has_condition(self):
         return self.message_wrapper.email_message.get('X-Spam-Status', '').startswith('Yes')
+
+
+class SpamLevelSpamInspector(SpamInspector):
+    '''Checks for SpamLevel >= *****'''
+    def has_condition(self):
+        return self.message_wrapper.email_message.get('X-Spam-Level', '').startswith('*****')

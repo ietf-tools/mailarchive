@@ -1,4 +1,17 @@
 
+mailarch (1.12.2) ietf; urgency=normal
+
+* Fix issue with browse views including gbt and index parameters
+
+* Add new SpamLevelSpamInspector
+
+* Add spam inspectors for all externally hosted lists
+
+* Allow small anonymous exports, to support Datatracker integrated
+  search features
+
+-- Ryan Cross <rcross@amsl.com>  01 June 2018 12:00:00 +0800
+
 mailarch (1.12.1) ietf; urgency=normal
 
 * Fix CloudFlare requirements 

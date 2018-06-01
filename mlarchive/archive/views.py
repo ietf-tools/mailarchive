@@ -10,6 +10,7 @@ from django.conf import settings
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
+from django.db.models.query import QuerySet
 from django.utils.cache import get_cache_key
 from django.utils.decorators import method_decorator
 from django.forms.formsets import formset_factory
@@ -299,7 +300,10 @@ class CustomBrowseView(CustomSearchView):
         extra['browse_list'] = self.list_name
         extra['queryset_offset'] = '200'
         if self.query or self.kwargs:
-            extra['count'] = self.results.count()
+            if isinstance(self.results, QuerySet):
+                extra['count'] = self.results.count()
+            else:
+                extra['count'] = len(self.results)
         else:
             extra['count'] = Message.objects.filter(email_list__name=self.list_name).count()
 
@@ -647,7 +651,8 @@ def detail_classic(request, list_name, id, msg):
     })
 
 
-@login_required
+# removed login requirement until API is created
+# @login_required
 def export(request, type):
     """Takes a search query string and builds a gzipped tar archive of the messages
     in the query results.

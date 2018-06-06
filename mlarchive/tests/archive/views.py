@@ -5,6 +5,7 @@ import pytest
 from django.conf import settings
 from django.contrib.auth import SESSION_KEY
 from django.urls import reverse
+from django.utils.http import urlencode
 from factories import EmailListFactory, MessageFactory, UserFactory
 from mlarchive.archive.models import Message
 from mlarchive.archive.management.commands import _classes
@@ -450,8 +451,24 @@ def test_detail_cache_headers_private(admin_client):
 @pytest.mark.django_db(transaction=True)
 def test_export(admin_client, thread_messages):
     url = reverse('archive_export', kwargs={'type': 'mbox'}) + '?email_list=acme'
-    # client.login(username='admin', password='admin')
     response = admin_client.get(url)
+    assert response.status_code == 200
+    assert response['Content-Disposition'].startswith('attachment;')
+    assert response['Content-Type'] == 'application/x-tar-gz'
+
+
+@pytest.mark.django_db(transaction=True)
+def test_export_datatracker_api(client, thread_messages):
+    '''Datatracker uses this interface from the complete-a-review view.
+    Note: no login is required
+    '''
+    params = {'subject':'anvil',
+              'email_list':'acme', 
+              'as':'1',
+              'qdr':'c',
+              'start_date':'2010-01-01'}
+    url = reverse('archive_export', kwargs={'type': 'mbox'}) + '?' + urlencode(params)
+    response = client.get(url)
     assert response.status_code == 200
     assert response['Content-Disposition'].startswith('attachment;')
     assert response['Content-Type'] == 'application/x-tar-gz'

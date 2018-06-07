@@ -20,7 +20,7 @@ from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-from django.utils.cache import add_never_cache_headers
+from django.utils.cache import add_never_cache_headers, patch_cache_control
 from django.views.generic import View
 from haystack.views import SearchView
 from haystack.query import SearchQuerySet
@@ -388,6 +388,8 @@ class BaseStaticIndexView(View):
         response = render(self.request, 'archive/static_index_date.html', context)
         if self.kwargs['email_list'].private:
             add_never_cache_headers(response)
+        else:
+            patch_cache_control(response, max_age=300)
         return response
 
     def get(self, request, **kwargs):

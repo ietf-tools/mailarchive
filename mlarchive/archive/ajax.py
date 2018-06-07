@@ -72,9 +72,9 @@ def ajax_messages(request):
 
     if query:
         results = get_query_results(query, referenceitem, direction)
-    elif browselist and not gbt and order_fields != ['-date']:
-        query = Message.objects.filter(email_list__name=browselist).order_by(*order_fields)
-        results = get_query_results(query, referenceitem, direction)
+   #  elif browselist and not gbt:
+        # query = Message.objects.filter(email_list__name=browselist).order_by(*order_fields)
+        # results = get_browse_results(reference_message, direction)
     elif browselist:
         results = get_browse_results(reference_message, direction, gbt)
     else:
@@ -132,5 +132,5 @@ def get_browse_results_date(reference_message, direction):
         results = Message.objects.filter(email_list=reference_message.email_list, date__lt=reference_message.date).order_by('-date')[:buffer]
     elif direction == 'previous':
         results = Message.objects.filter(email_list=reference_message.email_list, date__gt=reference_message.date).order_by('date')[:buffer]
-        results.reverse()
+        results = results.reverse()
     return results

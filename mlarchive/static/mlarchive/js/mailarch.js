@@ -214,7 +214,7 @@ var mailarch = {
                 mailarch.setLastItem();
 
             } else if(xhr.status == 204)  {
-                mailarch.$msgList.off( "scroll" );
+                // mailarch.$msgList.off( "scroll" );
             }
         });
         request.fail(function(xhr, textStatus, errorThrown) {
@@ -266,7 +266,7 @@ var mailarch = {
                 var oldTop = mailarch.$msgTable.find('.xtr').eq(numNewRows);
                 mailarch.$msgList.scrollTop(oldTop.position().top);
             } else if(xhr.status == 204)  {
-                mailarch.$msgList.off( "scroll" );
+                // mailarch.$msgList.off( "scroll" );
             }
         });
         request.fail(function(xhr, textStatus, errorThrown) {

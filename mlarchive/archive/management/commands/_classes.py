@@ -821,21 +821,20 @@ class MessageWrapper(object):
             self.from_line = self.from_line[5:].lstrip()    # we only need the unique part
         self.frm = self.normalize(self.email_message.get('From', ''))
         self._archive_message = Message(base_subject=self.base_subject,
-                             cc=self.get_cc(),
-                             date=self.date,
-                             email_list=self.email_list,
-                             frm=self.frm,
-                             from_line=self.from_line,
-                             hashcode=self.hashcode,
-                             in_reply_to_value=self.in_reply_to_value,
-                             in_reply_to=self.in_reply_to,
-                             msgid=self.msgid,
-                             references=self.references,
-                             spam_score=self.spam_score,
-                             subject=self.subject,
-                             thread=self.thread,
-
-                             to=self.get_to())
+                                        cc=self.get_cc(),
+                                        date=self.date,
+                                        email_list=self.email_list,
+                                        frm=self.frm,
+                                        from_line=self.from_line,
+                                        hashcode=self.hashcode,
+                                        in_reply_to_value=self.in_reply_to_value,
+                                        in_reply_to=self.in_reply_to,
+                                        msgid=self.msgid,
+                                        references=self.references,
+                                        spam_score=self.spam_score,
+                                        subject=self.subject,
+                                        thread=self.thread,
+                                        to=self.get_to())
         # not saving here.
         thread_messages = list(self.thread.message_set.all().order_by('date'))
         thread_messages.append(self._archive_message)

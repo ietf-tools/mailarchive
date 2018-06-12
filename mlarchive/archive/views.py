@@ -298,7 +298,7 @@ class CustomBrowseView(CustomSearchView):
         """Add variables to template context"""
         extra = super(CustomBrowseView, self).extra_context()
         extra['browse_list'] = self.list_name
-        extra['queryset_offset'] = '200'
+        extra['queryset_offset'] = '0'
         if self.query or self.kwargs:
             if isinstance(self.results, QuerySet):
                 extra['count'] = self.results.count()

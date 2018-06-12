@@ -6,7 +6,7 @@ from django.template.loader import render_to_string
 from mlarchive.archive import actions
 from mlarchive.archive.utils import jsonapi
 from mlarchive.archive.models import Message
-from mlarchive.archive.query_utils import get_cached_query, get_order_fields
+from mlarchive.archive.query_utils import get_cached_query, get_order_fields, get_qdr_kwargs
 from mlarchive.utils.decorators import check_access, superuser_only, check_ajax_list_access
 
 
@@ -60,6 +60,7 @@ def ajax_messages(request):
     direction = request.GET.get('direction')
     gbt = request.GET.get('gbt')
     order_fields = get_order_fields(request.GET, use_db=True)
+    qdr_kwargs = get_qdr_kwargs(request.GET)
 
     if queryid and not query:
         return HttpResponse(status=404)
@@ -72,15 +73,20 @@ def ajax_messages(request):
 
     if query:
         results = get_query_results(query, referenceitem, direction)
-   #  elif browselist and not gbt:
-        # query = Message.objects.filter(email_list__name=browselist).order_by(*order_fields)
-        # results = get_browse_results(reference_message, direction)
-    elif browselist:
-        results = get_browse_results(reference_message, direction, gbt)
     else:
-        # TODO or fail?, signal to reload query
-        return HttpResponse(status=404)     # Request Timeout (query gone from cache)
+        if browselist and not gbt:
+            query = Message.objects.filter(email_list__name=browselist).order_by(*order_fields)
+            if qdr_kwargs:
+                query = query.filter(**qdr_kwargs)
+            results = get_query_results(query, referenceitem, direction)
+        elif browselist:
+            results = get_browse_results(reference_message, direction, gbt)
+        else:
+            # TODO or fail?, signal to reload query
+            return HttpResponse(status=404)     # Request Timeout (query gone from cache)
 
+
+    
     if not results:
         return HttpResponse(status=204)     # No Content
 

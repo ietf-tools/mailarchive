@@ -287,12 +287,9 @@ MARK_LOAD_SPAM = 11
 
 # Inspector configuration
 INSPECTORS = {
-    'ListIdSpamInspector': {'includes': ['ietf-dkim', 'rfc-dist', 'rfc-interest', 'ipp', 'itu+ietf', 'krb-wg', 'pwot', 'ram',
-        'rsn', 'ternli']},
-    'ListIdExistsSpamInspector': {'includes': ['webdav', 'httpbisa', 'nntpext', 'remoteui', 'secsh']},
-    'SpamLevelSpamInspector': {'includes': ['rfc-dist', 'rfc-interest', 'httpbisa', 'ipp', 'itu+ietf', 'krb-wg', 'nntpext',
-        'pwot', 'ram', 'remoteui', 'rsn', 'secsh', 'sming', 'snanau', 'ssh', 'ternli', 'tn3270e', 'trunkmib', 'upsmib',
-        'webdav', 'weird', 'wrec', 'zeroconf']}
+    'ListIdSpamInspector': {'includes': ['rfc-dist', 'rfc-interest', 'ipp', 'krb-wg']},
+    'ListIdExistsSpamInspector': {'includes': ['httpbisa']},
+    'SpamLevelSpamInspector': {'includes': ['rfc-dist', 'rfc-interest', 'httpbisa', 'ipp', 'krb-wg']}
 }
 
 # AUTH

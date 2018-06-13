@@ -18,7 +18,7 @@ from django.views.decorators.cache import cache_page
 from django.views.generic.detail import DetailView
 from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse
+from django.urls import reverse, NoReverseMatch
 from django.utils.safestring import mark_safe
 from django.utils.cache import add_never_cache_headers, patch_cache_control
 from django.views.generic import View
@@ -132,10 +132,13 @@ class CustomSearchView(SearchView):
         """
         browse_list = get_browse_equivalent(request)
         if browse_list:
-            if is_legacy_on(request):
-                return redirect('archive_browse_static', list_name=browse_list)
-            else:
-                return redirect('archive_browse_list', list_name=browse_list)
+            try:
+                if is_legacy_on(request):
+                    return redirect('archive_browse_static', list_name=browse_list)
+                else:
+                    return redirect('archive_browse_list', list_name=browse_list)
+            except NoReverseMatch:
+                raise Http404("Invalid List")
 
         self.request = request
         self.form = self.build_form()

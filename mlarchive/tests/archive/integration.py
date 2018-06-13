@@ -234,6 +234,13 @@ def test_queries_email_list_with_hyphen(client, messages):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_queries_email_list_with_bad_name(client, messages):
+    url = reverse('archive_search') + '?email_list=dev-ops/'
+    response = client.get(url)
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db(transaction=True)
 def test_queries_to_param(client, messages):
     print [m.msgid for m in messages]
     url = reverse('archive_search') + '?to=to@amsl.com'

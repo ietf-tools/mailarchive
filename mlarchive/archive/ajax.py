@@ -68,7 +68,7 @@ def ajax_messages(request):
     if not query:
         try:
             reference_message = Message.objects.get(pk=referenceid, email_list__name=browselist)
-        except Message.DoesNotExist:
+        except (Message.DoesNotExist, ValueError):
             return HttpResponse(status=204)
 
     if query:

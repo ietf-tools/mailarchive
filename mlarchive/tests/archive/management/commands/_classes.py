@@ -6,11 +6,12 @@ import os
 import pytest
 import pytz
 import shutil
-
+from StringIO import StringIO
 
 from django.conf import settings
+from django.core.management import call_command
 from django.urls import reverse
-from mlarchive.archive.models import Message
+from mlarchive.archive.models import Message, EmailList
 from mlarchive.archive.management.commands._classes import (archive_message, clean_spaces, MessageWrapper,
     get_base_subject, get_envelope_date, tzoffset, get_from, get_header_date, get_mb, get_mime_extension,
     is_aware, get_received_date, parsedate_to_datetime, subject_is_reply)
@@ -21,14 +22,16 @@ def teardown_module(module):
     for path in (settings.LOG_FILE, settings.IMPORT_LOG_FILE):
         if os.path.exists(path):
             os.remove(path)
+    # content = StringIO()
+    # call_command('clear_index', interactive=False, stdout=content)
 
 
 @pytest.mark.django_db(transaction=True)
 def test_archive_message(client):
-    data = '''From: Ryan Cross <rcross@amsl.com>
-To: Ryan Cross <rcross@amsl.com>
+    data = '''From: Joe <joe@example.com>
+To: Joe <joe@example.com>
 Date: Thu, 7 Nov 2013 17:54:55 +0000
-Message-ID: <0000000002@amsl.com>
+Message-ID: <0000000002@example.com>
 Content-Type: text/plain; charset="us-ascii"
 Subject: This is a test
 
@@ -73,6 +76,31 @@ def test_archive_message_bad_order():
     # test that index thread id / date correct if older message added later
     # TODO
     pass
+
+
+@pytest.mark.django_db(transaction=True)
+def test_archive_message_change_list_access(messages):
+    data = '''From: Joe <joe@example.com>
+To: Joe <joe@example.com>
+Date: Thu, 7 Nov 2013 17:54:55 +0000
+Message-ID: <0000000002@example.com>
+Content-Type: text/plain; charset="us-ascii"
+Subject: This is a test
+
+Hello,
+
+This is a test email.  database
+'''
+    email_list = EmailList.objects.get(name='pubone')
+    assert email_list.private is False
+    status = archive_message(data, 'pubone', private=True)
+    assert status == 0
+    email_list = EmailList.objects.get(name='pubone')
+    assert email_list.private is True
+    # remove message from index
+    # TODO figure out better test index management
+    message = Message.objects.get(msgid='0000000002@example.com')
+    message.delete()
 
 
 def test_clean_spaces():

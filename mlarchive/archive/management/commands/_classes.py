@@ -810,6 +810,11 @@ class MessageWrapper(object):
         """
         self.email_list, created = EmailList.objects.get_or_create(
             name=self.listname, defaults={'description': self.listname, 'private': self.private})
+        if not created and self.private is True and self.email_list.private is False:
+            # the list has been changed from public to private
+            logger.info('Email List {} changed from public to private'.format(self.email_list.name))
+            self.email_list.private = True
+            self.email_list.save()
         self.hashcode = self.get_hash()
         self._init_in_reply_to_fields()
         self.references = self.email_message.get('References', '')

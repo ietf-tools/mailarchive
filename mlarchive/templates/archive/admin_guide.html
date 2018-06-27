@@ -32,7 +32,7 @@
     <h2>How do I import messages from an archive file?</h2>
     <p>The mail archive supports imports from mbox files (or directories of files).  Use the following procedure to load messages into the live archive.<br>
     <pre>cd /a/mailarch/current
-source bin/activate
+source env/bin/activate
 export PYTHONPATH=$PWD
 django-admin.py load [path-to-file/dir] -l [listname] --settings=mlarchive.settings.noindex</pre>
     This will load messages into the database without flooding the index update queue.
@@ -55,7 +55,7 @@ django-admin.py load [path-to-file/dir] -l [listname] --settings=mlarchive.setti
     <pre>sudo /etc/init.d/celeryd stop</pre>
     Then use the Haystack update_index command
     <pre>cd /a/mailarch/current
-source bin/activate
+source env/bin/activate
 export PYTHONPATH=$PWD
 django-admin.py update_index --start='2014-01-14T00:00:00' --end='2014-01-16T23:59:59' --settings=mlarchive.settings.production
 -- or --

@@ -141,6 +141,8 @@ def test_get_export_url(messages):
     url = '%s?%s' % (reverse('archive_export', kwargs={'type': 'url'}), 'q=message')
     request = get_request(url=url)
     sqs = SearchQuerySet().filter(email_list__in=['pubone'])
+    for r in sqs:
+        print r.msgid, r.object
     response = get_export(sqs, 'url', request)
     assert response.status_code == 200
     assert sqs[0].object.get_absolute_url() in response.content

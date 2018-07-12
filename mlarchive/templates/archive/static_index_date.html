@@ -10,7 +10,7 @@
 
         {% include "includes/static_index_nav.html" %}
 
-        <ul class="static-index" data-legacy-off-url="{{ legacy_off_url }}">
+        <ul class="static-index" data-static-off-url="{{ static_off_url }}">
         {% for message in queryset %}
             {% if group_by_thread %}
                 <li class="depth-{{ message.thread_depth|max_depth }}">

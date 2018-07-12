@@ -462,28 +462,28 @@ var mailarch = {
     },
     
 /*
-    legacyOff: function() {
+    staticOff: function() {
         if(!mailarch.showFilters){
             mailarch.toggleFilters();
         }
         if(!mailarch.showPreview){
             mailarch.togglePreview();
         }
-        mailarch.$msgList.removeClass('legacy')
+        mailarch.$msgList.removeClass('static')
         mailarch.$msgList.on('keydown', mailarch.messageNav);
         mailarch.$msgTable.on('click','.xtr', mailarch.selectRow);
         mailarch.$msgTable.on('dblclick','.xtr', mailarch.gotoMessage);
         mailarch.initMessageList();
     },
 
-    legacyOn: function() {
+    staticOn: function() {
         if(mailarch.showFilters){
             mailarch.toggleFilters();
         }
         if(mailarch.showPreview){
             mailarch.togglePreview();
         }
-        mailarch.$msgList.addClass('legacy')
+        mailarch.$msgList.addClass('static')
         mailarch.$msgList.off('keydown');
         mailarch.$msgTable.off('click','.xtr');
         mailarch.$msgTable.off('dblclick','.xtr');
@@ -492,17 +492,17 @@ var mailarch = {
     },
 */
 
-    legacyOff: function() {
-        var legacyOffUrl = mailarch.$msgList.data('legacy-off-url');
-        if(legacyOffUrl) {
-            window.location.replace(legacyOffUrl);
+    staticOff: function() {
+        var staticOffUrl = mailarch.$msgList.data('static-off-url');
+        if(staticOffUrl) {
+            window.location.replace(staticOffUrl);
         }
     },
 
-    legacyOn: function() {
-        var legacyOnUrl = mailarch.$msgList.data('legacy-on-url');
-        if(legacyOnUrl) {
-            window.location.replace(legacyOnUrl);
+    staticOn: function() {
+        var staticOnUrl = mailarch.$msgList.data('static-on-url');
+        if(staticOnUrl) {
+            window.location.replace(staticOnUrl);
         }
     },
 

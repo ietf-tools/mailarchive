@@ -112,7 +112,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'mlarchive.context_processors.server_mode',
                 'mlarchive.context_processors.revision_info',
-                'mlarchive.context_processors.legacy_mode_enabled',
+                'mlarchive.context_processors.static_mode_enabled',
             ],
         },
     },
@@ -265,7 +265,7 @@ FILTER_CUTOFF = 5000            # maximum results for which we'll provide filter
 LOG_FILE = os.path.join(DATA_ROOT, 'log/mlarchive.log')
 MAILMAN_DIR = '/usr/lib/mailman'
 SERVER_MODE = 'production'
-LEGACY_MODE_ENABLED = False
+STATIC_MODE_ENABLED = False
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # number of messages to load when scrolling search results
 SEARCH_SCROLL_BUFFER_SIZE = HAYSTACK_SEARCH_RESULTS_PER_PAGE

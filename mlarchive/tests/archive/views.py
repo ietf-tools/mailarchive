@@ -253,10 +253,10 @@ def test_browse_index_gbt(client, messages):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_browse_legacy_mode(client):
+def test_browse_static_mode(client):
     elist = EmailListFactory.create()
     url = reverse('archive_browse_list', kwargs={'list_name': elist.name})
-    client.cookies['isLegacyOn'] = 'true'
+    client.cookies['isStaticOn'] = 'true'
     response = client.get(url)
     assert response.status_code == 302
     assert response['location'] == reverse('archive_browse_static', kwargs={'list_name': elist.name})

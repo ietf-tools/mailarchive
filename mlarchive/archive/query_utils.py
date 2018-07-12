@@ -199,5 +199,5 @@ def get_browse_equivalent(request):
         return request.GET.get('email_list')
 
 
-def is_legacy_on(request):
-    return True if request.COOKIES.get('isLegacyOn') == 'true' else False
+def is_static_on(request):
+    return True if request.COOKIES.get('isStaticOn') == 'true' else False

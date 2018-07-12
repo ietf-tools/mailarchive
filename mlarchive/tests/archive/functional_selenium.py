@@ -181,8 +181,55 @@ class MySeleniumTests(StaticLiveServerTestCase):
         element = self.selenium.find_element_by_id('msg-header')
         assert not element.is_displayed()
 
+    def test_back_to_search(self):
+        # User performs search
+        url = urlparse.urljoin(self.live_server_url, reverse('archive'))
+        self.selenium.get(url)
+        query_input = self.selenium.find_element_by_id('id_q')
+        query_input.send_keys('data')
+        self.selenium.find_element_by_name('search-form').submit()
+        # Wait until the response is received
+        WebDriverWait(self.selenium, timeout).until(
+            lambda driver: driver.find_element_by_tag_name('body'))
+
+        # Get results page
+        self.assertIn('Mail Archive', self.selenium.title)
+        self.selenium.get_screenshot_as_file('tests/tmp/mailarch_test.png')
+
+        # Press back button
+        self.selenium.find_element_by_id('modify-search').click()
+        WebDriverWait(self.selenium, timeout).until(
+            lambda driver: driver.find_element_by_tag_name('body'))
+
+        # End up back at basic search
+        self.assertEquals('Mail Archive', self.selenium.title)
+
+    def test_back_to_advanced_search(self):
+        # User performs search
+        url = urlparse.urljoin(self.live_server_url,
+                               reverse('archive_advsearch'))
+        self.selenium.get(url)
+        query_input = self.selenium.find_element_by_id('id_query-0-value')
+        query_input.send_keys('data')
+        self.selenium.find_element_by_id('advanced-search-form').submit()
+        # Wait until the response is received
+        WebDriverWait(self.selenium, timeout).until(
+            lambda driver: driver.find_element_by_tag_name('body'))
+
+        # Get results page
+        self.assertIn('Mail Archive', self.selenium.title)
+        self.selenium.get_screenshot_as_file('tests/tmp/mailarch_test.png')
+
+        # Press back button
+        self.selenium.find_element_by_id('modify-search').click()
+        WebDriverWait(self.selenium, timeout).until(
+            lambda driver: driver.find_element_by_tag_name('body'))
+
+        # End up back at advanced search
+        self.assertEquals('Mail Archive Advanced Search', self.selenium.title)
+
 """
-    def test_legacy_mode(self):
+    def test_static_mode(self):
         main_url = reverse('archive')
         url = urlparse.urljoin(self.live_server_url, main_url)
         print url
@@ -191,9 +238,9 @@ class MySeleniumTests(StaticLiveServerTestCase):
 
         # click Legacy Mode On
         self.selenium.find_element_by_id('nav-settings').click()
-        self.selenium.get_screenshot_as_file('tests/tmp/test_legacy_mode.png')
+        self.selenium.get_screenshot_as_file('tests/tmp/test_static_mode.png')
         #self.selenium.find_element_by_link_text('Legacy Mode On').click()
-        self.selenium.find_element_by_id('toggle-legacy').click()
+        self.selenium.find_element_by_id('toggle-static').click()
 
         # Wait until the response is received
         #WebDriverWait(self.selenium, timeout).until(

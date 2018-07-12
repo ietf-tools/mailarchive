@@ -32,7 +32,7 @@ urlpatterns = [
     url(r'^legacy/msg/(?P<list_name>[a-z0-9_\-\+]+)/(?P<id>[0-9]+)/$', views.legacy_message, name='archive_legacy_message'),
     url(r'^logout/$', views.logout_view, name='archive_logout'),
     url(r'^msg/(?P<list_name>[a-z0-9_\-\+]+)/(?P<id>[a-zA-Z0-9_\-]+)(=)?(/)?$', views.detail, name='archive_detail'),
-    url(r'^msg/classic/(?P<list_name>[a-z0-9_\-\+]+)/(?P<id>[a-zA-Z0-9_\-]+)(=)?(/)?$', views.detail_classic, name='archive_detail_classic'),
+    # url(r'^msg/classic/(?P<list_name>[a-z0-9_\-\+]+)/(?P<id>[a-zA-Z0-9_\-]+)(=)?(/)?$', views.detail_classic, name='archive_detail_classic'),
     url(r'^search/', search_view_factory(
         form_class=AdvancedSearchForm,
         view_class=views.CustomSearchView,

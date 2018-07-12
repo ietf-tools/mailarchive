@@ -3,54 +3,54 @@
 var base = {
 
     // VARAIBLES =============================================
-    isLegacyOn: $.cookie('isLegacyOn') == "true" ? true : false,
+    isStaticOn: $.cookie('isStaticOn') == "true" ? true : false,
 
     // PRIMARY FUNCTIONS =====================================
     
     init: function() {
         base.cacheDom();
         base.bindEvents();
-        base.initLegacy();
+        base.initStatic();
     },
 
     cacheDom: function() {
-        base.$toggleLegacyLink = $('#toggle-legacy');
+        base.$toggleStaticLink = $('#toggle-static');
     },
 
     bindEvents: function() {
-        base.$toggleLegacyLink.on('click', base.toggleLegacy);
+        base.$toggleStaticLink.on('click', base.toggleStatic);
     },
 
-    initLegacy: function() {
-        if(base.isLegacyOn) {
-            base.$toggleLegacyLink.text("Turn Legacy Mode Off");
+    initStatic: function() {
+        if(base.isStaticOn) {
+            base.$toggleStaticLink.text("Turn Static Mode Off");
         }
     },
 
-    toggleLegacy: function(event) {
+    toggleStatic: function(event) {
         event.preventDefault();
-        if(base.isLegacyOn) {
-            base.isLegacyOn = false;
-            $.cookie('isLegacyOn','false', { expires: 5*365, path: '/'});
-            base.$toggleLegacyLink.text("Turn Legacy Mode On");
+        if(base.isStaticOn) {
+            base.isStaticOn = false;
+            $.cookie('isStaticOn','false', { expires: 5*365, path: '/'});
+            base.$toggleStaticLink.text("Turn Static Mode On");
             if(typeof mailarch !== 'undefined'){
-                mailarch.legacyOff();
+                mailarch.staticOff();
             }
             if(typeof mailarchDetails !== 'undefined'){
-                mailarchDetails.legacyOff();
+                mailarchDetails.staticOff();
             }
             if(typeof mailarchStaticIndex !== 'undefined'){
-                mailarchStaticIndex.legacyOff();
+                mailarchStaticIndex.staticOff();
             }
         } else {
-            base.isLegacyOn = true;
-            $.cookie('isLegacyOn','true', { expires: 5*365, path: '/'});
-            base.$toggleLegacyLink.text(" Turn Legacy Mode Off");
+            base.isStaticOn = true;
+            $.cookie('isStaticOn','true', { expires: 5*365, path: '/'});
+            base.$toggleStaticLink.text(" Turn Static Mode Off");
             if(typeof mailarch !== 'undefined'){
-                mailarch.legacyOn();
+                mailarch.staticOn();
             }
             if(typeof mailarchDetails !== 'undefined'){
-                mailarchDetails.legacyOn();
+                mailarchDetails.staticOn();
             }
         }
     },

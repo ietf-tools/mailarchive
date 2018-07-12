@@ -29,7 +29,7 @@ from haystack.forms import SearchForm
 from mlarchive.utils.decorators import check_access, superuser_only, pad_id, log_timing, check_list_access
 from mlarchive.archive import actions
 from mlarchive.archive.query_utils import (get_kwargs, get_qdr_kwargs, get_cached_query, get_browse_equivalent,
-    parse_query_string, get_order_fields, generate_queryid, is_legacy_on)
+    parse_query_string, get_order_fields, generate_queryid, is_static_on)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     get_query_neighbors, get_query_string, get_lists_for_user, get_random_token)
 
@@ -120,6 +120,10 @@ class CustomSearchView(SearchView):
     def __name__(self):
         return "CustomSearchView"
 
+    #def __init__(self, *args, **kwargs):
+    #    super(CustomSearchView, self).__init__(*args, **kwargs)
+    #    self.base_url = reverse('archive_search')
+
     def __call__(self, request):
         """Generates the actual response to the search.
 
@@ -133,7 +137,7 @@ class CustomSearchView(SearchView):
         browse_list = get_browse_equivalent(request)
         if browse_list:
             try:
-                if is_legacy_on(request):
+                if is_static_on(request):
                     return redirect('archive_browse_static', list_name=browse_list)
                 else:
                     return redirect('archive_browse_list', list_name=browse_list)
@@ -257,8 +261,12 @@ class CustomBrowseView(CustomSearchView):
     def __name__(self):
         return "CustomBrowseView"
 
+    #def __init__(self, *args, **kwargs):
+    #    super(CustomBrowsehView, self).__init__(*args, **kwargs)
+    #    self.base_url = reverse('archive_browse')
+
     def __call__(self, request, list_name, email_list):
-        if is_legacy_on(request):
+        if is_static_on(request):
             return redirect('archive_browse_static', list_name=list_name)
 
         self.list_name = list_name
@@ -321,8 +329,8 @@ class CustomBrowseView(CustomSearchView):
         extra['export_maildir'] = reverse('archive_export', kwargs={'type': 'maildir'}) + '?' + new_query.urlencode()
         extra['export_url'] = reverse('archive_export', kwargs={'type': 'url'}) + '?' + new_query.urlencode()
 
-        extra['legacy_off_url'] = reverse('archive_browse_list', kwargs={'list_name': self.list_name})
-        extra['legacy_on_url'] = reverse('archive_browse_static', kwargs={'list_name': self.list_name})
+        extra['static_off_url'] = reverse('archive_browse_list', kwargs={'list_name': self.list_name})
+        extra['static_on_url'] = reverse('archive_browse_static', kwargs={'list_name': self.list_name})
 
         return extra
 
@@ -382,7 +390,7 @@ class BaseStaticIndexView(View):
                        group_by_thread=self.group_by_thread,
                        time_period=TimePeriod(year=self.year, month=self.month),
                        date_string=self.get_date_string(),
-                       legacy_off_url=reverse('archive_browse_list', kwargs={'list_name': self.kwargs['list_name']}))
+                       static_off_url=reverse('archive_browse_list', kwargs={'list_name': self.kwargs['list_name']}))
 
         add_nav_urls(context)
         return context
@@ -555,7 +563,7 @@ def browse(request):
     """Presents a list of Email Lists the user has access to.  There are
     separate sections for private, active and inactive.
     """
-    is_legacy_on = True if request.COOKIES.get('isLegacyOn') == 'true' else False
+    is_static_on = True if request.COOKIES.get('isStaticOn') == 'true' else False
     columns = get_columns(request)
 
     if request.method == "GET" and request.GET.get('list'):
@@ -563,7 +571,7 @@ def browse(request):
         if form.is_valid():
             list_name = form.cleaned_data['list'].name
             params = [('email_list', list_name)]
-            if is_legacy_on:
+            if is_static_on:
                 return redirect('/arch/browse/{name}/index.html'.format(name=list_name))
             else:
                 return redirect('{url}?{params}'.format(url=reverse('archive_search'), params=urllib.urlencode(params)))
@@ -594,10 +602,10 @@ def detail(request, list_name, id, msg):
     """Displays the requested message.
     NOTE: the "msg" argument is a Message object added by the check_access decorator
     """
-    is_legacy_on = True if request.COOKIES.get('isLegacyOn') == 'true' else False
+    is_static_on = True if request.COOKIES.get('isStaticOn') == 'true' else False
     queryid, sqs = get_cached_query(request)
 
-    if sqs and not is_legacy_on:
+    if sqs and not is_static_on:
         previous_in_search, next_in_search = get_query_neighbors(query=sqs, message=msg)
         search_url = reverse('archive_search') + '?' + sqs.query_string
     else:
@@ -630,10 +638,10 @@ def detail_classic(request, list_name, id, msg):
     """Displays the requested message.
     NOTE: the "msg" argument is a Message object added by the check_access decorator
     """
-    is_legacy_on = True if request.COOKIES.get('isLegacyOn') == 'true' else False
+    is_static_on = True if request.COOKIES.get('isStaticOn') == 'true' else False
     queryid, sqs = get_cached_query(request)
 
-    if sqs and not is_legacy_on:
+    if sqs and not is_static_on:
         previous_in_search, next_in_search = get_query_neighbors(query=sqs, message=msg)
         search_url = reverse('archive_search') + '?' + sqs.query_string
     else:
@@ -720,10 +728,10 @@ def detailx(request, list_name, id, msg):
     """Displays the requested message.
     NOTE: the "msg" argument is a Message object added by the check_access decorator
     """
-    is_legacy_on = True if request.COOKIES.get('isLegacyOn') == 'true' else False
+    is_static_on = True if request.COOKIES.get('isStaticOn') == 'true' else False
     queryid, sqs = get_cached_query(request)
 
-    if sqs and not is_legacy_on:
+    if sqs and not is_static_on:
         previous_in_search, next_in_search = get_query_neighbors(query=sqs, message=msg)
         search_url = reverse('archive_search') + '?' + sqs.query_string
     else:

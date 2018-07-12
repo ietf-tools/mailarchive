@@ -32,7 +32,7 @@ ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
 CONSOLE_STATS_FILE = os.path.join(DATA_ROOT, 'log', 'console.json')
 LOG_FILE = os.path.join(DATA_ROOT, 'log', 'mlarchive.log')
 SERVER_MODE = 'development'
-LEGACY_MODE_ENABLED = True
+STATIC_MODE_ENABLED = True
 
 LOGGING['handlers']['watched_file']['filename'] = LOG_FILE
 LOGGING['handlers']['archive-mail_file_handler']['filename'] = os.path.join(DATA_ROOT, 'log', 'archive-mail.log')

@@ -149,6 +149,7 @@ def index_resource():
 
     yield
 
+    # uncomment to remove index after test
     # call_command('clear_index', interactive=False, stdout=content)
     print content.read()
 

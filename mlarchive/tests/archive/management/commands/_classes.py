@@ -22,8 +22,8 @@ def teardown_module(module):
     for path in (settings.LOG_FILE, settings.IMPORT_LOG_FILE):
         if os.path.exists(path):
             os.remove(path)
-    # content = StringIO()
-    # call_command('clear_index', interactive=False, stdout=content)
+    content = StringIO()
+    call_command('clear_index', interactive=False, stdout=content)
 
 
 @pytest.mark.django_db(transaction=True)

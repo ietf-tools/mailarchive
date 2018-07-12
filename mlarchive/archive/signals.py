@@ -40,12 +40,17 @@ def _message_remove(sender, instance, **kwargs):
     path = instance.get_file_path()
     if not os.path.exists(path):
         return
-    target = instance.get_removed_dir()
-    if not os.path.exists(target):
-        os.mkdir(target)
-        os.chmod(target, 02777)
-    shutil.move(path, target)
-    logger.info('message file moved: {} => {}'.format(path, target))
+    target_dir = instance.get_removed_dir()
+    if not os.path.exists(target_dir):
+        os.mkdir(target_dir)
+        os.chmod(target_dir, 02777)
+    target_path = os.path.join(target_dir, os.path.basename(path))
+    if os.path.exists(target_path):
+        os.remove(path)
+    else:
+        shutil.move(path, target_dir)
+
+    logger.info('message file moved: {} => {}'.format(path, target_dir))
 
     # if message is first of many in thread, should reset thread.first before
     # deleting

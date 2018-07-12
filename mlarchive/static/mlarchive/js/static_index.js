@@ -1,9 +1,9 @@
 
 var mailarchStaticIndex = {
-    legacyOff: function() {
-        var legacyOffUrl = $('.static-index').data('legacy-off-url');
-        if(legacyOffUrl) {
-            window.location.replace(legacyOffUrl);
+    staticOff: function() {
+        var staticOffUrl = $('.static-index').data('static-off-url');
+        if(staticOffUrl) {
+            window.location.replace(staticOffUrl);
         }
     },
 }

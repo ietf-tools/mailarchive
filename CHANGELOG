@@ -1,4 +1,20 @@
 
+mailarch (1.12.3) ietf; urgency=normal
+
+* Handle invalid parameters in ajax call
+
+* Fix issue handling bad email list name in query string
+
+* Detect if existing mail list access changes to private.  Fixes #2518
+
+* Fix issue with arch/browse and infinite scroll ajax calls
+
+* Fix infinite scroll bug.  Fixes #2445
+
+* Add test for datatracker complete-a-review integration
+
+-- Ryan Cross <rcross@amsl.com>  13 June 2018 15:00:00 +0800
+
 mailarch (1.12.2) ietf; urgency=normal
 
 * Fix issue with browse views including gbt and index parameters

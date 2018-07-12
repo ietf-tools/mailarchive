@@ -18,11 +18,11 @@ var mailarchDetails = {
         $("#thread-index").attr("href", $("#msg-detail").data('thread-index-url'));
     },
 
-    legacyOn: function() {
+    staticOn: function() {
         mailarchDetails.doStaticNavLinks();
     },
 
-    legacyOff: function() {
+    staticOff: function() {
         mailarchDetails.doRegularNavLinks();
     },
 
@@ -33,7 +33,7 @@ var mailarchDetails = {
     },
 
     initNavLinks: function() {
-        if(base.isLegacyOn){
+        if(base.isStaticOn){
             mailarchDetails.doStaticNavLinks();
         }
     },

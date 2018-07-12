@@ -144,7 +144,7 @@
                         </div>
                     {% endif %}
 
-                    <div id="msg-list" class="msg-list wrapper no-preview" tabindex="-1" data-results-per-page="{{ results_per_page }}" data-queryid="{{ queryid }}" data-queryset-offset="{{ queryset_offset }}" data-selected-offset="{{ selected_offset }}" data-export-token="{{ export_token }}" data-browse-list="{{ browse_list|default_if_none:"" }}" data-gbt="{% if group_by_thread %}1{% endif %}"{% if browse_list %} data-legacy-off-url="{{ legacy_off_url }}" data-legacy-on-url="{{ legacy_on_url }}"{% endif %}>
+                    <div id="msg-list" class="msg-list wrapper no-preview" tabindex="-1" data-results-per-page="{{ results_per_page }}" data-queryid="{{ queryid }}" data-queryset-offset="{{ queryset_offset }}" data-selected-offset="{{ selected_offset }}" data-export-token="{{ export_token }}" data-browse-list="{{ browse_list|default_if_none:"" }}" data-gbt="{% if group_by_thread %}1{% endif %}"{% if browse_list %} data-static-off-url="{{ static_off_url }}" data-static-on-url="{{ static_on_url }}"{% endif %}>
                         <div class="table table-condensed msg-table xtable{% if group_by_thread %} thread-sorted{% endif %}">
                             <div class="xtbody">
                                 {% with page as results %}

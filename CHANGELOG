@@ -1,4 +1,16 @@
 
+mailarch (1.12.4) ietf; urgency=normal
+
+* Fix message links for mobile devices (small screens)
+
+* Fix next page link in browse view.  Fixes #2528
+
+* Refactor: change Legacy Mode to Static Mode
+
+* Update virtualenv path in admin_guide.html
+
+-- Ryan Cross <rcross@amsl.com>  16 July 2018 12:30:00 +0800
+
 mailarch (1.12.3) ietf; urgency=normal
 
 * Handle invalid parameters in ajax call

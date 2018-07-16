@@ -206,13 +206,13 @@ class CustomSearchView(SearchView):
         new_query = self.request.GET.copy()
 
         if extra['group_by_thread']:
-            extra['view_thread_url'] = reverse('archive_search') + extra['query_string']
+            extra['view_thread_url'] = self.base_url + extra['query_string']
             new_query.pop('gbt')
-            extra['view_date_url'] = reverse('archive_search') + '?' + new_query.urlencode()
+            extra['view_date_url'] = self.base_url + '?' + new_query.urlencode()
         else:
-            extra['view_date_url'] = reverse('archive_search') + extra['query_string']
+            extra['view_date_url'] = self.base_url + extra['query_string']
             new_query['gbt'] = 1
-            extra['view_thread_url'] = reverse('archive_search') + '?' + new_query.urlencode()
+            extra['view_thread_url'] = self.base_url + '?' + new_query.urlencode()
 
     def set_page_links(self, extra):
         if self.page and self.page.has_other_pages():
@@ -266,7 +266,17 @@ class CustomBrowseView(CustomSearchView):
         self.list_name = list_name
         self.email_list = email_list
         self.kwargs = {}
-        return super(CustomBrowseView, self).__call__(request)
+
+        self.request = request
+        self.form = self.build_form()
+        self.query = self.get_query()
+        self.results = self.get_results()
+        if hasattr(self.results, 'myfacets'):
+            self.myfacets = self.results.myfacets
+        if hasattr(self.results, 'queryid'):
+            self.queryid = self.results.queryid
+
+        return self.create_response()
 
     def get_results(self):
         """Gets a small set of results from the database rather than the search index"""

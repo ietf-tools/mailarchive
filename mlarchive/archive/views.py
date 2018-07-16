@@ -120,10 +120,6 @@ class CustomSearchView(SearchView):
     def __name__(self):
         return "CustomSearchView"
 
-    #def __init__(self, *args, **kwargs):
-    #    super(CustomSearchView, self).__init__(*args, **kwargs)
-    #    self.base_url = reverse('archive_search')
-
     def __call__(self, request):
         """Generates the actual response to the search.
 
@@ -144,6 +140,7 @@ class CustomSearchView(SearchView):
             except NoReverseMatch:
                 raise Http404("Invalid List")
 
+        self.base_url = reverse('archive_search')
         self.request = request
         self.form = self.build_form()
         self.query = self.get_query()
@@ -224,13 +221,13 @@ class CustomSearchView(SearchView):
                 new_query['page'] = self.page.next_page_number()
                 if 'index' in new_query:
                     new_query.pop('index')
-                extra['next_page_url'] = reverse('archive_search') + '?' + new_query.urlencode()
+                extra['next_page_url'] = self.base_url + '?' + new_query.urlencode()
             if self.page.has_previous():
                 new_query = self.request.GET.copy()
                 new_query['page'] = self.page.previous_page_number()
                 if 'index' in new_query:
                     new_query.pop('index')
-                extra['previous_page_url'] = reverse('archive_search') + '?' + new_query.urlencode()
+                extra['previous_page_url'] = self.base_url + '?' + new_query.urlencode()
 
     def get_context(self):
         # page, selected_offset = self.build_page()
@@ -261,14 +258,11 @@ class CustomBrowseView(CustomSearchView):
     def __name__(self):
         return "CustomBrowseView"
 
-    #def __init__(self, *args, **kwargs):
-    #    super(CustomBrowsehView, self).__init__(*args, **kwargs)
-    #    self.base_url = reverse('archive_browse')
-
     def __call__(self, request, list_name, email_list):
         if is_static_on(request):
             return redirect('archive_browse_static', list_name=list_name)
 
+        self.base_url = reverse('archive_browse_list', kwargs={'list_name': list_name})
         self.list_name = list_name
         self.email_list = email_list
         self.kwargs = {}

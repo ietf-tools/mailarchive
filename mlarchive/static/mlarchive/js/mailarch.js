@@ -17,7 +17,7 @@ var mailarch = {
     isDateOrdered: false,
     isGroupByThread: false,
     showFilters: $.cookie('showfilters') == "false" ? false : true,
-    showPreview: $.cookie('showpreview') == "false" ? false : true,
+    showPreviewCookie: $.cookie('showpreview') == "false" ? false : true,
     lastItem: 0,
     urlParams: {},
     resultsPerPage: 20,
@@ -25,6 +25,7 @@ var mailarch = {
     scrollMargin: $('.xtr').height(),
     splitterHeight: $('#splitter-pane').height(),
     timer_attempts: 300,
+    smallViewport: false,
     
     // PRIMARY FUNCTIONS =====================================
     
@@ -39,7 +40,6 @@ var mailarch = {
         mailarch.initPanels();
         mailarch.initSort();
         mailarch.handleResize();
-        // $('[data-toggle="tooltip"]').tooltip({container: 'body'});
     },
 
     cacheDom: function() {
@@ -328,13 +328,32 @@ var mailarch = {
         mailarch.doSearch();
     },
 
-    handleResize: function() {
-        if(mailarch.isSmallViewport()) {
+    handleResize: function(event) {
+        var isSmall = mailarch.isSmallViewport();
+        // do these on any resize
+        if(!isSmall){
+            mailarch.setHeaderWidths();
+        }
+        if (typeof event == 'object') {
+            // if we got an event, viewport size changed, check if went between large / small
+            if(isSmall == mailarch.smallViewport){
+                return true;
+            } else {
+                console.log("small:" + isSmall);
+                mailarch.smallViewport = isSmall;
+            }
+        }
+        // do these only if crossing the small screen width
+        if(isSmall) {
             $('.header').removeAttr('style');
             $('#list-pane').removeAttr('style');
             mailarch.$window.off('scroll', mailarch.infiniteScroll);
+            mailarch.$msgList.addClass('no-preview');
         } else {
-            mailarch.setHeaderWidths();
+            if(mailarch.showPreviewCookie){
+                mailarch.$msgList.removeClass('no-preview');
+            }
+            mailarch.showPreview = mailarch.showPreviewCookie;
             mailarch.$window.on('scroll', mailarch.infiniteScroll);
             mailarch.setPaneHeights();
             if ($(".xtr").length == mailarch.resultsPerPage && !mailarch.$msgList.hasScrollBar()) {
@@ -680,6 +699,7 @@ var mailarch = {
     setProps: function() {
         mailarch.getURLParams();
         mailarch.setLastItem();
+        mailarch.smallViewport = mailarch.isSmallViewport();
         mailarch.resultsPerPage = mailarch.$msgList.data('results-per-page');
         // get message ordering
         if(mailarch.urlParams.hasOwnProperty('gbt')) {
@@ -687,6 +707,12 @@ var mailarch = {
             mailarch.isGroupByThread = true;
         } else if (!mailarch.urlParams.hasOwnProperty('so') || mailarch.urlParams['so'].endsWith('date')) {
             mailarch.isDateOrdered = true;
+        }
+        // override showPreview cookie if mobile (small screen)
+        if(mailarch.smallViewport){
+            mailarch.showPreview = false;
+        } else {
+            mailarch.showPreview = mailarch.showPreviewCookie;
         }
         //console.log(mailarch.isDateOrdered);
     },
@@ -771,12 +797,15 @@ var mailarch = {
 
     doShowPreview: function(event) {
         mailarch.showPreview = true;
+        mailarch.showPreviewCookie = true;
         $.cookie('showpreview','true');
         mailarch.$togglePreviewIcon.addClass("fa-chevron-down");
         mailarch.$togglePreviewIcon.removeClass("fa-chevron-up");
         mailarch.$listPane.animate({height:mailarch.splitterTop},function() {
-            mailarch.$viewPane.show();
-            mailarch.$splitterPane.show();
+            mailarch.$viewPane.removeClass("hidden");
+            mailarch.$splitterPane.removeClass("hidden");
+            // mailarch.$viewPane.show();
+            // mailarch.$splitterPane.show();
         });
         mailarch.$msgList.on('keydown', mailarch.messageNav);
         mailarch.$msgTable.on('click','.xtr', mailarch.selectRow);
@@ -788,11 +817,14 @@ var mailarch = {
     doHidePreview: function(event) {
         var height = mailarch.getMaxListPaneHeight();
         mailarch.showPreview = false;
+        mailarch.showPreviewCookie = false;
         $.cookie('showpreview','false');
         mailarch.$togglePreviewIcon.removeClass("fa-chevron-down");
         mailarch.$togglePreviewIcon.addClass("fa-chevron-up");
-        mailarch.$viewPane.hide();
-        mailarch.$splitterPane.hide();
+        //mailarch.$viewPane.hide();
+        //mailarch.$splitterPane.hide();
+        mailarch.$viewPane.addClass("hidden");
+        mailarch.$splitterPane.addClass("hidden");
         if (event.type == 'click'){
             mailarch.$listPane.animate({height:height});
         } else {
@@ -804,7 +836,7 @@ var mailarch = {
         mailarch.$msgList.addClass('no-preview');
         mailarch.$msgTable.find('.xtr').removeClass('row-selected');
         mailarch.addBorder(0);
-        mailarch.handleResize();
+        //mailarch.handleResize();
     }
 }
 

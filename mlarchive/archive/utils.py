@@ -1,15 +1,28 @@
 
+import base64
+import hashlib
 import json
+import logging
+import os
+import re
+import requests
+import subprocess
 from collections import OrderedDict
 
-from django.core.cache import cache, caches
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.core.cache import cache
+from django.db.models import signals
 from django.http import HttpResponse
 
 
 from mlarchive.archive.models import EmailList
+from mlarchive.archive.signals import _export_lists, _list_save_handler
 from mlarchive.utils.test_utils import get_search_backend
 
+logger = logging.getLogger('mlarchive.custom')
 THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
+LIST_LISTS_PATTERN = re.compile(r'\s*([\w\-]*) - (.*)$')
 
 # --------------------------------------------------
 # Helper Functions
@@ -81,31 +94,96 @@ def get_lists_for_user(user):
     return lists
 
 
-def get_purge_cache_urls(message, created=True):
-    """Retuns a list of absolute urls to purge from cache when message
-    is created or deleted
-    """
-    # all messages in thread
-    if created:
-        urls = [m.get_absolute_url_with_host() for m in message.thread.message_set.all().exclude(pk=message.pk)]
-    else:
-        urls = [m.get_absolute_url_with_host() for m in message.thread.message_set.all()]
-    # previous and next by date
-    next_in_list = message.next_in_list()
-    if next_in_list:
-        urls.append(next_in_list.get_absolute_url_with_host())
-    previous_in_list = message.previous_in_list()
-    if previous_in_list:
-        urls.append(previous_in_list.get_absolute_url_with_host())
-    # index pages
-    urls.extend(message.get_absolute_static_index_urls())
-    # dedupe
-    urls = list(set(urls))
-    return urls
-
-
 def jsonapi(fn):
     def to_json(request, *args, **kwargs):
         context_data = fn(request, *args, **kwargs)
         return HttpResponse(json.dumps(context_data), content_type='application/json')
     return to_json
+
+
+def lookup_user(address):
+    '''
+    This function takes an email address and looks in Datatracker for an associated
+    Datatracker account name.  Returns None if the email is not found or if there is no
+    associated User account.
+    '''
+    apikey = settings.DATATRACKER_PERSON_ENDPOINT_API_KEY
+    url = settings.DATATRACKER_PERSON_ENDPOINT
+    data = {'apikey': apikey, '_expand': 'user', 'email': address}
+
+    try:
+        response = requests.post(url, data)
+    except requests.exceptions.RequestException as error:
+        logger.error(str(error))
+        return None
+
+    if response.status_code != 200:
+        logger.error('Call to %s returned error %s' % (url, response.status_code))
+        return None
+
+    try:
+        output = response.json()
+        person_id = output['person.person'].keys()[0]
+        username = output['person.person'][person_id]['user']['username']
+    except (TypeError, LookupError) as error:
+        logger.error(str(error))
+        return None
+
+    return username
+
+
+def process_members(email_list, emails):
+    '''
+    This function takes an EmailList object and a list of emails, from the mailman list_members
+    command and creates the appropriate list membership relationships
+    '''
+    email_mapping = {}
+    members = email_list.members.all()
+    for email in emails:
+        if email in email_mapping:
+            name = email_mapping[email]
+        else:
+            name = lookup_user(email)
+            email_mapping[email] = name
+
+        if name:
+            user, created = User.objects.get_or_create(username=name)
+            if user not in members:
+                email_list.members.add(user)
+
+
+def get_membership(options, args):
+    list_members_cmd = os.path.join(settings.MAILMAN_DIR, 'bin/list_members')
+    list_lists_cmd = os.path.join(settings.MAILMAN_DIR, 'bin/list_lists')
+
+    # disconnect the EmailList post_save signal, we don't want to call it multiple
+    # times if many lists memberships have changed
+    signals.post_save.disconnect(_list_save_handler, sender=EmailList)
+    has_changed = False
+
+    known_lists = []
+    output = subprocess.check_output([list_lists_cmd]).splitlines()
+    for line in output:
+        match = LIST_LISTS_PATTERN.match(line)
+        if match:
+            known_lists.append(match.groups()[0].lower())
+
+    for mlist in EmailList.objects.filter(private=True, name__in=known_lists, active=True):
+        if not options.quiet:
+            print "Processing: %s" % mlist.name
+
+        try:
+            output = subprocess.check_output([list_members_cmd, mlist.name])
+        except subprocess.CalledProcessError:
+            continue
+
+        sha = hashlib.sha1(output)
+        digest = base64.urlsafe_b64encode(sha.digest())
+        if mlist.members_digest != digest:
+            has_changed = True
+            process_members(mlist, output.split())
+            mlist.members_digest = digest
+            mlist.save()
+
+    if has_changed:
+        _export_lists()

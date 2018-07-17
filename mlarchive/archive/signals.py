@@ -6,16 +6,12 @@ import sys
 import CloudFlare
 import traceback
 
-from celery.task import task
 from django.conf import settings
-from django.contrib.auth.signals import user_logged_in
 from django.core.cache import cache
 from django.dispatch import receiver
-from django.db.models.signals import pre_delete, post_delete, post_save, post_init
+from django.db.models.signals import pre_delete, post_delete, post_save
 
 from mlarchive.archive.models import Message, EmailList
-from mlarchive.archive.utils import get_purge_cache_urls
-from mlarchive.archive.views_static import update_static_index
 
 logger = logging.getLogger('mlarchive.custom')
 
@@ -85,20 +81,31 @@ def _list_save_handler(sender, instance, **kwargs):
 
 
 # --------------------------------------------------
-# Celery Tasks
-# --------------------------------------------------
-
-
-# TODO: not used currently
-@task
-def call_update_static_index(email_list_pk):
-    email_list = EmailList.objects.get(pk=email_list_pk)
-    update_static_index(email_list)
-
-
-# --------------------------------------------------
 # Helpers
 # --------------------------------------------------
+
+
+def get_purge_cache_urls(message, created=True):
+    """Retuns a list of absolute urls to purge from cache when message
+    is created or deleted
+    """
+    # all messages in thread
+    if created:
+        urls = [m.get_absolute_url_with_host() for m in message.thread.message_set.all().exclude(pk=message.pk)]
+    else:
+        urls = [m.get_absolute_url_with_host() for m in message.thread.message_set.all()]
+    # previous and next by date
+    next_in_list = message.next_in_list()
+    if next_in_list:
+        urls.append(next_in_list.get_absolute_url_with_host())
+    previous_in_list = message.previous_in_list()
+    if previous_in_list:
+        urls.append(previous_in_list.get_absolute_url_with_host())
+    # index pages
+    urls.extend(message.get_absolute_static_index_urls())
+    # dedupe
+    urls = list(set(urls))
+    return urls
 
 
 def purge_files_from_cache(message, created=True):

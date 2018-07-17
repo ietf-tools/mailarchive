@@ -34,5 +34,10 @@ LOG_FILE = os.path.join(DATA_ROOT, 'log', 'mlarchive.log')
 SERVER_MODE = 'development'
 STATIC_MODE_ENABLED = True
 
+
 LOGGING['handlers']['watched_file']['filename'] = LOG_FILE
 LOGGING['handlers']['archive-mail_file_handler']['filename'] = os.path.join(DATA_ROOT, 'log', 'archive-mail.log')
+
+
+# DATATRACKER API
+DATATRACKER_PERSON_ENDPOINT = 'http://deva.amsl.com/api/v2/person/person'

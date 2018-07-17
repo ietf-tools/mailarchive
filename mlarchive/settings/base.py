@@ -332,3 +332,7 @@ EXPORT_DIR = os.path.join(DATA_ROOT, 'export')
 
 # new in Django 1.6
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
+# DATATRACKER API
+DATATRACKER_PERSON_ENDPOINT = 'https://datatracker.ietf.org/api/v2/person/person'
+DATATRACKER_PERSON_ENDPOINT_API_KEY = get_secret('DATATRACKER_PERSON_ENDPOINT_API_KEY')

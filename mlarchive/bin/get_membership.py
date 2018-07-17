@@ -4,108 +4,25 @@ This script checks all active private lists memberships, if membership has chang
 last time it was run, the list membership db table is updated.  This script can be run
 periodically by cron.
 '''
-import os
-import sys
-sys.path.insert(0, '/a/www/ietf-datatracker/web')
 
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
-do_setup(settings='production_datatracker')
+do_setup(settings='production')
 # -------------------------------------------------------------------------------------
 
-from django.conf import settings
-from django.db.models.signals import post_save
-from django.contrib.auth.models import User
-from ietf.person.models import Email
 from optparse import OptionParser
-from mlarchive.archive.models import EmailList
-from mlarchive.archive.signals import _list_save_handler, _export_lists
-from subprocess import CalledProcessError, check_output
-import hashlib
-import base64
-import re
+from mlarchive.archive.utils import get_membership
 
-
-LIST_LISTS_PATTERN = re.compile(r'\s*([\w\-]*) - (.*)$')
-
-
-def lookup(address):
-    '''
-    This function takes an email address and looks in Datatracker for an associated
-    Datatracker account name.  Returns None if the email is not found or if there is no
-    associated User account.
-    '''
-    try:
-        email = Email.objects.using('ietf').get(address=address)
-    except Email.DoesNotExist:
-        return None
-
-    try:
-        username = email.person.user.username
-    except AttributeError:
-        return None
-
-    return username
-
-def process_members(mlist, emails):
-    '''
-    This function takes an EmailList object and a list of emails, from the mailman list_members
-    command and creates the appropriate list membership relationships
-    '''
-    members = mlist.members.all()
-    for email in emails:
-        name = lookup(email)
-        if name:
-            user, created = User.objects.get_or_create(username=name)
-            if user not in members:
-                mlist.members.add(user)
 
 def main():
     usage = "usage: %prog"
     parser = OptionParser(usage=usage)
-    parser.add_option("-q", "--quiet", help="don't print lists as they are processed",
+    parser.add_option("-q", "--quiet", help="Don't print lists as they are processed",
                       action="store_true", default=False)
     (options, args) = parser.parse_args()
 
-    list_members_cmd = os.path.join(settings.MAILMAN_DIR,'bin/list_members')
-    list_lists_cmd = os.path.join(settings.MAILMAN_DIR,'bin/list_lists')
-    
-    # disconnect the EmailList post_save signal, we don't want to call it multiple
-    # times if many lists memberships have changed
-    post_save.disconnect(_list_save_handler,sender=EmailList)
-    has_changed = False
-    
-    known_lists = []
-    output = check_output([list_lists_cmd]).splitlines()
-    for line in output:
-        match = LIST_LISTS_PATTERN.match(line)
-        if match:
-            known_lists.append(match.groups()[0].lower())
+    get_membership(options, args)
 
-    for mlist in EmailList.objects.filter(private=True,active=True):
-        # skip lists that aren't managed by mailman
-        if mlist.name not in known_lists:
-            continue
-        
-        if not options.quiet:
-            print "Processing: %s" % mlist.name
-            
-        try:
-            output = check_output([list_members_cmd,mlist.name])
-        except CalledProcessError:
-            # some lists don't exist in mailman
-            continue
-            
-        sha = hashlib.sha1(output)
-        digest = base64.urlsafe_b64encode(sha.digest())
-        if mlist.members_digest != digest:
-            has_changed = True
-            process_members(mlist,output.split())
-            mlist.members_digest = digest
-            mlist.save()
-
-    if has_changed:
-        _export_lists()
 
 if __name__ == "__main__":
     main()

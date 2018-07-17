@@ -1,11 +1,16 @@
 
 import pytest
+import requests
 from factories import EmailListFactory, UserFactory
-from pyquery import PyQuery
+from mock import patch
+import os
+import subprocess   # noqa
 
+
+from django.conf import settings
 from django.core.cache import cache
 from django.contrib.auth.models import AnonymousUser
-from mlarchive.archive.utils import get_noauth, get_lists, get_lists_for_user, get_purge_cache_urls
+from mlarchive.archive.utils import get_noauth, get_lists, get_lists_for_user, lookup_user, process_members, get_membership
 
 
 @pytest.mark.django_db(transaction=True)
@@ -37,12 +42,13 @@ def test_get_noauth_updates(settings):
     print "key {}:{}".format(key, cache.get(key))
     assert 'public' not in get_noauth(user)
     print "key {}:{}".format(key, cache.get(key))
-    #assert cache.get(key) == []
+    # assert cache.get(key) == []
     public.private = True
     public.save()
     assert 'public' in get_noauth(user)
     print "key {}:{}".format(key, cache.get(key))
-    #assert False
+    # assert False
+
 
 @pytest.mark.django_db(transaction=True)
 def test_get_lists():
@@ -65,28 +71,63 @@ def test_get_lists_for_user(admin_user):
     assert private2 not in lists
 
 
+@patch('requests.post')
+def test_lookup_user(mock_post):
+    response = requests.Response()
+    # test error status
+    response.status_code = 404
+    mock_post.return_value = response
+    user = lookup_user('joe@example.com')
+    assert user is None
+    # test no user object
+    response.status_code = 200
+    response._content = '{"person.person": {"1": {"user": ""}}}'
+    user = lookup_user('joe@example.com')
+    assert user is None
+    # test success
+    response._content = '{"person.person": {"1": {"user": {"username": "joe@example.com"}}}}'
+    user = lookup_user('joe@example.com')
+    assert user == 'joe@example.com'
+
+
+@patch('requests.post')
 @pytest.mark.django_db(transaction=True)
-def test_get_purge_cache_urls(messages):
-    message = messages.get(msgid='c02')
-    urls = get_purge_cache_urls(message)
-    assert urls
-    print urls
-    # previous in list
-    msg = messages.get(msgid='c01')
-    assert msg.get_absolute_url_with_host() in urls
-    # next in list
-    msg = messages.get(msgid='c03')
-    assert msg.get_absolute_url_with_host() in urls
-    # thread mate
-    msg = messages.get(msgid='c04')
-    assert msg.get_absolute_url_with_host() in urls
-    # date index page
-    index_urls = message.get_absolute_static_index_urls()
-    assert index_urls[0] in urls
-    # thread index page
-    assert index_urls[1] in urls
-    # self on create
-    assert message.get_absolute_url_with_host() not in urls
-    # self on delete
-    urls = get_purge_cache_urls(message, created=False)
-    assert message.get_absolute_url_with_host() in urls
+def test_process_members(mock_post):
+    response = requests.Response()
+    response.status_code = 200
+    response._content = '{"person.person": {"1": {"user": {"username": "joe@example.com"}}}}'
+    mock_post.return_value = response
+    email_list = EmailListFactory.create(name='private', private=True)
+    assert email_list.members.count() == 0
+    process_members(email_list, ['joe@example.com'])
+    assert email_list.members.count() == 1
+    assert email_list.members.get(username='joe@example.com')
+
+
+@patch('subprocess.check_output')
+@patch('requests.post')
+@pytest.mark.django_db(transaction=True)
+def test_get_membership(mock_post, mock_output):
+    # setup
+    path = os.path.join(settings.EXPORT_DIR, 'email_lists.xml')
+    if os.path.exists(path):
+        os.remove(path)
+
+    private = EmailListFactory.create(name='private', private=True)
+    # handle multiple calls to check_output
+    mock_output.side_effect = ['private - Private Email List', 'joe@example.com']
+    response = requests.Response()
+    mock_post.return_value = response
+    response.status_code = 200
+    response._content = '{"person.person": {"1": {"user": {"username": "joe@example.com"}}}}'
+    assert private.members.count() == 0
+    options = DummyOptions()
+    options.quiet = True
+    get_membership(options, None)
+    assert private.members.count() == 1
+    assert private.members.first().username == 'joe@example.com'
+    assert os.path.exists(path)
+
+
+class DummyOptions(object):
+    pass

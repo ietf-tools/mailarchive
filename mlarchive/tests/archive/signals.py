@@ -7,7 +7,7 @@ from factories import EmailListFactory, ThreadFactory, MessageFactory, UserFacto
 from django.urls import reverse
 
 from mlarchive.archive.models import EmailList, Message, Thread
-from mlarchive.archive.signals import _get_lists_as_xml
+from mlarchive.archive.signals import _get_lists_as_xml, get_purge_cache_urls
 
 
 @pytest.mark.django_db(transaction=True)
@@ -68,3 +68,30 @@ def test_get_lists_as_xml(client):
 
     private_test = root.find("shared_root/[@name='private']").find("user/[@name='test']")
     assert private_test.attrib['access'] == 'read,write'
+
+
+@pytest.mark.django_db(transaction=True)
+def test_get_purge_cache_urls(messages):
+    message = messages.get(msgid='c02')
+    urls = get_purge_cache_urls(message)
+    assert urls
+    print urls
+    # previous in list
+    msg = messages.get(msgid='c01')
+    assert msg.get_absolute_url_with_host() in urls
+    # next in list
+    msg = messages.get(msgid='c03')
+    assert msg.get_absolute_url_with_host() in urls
+    # thread mate
+    msg = messages.get(msgid='c04')
+    assert msg.get_absolute_url_with_host() in urls
+    # date index page
+    index_urls = message.get_absolute_static_index_urls()
+    assert index_urls[0] in urls
+    # thread index page
+    assert index_urls[1] in urls
+    # self on create
+    assert message.get_absolute_url_with_host() not in urls
+    # self on delete
+    urls = get_purge_cache_urls(message, created=False)
+    assert message.get_absolute_url_with_host() in urls

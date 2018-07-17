@@ -404,7 +404,7 @@ class BaseStaticIndexView(View):
         if self.kwargs['email_list'].private:
             add_never_cache_headers(response)
         else:
-            patch_cache_control(response, max_age=300)
+            patch_cache_control(response, max_age=settings.CACHE_CONTROL_MAX_AGE)
         return response
 
     def get(self, request, **kwargs):

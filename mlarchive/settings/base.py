@@ -24,7 +24,6 @@ def get_secret(setting, secrets=secrets):
 
 
 SECRET_KEY = get_secret("SECRET_KEY")
-CLOUDFLARE_ZONE_ID = get_secret("CLOUDFLARE_ZONE_ID")
 
 DATABASES = {
     'default': {
@@ -273,7 +272,6 @@ TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
 USE_EXTERNAL_PROCESSOR = False
 MAX_THREAD_DEPTH = 6
 THREAD_ORDER_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
-USING_CDN = False
 
 # spam_score bits
 MARK_BITS = {'NON_ASCII_HEADER': 0b0001,
@@ -336,3 +334,8 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 # DATATRACKER API
 DATATRACKER_PERSON_ENDPOINT = 'https://datatracker.ietf.org/api/v2/person/person'
 DATATRACKER_PERSON_ENDPOINT_API_KEY = get_secret('DATATRACKER_PERSON_ENDPOINT_API_KEY')
+
+# CLOUDFLARE  INTEGRATION
+USING_CDN = False
+CLOUDFLARE_ZONE_ID = get_secret("CLOUDFLARE_ZONE_ID")
+CACHE_CONTROL_MAX_AGE = 60 * 60     # one hour

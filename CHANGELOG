@@ -1,4 +1,20 @@
 
+mailarch (1.12.5) ietf; urgency=normal
+
+* Fix Thread / Date links in browse view.  Fixes #2529.
+
+* Refactor bin/get_membership to use Datatracker API.  Also added tests.  Fixes #2515.  Fixes #2288.
+
+* Fix bug where List header appears in browse results when grouped by thread.
+
+* Group Cloudflare variables together in settings file
+
+* Change requirement pytest-coverage to pytest-cov.
+
+* Fix MIME encoded-word (RFC2047) issues.  Fixes #1965.  Fixes #2554.
+
+-- Ryan Cross <rcross@amsl.com>  25 July 2018 15:30:00 +0800
+
 mailarch (1.12.4) ietf; urgency=normal
 
 * Fix message links for mobile devices (small screens)

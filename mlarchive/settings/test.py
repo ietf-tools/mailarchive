@@ -6,9 +6,6 @@ DATA_ROOT = '/tmp/mailarch/data'
 
 AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
 
-# Don't try and create test IETF database
-del DATABASES['ietf']
-
 # HAYSTACK SETTINGS
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 HAYSTACK_CONNECTIONS['default']['INDEX_NAME'] = 'test'

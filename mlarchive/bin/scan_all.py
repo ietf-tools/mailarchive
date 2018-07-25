@@ -21,19 +21,18 @@ do_setup(settings='production')
 import argparse
 import datetime
 import email
-import glob
-import mailbox
 import os
 import re
 import sys
 import time
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
+from mlarchive.utils.encoding import decode_rfc2047_header
+from mlarchive.archive.management.commands._classes import MessageWrapper
 
 from django.db.models import Count
 from haystack.query import SearchQuerySet
 from mlarchive.archive.models import *
-from mlarchive.archive.thread import compute_thread
 from mlarchive.bin.scan_utils import *
 from mlarchive.archive.management.commands import _classes
 from tzparse import tzparse
@@ -581,7 +580,7 @@ def test():
         time.sleep(5)
         print n
 
-def unicode():
+def non_ascii():
     """Scan all lists looking for non-ascii data in headers to test handling"""
     for elist in EmailList.objects.all().order_by('name'):
     # for elist in EmailList.objects.filter(name='homenet').order_by('name'):
@@ -594,6 +593,130 @@ def unicode():
                 if not is_ascii(message[header]):
                     print "Message: {},   {}:{}".format(msg.pk,header,message[header])
                     return
+
+
+def mime_encoded_word(start):
+    """Scan all lists looking for MIME encoded-word (RFC2047) data in headers to test handling"""
+    max_bmp = u'\U0000ffff'
+    total = 0
+    for elist in EmailList.objects.all().order_by('name'):
+        if start and start > elist.name:
+            continue
+        print "Scanning {}".format(elist.name)
+
+        for msg in Message.objects.filter(email_list=elist).order_by('date'):
+            try:
+                message = email.message_from_string(msg.get_body_raw())
+            except IOError:
+                continue
+
+            for header in ('from', 'subject'):
+                count = 0
+                if message[header] and "=?" in message[header]:
+                    total = total + 1
+                    parts = email.header.decode_header(message[header])
+                    try:
+                        unis = [unicode(string, encoding) for string, encoding in parts if encoding]
+                    except (UnicodeDecodeError, LookupError):
+                        print "Message: {},   {}:{}  DECODE ERROR".format(msg.pk, header, message[header])
+                        continue
+                    
+                    # check fo high plane
+                    for uni in unis:
+                        for point in uni:
+                            if point > max_bmp:
+                                count = count + 1
+                    if count > 0:
+                        print "Message: {},   {}:{}  High Plane: {} ".format(msg.pk, header, message[header], 'X' * count)
+
+                    # check if db field empty
+                    if getattr(msg, map_header(header)) == '':
+                        print "Message: {},   {}:{}  EMPTY".format(msg.pk, header, message[header])
+
+                    if '=?' in getattr(msg, map_header(header)):
+                        print "Message: {},   {}:{}  UNDECODED".format(msg.pk, header, message[header])
+    print "Total: %s" % total
+
+
+ecre = re.compile(r'''
+  =\?                   # literal =?
+  (?P<charset>[^?]*?)   # non-greedy up to the next ? is the charset
+  \?                    # literal ?
+  (?P<encoding>[qb])    # either a "q" or a "b", case insensitive
+  \?                    # literal ?
+  (?P<encoded>.*?)      # non-greedy up to the next ?= is the encoded string
+  \?=                   # literal ?=
+  ''', re.VERBOSE | re.IGNORECASE | re.MULTILINE)
+
+
+def get_encoded_words():
+    """Scan all messages and find those with encoded-words in the headers.  Save list to a file"""
+    messages = []
+    for elist in EmailList.objects.all().order_by('name'):
+        #if start and start > elist.name:
+        #    continue
+        print "Scanning {}".format(elist.name)
+
+        for msg in Message.objects.filter(email_list=elist).order_by('date'):
+            try:
+                message = email.message_from_string(msg.get_body_raw())
+            except IOError:
+                continue
+
+            for header in ('from', 'subject'):
+                if message[header] and re.search(ecre, message[header]):
+                    messages.append(msg.pk)
+                    break
+        if messages:
+            with open('encoded_messages.txt', 'a') as f:
+                data = ','.join([str(n) for n in messages])
+                f.write(data + '\n')
+            messages = []
+
+
+def map_header(header):
+    if header == 'from':
+        return 'frm'
+    else:
+        return header
+
+
+def fix_encoded_words(fix=False):
+    """Process messages with encoded-words in header"""
+    pks = []
+    mismatches = []
+    with open('encoded_messages.txt') as f:
+        line = f.readline()
+        while line:
+            chop = line[:-1]    # remove newline
+            pks.extend(chop.split(','))
+            line = f.readline()
+
+    for pk in pks:
+        message = Message.objects.get(pk=pk)
+        for db_header, header in (('frm', 'from'), ('subject', 'subject')):
+            msg = email.message_from_string(message.get_body_raw())
+            mw = MessageWrapper(msg, message.email_list.name)
+            if msg[header] and '=?' in msg[header]:
+                text = mw.normalize(msg[header])
+                if text != getattr(message, db_header):
+                    mismatches.append(message)
+                    if '?="' not in msg[header] and '?=)' not in msg[header] and not has_higher_plane(text):
+                        print "PK: %s, %s != %s" % (pk, repr(text), repr(getattr(message, db_header)))
+                    if fix:
+                        setattr(message, db_header, text)
+                        message.save()
+
+    print "Total: %s" % len(pks)
+    print "Mismatches: %s" % len(mismatches)
+
+
+def has_higher_plane(header):
+    max_bmp = u'\U0000ffff'
+    for point in header:
+        if point > max_bmp:
+            return True
+    return False
 
 
 def month_count():

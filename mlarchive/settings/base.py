@@ -29,15 +29,12 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': get_secret("DATABASES_NAME"),
-        'TEST_NAME': get_secret("DATABASES_TEST_NAME"),
         'USER': get_secret("DATABASES_USER"),
         'PASSWORD': get_secret("DATABASES_PASSWORD"),
-    },
-    'ietf': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': get_secret("IETF_DATABASES_NAME"),
-        'USER': get_secret("IETF_DATABASES_USER"),
-        'PASSWORD': get_secret("IETF_DATABASES_PASSWORD"),
+        'OPTIONS': {'charset': 'utf8mb4'},
+        'TEST': {
+            'CHARSET': 'utf8mb4'
+        }
     }
 }
 

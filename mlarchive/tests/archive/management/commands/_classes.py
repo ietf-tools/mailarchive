@@ -7,6 +7,7 @@ import pytest
 import pytz
 import shutil
 from StringIO import StringIO
+import time
 
 from django.conf import settings
 from django.core.management import call_command
@@ -101,6 +102,60 @@ This is a test email.  database
     # TODO figure out better test index management
     message = Message.objects.get(msgid='0000000002@example.com')
     message.delete()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_archive_message_encoded_word(client):
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'encoded_word.mail')
+    with open(path) as f:
+        data = f.read()
+    status = archive_message(data, 'test', private=False)
+    assert status == 0
+    # ensure message in db
+    assert Message.objects.all().count() == 1
+    # ensure message in index
+    url = '%s/?q=encoded' % reverse('archive_search')
+    response = client.get(url)
+    assert len(response.context['results']) == 1
+    message = Message.objects.first()
+    assert message.frm == u'J\xe4rvinen <jarvinen@example.com>'
+
+
+@pytest.mark.django_db(transaction=True)
+def test_archive_message_encoded_word_alternate(client):
+    """Test that encoded-word followed by non-whitespace,
+    double quote or right paren, gets decoded properly
+    """
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'encoded_word_2.mail')
+    with open(path) as f:
+        data = f.read()
+    status = archive_message(data, 'test', private=False)
+    assert status == 0
+    # ensure message in db
+    assert Message.objects.all().count() == 1
+    # ensure message in index
+    url = '%s/?q=encoded' % reverse('archive_search')
+    response = client.get(url)
+    assert len(response.context['results']) == 1
+    message = Message.objects.first()
+    assert message.frm == u'" J\xe4rvinen " <jarvinen@example.com>'
+
+
+@pytest.mark.django_db(transaction=True)
+def test_archive_message_encoded_word_high_plane(client):
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'encoded_word_3.mail')
+    with open(path) as f:
+        data = f.read()
+    status = archive_message(data, 'test', private=False)
+    assert status == 0
+    # ensure message in db
+    assert Message.objects.all().count() == 1
+    # ensure message in index
+    url = '%s/?q=encoded' % reverse('archive_search')
+    response = client.get(url)
+    assert len(response.context['results']) == 1
+    message = Message.objects.first()
+    assert message.frm == u'\U0001f513Joe <joe@example.com>'
 
 
 def test_clean_spaces():

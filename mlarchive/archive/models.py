@@ -88,12 +88,12 @@ class Thread(models.Model):
 
 class EmailList(models.Model):
     active = models.BooleanField(default=True, db_index=True)
-    alias = models.CharField(max_length=255, blank=True)
+    alias = models.CharField(max_length=65, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     description = models.CharField(max_length=255, blank=True)
     members = models.ManyToManyField(User, blank=True)
     members_digest = models.CharField(max_length=28, blank=True)
-    name = models.CharField(max_length=255, db_index=True, unique=True)
+    name = models.CharField(max_length=65, db_index=True, unique=True)
     private = models.BooleanField(default=False, db_index=True)
     updated = models.DateTimeField(auto_now=True)
 
@@ -137,7 +137,7 @@ class Message(models.Model):
     in_reply_to_value = models.TextField(blank=True, default='')
     # mapping to MHonArc message number
     legacy_number = models.IntegerField(blank=True, null=True, db_index=True)
-    msgid = models.CharField(max_length=255, db_index=True)
+    msgid = models.CharField(max_length=240, db_index=True)
     references = models.TextField(blank=True, default='')
     spam_score = models.IntegerField(default=0)             # > 0 = spam
     subject = models.CharField(max_length=512, blank=True)
@@ -412,7 +412,7 @@ class Attachment(models.Model):
     # message if problem with attachment
     error = models.CharField(max_length=255, blank=True)
     description = models.CharField(max_length=255)
-    filename = models.CharField(max_length=255)
+    filename = models.CharField(max_length=65)
     message = models.ForeignKey(Message, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
 
@@ -432,7 +432,7 @@ class Attachment(models.Model):
 
 class Legacy(models.Model):
     email_list_id = models.CharField(max_length=40)
-    msgid = models.CharField(max_length=255, db_index=True)
+    msgid = models.CharField(max_length=200, db_index=True)
     number = models.IntegerField()
 
     def __unicode__(self):

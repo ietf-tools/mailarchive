@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import random
 import re
 from datetime import datetime, timedelta
@@ -193,9 +195,9 @@ def is_nojs_value(items):
 def get_browse_equivalent(request):
     """Returns the listname if the query params are the equivalent of a list browse:
     /?q=[listname] or /?email_list=[listname]"""
-    if request.GET.keys() == ['q'] and request.GET.get('q') in get_lists():
+    if list(request.GET) == ['q'] and request.GET.get('q') in get_lists():
         return request.GET.get('q')
-    if request.GET.keys() == ['email_list'] and len(request.GET.getlist('email_list')) == 1:
+    if list(request.GET) == ['email_list'] and len(request.GET.getlist('email_list')) == 1:
         return request.GET.get('email_list')
 
 

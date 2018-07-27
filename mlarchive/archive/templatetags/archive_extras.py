@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 from django import template
 from django.conf import settings
 from django.utils.safestring import mark_safe
@@ -92,7 +94,7 @@ def get_column(length, count):
     list item.  It returns col[1-4] to be used as a class to position the item in the
     correct column.
     """
-    col_length = length / 4
+    col_length = length // 4
     if count <= col_length:
         return 'col1'
     elif count <= 2 * col_length:
@@ -200,7 +202,7 @@ def get_query_string(p, new_params, remove, context):
     Add and remove query parameters. From `django.contrib.admin`.
     """
     for r in remove:
-        for k in p.keys():
+        for k in list(p):
             if k.startswith(r):
                 del p[k]
     for k, v in new_params.items():

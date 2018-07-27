@@ -7,10 +7,10 @@ mid-file.  See ietf list.  This script will identify such files.
 
 ./check_bad_mmdf [dir]
 '''
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os
 import sys
-from collections import deque
 
 
 def is_old_mbox(fp):
@@ -20,10 +20,11 @@ def is_old_mbox(fp):
     else:
         return False
 
+
 def main():
     d = sys.argv[1]
     root = os.path.dirname(d)
-    files = [ os.path.join(d,f) for f in os.listdir(d) ]
+    files = [os.path.join(d, f) for f in os.listdir(d)]
     files = [item for item in files if not os.path.isdir(item)]
 
     for file in files:
@@ -35,9 +36,10 @@ def main():
                 if line == '\x01\x01\x01\x01\n':
                     line = f.readline()
                     if line and not line == '\x01\x01\x01\x01\n':
-                        print "{}:{},{}".format(file,f.tell(),line)
+                        print("{}:{},{}".format(file, f.tell(), line))
                 elif line == '':
                     break
+
 
 if __name__ == "__main__":
     main()

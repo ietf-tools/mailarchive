@@ -19,6 +19,8 @@ by the subject, and they have no references, we will get a top-level dummy
 container that has these as siblings to the original first message of
 the thread.
 '''
+from __future__ import absolute_import, division, print_function, unicode_literals
+from builtins import input
 
 import re
 
@@ -165,9 +167,9 @@ def build_container(message, id_table, bogus_id_count):
 
         # init list
         if DEBUG:
-            print "in message: {}".format(message.msgid)
-            print "checking reference: {}".format(reference_id)
-            print "checking {} for descendent {}".format(parent_ref, ref)
+            print("in message: {}".format(message.msgid))
+            print("checking reference: {}".format(reference_id))
+            print("checking {} for descendent {}".format(parent_ref, ref))
         if (parent_ref and                  # there is a parent
                 ref.parent is None and      # don't have a parent already
                 parent_ref != ref and       # not a tight loop
@@ -217,7 +219,7 @@ def build_container(message, id_table, bogus_id_count):
     if DEBUG:
         root = find_root(container)
         display_thread(root)
-        raw_input("Press enter")
+        input("Press enter")
 
 
 def build_subject_table(root_node):
@@ -293,8 +295,8 @@ def container_stats(parent, id_table):
     empty = 0
     empty_top = 0
     empty_top_nochild = 0
-    print "Length if id_table: {}".format(len(id_table))
-    print "Length of walk(): {}".format(len(list(parent.walk())))
+    print("Length if id_table: {}".format(len(id_table)))
+    print("Length of walk(): {}".format(len(list(parent.walk()))))
     for c in parent.walk():
         if c.is_empty():
             empty = empty + 1
@@ -302,10 +304,10 @@ def container_stats(parent, id_table):
                 empty_top = empty_top + 1
                 if c.child is None:
                     empty_top_nochild = empty_top_nochild + 1
-                    print c
-    print "Total empty: {}".format(empty)
-    print "Total empty top-level: {}".format(empty_top)
-    print "Total empty top-level no child: {}".format(empty_top_nochild)
+                    print(c)
+    print("Total empty: {}".format(empty))
+    print("Total empty top-level: {}".format(empty_top))
+    print("Total empty top-level no child: {}".format(empty_top_nochild))
     display_thread(parent)
 
 
@@ -323,15 +325,15 @@ def display_thread(parent):
     '''Prints the thread.'''
     for container in parent.walk():
         if container.message:
-            print '{indent}{subject} {date}'.format(
+            print('{indent}{subject} {date}'.format(
                 indent=' ' * container.depth,
                 subject=get_ascii(container.message.subject),
-                date=container.message.date.strftime("%Y-%m-%d %H:%M"))
+                date=container.message.date.strftime("%Y-%m-%d %H:%M")))
         else:
             if container.parent is None:
-                print "(Empty)"
+                print("(Empty)")
             else:
-                print container
+                print(container)
 
 
 def find_root(node):
@@ -579,9 +581,9 @@ def process(queryset, display=False, debug=False):
     # debug
     if display:
         display_thread(root_node)
-        print "messages count: {}".format(queryset.count())
-        print "root set count: {}".format(count_root_set(root_node))
-        print "total containers: {}".format(CONTAINER_COUNT)
+        print("messages count: {}".format(queryset.count()))
+        print("root set count: {}".format(count_root_set(root_node)))
+        print("total containers: {}".format(CONTAINER_COUNT))
 
     return root_node
 

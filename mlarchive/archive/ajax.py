@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -85,8 +87,6 @@ def ajax_messages(request):
             # TODO or fail?, signal to reload query
             return HttpResponse(status=404)     # Request Timeout (query gone from cache)
 
-
-    
     if not results:
         return HttpResponse(status=204)     # No Content
 

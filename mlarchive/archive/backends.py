@@ -1,10 +1,11 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
+from haystack.inputs import Clean, Exact, PythonData, Raw
 from haystack_elasticsearch.elasticsearch5 import (Elasticsearch5SearchBackend,
     Elasticsearch5SearchQuery, Elasticsearch5SearchEngine)
 
 from django.conf import settings
 from django.utils import six
-
-from haystack.inputs import Clean, Exact, PythonData, Raw
 
 
 class ConfigurableElasticsearchBackend(Elasticsearch5SearchBackend):
@@ -44,20 +45,20 @@ class CustomElasticsearchQuery(Elasticsearch5SearchQuery):
         if field == 'content':
             index_fieldname = ''
         else:
-            index_fieldname = u'%s:' % connections[self._using].get_unified_index().get_index_fieldname(field)
+            index_fieldname = '%s:' % connections[self._using].get_unified_index().get_index_fieldname(field)
 
         filter_types = {
-            'content': u'%s',
+            'content': '%s',
             # 'contains': u'*%s*',
-            'contains': u'%s',
-            'endswith': u'*%s',
-            'startswith': u'%s*',
-            'exact': u'%s',
-            'gt': u'{%s TO *}',
-            'gte': u'[%s TO *]',
-            'lt': u'{* TO %s}',
-            'lte': u'[* TO %s]',
-            'fuzzy': u'%s~',
+            'contains': '%s',
+            'endswith': '*%s',
+            'startswith': '%s*',
+            'exact': '%s',
+            'gt': '{%s TO *}',
+            'gte': '[%s TO *]',
+            'lt': '{* TO %s}',
+            'lte': '[* TO %s]',
+            'fuzzy': '%s~',
         }
 
         if value.post_process is False:
@@ -79,21 +80,21 @@ class CustomElasticsearchQuery(Elasticsearch5SearchQuery):
                     if len(terms) == 1:
                         query_frag = terms[0]
                     else:
-                        query_frag = u"(%s)" % " AND ".join(terms)
+                        query_frag = "(%s)" % " AND ".join(terms)
             elif filter_type == 'in':
                 in_options = []
 
                 if not prepared_value:
-                    query_frag = u'(!*:*)'
+                    query_frag = '(!*:*)'
                 else:
                     for possible_value in prepared_value:
-                        in_options.append(u'"%s"' % self.backend._from_python(possible_value))
-                    query_frag = u"(%s)" % " OR ".join(in_options)
+                        in_options.append('"%s"' % self.backend._from_python(possible_value))
+                    query_frag = "(%s)" % " OR ".join(in_options)
 
             elif filter_type == 'range':
                 start = self.backend._from_python(prepared_value[0])
                 end = self.backend._from_python(prepared_value[1])
-                query_frag = u'["%s" TO "%s"]' % (start, end)
+                query_frag = '["%s" TO "%s"]' % (start, end)
             elif filter_type == 'exact':
                 if value.input_type_name == 'exact':
                     query_frag = prepared_value
@@ -110,7 +111,7 @@ class CustomElasticsearchQuery(Elasticsearch5SearchQuery):
             if not query_frag.startswith('(') and not query_frag.endswith(')'):
                 query_frag = "(%s)" % query_frag
 
-        return u"%s%s" % (index_fieldname, query_frag)
+        return "%s%s" % (index_fieldname, query_frag)
 
     def get_facet_counts(self):
         """
@@ -150,7 +151,7 @@ class CustomElasticsearchQuery(Elasticsearch5SearchQuery):
         query_filter = self.build_query()
 
         # combine
-        combined = u'({query}) AND {filter}'.format(query=query, filter=query_filter)
+        combined = '({query}) AND {filter}'.format(query=query, filter=query_filter)
         search_kwargs = self.build_params()
         search_kwargs.update(self._raw_query_params)
 

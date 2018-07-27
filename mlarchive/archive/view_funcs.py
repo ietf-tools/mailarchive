@@ -2,9 +2,11 @@
 This module contains functions used in views.  We place them here to keep views "skinny"
 and facilitate clean unit testing.
 """
+from __future__ import absolute_import, division, print_function, unicode_literals
+from builtins import range
+
 import datetime
 import math
-import operator
 import os
 import random
 import re
@@ -63,7 +65,7 @@ class SearchResult(object):
 def chunks(l, n):
     """Yield successive n-sized chunks from l"""
     result = []
-    for i in xrange(0, len(l), n):
+    for i in range(0, len(l), n):
         # yield l[i:i+n]
         result.append(l[i:i + n])
     return result
@@ -223,7 +225,7 @@ def get_random_basename(prefix):
 
 
 def get_random_token(length=32):
-    return ''.join([random.choice(string.ascii_letters + string.digits) for n in xrange(length)])
+    return ''.join([random.choice(string.ascii_letters + string.digits) for n in range(length)])
 
 
 def build_maildir_tar(sqs, tar, basename):

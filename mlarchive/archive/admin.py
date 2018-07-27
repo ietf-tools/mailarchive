@@ -1,14 +1,17 @@
-from django.contrib import admin
+from __future__ import absolute_import, division, print_function, unicode_literals
 
+from django.contrib import admin
 from mlarchive.archive.models import Message, EmailList, Attachment, Thread
 
 
 class MessageAdmin(admin.ModelAdmin):
     raw_id_fields = ('email_list', 'in_reply_to', 'thread')
 
+
 class EmailListAdmin(admin.ModelAdmin):
     ordering = ['name']
     search_fields = ['name']
+
 
 admin.site.register(Message, MessageAdmin)
 admin.site.register(EmailList, EmailListAdmin)

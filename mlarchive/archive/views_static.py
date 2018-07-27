@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import datetime
 import codecs
 import math
@@ -151,7 +153,7 @@ def link_index_page(elist):
     link_name = os.path.join(path, 'thread.html')
     if os.path.exists(link_name):
         os.remove(link_name)
-    print source
+    print(source)
     os.link(source, link_name)
 
 

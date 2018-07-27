@@ -6,6 +6,7 @@ Script to test threading functions on archive.
 from django_setup import do_setup
 do_setup(settings='production')
 # -------------------------------------------------------------------------------------
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import argparse
 import time
@@ -13,30 +14,31 @@ import time
 from mlarchive.archive.models import Message, EmailList
 from mlarchive.archive.thread import process
 
+
 def timeit(method):
     def timed(*args, **kw):
         ts = time.time()
         result = method(*args, **kw)
         te = time.time()
 
-        print '%r (%r, %r) %2.2f sec' % \
-              (method.__name__, args, kw, te-ts)
+        print('%r (%r, %r) %2.2f sec' % (method.__name__, args, kw, te - ts))
         return result
 
     return timed
+
 
 @timeit
 def do_thread(elist, args):
     queryset = Message.objects.filter(email_list=elist).order_by('date')
     # DEBUG
-    #ids = ['55ADF8D7.1000608@meinberg.de', '613F85B8-20E2-45AB-A1D9-1CACC5B82F64@noao.edu']
-    #queryset = Message.objects.filter(email_list__name='ntp',subject__contains='Proposed REFID changes').order_by('date')
-    #queryset = Message.objects.filter(email_list__name='ntp',msgid__in=ids).order_by('date')
+    # ids = ['55ADF8D7.1000608@meinberg.de', '613F85B8-20E2-45AB-A1D9-1CACC5B82F64@noao.edu']
+    # queryset = Message.objects.filter(email_list__name='ntp',subject__contains='Proposed REFID changes').order_by('date')
+    # queryset = Message.objects.filter(email_list__name='ntp',msgid__in=ids).order_by('date')
     if not queryset:
         return
 
-    root=process(queryset, debug=args.verbose)
-    
+    root = process(queryset, debug=args.verbose)
+
     # check walk
     count = 0
     empty = 0
@@ -45,10 +47,11 @@ def do_thread(elist, args):
         if c.is_empty():
             empty = empty + 1
 
-    print "Messages: {}, Containers: {}, Empty {}".format(
+    print("Messages: {}, Containers: {}, Empty {}".format(
         queryset.count(),
         count,
-        empty)
+        empty))
+
 
 def main():
     parser = argparse.ArgumentParser()

@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 from email.utils import parseaddr
 import datetime
 import logging
@@ -150,9 +152,7 @@ class Message(models.Model):
     # thread_index_page = models.CharField(max_length=64, default='')
 
     class Meta:
-        indexes = [
-            models.Index(fields=['email_list', 'date']),
-        ]
+        indexes = [models.Index(fields=['email_list', 'date'])]
 
     def __unicode__(self):
         return self.msgid
@@ -299,13 +299,13 @@ class Message(models.Model):
         NOTE: returns unicode, call to_str() before writing to file.
         """
         if self.from_line:
-            return u'From {}'.format(self.from_line)
+            return 'From {}'.format(self.from_line)
         elif self.frm_email:
-            return u'From {} {}'.format(
+            return 'From {} {}'.format(
                 self.frm_email,
                 self.date.strftime('%a %b %d %H:%M:%S %Y'))
         else:
-            return u'From (none) {}'.format(
+            return 'From (none) {}'.format(
                 self.date.strftime('%a %b %d %H:%M:%S %Y'))
 
     def get_references(self):

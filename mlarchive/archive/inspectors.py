@@ -1,6 +1,7 @@
 '''This module contains classes which inherit from Inspector.  They are used
 to inspect incoming messages and perform some auxiliary processing.  ie. spam
 checkers'''
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from django.conf import settings
 

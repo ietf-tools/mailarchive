@@ -7,6 +7,7 @@ archive that exhibit signs of corruption
 from django_setup import do_setup
 do_setup(settings='production')
 # -------------------------------------------------------------------------------------
+from builtins import input
 
 import email
 import logging
@@ -77,7 +78,7 @@ def main():
             corrupted = corrupted + 1
             print "thread message count: {}".format(message.thread.message_set.count())
             message.delete()
-            _ = raw_input('Deleted: {}:{}:{}'.format(message.email_list.name,message.msgid,message.get_file_path()))
+            _ = input('Deleted: {}:{}:{}'.format(message.email_list.name,message.msgid,message.get_file_path()))
         else:
             # leave messages marked for time being
             pass

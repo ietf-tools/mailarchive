@@ -10,6 +10,8 @@ still possibly encoded using the Content-Type charset.
 string.decode(codec) decodes a string according to the codec provided.  Returns a
 unicode object.
 """
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 from email.utils import collapse_rfc2231_value
 import mailbox
 

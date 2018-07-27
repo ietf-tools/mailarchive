@@ -7,6 +7,7 @@ in their references header which is causing failure of the threading function
 from django_setup import do_setup
 do_setup(settings='production')
 # -------------------------------------------------------------------------------------
+from builtins import input
 
 import argparse
 import email
@@ -74,7 +75,7 @@ def main():
             print '-----------------'
             print new_references
             print '================='
-            raw_input('Press enter to continue')
+            input('Press enter to continue')
 
             if not args.check:
                 print 'saving...'

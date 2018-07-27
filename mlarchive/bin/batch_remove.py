@@ -18,6 +18,7 @@ https://trac.xapian.org/wiki/FAQ/UniqueIds
 from django_setup import do_setup
 do_setup(settings='production')
 # -------------------------------------------------------------------------------------
+from builtins import range
 
 import argparse
 import base64
@@ -25,15 +26,14 @@ import json
 import os
 import time
 import urllib2
-import xapian
 
 from django.conf import settings
 from celery_haystack.tasks import CeleryXapianBatchRemove
 from mlarchive.archive.models import Message
 
 import logging
-logpath = os.path.join(settings.DATA_ROOT,'log/batch_remove.log')
-logging.basicConfig(filename=logpath,level=logging.DEBUG)
+logpath = os.path.join(settings.DATA_ROOT, 'log/batch_remove.log')
+logging.basicConfig(filename=logpath, level=logging.DEBUG)
 
 
 def get_queue():
@@ -44,22 +44,23 @@ def get_queue():
     url = 'http://127.0.0.1:15672/api/queues'
     req = urllib2.Request(url)
     base64string = base64.encodestring('%s:%s' % (username, password))[:-1]
-    authheader =  "Basic %s" % base64string
+    authheader = "Basic %s" % base64string
     req.add_header("Authorization", authheader)
     try:
         handle = urllib2.urlopen(req)
-    except URLError:
+    except urllib2.URLError:
         return None
     data = json.load(handle)
     for q in data:
         if q['name'] == 'celery':
             return q['messages']
     return None
-    
+
+
 def chunks(l, n):
     """Yield successive n-sized chunks from l"""
-    for i in xrange(0, len(l), n):
-        yield l[i:i+n]
+    for i in range(0, len(l), n):
+        yield l[i:i + n]
 
 
 def main():
@@ -67,17 +68,17 @@ def main():
     parser = argparse.ArgumentParser(description='Batch remove messages')
     parser.add_argument('score')
     args = parser.parse_args()
-    
+
     messages = Message.objects.filter(spam_score=args.score)
-    
-    for chunk in chunks(messages,200):
+
+    for chunk in chunks(messages, 200):
         CeleryXapianBatchRemove.delay(chunk)
         while True:
             time.sleep(30)
             q = get_queue()
             if q is None:
                 # can't get queue length, wait 8 minutes and proceed
-                time.sleep(8*60)
+                time.sleep(8 * 60)
                 break
             elif q == 0:
                 break

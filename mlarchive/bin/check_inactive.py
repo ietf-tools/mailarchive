@@ -10,6 +10,7 @@ Script to retrieve active lists, identify inactive lists, and update the db
 from django_setup import do_setup
 do_setup(settings='production')
 # -------------------------------------------------------------------------------------
+from builtins import input
 
 import datetime
 import subprocess
@@ -40,7 +41,7 @@ for elist in EmailList.objects.filter(active=True).order_by('name'):
         print("{}  => inactive".format(elist.name))
         to_inactive.append(elist)
 
-answer = raw_input('Update lists y/n?')
+answer = input('Update lists y/n?')
 
 if answer.lower() == 'y':
     print('OK')

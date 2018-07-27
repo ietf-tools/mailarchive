@@ -2,6 +2,7 @@
 Built-in, globally-available admin actions. (ala Django)
 These take a request object and queryset of objects to act on.
 """
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from django.contrib import messages
 from django.shortcuts import redirect
@@ -30,8 +31,7 @@ def remove_selected(request, queryset):
     count = queryset.count()
     for message in queryset:
         logger.info('User %s removed message [list=%s,hash=%s,msgid=%s,pk=%s]' %
-                (request.user, message.email_list, message.hashcode, message.msgid,
-                message.pk))
+                    (request.user, message.email_list, message.hashcode, message.msgid, message.pk))
     queryset.delete()
     if not is_ajax(request):
         messages.success(request, '%d Message(s) Removed' % count)

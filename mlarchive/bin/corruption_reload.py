@@ -7,6 +7,7 @@ This script reviews messages removed by corruption_remove and runs corruption ch
 from django_setup import do_setup
 do_setup(settings='production')
 # -------------------------------------------------------------------------------------
+from builtins import input
 
 import email
 import logging
@@ -69,9 +70,9 @@ def main():
             print "not corrupt: {}".format(path)
             listname = path.split('/')[-3]
             call_command('load', path, listname=listname)
-            _ = raw_input('Return to continue')
+            _ = input('Return to continue')
 
-    _ = raw_input('Return to continue')
+    _ = input('Return to continue')
     for p in uncorrupted:
         ndir = os.path.dirname(os.path.dirname(p))
         nbase = os.path.basename(p)

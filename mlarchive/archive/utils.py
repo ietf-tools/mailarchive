@@ -1,3 +1,4 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import base64
 import hashlib
@@ -123,7 +124,7 @@ def lookup_user(address):
 
     try:
         output = response.json()
-        person_id = output['person.person'].keys()[0]
+        person_id = list(output['person.person'])[0]
         username = output['person.person'][person_id]['user']['username']
     except (TypeError, LookupError) as error:
         logger.error(str(error))
@@ -170,7 +171,7 @@ def get_membership(options, args):
 
     for mlist in EmailList.objects.filter(private=True, name__in=known_lists, active=True):
         if not options.quiet:
-            print "Processing: %s" % mlist.name
+            print("Processing: %s" % mlist.name)
 
         try:
             output = subprocess.check_output([list_members_cmd, mlist.name])

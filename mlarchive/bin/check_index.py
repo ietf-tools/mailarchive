@@ -8,6 +8,7 @@ For best performance set HAYSTACK_ITERATOR_LOAD_PRE_QUERY = 10000
 from django_setup import do_setup
 do_setup(settings='production')
 # -------------------------------------------------------------------------------------
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import argparse
 import os
@@ -17,38 +18,41 @@ from haystack.query import SearchQuerySet
 from mlarchive.archive.models import *
 
 import logging
-logpath = os.path.join(settings.DATA_ROOT,'log/check_index.log')
-logging.basicConfig(filename=logpath,level=logging.DEBUG)
+logpath = os.path.join(settings.DATA_ROOT, 'log/check_index.log')
+logging.basicConfig(filename=logpath, level=logging.DEBUG)
+
 
 def remove_index_entry(id):
     '''Remove index entry using Celery queued task'''
     task = get_update_task()
-    task.delay('delete',id)
+    task.delay('delete', id)
+
 
 def main():
     # parse arguments
     parser = argparse.ArgumentParser(description='Check index for bad records')
-    parser.add_argument('-f','--fix',help="perform fix",action='store_true')
+    parser.add_argument('-f', '--fix', help="perform fix", action='store_true')
     args = parser.parse_args()
-    
+
     sqs = SearchQuerySet()
     count = 0
     stat = {}
-    for n,sr in enumerate(sqs):
+    for n, sr in enumerate(sqs):
         if n % 10000 == 0:
             logging.info(n)
         if sr.object is None:
             count = count + 1
             logging.warning(sr.id + '\n')
             elist = sr.email_list
-            stat[elist] = stat.get(elist,0) + 1
+            stat[elist] = stat.get(elist, 0) + 1
             if args.fix:
                 remove_index_entry(sr.id)
-            # _ = raw_input('Return to continue')
+            # _ = input('Return to continue')
 
-    print count
-    for k,v in stat.items():
-        print "{}:{}".format(k,v)
-    
+    print(count)
+    for k, v in stat.items():
+        print("{}:{}".format(k, v))
+
+
 if __name__ == "__main__":
     main()

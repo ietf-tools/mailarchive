@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 from django.conf.urls import url
 from django.views.generic import TemplateView
 from haystack.views import search_view_factory

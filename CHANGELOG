@@ -1,4 +1,10 @@
 
+mailarch (1.12.6) ietf; urgency=normal
+
+* Add credentials to CloudFlare API call
+
+-- Ryan Cross <rcross@amsl.com>  30 July 2018 16:30:00 +0800
+
 mailarch (1.12.5) ietf; urgency=normal
 
 * Fix Thread / Date links in browse view.  Fixes #2529.

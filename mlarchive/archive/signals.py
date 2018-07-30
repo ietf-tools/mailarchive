@@ -112,14 +112,14 @@ def get_purge_cache_urls(message, created=True):
 
 def purge_files_from_cache(message, created=True):
     """Purge file from Cloudflare cache"""
-    cf = CloudFlare.CloudFlare()
     urls = get_purge_cache_urls(message, created)
-    try:
-        cf.zones.purge_cache.post(settings.CLOUDFLARE_ZONE_ID, data={'files': urls})
-        logger.info('purging cached urls: {}'.format(urls))
-    except CloudFlare.exceptions.CloudFlareAPIError as e:
-        traceback.print_exc(file=sys.stdout)
-        logger.error(e)
+    with CloudFlare.CloudFlare(email=settings.CLOUDFLARE_AUTH_EMAIL, token=settings.CLOUDFLARE_AUTH_KEY) as cf:
+        try:
+            cf.zones.purge_cache.post(settings.CLOUDFLARE_ZONE_ID, data={'files': urls})
+            logger.info('purging cached urls: {}'.format(urls))
+        except CloudFlare.exceptions.CloudFlareAPIError as e:
+            traceback.print_exc(file=sys.stdout)
+            logger.error(e)
 
 
 def _export_lists():

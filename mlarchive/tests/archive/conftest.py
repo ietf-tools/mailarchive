@@ -138,7 +138,7 @@ def load_db():
     MessageFactory.create(email_list=privateops)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def index_resource():
     if not Message.objects.first():
         load_db()

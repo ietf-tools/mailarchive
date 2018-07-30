@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import pytest
 from django.conf import settings
 from django.core.cache import cache
@@ -78,8 +80,8 @@ def test_ajax_get_messages(client, messages, settings):
     q = PyQuery(response.content)
     id = q('.msg-list').attr('data-queryid')
 
-    print id,
-    print cache.get(id)
+    print(id),
+    print(cache.get(id))
 
     # test successful get_messages call
     url = '%s/?qid=%s&referenceitem=2&direction=next' % (reverse('ajax_messages'), id)
@@ -142,8 +144,8 @@ def test_ajax_get_messages_browse_gbt(client, messages):
     response = client.get(url)
     assert response.status_code == 200
     # assert proper order
-    print len(messages), threads[0].get_previous(), threads[1].get_previous()
-    print [(m.pk, m.date, m.thread, m.thread_order) for m in Message.objects.filter(email_list__name='pubone')]
+    print(len(messages), threads[0].get_previous(), threads[1].get_previous())
+    print([(m.pk, m.date, m.thread, m.thread_order) for m in Message.objects.filter(email_list__name='pubone')])
     assert [r.pk for r in response.context['results']] == [m.pk for m in messages]
 
 
@@ -165,7 +167,7 @@ def test_get_query_results(client, messages, settings):
     # run initial query to setup cache
     url = '%s/?email_list=pubthree&so=-date' % reverse('archive_search')
     response = client.get(url)
-    print response.content
+    print(response.content)
     assert response.status_code == 200
     assert len(response.context['results']) == settings.HAYSTACK_SEARCH_RESULTS_PER_PAGE
     q = PyQuery(response.content)
@@ -204,6 +206,6 @@ def test_get_browse_results_gbt(client, thread_messages_db_only):
 def test_get_browse_results_date(client, messages):
     messages = messages.filter(email_list__name='pubthree').order_by('-date')
     results = get_browse_results_date(reference_message=messages[9], direction='next')
-    print messages.count()
+    print(messages.count())
     assert len(results) == 11
     assert [r.pk for r in results] == [m.pk for m in messages[10:]]

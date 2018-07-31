@@ -103,22 +103,6 @@ def test_unauth_search(client, messages):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_admin_access(client, admin_client):
-    '''Test that only superusers see admin link and have access to admin pages'''
-    url = reverse('archive')
-    # anonymous user
-    response = client.get(url)
-    assert response.status_code == 200
-    q = PyQuery(response.content)
-    assert len(q('a[href="/arch/admin"]')) == 0
-    # admin user
-    response = admin_client.get(url)
-    assert response.status_code == 200
-    q = PyQuery(response.content)
-    assert len(q('a[href="/arch/admin/"]')) == 1
-
-
-@pytest.mark.django_db(transaction=True)
 def test_console_access(client, admin_client):
     '''Test that only superusers have access to console page'''
     url = reverse('archive_admin_console')

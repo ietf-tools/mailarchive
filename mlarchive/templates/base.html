@@ -50,6 +50,16 @@
                     <a href="{% url "archive_help" %}">Help</a>
                 </div>
                 {% endif %}
+                {% if user.is_superuser %}
+                <div id="nav-admin" class="nav-menu dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin</a>
+                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+                        <li><a href="{% url "archive_admin" %}">Remove Messages</a></li>
+                        <li><a href="{% url "archive_admin_guide" %}">Guide</a></li>
+                        <li><a href="{% url "archive_admin_console" %}">Console</a></li>
+                    </ul>
+                </div>
+                {% endif %}
                 {% if static_mode_enabled %}
                 <div id="nav-settings" class="nav-menu dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Settings</a>

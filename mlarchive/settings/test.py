@@ -44,3 +44,6 @@ EXPORT_DIR = os.path.join(DATA_ROOT, 'export')
 # INSPECTORS = {
 #    'ListIdSpamInspector': {'includes':['mpls']}
 # }
+
+# CLOUDFLARE  INTEGRATION
+USING_CDN = False

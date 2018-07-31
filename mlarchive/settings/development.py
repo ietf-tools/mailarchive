@@ -41,3 +41,7 @@ LOGGING['handlers']['archive-mail_file_handler']['filename'] = os.path.join(DATA
 
 # DATATRACKER API
 DATATRACKER_PERSON_ENDPOINT = 'http://deva.amsl.com/api/v2/person/person'
+
+
+# CLOUDFLARE  INTEGRATION
+USING_CDN = False

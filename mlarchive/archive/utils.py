@@ -1,6 +1,8 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
+from builtins import input
 
 import base64
+import datetime
 import hashlib
 import json
 import logging
@@ -15,7 +17,6 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.db.models import signals
 from django.http import HttpResponse
-
 
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.signals import _export_lists, _list_save_handler
@@ -188,3 +189,43 @@ def get_membership(options, args):
 
     if has_changed:
         _export_lists()
+
+
+def check_inactive(prompt=True):
+    '''Check for inactive lists and mark them as inactive'''
+    active = []
+    to_inactive = []
+
+    # get active mailman lists
+    output = subprocess.check_output(['/usr/lib/mailman/bin/list_lists'])
+    for line in output.splitlines():
+        name = line.split(' - ')[0].strip().lower()
+        active.append(name)
+
+    # get externally hosted lists
+    try:
+        output = subprocess.check_output(['grep', 'call-archives.py', '/a/postfix/aliases'])
+    except subprocess.CalledProcessError as e:
+        if e.returncode not in (0, 1):      # 1 means grep found nothing
+            raise
+
+    for line in output.splitlines():
+        name = line.split()[-1].strip('"').strip().lower()
+        active.append(name)
+
+    for elist in EmailList.objects.filter(active=True).order_by('name'):
+        if elist.name not in active:
+            messages = elist.message_set.all().order_by('-date')
+            if messages.first() and messages.first().date > datetime.datetime.today() - datetime.timedelta(days=90):
+                print("{}  => inactive.  SKIPPING last message date = {}".format(elist.name, messages.first().date))
+                continue
+            print("{}  => inactive".format(elist.name))
+            to_inactive.append(elist)
+
+    if prompt:
+        answer = input('Update lists y/n?')
+        if answer.lower() == 'y':
+            print('OK')
+        else:
+            return
+    EmailList.objects.filter(name__in=to_inactive).update(active=False)

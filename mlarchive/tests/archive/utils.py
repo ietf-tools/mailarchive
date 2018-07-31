@@ -10,7 +10,8 @@ import subprocess   # noqa
 from django.conf import settings
 from django.core.cache import cache
 from django.contrib.auth.models import AnonymousUser
-from mlarchive.archive.utils import get_noauth, get_lists, get_lists_for_user, lookup_user, process_members, get_membership
+from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user, lookup_user, process_members,
+    get_membership, check_inactive, EmailList)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -131,3 +132,29 @@ def test_get_membership(mock_post, mock_output):
 
 class DummyOptions(object):
     pass
+
+
+@patch('mlarchive.archive.utils.input')
+@patch('subprocess.check_output')
+@pytest.mark.django_db(transaction=True)
+def test_check_inactive(mock_output, mock_input):
+    mock_input.return_value = 'n'
+    EmailListFactory.create(name='public')
+    EmailListFactory.create(name='acme')
+    support = EmailListFactory.create(name='support')
+
+    # handle multiple calls to check_output
+    mock_output.side_effect = [
+        'public - Public Email List',
+        'acme-arch:  "|/usr/home/call-archives.py acme"',
+        'public - Public Email List',
+        'acme-arch:  "|/usr/home/call-archives.py acme"',
+    ]
+    assert EmailList.objects.filter(active=True).count() == 3
+
+    check_inactive(prompt=True)
+    assert EmailList.objects.filter(active=True).count() == 3
+
+    check_inactive(prompt=False)
+    assert EmailList.objects.filter(active=True).count() == 2
+    assert EmailList.objects.filter(active=False).first() == support

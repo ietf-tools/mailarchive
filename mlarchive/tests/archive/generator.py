@@ -7,6 +7,8 @@ from django.test.client import RequestFactory
 from mlarchive.archive.generator import Generator
 from mlarchive.archive.management.commands._classes import archive_message
 from mlarchive.archive.models import Message
+from mlarchive.utils.test_utils import message_from_file
+
 from pyquery import PyQuery
 
 # --------------------------------------------------
@@ -54,10 +56,7 @@ def test_generator_as_html(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_handle_text_html_text_only(client, messages):
-    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail_html.1')
-    with open(path) as f:
-        msg = email.message_from_file(f)
-    # we're passing some message to Generator but using the email from tests/data
+    msg = message_from_file('mail_html.1')
     g = Generator(Message.objects.first())
     g.text_only = True
     output = g._handle_text_html(msg)
@@ -67,10 +66,7 @@ def test_handle_text_html_text_only(client, messages):
 @pytest.mark.django_db(transaction=True)
 def test_handle_text_html_secure(client, messages):
     # ensure that handle_text_html strips unwanted, dangerous tags (script, etc)
-    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail_html_unsafe.1')
-    with open(path) as f:
-        msg = email.message_from_file(f)
-    # we're passing some message to Generator but using the email from tests/data
+    msg = message_from_file('mail_html_unsafe.1')
     g = Generator(Message.objects.first())
     g.text_only = False
     output = g._handle_text_html(msg)
@@ -87,60 +83,64 @@ def test_handle_text_html_secure(client, messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_handle_text_enriched(client):
-    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail_text_enriched.1')
-    with open(path) as f:
-        data = f.read()
-    status = archive_message(data, 'test', private=False)
+    msg = message_from_file('mail_text_enriched.1')
+    status = archive_message(msg.as_string(), 'test')
     assert status == 0
-    msg = Message.objects.first()
-    g = Generator(msg)
-    output = g.as_text()
+    generator = Generator(Message.objects.first())
+    output = generator.as_text()
     assert 'This is a test email' in output
 
 
 @pytest.mark.django_db(transaction=True)
-def test_handle_message_external_body_type_a(client, messages):
-    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail_external_body.1')
-    with open(path) as f:
-        msg = email.message_from_file(f)
-    # we're passing some message to Generator but using the email from tests/data
+def test_handle_message_delivery_status(client):
+    msg = message_from_file('mail_delivery_status.1')
+    status = archive_message(msg.as_string(), 'test', private=False)
+    assert status == 0
     generator = Generator(Message.objects.first())
     generator.text_only = False
-    for part in msg.walk():
-        if part.get_content_type() == 'message/external-body':
-            break
-    output = generator._handle_message_external_body(part)
+    part = list(msg.walk())[2]
+    assert part.get_content_type() == 'message/delivery-status'
+    output = generator._dispatch(part)
+    assert 'Action: failed' in output
+
+
+@pytest.mark.django_db(transaction=True)
+def test_handle_message_external_body_type_a(client):
+    msg = message_from_file('mail_external_body.1')
+    status = archive_message(msg.as_string(), 'test', private=False)
+    assert status == 0
+    generator = Generator(Message.objects.first())
+    generator.text_only = False
+    part = list(msg.walk())[2]
+    assert part.get_content_type() == 'message/external-body'
+    output = generator._dispatch(part)
     q = PyQuery(output)
     href = q('a').attr('href')
     assert href == 'ftp://ftp.ietf.org/internet-drafts/draft-ietf-ancp-framework-06.txt'
 
 
 @pytest.mark.django_db(transaction=True)
-def test_handle_message_external_body_type_a_invalid(client, messages):
-    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail_external_body_invalid.1')
-    with open(path) as f:
-        msg = email.message_from_file(f)
-    # we're passing some message to Generator but using the email from tests/data
+def test_handle_message_external_body_type_a_invalid(client):
+    msg = message_from_file('mail_external_body_invalid.1')
+    status = archive_message(msg.as_string(), 'test', private=False)
+    assert status == 0
     generator = Generator(Message.objects.first())
     generator.text_only = False
-    for part in msg.walk():
-        if part.get_content_type() == 'message/external-body':
-            break
-    assert generator._handle_message_external_body(part) is None
+    part = list(msg.walk())[2]
+    assert part.get_content_type() == 'message/external-body'
+    assert generator._dispatch(part) is None
 
 
 @pytest.mark.django_db(transaction=True)
-def test_handle_message_external_body_type_b(client, messages):
-    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail_external_body.2')
-    with open(path) as f:
-        msg = email.message_from_file(f)
-    # we're passing some message to Generator but using the email from tests/data
+def test_handle_message_external_body_type_b(client):
+    msg = message_from_file('mail_external_body.2')
+    status = archive_message(msg.as_string(), 'test', private=False)
+    assert status == 0
     generator = Generator(Message.objects.first())
     generator.text_only = False
-    for part in msg.walk():
-        if part.get_content_type() == 'message/external-body':
-            break
-    output = generator._handle_message_external_body(part)
+    part = list(msg.walk())[2]
+    assert part.get_content_type() == 'message/external-body'
+    output = generator._dispatch(part)
     assert output.find('[InternetShortcut]') != -1
 
 
@@ -155,9 +155,7 @@ def test_generator_clean_headers():
 
 @pytest.mark.django_db(transaction=True)
 def test_generator_multipart_malformed(client):
-    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail_multipart_bad.1')
-    with open(path) as f:
-        data = f.read()
+    msg = message_from_file('mail_multipart_bad.1')
     status = archive_message(data, 'test', private=False)
     assert status == 0
     msg = Message.objects.first()

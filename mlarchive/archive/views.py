@@ -15,7 +15,7 @@ from django.db.models.query import QuerySet
 from django.utils.decorators import method_decorator
 from django.forms.formsets import formset_factory
 from django.views.generic.detail import DetailView
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse, NoReverseMatch
 from django.utils.safestring import mark_safe
@@ -32,7 +32,7 @@ from mlarchive.archive.query_utils import (get_kwargs, get_qdr_kwargs, get_cache
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     get_query_neighbors, get_query_string, get_lists_for_user, get_random_token)
 
-from mlarchive.archive.models import EmailList, Message, Thread
+from mlarchive.archive.models import EmailList, Message, Thread, Attachment
 from mlarchive.archive.forms import AdminForm, AdminActionForm, AdvancedSearchForm, BrowseForm, RulesForm
 
 import logging
@@ -536,6 +536,21 @@ def get_top25_data():
 @superuser_only
 def admin_guide(request):
     return render(request, 'archive/admin_guide.html', {})
+
+
+@pad_id
+@check_access
+def attachment(request, list_name, id, sequence, name, msg):
+    try:
+        attachment = msg.attachment_set.get(sequence=sequence, name=name)
+    except Attachment.DoesNotExist:
+        raise Http404("Attachment not found")
+
+    sub_message = attachment.get_sub_message()
+    payload = sub_message.get_payload(decode=True)
+    response = HttpResponse(payload, content_type=attachment.content_type)
+    response['Content-Disposition'] = 'attachment; filename=%s' % name
+    return response
 
 
 def advsearch(request):

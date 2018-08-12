@@ -17,16 +17,17 @@ from collections import deque
 from email.utils import parsedate_tz, getaddresses, make_msgid
 
 from django.conf import settings
+from django.core.cache import cache
 from django.core.management.base import CommandError
 from dateutil.tz import tzoffset
 
 from mlarchive.archive.models import (Attachment, EmailList, Legacy, Message,
-    Thread, get_in_reply_to_message)
+    Thread, get_in_reply_to_message, is_attachment)
 from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES, UNKNOWN_CONTENT_TYPE
 from mlarchive.archive.inspectors import *      # noqa
 from mlarchive.archive.thread import compute_thread, reconcile_thread, parse_message_ids
 from mlarchive.utils.decorators import check_datetime
-from mlarchive.utils.encoding import decode_safely, decode_rfc2047_header
+from mlarchive.utils.encoding import decode_safely, decode_rfc2047_header, get_filename
 
 import logging
 logger = logging.getLogger('mlarchive.custom')
@@ -208,6 +209,18 @@ def get_base_subject(text):
     return text
 
 
+def get_content_disposition(part):
+    cd = part.get('content-disposition')
+    if cd:
+        try:
+            text = cd[:10].lower().split(';')[0]
+        except UnicodeDecodeError:
+            return ''
+        if text == 'attachment' or text == 'inline':
+            return text
+    return ''
+
+
 def get_envelope_date(msg):
     """Returns the date, a naive or aware datetime object, from the message
     envelope line.  msg is a email.message.Message object
@@ -288,21 +301,6 @@ def get_mb(path):
 
     # if we get here the file isn't recognized.  Raise an error
     raise UnknownFormat('%s, %s' % (path, line))
-
-
-def get_mime_extension(type):
-    """Returns the proper file extension for the given mime content type (string),
-    returns a tuple of extension, description
-    """
-    if type in CONTENT_TYPES:
-        ext, desc = CONTENT_TYPES[type]
-        # return only the first of multiple extensions
-        return (ext.split(',')[0], desc)
-    # TODO: type without x
-    elif type.startswith('text/'):
-        return ('txt', 'Text Data')
-    else:
-        return (UNKNOWN_CONTENT_TYPE, type)
 
 
 def get_received_date(msg):
@@ -441,6 +439,21 @@ def write_file(path, data):
         f.flush()
     os.chmod(path, 0666)
     # call_remote_backup(path)
+
+
+def lookup_extension(mime_type):
+    mime_types = cache.get('mime_types')
+    if not mime_types:
+        mime_types = {}
+        with open(settings.MIME_TYPES_PATH) as f:
+            for line in f.readlines():
+                parts = line.split()
+                if not line.startswith('#') and len(parts) > 1:
+                    mime_types[parts[0]] = parts[1]
+        cache.set('mime_types', mime_types, None)
+    if mime_type not in mime_types and mime_type.startswith('text/'):
+        return 'txt'
+    return mime_types.get(mime_type, 'bin')
 
 
 # --------------------------------------------------
@@ -849,24 +862,30 @@ class MessageWrapper(object):
         self._archive_message.thread_order = info.order
 
     def process_attachments(self, test=False):
-        """Walks the message parts and saves any attachments
         """
-        for part in self.email_message.walk():
-            # TODO can we have an attachment without a filename (content disposition) ??
-            name = part.get_filename()
-            type = part.get_content_type()
-            if name and type in CONTENT_TYPES:     # indicates an attachment
-                extension, description = get_mime_extension(type)
+        Walks the message parts and saves any attachments.  See is_attachment().
+        See docs for details: https://docs.python.org/3/library/email.message.html
+        The message/external-body type indicates that the actual body data are not
+        included, but merely referenced.
 
-                # create record
-                attach = Attachment.objects.create(message=self.archive_message,
-                                                   description=description,
-                                                   name=name)
+        NOTE: Python 3 has iter_attachments()
+        """
+        for sequence, part in enumerate(self.email_message.walk()):
+            if is_attachment(part):
+                Attachment.objects.create(message=self.archive_message,
+                                          description='',
+                                          content_type=part.get_content_type(),
+                                          content_disposition=get_content_disposition(part),
+                                          name=get_filename(part),
+                                          sequence=sequence)
 
+                '''
+                # extension = lookup_extension(content_type)
                 # handle unrecognized
                 payload = part.get_payload(decode=True)
                 if not payload:
-                    attach.error = '<<< %s; name=%s: Unrecognized >>>' % (type, name)
+                    # TODO: get error from msg
+                    attach.error = '<<< %s; name=%s: Unrecognized >>>' % (content_type, name)
                     attach.save()
                     continue
 
@@ -882,6 +901,7 @@ class MessageWrapper(object):
                     attach.save()
                     os.chmod(fp.name, 0666)
                     call_remote_backup(fp.name)
+                '''
 
     def save(self, test=False):
         """Ensure message is not duplicate message-id or hash.  Save message to database.

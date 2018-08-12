@@ -27,17 +27,21 @@ import sys
 import time
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
-from mlarchive.utils.encoding import decode_rfc2047_header
-from mlarchive.archive.management.commands._classes import MessageWrapper
-
-from django.db.models import Count
-from haystack.query import SearchQuerySet
-from mlarchive.archive.models import *
-from mlarchive.bin.scan_utils import *
-from mlarchive.archive.management.commands import _classes
 from tzparse import tzparse
 from pprint import pprint
 from pytz import timezone
+
+from django.core.cache import cache
+from django.db.models import Count
+from haystack.query import SearchQuerySet
+
+from mlarchive.archive.models import *
+from mlarchive.bin.scan_utils import *
+from mlarchive.archive.management.commands import _classes
+from mlarchive.utils.encoding import decode_rfc2047_header, is_attachment
+from mlarchive.archive.management.commands._classes import MessageWrapper, lookup_extension
+from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES
+
 
 print "DJANGO_SETTINGS_MODULE={}".format(os.environ['DJANGO_SETTINGS_MODULE'])
 
@@ -468,6 +472,52 @@ def multipart():
                     types[part.get_content_type()] = types.get(part.get_content_type(),0) + 1
 
     print types
+
+
+def attachments():
+    """Scan all lists, analyze attachments"""
+    missing_from_db = 0
+    missing_new = {}
+    missing_old = {}
+    content_dispositions = {}
+    total = 0
+    lookup_extension('txt/plain')
+    mime_types = cache.get('mime_types')
+    for elist in EmailList.objects.all().order_by('name'):
+        print "Scanning {}".format(elist.name)
+
+        for msg in Message.objects.filter(email_list=elist).order_by('date'):
+            message = email.message_from_string(msg.get_body_raw())
+            count = 0
+            for part in message.walk():
+                if is_attachment(part):
+                    total = total + 1
+                    count = count + 1
+                    content_type = part.get_content_type()
+                    # content_disposition = part.get_content_disposition()
+                    content_disposition = part.get('content-disposition')
+                    if content_disposition:
+                        content_disposition = content_disposition.split()[0].strip(';')
+                    content_dispositions[content_disposition] = content_dispositions.get(content_disposition, 0) + 1
+                    if content_type not in mime_types:
+                        missing_new[content_type] = missing_new.get(content_type, 0) + 1
+                        print "NEW {:10} {}".format(msg.pk, content_type)
+                    if content_type not in CONTENT_TYPES:
+                        missing_old[content_type] = missing_old.get(content_type, 0) + 1
+                        print "OLD {:10} {}".format(msg.pk, content_type)
+
+            if count > msg.attachment_set.count():
+                missing_from_db = missing_from_db + (count - msg.attachment_set.count())
+
+    print 'Total Attachments: %s' % total
+    print 'Missing from DB: %s' % missing_from_db
+    for key, value in missing_new.items():
+        print "NEW: %s (%s)" % (key, value)
+    for key, value in missing_old.items():
+        print "OLD: %s (%s)" % (key, value)
+    for key, value in content_dispositions.items():
+        print "CONTENT_DISPOSITION: %s (%s)" % (key, value)
+
 
 def received_date(start):
     """Test receive date parsing.  Start at list named by 'start', use 80companions

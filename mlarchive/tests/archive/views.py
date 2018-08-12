@@ -6,8 +6,8 @@ from django.conf import settings
 from django.contrib.auth import SESSION_KEY
 from django.urls import reverse
 from django.utils.http import urlencode
-from factories import EmailListFactory, MessageFactory, UserFactory
-from mlarchive.archive.models import Message
+from factories import EmailListFactory, MessageFactory, UserFactory, AttachmentFactory
+from mlarchive.archive.models import Message, Attachment
 from mlarchive.archive.management.commands import _classes
 from mlarchive.archive.views import (TimePeriod, add_nav_urls, is_small_year,
     add_one_month, get_this_next_periods, get_date_endpoints, get_thread_endpoints)
@@ -455,6 +455,26 @@ def test_detail_cache_headers_private(admin_client):
     response = admin_client.get(url)
     assert response.status_code == 200
     assert 'no-cache' in response.get('Cache-Control')
+
+
+@pytest.mark.django_db(transaction=True)
+def test_attachment(client, attachment_messages_no_index):
+    # elist = EmailListFactory.create()
+    # msg = MessageFactory.create(email_list=elist)
+    # attachment = AttachmentFactory.create(message=msg)
+    attachment = Attachment.objects.first()
+    url = reverse('archive_attachment', kwargs={'list_name': attachment.message.email_list.name,
+                                                'id': attachment.message.hashcode,
+                                                'sequence': attachment.sequence,
+                                                'name': attachment.name})
+    print url
+    print attachment.sequence, attachment.name, attachment.content_type
+    response = client.get(url)
+    print response.items()
+    assert response.status_code == 200
+    assert response['Content-Type'] == 'text/plain'
+    assert response['Content-Disposition'] == 'attachment; filename=skip32.c'
+    assert 'unsigned' in response.content
 
 
 @pytest.mark.django_db(transaction=True)

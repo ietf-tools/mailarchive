@@ -1,6 +1,7 @@
 import binascii
 import email
 import re
+import six
 from email.header import HeaderParseError
 import logging
 
@@ -33,6 +34,29 @@ def to_str(unicode_or_str):
     else:
         value = unicode_or_str
     return value    # Instance of str
+
+
+def get_filename(sub_message):
+    """Wraps email.message.get_filename(), in Python 2 the function can either return
+    str or unicode(when collapse_rfc2231() is used), Python 3 always returns str.
+    """
+    filename = sub_message.get_filename()
+    if isinstance(filename, six.binary_type):
+        try:
+            filename = filename.decode('ascii')
+        except UnicodeDecodeError:
+            return ''
+    return filename
+
+
+def is_attachment(sub_message):
+    """Returns true if sub_messsage (email.message) is an attachment"""
+    content_type = sub_message.get_content_type()
+    filename = get_filename(sub_message)
+    if (filename and content_type != 'message/external-body' and content_type != 'message/delivery-status'):
+        return True
+    else:
+        return False
 
 
 '''

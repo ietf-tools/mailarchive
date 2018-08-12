@@ -6,17 +6,18 @@ import os
 import pytest
 import pytz
 import shutil
+import six
 from StringIO import StringIO
-import time
 
 from django.conf import settings
 from django.core.management import call_command
 from django.urls import reverse
 from mlarchive.archive.models import Message, EmailList
 from mlarchive.archive.management.commands._classes import (archive_message, clean_spaces, MessageWrapper,
-    get_base_subject, get_envelope_date, tzoffset, get_from, get_header_date, get_mb, get_mime_extension,
-    is_aware, get_received_date, parsedate_to_datetime, subject_is_reply)
+    get_base_subject, get_envelope_date, tzoffset, get_from, get_header_date, get_mb,
+    is_aware, get_received_date, parsedate_to_datetime, subject_is_reply, lookup_extension)
 from factories import EmailListFactory, MessageFactory, ThreadFactory
+from mlarchive.utils.test_utils import message_from_file
 
 
 def teardown_module(module):
@@ -247,13 +248,6 @@ def test_get_mb():
         assert len(mb) > 0
 
 
-def test_get_mime_extension():
-    data = [('image/jpeg', 'jpg'), ('text/html', 'html'), ('hologram/3d', 'bin')]
-    for item in data:
-        ext, desc = get_mime_extension(item[0])
-        assert ext == item[1]
-
-
 def test_get_received_date():
     data = '''Received: from mail.ietf.org ([64.170.98.30]) by localhost \
 (ietfa.amsl.com [127.0.0.1]) (amavisd-new, port 10024) with ESMTP id oE4MnXBb8IJ9 \
@@ -413,6 +407,50 @@ This is the message.
     msg = email.message_from_string(data)
     mw = MessageWrapper(msg, 'ancp')
     assert mw.get_cc() == 'ancp@ietf.org'
+
+
+@pytest.mark.django_db(transaction=True)
+def test_MessageWrapper_process_attachments():
+    msg = message_from_file('mail_multipart.1')
+    mw = MessageWrapper(msg, 'public')
+    mw.process()
+    mw.archive_message.save()
+    mw.process_attachments()
+    assert mw.archive_message.attachment_set.count() == 1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_MessageWrapper_process_attachments_non_ascii_filename():
+    msg = message_from_file('mail_multipart_bad.2')
+    mw = MessageWrapper(msg, 'public')
+    mw.process()
+    mw.archive_message.save()
+    mw.process_attachments()
+    assert mw.archive_message.attachment_set.count() == 0
+    attachment = mw.archive_message.attachment_set.first()
+    assert attachment.name == 'joe'
+
+
+@pytest.mark.django_db(transaction=True)
+def test_MessageWrapper_process_attachments_rfc2231_filename():
+    msg = message_from_file('mail_multipart.2')
+    mw = MessageWrapper(msg, 'public')
+    mw.process()
+    mw.archive_message.save()
+    mw.process_attachments()
+    assert mw.archive_message.attachment_set.count() == 1
+    attachment = mw.archive_message.attachment_set.first()
+    assert attachment.name == six.u('satellite-\u6d77\u6dc0\u533a\u5317\u6d3c\u8def4\u53f7.png')
+
+
+def test_lookup_extension():
+    assert lookup_extension('text/plain') == 'txt'
+    assert lookup_extension('text/unknown_stuff') == 'txt'
+    assert lookup_extension('text/x-csrc') == 'c'
+    assert lookup_extension('image/jpeg') == 'jpeg'
+    assert lookup_extension('text/html') == 'html'
+    assert lookup_extension('hologram/3d') == 'bin'     # default for unknown
+
 
 # test various exceptions raised
 # test that older message added causes update to all tdates in index

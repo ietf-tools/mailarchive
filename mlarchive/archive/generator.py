@@ -7,7 +7,7 @@ Content-Transfer-Encoding header.  Common values are quoted-printable, base64, 8
 7bit.  The values 8bit and 7bit imply no encoding has been done.  Returns a string,
 still possibly encoded using the Content-Type charset.
 
-string.decode(codec) decodes a string according to the codec provided.  Returns a
+string.decode(codec) decodes a string according using the codec provided.  Returns a
 unicode object.
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
@@ -21,7 +21,7 @@ from django.template.loader import render_to_string
 from lxml.etree import XMLSyntaxError, ParserError
 from lxml.html.clean import Cleaner
 
-from mlarchive.utils.encoding import decode_safely
+from mlarchive.utils.encoding import decode_safely, get_filename, is_attachment
 
 import logging
 logger = logging.getLogger('mlarchive.custom')
@@ -41,7 +41,7 @@ def skip_attachment(function):
     If the part passed is an attachment then it is skipped (None is returned).
     """
     def _inner(*args, **kwargs):
-        if args[1].get_filename():
+        if is_attachment(args[1]):
             return None
         return function(*args, **kwargs)
     return _inner
@@ -122,6 +122,14 @@ class Generator:
 
     # multipart handlers ----------------------------------------------------------
 
+    # multipart/report RFC6522
+    
+    def _handle_message_delivery_status(self, entity):
+        """Handler for message/delivery-status MIME type
+        # Python 2.7 seems broken, delivery-status part has two empty text/plain
+        """
+        return entity.get_payload()
+
     def _handle_message_external_body(self, part):
         """Handler for Message/External-body
 
@@ -150,7 +158,8 @@ class Generator:
             return None
 
         # handle B format
-        if part.get_filename() and part.get_filename().endswith('url'):
+        filename = get_filename(part)
+        if filename and filename.endswith('url'):
             codec = part['Content-Transfer-Encoding']
             inner = part.get_payload()
             payload = inner[0].get_payload()

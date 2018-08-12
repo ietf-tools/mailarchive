@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 from email.utils import parseaddr
 import datetime
+import email
 import logging
 import os
 import re
@@ -16,6 +17,8 @@ from django.template.loader import render_to_string
 
 from mlarchive.archive.generator import Generator
 from mlarchive.archive.thread import parse_message_ids
+from mlarchive.utils.encoding import is_attachment
+
 
 TXT2HTML = ['/usr/bin/mhonarc', '-single']
 ATTACHMENT_PATTERN = r'<p><strong>Attachment:((?:.|\n)*?)</p>'
@@ -43,6 +46,14 @@ def get_message_prefer_list(msgid, email_list):
         return Message.objects.get(msgid=msgid, email_list=email_list)
     except Message.DoesNotExist:
         return Message.objects.filter(msgid=msgid).first()
+
+
+def is_ascii(text):
+    try:
+        text.decode('ascii')
+    except UnicodeDecodeError:
+        return False
+    return True
 
 
 def is_small_year(email_list, year):
@@ -415,19 +426,24 @@ class Attachment(models.Model):
     filename = models.CharField(max_length=65)
     message = models.ForeignKey(Message, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=150)
+    content_disposition = models.CharField(max_length=150, blank=True, null=True)
+    sequence = models.PositiveSmallIntegerField(default=1)
 
     def __unicode__(self):
         return self.name
 
     def get_absolute_url(self):
-        return os.path.join(
-            reverse('archive'),
-            'attach',
-            self.message.email_list.name,
-            self.filename)
+        return os.path.join(reverse('archive'), 'attach', self.message.email_list.name, self.filename)
 
     def get_file_path(self):
         return os.path.join(self.message.get_atttachment_path(), self.filename)
+
+    def get_sub_message(self):
+        """Returns a email.message, that is the attachment"""
+        msg = email.message_from_string(self.message.get_body_raw())
+        parts = list(msg.walk())
+        return parts[self.sequence]
 
 
 class Legacy(models.Model):

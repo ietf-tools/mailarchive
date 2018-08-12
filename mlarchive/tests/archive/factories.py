@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from mlarchive.archive.models import Message, EmailList, Thread
+from mlarchive.archive.models import Message, EmailList, Thread, Attachment
 
 import datetime
 import factory
@@ -39,6 +39,16 @@ class MessageFactory(factory.DjangoModelFactory):
     hashcode = factory.Sequence(lambda n: "abcdefghijklmnopqrstuvx%04d=" % n)
     thread = factory.SubFactory(ThreadFactory)
     # email_list = factory.SubFactory(EmailListFactory)
+
+
+class AttachmentFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = Attachment
+
+    name = 'attachment.txt'
+    content_type = 'text/plain'
+    content_disposition = 'attachment'
+    sequence = factory.Sequence(lambda n: n + 1)
 
 
 class UserFactory(factory.DjangoModelFactory):

@@ -163,6 +163,14 @@ def messages(index_resource):
 
 
 @pytest.fixture()
+def attachment_messages_no_index(settings):
+    settings.HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.BaseSignalProcessor'
+    content = StringIO()
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'attachment.mail')
+    call_command('load', path, listname='acme', summary=True, stdout=content)
+
+
+@pytest.fixture()
 def thread_messages():
     """Load some threads"""
     content = StringIO()
@@ -220,6 +228,11 @@ def thread_messages_db_only():
     # set first
     for thread in Thread.objects.all():
         thread.set_first()
+
+
+@pytest.fixture()
+def attachment_messages_db_only():
+  pass
 
 
 @pytest.fixture()

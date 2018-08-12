@@ -4,7 +4,9 @@ import pytest
 from factories import EmailListFactory, ThreadFactory, MessageFactory
 from django.urls import reverse
 from django.utils.http import urlencode
-from mlarchive.archive.models import Message
+from mlarchive.archive.models import Message, Attachment, is_attachment
+from mlarchive.utils.test_utils import message_from_file
+from mlarchive.utils.encoding import get_filename
 
 
 @pytest.mark.django_db(transaction=True)
@@ -139,15 +141,6 @@ def test_message_get_references(client):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_thread_get_snippet(client):
-    elist = EmailListFactory.create()
-    message = MessageFactory.create(
-        email_list=elist,
-        date=datetime.datetime(2016, 1, 1))
-    assert message.thread.get_snippet()
-
-
-@pytest.mark.django_db(transaction=True)
 def test_message_get_thread_snippet(client):
     elist = EmailListFactory.create()
     message = MessageFactory.create(
@@ -251,3 +244,29 @@ def test_message_previous_in_thread_different_thread(client):
     assert Message.objects.count() == 3
     assert thread1.first == message1
     assert message3.previous_in_thread() == message1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_thread_get_snippet(client):
+    elist = EmailListFactory.create()
+    message = MessageFactory.create(
+        email_list=elist,
+        date=datetime.datetime(2016, 1, 1))
+    assert message.thread.get_snippet()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_attachment_get_sub_message(client, attachment_messages_no_index):
+    attachment = Attachment.objects.first()
+    sub = attachment.get_sub_message()
+    assert sub.get_content_type() == 'text/plain'
+    assert get_filename(sub) == 'skip32.c'
+    assert 'unsigned' in sub.get_payload(decode=True)
+
+
+def test_is_attachment():
+    msg = message_from_file('mail_multipart.1')
+    parts = list(msg.walk())
+    assert is_attachment(parts[0]) is False
+    assert is_attachment(parts[1]) is False
+    assert is_attachment(parts[2]) is True

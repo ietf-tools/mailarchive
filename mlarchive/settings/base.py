@@ -269,6 +269,7 @@ TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
 USE_EXTERNAL_PROCESSOR = False
 MAX_THREAD_DEPTH = 6
 THREAD_ORDER_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
+MIME_TYPES_PATH = os.path.join(BASE_DIR, 'mime.types')
 
 # spam_score bits
 MARK_BITS = {'NON_ASCII_HEADER': 0b0001,

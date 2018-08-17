@@ -123,12 +123,15 @@ class Generator:
     # multipart handlers ----------------------------------------------------------
 
     # multipart/report RFC6522
-    
+
+    '''
+    incomplete
     def _handle_message_delivery_status(self, entity):
         """Handler for message/delivery-status MIME type
         # Python 2.7 seems broken, delivery-status part has two empty text/plain
         """
         return entity.get_payload()
+    '''
 
     def _handle_message_external_body(self, part):
         """Handler for Message/External-body

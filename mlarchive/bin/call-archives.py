@@ -1,4 +1,6 @@
 #!/usr/bin/python
+from __future__ import print_function
+
 '''
 The purpose of this script is to allow mailman to use multiple archiving systems.
 The script should be configured in mm_cfg.py as follows:
@@ -17,18 +19,19 @@ is called.
 When the time comes to end parallel archiving this script should be replaced by one that
 stashes the message, queues the import, and notifies on any failures
 '''
+import email
 import getpass
 import logging
 import logging.handlers
 import os
 import socket
-import subprocess
 import sys
 import traceback
+from subprocess import Popen, PIPE, STDOUT
     
 MHONARC = '/a/ietf/scripts/archive-mail.pl'
 MAILARCH= '/a/mailarch/current/mlarchive/bin/archive-mail.py'
-MAILTO = ['rcross@amsl.com','jshaffer@amsl.com']    # send errors to these addrs
+MAILTO = ['rcross@amsl.com', 'glen@amsl.com']    # send errors to these addrs
 
 def handle_error(error):
     """Sends an email with error message to appropriate parties"""
@@ -51,21 +54,19 @@ if len(old_args) > 1:
         new_args.pop(1)
 
 data = sys.stdin.read()
-
 try:
-    p = subprocess.Popen([MHONARC] + old_args, stdin=subprocess.PIPE)
-    p.communicate(input=data)
-    if p.returncode != 0:
-        handle_error('script failed: {} (exit_code={})'.format(MHONARC,p.returncode))
-except Exception as error:
-    handle_error(traceback.format_exc())
+    msg = email.message_from_string(data)
+    msg_details = 'Message Details:\nFrom:{}\nDate:{}\nMessage ID:{}\n\n'.format(msg.get('from'), msg.get('date'), msg.get('message-id'))
+except Exception:
+    msg_details = 'Message Details:\n(not available)'
+
+for command in ([MHONARC] + old_args, [MAILARCH] + new_args):
+    try:
+        p = Popen(command, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
+        (stdoutdata, stderrdata) = p.communicate(input=data)
+        if p.returncode != 0:
+            handle_error('script failed: {}\n\n (exit_code={})\n\n {}\n\n{}'.format(command[0],p.returncode,stdoutdata, msg_details))
+    except Exception as error:
+        handle_error(traceback.format_exc())
     
-try:
-    p = subprocess.Popen([MAILARCH] + new_args, stdin=subprocess.PIPE)
-    p.communicate(input=data)
-    if p.returncode != 0:
-        handle_error('script failed: {} (exit_code={})'.format(MAILARCH,p.returncode))
-except Exception as error:
-    handle_error(traceback.format_exc())
-
 sys.exit(0)

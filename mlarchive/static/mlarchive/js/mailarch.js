@@ -175,6 +175,22 @@ var mailarch = {
         },500);
     },
     
+    copyUrlToClipboard: function() {
+        var url = $('#msg-body').data('message-url');
+        var el = document.createElement('textarea');
+        el.value = url;
+        // Set non-editable to avoid focus and move outside of view
+        el.setAttribute('readonly', '');
+        el.style = {position: 'absolute', left: '-9999px'};
+        document.body.appendChild(el);
+        // Select text inside element
+        el.select();
+        // Copy text to clipboard
+        document.execCommand('copy');
+        // Remove temporary element
+        document.body.removeChild(el);
+    },
+
     doSearch: function() {
         // reload page after changing some query parameters
         delete mailarch.urlParams.page;
@@ -536,6 +552,8 @@ var mailarch = {
                     $('#msg-header').toggle();
                     $(this).html(($('#toggle-msg-header').text() == 'Show header') ? 'Hide header' : 'Show header');
                 });
+                $('#msg-body').prepend('<a href="#" class="copy-link" title="Copy Message URL to Clipboard"><i class="fa fa-copy fa-lg" aria-hidden="true"></i></a>');
+                $('#msg-body a.copy-link').on('click', mailarch.copyUrlToClipboard);
                 mailarch.$viewPane.scrollTop(0);    // should this be msg-body?
             });
         }

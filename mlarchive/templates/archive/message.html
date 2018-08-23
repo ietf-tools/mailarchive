@@ -1,4 +1,4 @@
-<div id="msg-body">
+<div id="msg-body" data-message-url="{{ msg.get_absolute_url_with_host }}">
     <h3>{{ msg.subject }}</h3>
     <p id="msg-info" class="msg-header">
       <span id="msg-from" class="pipe">{{ msg.frm }}</span>

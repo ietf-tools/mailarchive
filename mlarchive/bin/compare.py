@@ -3,7 +3,7 @@
 Compare legacy archive with new archive and report descrepencies
 
 Example:
-./compare --start=2018-01-15T00:00:00
+./compare.py --start=2018-01-15T00:00:00
 
 '''
 

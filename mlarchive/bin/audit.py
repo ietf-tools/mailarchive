@@ -8,7 +8,7 @@ Script to check for missing message files in the archive
 
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
-do_setup(settings='production')
+do_setup()
 # -------------------------------------------------------------------------------------
 import glob
 import sys

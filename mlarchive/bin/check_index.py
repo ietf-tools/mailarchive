@@ -6,7 +6,7 @@ For best performance set HAYSTACK_ITERATOR_LOAD_PRE_QUERY = 10000
 
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
-do_setup(settings='production')
+do_setup()
 # -------------------------------------------------------------------------------------
 from __future__ import absolute_import, division, print_function, unicode_literals
 

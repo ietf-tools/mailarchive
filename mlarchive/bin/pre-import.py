@@ -8,7 +8,7 @@ for redirecting requests to the old archive to the new one.
 '''
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
-do_setup(settings='production')
+do_setup()
 # -------------------------------------------------------------------------------------
 
 from mlarchive.archive.models import *

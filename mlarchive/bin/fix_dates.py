@@ -6,7 +6,7 @@ as X-Date, and original file is saved in a backup directory.
 """
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
-do_setup(settings='production')
+do_setup()
 # -------------------------------------------------------------------------------------
 
 from django.conf import settings

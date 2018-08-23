@@ -8,7 +8,7 @@ MAILTO="rcross@amsl.com"
 
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
-do_setup(settings='production')
+do_setup()
 # -------------------------------------------------------------------------------------
 
 import datetime

@@ -10,7 +10,7 @@ get_legacy_numbers.py testlist
 '''
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
-do_setup(settings='noindex')
+do_setup(django_settings='mlarchive.settings.noindex')
 # -------------------------------------------------------------------------------------
 
 import argparse

@@ -4,7 +4,7 @@ Script to scan through archive of mbox files and produce a spam report.
 """
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
-do_setup(settings='production')
+do_setup()
 # -------------------------------------------------------------------------------------
 
 import argparse

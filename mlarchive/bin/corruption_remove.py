@@ -5,7 +5,7 @@ archive that exhibit signs of corruption
 '''
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
-do_setup(settings='production')
+do_setup()
 # -------------------------------------------------------------------------------------
 from builtins import input
 

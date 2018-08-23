@@ -2,7 +2,7 @@
 
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
-do_setup(settings='staging')
+do_setup(django_settings='mlarchive.settings.staging')
 # -------------------------------------------------------------------------------------
 
 from django.conf import settings

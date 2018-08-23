@@ -5,7 +5,7 @@ msgid, then add that id to the message file on disk.
 """
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
-do_setup(settings='production')
+do_setup()
 # -------------------------------------------------------------------------------------
 
 from django.conf import settings

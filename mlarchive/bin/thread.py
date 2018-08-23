@@ -6,7 +6,7 @@ comparable to the MHonArc thread view.
 
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
-do_setup(settings='production')
+do_setup()
 # -------------------------------------------------------------------------------------
 
 import argparse

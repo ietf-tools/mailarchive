@@ -121,7 +121,7 @@ def log_timing(func):
         start = time.time()
         result = func(*args, **kwargs)
         end = time.time()
-        logger.info('Function Time: %s took %0.3f ms' % (func.__name__, (end - start) * 1000.0))
+        logger.info('Function Time: %s took %0.3f ms' % (__name__, (end - start) * 1000.0))
         return result
     return wrapper
 

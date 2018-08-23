@@ -17,7 +17,7 @@ line.startswith(b'<!--X-Message-Id:'), then decoding the found line using ASCII.
 
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
-do_setup(settings='production')
+do_setup()
 # -------------------------------------------------------------------------------------
 
 import argparse

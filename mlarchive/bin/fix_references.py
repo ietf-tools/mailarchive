@@ -5,7 +5,7 @@ in their references header which is causing failure of the threading function
 """
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
-do_setup(settings='production')
+do_setup()
 # -------------------------------------------------------------------------------------
 from builtins import input
 

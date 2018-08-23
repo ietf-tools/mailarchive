@@ -5,7 +5,7 @@ Fix uuid named files
 
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
-do_setup(settings='production')
+do_setup()
 # -------------------------------------------------------------------------------------
 
 from mlarchive.archive.models import Message

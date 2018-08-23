@@ -7,7 +7,7 @@ envelope.  We use the "From:" header to signify done reading Received lines.
 '''
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
-do_setup(settings='production')
+do_setup()
 # -------------------------------------------------------------------------------------
 
 from mlarchive.archive.models import *

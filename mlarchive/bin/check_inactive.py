@@ -8,7 +8,7 @@ Script to retrieve active lists, identify inactive lists, and update the db
 
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
-do_setup(settings='production')
+do_setup()
 # -------------------------------------------------------------------------------------
 
 import argparse

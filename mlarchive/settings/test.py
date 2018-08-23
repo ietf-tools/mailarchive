@@ -25,7 +25,7 @@ IMPORT_LOG_FILE = os.path.join(BASE_DIR, 'tests/tmp', 'archive-mail.log')
 
 SERVER_MODE = 'development'
 
-LOGGING['handlers']['watched_file']['filename'] = LOG_FILE
+LOGGING['handlers']['mlarchive']['filename'] = LOG_FILE
 LOGGING['handlers']['archive-mail_file_handler']['filename'] = IMPORT_LOG_FILE
 
 CACHES = {

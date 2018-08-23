@@ -22,7 +22,7 @@ from mlarchive.archive.models import EmailList
 from mlarchive.archive.signals import _export_lists, _list_save_handler
 from mlarchive.utils.test_utils import get_search_backend
 
-logger = logging.getLogger('mlarchive.custom')
+logger = logging.getLogger(__name__)
 THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
 LIST_LISTS_PATTERN = re.compile(r'\s*([\w\-]*) - (.*)$')
 

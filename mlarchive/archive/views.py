@@ -35,8 +35,6 @@ from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_
 from mlarchive.archive.models import EmailList, Message, Thread, Attachment
 from mlarchive.archive.forms import AdminForm, AdminActionForm, AdvancedSearchForm, BrowseForm, RulesForm
 
-import logging
-logger = logging.getLogger('mlarchive.custom')
 
 THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
 DATE_PATTERN = re.compile(r'(?P<year>\d{4})(?:-(?P<month>\d{2}))?')

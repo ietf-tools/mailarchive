@@ -16,7 +16,8 @@ from optparse import OptionParser
 import mlarchive.archive.management.commands._classes as _classes
 
 import logging
-logger = logging.getLogger('archive-mail')
+logger = logging.getLogger('mlarchive.bin.archive-mail')
+
 
 def main():
     logger.info('called with arguments: %s' % sys.argv)

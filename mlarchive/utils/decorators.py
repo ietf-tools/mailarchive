@@ -8,7 +8,7 @@ from functools import wraps
 from mlarchive.archive.models import Message, EmailList
 
 import logging
-logger = logging.getLogger('mlarchive.custom')
+logger = logging.getLogger(__name__)
 
 
 def check_access(func):
@@ -117,12 +117,12 @@ def log_timing(func):
     Handy for performance testing
     '''
     @wraps(func)
-    def wrapper(*arg):
-        t1 = time.time()
-        res = func(*arg)
-        t2 = time.time()
-        logger.info('%s took %0.3f ms' % (func.__name__, (t2 - t1) * 1000.0))
-        return res
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = func(*args, **kwargs)
+        end = time.time()
+        logger.info('Function Time: %s took %0.3f ms' % (func.__name__, (end - start) * 1000.0))
+        return result
     return wrapper
 
 

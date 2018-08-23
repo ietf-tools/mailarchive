@@ -157,54 +157,40 @@ STATICFILES_DIRS = (
 
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
+    'disable_existing_loggers': True,
     'formatters': {
         'simple': {
             'format': "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         }
     },
     'handlers': {
-        'watched_file':
+        'mlarchive':
         {
             'level': 'DEBUG',
             'formatter': 'simple',
             'class': 'logging.handlers.WatchedFileHandler',
-            'filename': '/a/mailarch/data/log/mlarchive.log',
+            'filename': '/var/log/mail-archive/mlarchive.log',
         },
         'archive-mail_file_handler':
         {
             'level': 'DEBUG',
             'formatter': 'simple',
             'class': 'logging.handlers.WatchedFileHandler',
-            'filename': '/a/mailarch/data/log/archive-mail.log',
-        },
-        'email':
-        {
-            'level': 'DEBUG',
-            'formatter': 'simple',
-            'class': 'logging.handlers.SMTPHandler',
-            'mailhost': ('ietfa.amsl.com', 25),
-            'fromaddr': 'rcross@ietfa.amsl.com',
-            'toaddrs': ['rcross@amsl.com'],
-            'subject': 'logging message',
+            'filename': '/var/log/mail-archive/archive-mail.log',
         }
     },
     'loggers': {
+        # Top level logger
+        'mlarchive': {
+            'handlers': ['mlarchive'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # Custom logger, e.g. bin scripts, change handler to log to different file
         'mlarchive.custom': {
-            'handlers': ['watched_file'],
+            'handlers': ['mlarchive'],
             'level': 'DEBUG',
-            'propagate': True,
-        },
-        'archive-mail': {
-            'handlers': ['archive-mail_file_handler'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'mlarchive.email': {
-            'handlers': ['email'],
-            # 'handlers': ['mail_admins'],
-            'level': 'DEBUG',
-            'propagate': True,
+            'propagate': False,
         }
     }
 }

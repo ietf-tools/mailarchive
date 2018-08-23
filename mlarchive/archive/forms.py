@@ -18,7 +18,7 @@ from mlarchive.archive.utils import get_noauth
 from mlarchive.utils.decorators import log_timing
 
 import logging
-logger = logging.getLogger('mlarchive.custom')
+logger = logging.getLogger(__name__)
 
 FIELD_CHOICES = (('text', 'Subject and Body'),
                  ('subject', 'Subject'),
@@ -35,16 +35,6 @@ TIME_CHOICES = (('a', 'Any time'),
                 ('m', 'Past month'),
                 ('y', 'Past year'),
                 ('c', 'Custom range...'))
-
-
-def profile(func):
-    """Decorator to log the time it takes to run a function"""
-    def wrap(*args, **kwargs):
-        started_at = time.time()
-        result = func(*args, **kwargs)
-        logger.info("Function time: %s" % (time.time() - started_at))
-        return result
-    return wrap
 
 
 # --------------------------------------------------------
@@ -268,7 +258,7 @@ class AdvancedSearchForm(FacetedSearchForm):
 
     def process_query(self):
         logger.info('Query String: %s' % self.q)
-        logger.info('Query Params: %s' % self.data)
+        logger.debug('Query Params: %s' % self.data)
         if self.q:
             self.searchqueryset.query.raw_search(self.q)
 
@@ -330,7 +320,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         sqs.queryid = queryid
         cache.set(queryid, sqs, 7200)           # 2 hours
 
-        logger.info('Backend Query: %s' % sqs.query.build_query())
+        logger.debug('Backend Query: %s' % sqs.query.build_query())
 
         # insert facets just before returning query, so they don't get overridden
         sqs.myfacets = facets

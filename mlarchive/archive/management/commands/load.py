@@ -10,7 +10,7 @@ from mlarchive.archive.models import EmailList, Legacy
 from mlarchive.archive.management.commands import _classes
 
 import logging
-logger = logging.getLogger('mlarchive.custom')
+logger = logging.getLogger(__name__)
 
 # --------------------------------------------------
 # Helper Functions

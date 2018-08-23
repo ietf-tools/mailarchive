@@ -1,8 +1,6 @@
 from django.conf import settings
 from mlarchive import __date__, __rev__, __version__, __id__
 
-import logging
-logger = logging.getLogger('mlarchive.custom')
 
 # --------------------------------------------------
 # Context Processors

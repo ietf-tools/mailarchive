@@ -10,8 +10,6 @@ from django.core.cache import cache
 from mlarchive.archive.utils import get_lists
 from mlarchive.utils.test_utils import get_search_backend
 
-import logging
-logger = logging.getLogger('mlarchive.custom')
 
 VALID_QUERYID_RE = re.compile(r'^[a-f0-9]{32}$')
 FILTER_PARAMS = ('f_list', 'f_from')

@@ -6,8 +6,6 @@ from django.core.management.base import BaseCommand, CommandError
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.views_static import rebuild_static_index
 
-import logging
-logger = logging.getLogger('mlarchive.custom')
 
 # --------------------------------------------------
 # Helper Functions

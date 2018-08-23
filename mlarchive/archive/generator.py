@@ -24,7 +24,7 @@ from lxml.html.clean import Cleaner
 from mlarchive.utils.encoding import decode_safely, get_filename, is_attachment
 
 import logging
-logger = logging.getLogger('mlarchive.custom')
+logger = logging.getLogger(__name__)
 
 UNDERSCORE = '_'
 MESSAGE_RFC822_BEGIN = '<blockquote>\n<small>---&nbsp;<i>Begin&nbsp;Message</i>&nbsp;---</small>'
@@ -68,7 +68,7 @@ class Generator:
             with open(msg.get_file_path()) as f:
                 self.mdmsg = mailbox.MaildirMessage(f)
         except IOError:
-            logger.warning('Error reading message file: %s' % msg.get_file_path())
+            logger.error('Error reading message file: %s' % msg.get_file_path())
             self.error = 'Error reading message file'
 
     def as_html(self, request):

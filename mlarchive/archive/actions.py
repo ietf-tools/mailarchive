@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.shortcuts import redirect
 
 import logging
-logger = logging.getLogger('mlarchive.custom')
+logger = logging.getLogger(__name__)
 
 
 def is_ajax(request):

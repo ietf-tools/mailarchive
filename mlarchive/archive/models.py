@@ -24,7 +24,7 @@ TXT2HTML = ['/usr/bin/mhonarc', '-single']
 ATTACHMENT_PATTERN = r'<p><strong>Attachment:((?:.|\n)*?)</p>'
 REFERENCE_RE = re.compile(r'<(.*?)>')
 
-logger = logging.getLogger('mlarchive.custom')
+logger = logging.getLogger(__name__)
 
 
 # --------------------------------------------------
@@ -255,7 +255,7 @@ class Message(models.Model):
                 return f.read()
         except IOError:
             msg = 'Error reading message file: %s' % self.get_file_path()
-            logger.warning(msg)
+            logger.error(msg)
             return msg
 
     def get_date_index_url(self):

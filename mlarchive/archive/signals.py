@@ -15,7 +15,7 @@ from django.db.models.signals import pre_delete, post_delete, post_save
 
 from mlarchive.archive.models import Message, EmailList
 
-logger = logging.getLogger('mlarchive.custom')
+logger = logging.getLogger(__name__)
 
 
 # --------------------------------------------------
@@ -144,9 +144,7 @@ def _export_lists():
         try:
             subprocess.check_call([command, path])
         except (OSError, subprocess.CalledProcessError) as error:
-            logger.error(
-                'Error calling external command: {} ({})'.format(
-                    command, error))
+            logger.error('Error calling external command: {} ({})'.format(command, error))
 
 
 def _flush_noauth_cache(email_list):

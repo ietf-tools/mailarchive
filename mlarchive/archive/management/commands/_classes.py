@@ -30,7 +30,7 @@ from mlarchive.utils.decorators import check_datetime
 from mlarchive.utils.encoding import decode_safely, decode_rfc2047_header, get_filename
 
 import logging
-logger = logging.getLogger('mlarchive.custom')
+logger = logging.getLogger(__name__)
 
 '''
 Notes on character encoding.
@@ -132,11 +132,11 @@ def archive_message(data, listname, private=False, save_failed=True):
         mw.save()
     except DuplicateMessage as error:
         # if DuplicateMessage it's already been saved to _dupes
-        logger.error('Archive message failed [{0}]'.format(error.args))
+        logger.warning('Archive message failed [{0}]'.format(error.args))
         return 0
     except SpamMessage as error:
         # if SpamMessage it's already been saved to _spam
-        logger.error('Archive message failed [{0}]'.format(error.args))
+        logger.warning('Archive message failed [{0}]'.format(error.args))
         return 0
     except Exception as error:
         traceback.print_exc(file=sys.stdout)
@@ -959,7 +959,7 @@ class MessageWrapper(object):
         # if the file already exists, append a suffix
         if os.path.exists(path):
             log_msg = "Message file already exists [{0}]".format(path)
-            logger.warning(log_msg)
+            logger.error(log_msg)
             path = get_incr_path(path)
 
         # convert line endings to crlf

@@ -8,14 +8,14 @@ import logging
 DEFAULT_CHARSET = 'latin1'
 
 
-logger = logging.getLogger('mlarchive.custom')
+logger = logging.getLogger(__name__)
 
 
 def decode_rfc2047_header(text):
     try:
         return ' '.join(decode_safely(s, charset) for s, charset in decode_header(text))
     except email.header.HeaderParseError as error:
-        logger.error('Decode header failed [{0},{1}]'.format(error.args, text))
+        logger.warning('Decode header failed [{0},{1}]'.format(error.args, text))
         return ''
 
 

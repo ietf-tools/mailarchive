@@ -7,7 +7,7 @@ Content-Transfer-Encoding header.  Common values are quoted-printable, base64, 8
 7bit.  The values 8bit and 7bit imply no encoding has been done.  Returns a string,
 still possibly encoded using the Content-Type charset.
 
-string.decode(codec) decodes a string according using the codec provided.  Returns a
+string.decode(codec) decodes a string using the codec provided.  Returns a
 unicode object.
 """
 from __future__ import absolute_import, division, print_function, unicode_literals

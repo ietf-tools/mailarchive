@@ -7,6 +7,7 @@ import logging
 import os
 import re
 import subprocess
+import urllib
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -423,7 +424,7 @@ class Attachment(models.Model):
     # message if problem with attachment
     error = models.CharField(max_length=255, blank=True)
     description = models.CharField(max_length=255)
-    filename = models.CharField(max_length=65)
+    filename = models.CharField(max_length=65, blank=True, default='')      # old disk filename
     message = models.ForeignKey(Message, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     content_type = models.CharField(max_length=150)
@@ -434,7 +435,10 @@ class Attachment(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return os.path.join(reverse('archive'), 'attach', self.message.email_list.name, self.filename)
+        return reverse('archive_attachment', kwargs={'list_name': self.message.email_list.name,
+                                                     'id': self.message.hashcode.strip('='),
+                                                     'sequence': str(self.sequence),
+                                                     'name': urllib.quote_plus(self.name)})
 
     def get_file_path(self):
         return os.path.join(self.message.get_atttachment_path(), self.filename)

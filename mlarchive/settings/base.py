@@ -151,50 +151,6 @@ STATICFILES_DIRS = (
 )
 
 
-###########
-# LOGGING #
-###########
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': True,
-    'formatters': {
-        'simple': {
-            'format': "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        }
-    },
-    'handlers': {
-        'mlarchive':
-        {
-            'level': 'DEBUG',
-            'formatter': 'simple',
-            'class': 'logging.handlers.WatchedFileHandler',
-            'filename': '/var/log/mail-archive/mlarchive.log',
-        },
-        'archive-mail_file_handler':
-        {
-            'level': 'DEBUG',
-            'formatter': 'simple',
-            'class': 'logging.handlers.WatchedFileHandler',
-            'filename': '/var/log/mail-archive/archive-mail.log',
-        }
-    },
-    'loggers': {
-        # Top level logger
-        'mlarchive': {
-            'handlers': ['mlarchive'],
-            'level': 'INFO',
-            'propagate': False,
-        },
-        # Custom logger, e.g. bin scripts, change handler to log to different file
-        'mlarchive.custom': {
-            'handlers': ['mlarchive'],
-            'level': 'DEBUG',
-            'propagate': False,
-        }
-    }
-}
-
 # HAYSTACK SETTINGS
 HAYSTACK_DEFAULT_OPERATOR = 'AND'
 HAYSTACK_SIGNAL_PROCESSOR = 'celery_haystack.signals.CelerySignalProcessor'
@@ -244,7 +200,8 @@ CONSOLE_STATS_FILE = os.path.join(DATA_ROOT, 'log/console.json')
 EXPORT_LIMIT = 5000             # maximum number of messages we will export
 ANONYMOUS_EXPORT_LIMIT = 100    # maximum number of messages a non-logged in user can export
 FILTER_CUTOFF = 5000            # maximum results for which we'll provide filter options
-LOG_FILE = os.path.join(DATA_ROOT, 'log/mlarchive.log')
+LOG_DIR = '/var/log/mail-archive'
+LOG_FILE = os.path.join(LOG_DIR, 'mlarchive.log')
 MAILMAN_DIR = '/usr/lib/mailman'
 SERVER_MODE = 'production'
 STATIC_MODE_ENABLED = False
@@ -325,3 +282,48 @@ CLOUDFLARE_AUTH_EMAIL = get_secret("CLOUDFLARE_AUTH_EMAIL")
 CLOUDFLARE_AUTH_KEY = get_secret("CLOUDFLARE_AUTH_KEY")
 CLOUDFLARE_ZONE_ID = get_secret("CLOUDFLARE_ZONE_ID")
 CACHE_CONTROL_MAX_AGE = 60 * 60 * 24 * 7     # one week
+
+
+###########
+# LOGGING #
+###########
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'simple': {
+            'format': "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        }
+    },
+    'handlers': {
+        'mlarchive':
+        {
+            'level': 'DEBUG',
+            'formatter': 'simple',
+            'class': 'logging.handlers.WatchedFileHandler',
+            'filename': LOG_FILE,
+        },
+        'archive-mail_file_handler':
+        {
+            'level': 'DEBUG',
+            'formatter': 'simple',
+            'class': 'logging.handlers.WatchedFileHandler',
+            'filename': os.path.join(LOG_DIR, 'archive-mail.log'),
+        }
+    },
+    'loggers': {
+        # Top level logger
+        'mlarchive': {
+            'handlers': ['mlarchive'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # Custom logger, e.g. bin scripts, change handler to log to different file
+        'mlarchive.custom': {
+            'handlers': ['mlarchive'],
+            'level': 'DEBUG',
+            'propagate': False,
+        }
+    }
+}

@@ -70,6 +70,7 @@ def process_attachments(apps, schema_editor):
                                                   name=filename,
                                                   content_type=content_type,
                                                   content_disposition=content_disposition,
+                                                  filename='',      # old random disk fileneme
                                                   sequence=sequence)
                         created = created + 1
     print('Total created: {}'.format(created))

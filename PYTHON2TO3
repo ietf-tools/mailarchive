@@ -6,6 +6,7 @@ x xrange
 - from builtins import dict, str
 - HTMLParser
 - urllib -> requests
+- urllib parse
 - dict.keys(), dict.values(), dict.items()
 - print function
 - unicode_literals
@@ -14,6 +15,7 @@ x xrange
 - StringIO
 - open -> io.open
 - super
+- htauth replace w/ passlib
 '''
 
 

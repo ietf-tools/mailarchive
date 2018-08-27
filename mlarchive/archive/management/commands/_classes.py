@@ -879,30 +879,6 @@ class MessageWrapper(object):
                                           name=get_filename(part),
                                           sequence=sequence)
 
-                '''
-                # extension = lookup_extension(content_type)
-                # handle unrecognized
-                payload = part.get_payload(decode=True)
-                if not payload:
-                    # TODO: get error from msg
-                    attach.error = '<<< %s; name=%s: Unrecognized >>>' % (content_type, name)
-                    attach.save()
-                    continue
-
-                # write to disk
-                if not test:
-                    fp = tempfile.NamedTemporaryFile(dir=self.archive_message.get_attachment_path(),
-                                                     prefix=extension,
-                                                     suffix='.' + extension,
-                                                     delete=False)
-                    with fp as f:
-                        f.write(payload)
-                    attach.filename = os.path.basename(fp.name)
-                    attach.save()
-                    os.chmod(fp.name, 0666)
-                    call_remote_backup(fp.name)
-                '''
-
     def save(self, test=False):
         """Ensure message is not duplicate message-id or hash.  Save message to database.
         Save to disk (if not test mode) and process attachments.

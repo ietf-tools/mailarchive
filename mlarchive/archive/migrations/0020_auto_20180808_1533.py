@@ -42,7 +42,10 @@ def process_attachments(apps, schema_editor):
     EmailList = apps.get_model("archive", "EmailList")
     Attachment = apps.get_model("archive", "Attachment")
 
-    updated = 0
+    # delete all existing attachments
+    print('Deleting existing attachments')
+    Attachment.objects.all().delete()
+    
     created = 0
     for elist in EmailList.objects.all().order_by('name'):
         print("Scanning {}".format(elist.name))
@@ -54,25 +57,14 @@ def process_attachments(apps, schema_editor):
                     filename = get_filename(part)
                     content_type = part.get_content_type()
                     content_disposition = get_content_disposition(part)
-                    extension = lookup_extension(content_type)
-
-                    # check if attachment already exists
-                    attachment = msg.attachment_set.filter(name=filename, filename__endswith=extension, content_type='', content_disposition='').first()
-                    if attachment:
-                        attachment.content_type = content_type
-                        attachment.content_disposition = content_disposition
-                        attachment.sequence = sequence
-                        attachment.save()
-                        updated = updated + 1
-                    else:
-                        Attachment.objects.create(message=msg,
-                                                  description='',
-                                                  name=filename,
-                                                  content_type=content_type,
-                                                  content_disposition=content_disposition,
-                                                  filename='',      # old random disk fileneme
-                                                  sequence=sequence)
-                        created = created + 1
+                    Attachment.objects.create(message=msg,
+                                              description='',
+                                              name=filename,
+                                              content_type=content_type,
+                                              content_disposition=content_disposition,
+                                              filename='',      # old random disk fileneme
+                                              sequence=sequence)
+                    created = created + 1
     print('Total created: {}'.format(created))
 
 

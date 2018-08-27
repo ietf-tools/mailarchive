@@ -16,6 +16,7 @@ x xrange
 - open -> io.open
 - super
 - htauth replace w/ passlib
+- python 3 bytesparser
 '''
 
 

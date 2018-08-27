@@ -1,4 +1,22 @@
 
+mailarch (1.13.0) ietf; urgency=normal
+
+* Fix bug where invalid qdr parameter causes HTTP 500 error.  Fixes #2575
+
+* Add button to copy message url to clipboard, to message view pane.  Fixes #2571
+
+* Refactor logging
+
+* Add stack trace and message details to call-archives.py failure email, to aid in troubleshooting failures
+
+* Refactor attachment handling to serve as needed rather than creating files.  Fixes #2456
+
+* Add --noinput argument to bin/check_inactive.py, and add test.  Fixes #2517
+
+* Move admin navigation links from footer to menu in header. Fixes #2557
+
+-- Ryan Cross <rcross@amsl.com>  27 August 2018 14:00:00 +0800
+
 mailarch (1.12.6) ietf; urgency=normal
 
 * Add credentials to CloudFlare API call

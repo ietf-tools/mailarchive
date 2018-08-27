@@ -290,6 +290,14 @@ def test_browse_qdr(client, messages):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_browse_qdr_invalid(client, messages):
+    url = reverse('archive_browse_list', kwargs={'list_name': 'pubthree'}) + '?qdr=3d'
+    response = client.get(url)
+    assert response.status_code == 200
+    assert len(response.context['results']) == 20
+
+
+@pytest.mark.django_db(transaction=True)
 def test_browse_static(client, static_list):
     url = reverse('archive_browse_static_date', kwargs={'list_name': static_list.name, 'date': '2017'})
     response = client.get(url)

@@ -101,8 +101,9 @@ def get_kwargs(data):
 
 def get_qdr_kwargs(data):
     qdr_kwargs = {}
-    if data.get('qdr') and data['qdr'] not in ('a', 'c'):
+    if data.get('qdr') and data['qdr'] in ('d', 'w', 'm', 'y'):
         qdr_kwargs['date__gte'] = get_qdr_time(data['qdr'])
+
     return qdr_kwargs
 
 

@@ -437,8 +437,7 @@ class Attachment(models.Model):
     def get_absolute_url(self):
         return reverse('archive_attachment', kwargs={'list_name': self.message.email_list.name,
                                                      'id': self.message.hashcode.strip('='),
-                                                     'sequence': str(self.sequence),
-                                                     'name': urllib.quote_plus(self.name)})
+                                                     'sequence': str(self.sequence)})
 
     def get_file_path(self):
         return os.path.join(self.message.get_atttachment_path(), self.filename)

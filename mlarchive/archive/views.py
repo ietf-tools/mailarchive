@@ -538,16 +538,16 @@ def admin_guide(request):
 
 @pad_id
 @check_access
-def attachment(request, list_name, id, sequence, name, msg):
+def attachment(request, list_name, id, sequence, msg):
     try:
-        attachment = msg.attachment_set.get(sequence=sequence, name=name)
+        attachment = msg.attachment_set.get(sequence=sequence)
     except Attachment.DoesNotExist:
         raise Http404("Attachment not found")
 
     sub_message = attachment.get_sub_message()
     payload = sub_message.get_payload(decode=True)
     response = HttpResponse(payload, content_type=attachment.content_type)
-    response['Content-Disposition'] = 'attachment; filename=%s' % name
+    response['Content-Disposition'] = 'attachment; filename=%s' % attachment.name
     return response
 
 

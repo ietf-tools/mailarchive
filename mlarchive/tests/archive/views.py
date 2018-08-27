@@ -473,8 +473,7 @@ def test_attachment(client, attachment_messages_no_index):
     attachment = Attachment.objects.first()
     url = reverse('archive_attachment', kwargs={'list_name': attachment.message.email_list.name,
                                                 'id': attachment.message.hashcode,
-                                                'sequence': attachment.sequence,
-                                                'name': attachment.name})
+                                                'sequence': attachment.sequence})
     print url
     print attachment.sequence, attachment.name, attachment.content_type
     response = client.get(url)

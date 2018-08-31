@@ -167,25 +167,25 @@ HAYSTACK_XAPIAN_MAX_RETRIES = 5    # number or times to retry lookup, enquire.ge
 
 # ELASTICSEARCH SETTINGS
 ELASTICSEARCH_INDEX_MAPPINGS = {
-    "django_ct": {'type': 'string', 'index': 'not_analyzed', 'include_in_all': False},
-    "django_id": {'type': 'string', 'index': 'not_analyzed', 'include_in_all': False},
+    "django_ct": {'type': 'keyword'},
+    "django_id": {'type': 'keyword'},
     "date": {"type": "date"},
     "email_list": {"type": "keyword"},
     "email_list_exact": {"type": "keyword"},
-    "frm": {"type": "text", "analyzer": "snowball"},
+    "frm": {"type": "text"},
     "frm_exact": {"type": "keyword"},
     "frm_name": {"type": "keyword"},
     "frm_name_exact": {"type": "keyword"},
-    "from": {"type": "text", "analyzer": "snowball"},
+    "from": {"type": "text"},
     "id": {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}},
-    "msgid": {"type": "text", "analyzer": "snowball"},
+    "msgid": {"type": "text"},
     "msgid_exact": {"type": "keyword"},
     "spam_score": {"type": "long"},
-    "subject": {"type": "text", "analyzer": "snowball"},
+    "subject": {"type": "text"},
     "tdate": {"type": "date"},
-    "text": {"type": "text", "analyzer": "snowball"},
+    "text": {"type": "text"},
     "tid": {"type": "long"},
-    "to": {"type": "text", "analyzer": "snowball"},
+    "to": {"type": "text"},
     "torder": {"type": "long"}
 }
 
@@ -290,7 +290,7 @@ CACHE_CONTROL_MAX_AGE = 60 * 60 * 24 * 7     # one week
 
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': True,
+    'disable_existing_loggers': False,
     'formatters': {
         'simple': {
             'format': "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -323,6 +323,11 @@ LOGGING = {
         'mlarchive.custom': {
             'handlers': ['mlarchive'],
             'level': 'DEBUG',
+            'propagate': False,
+        },
+        'haystack': {
+            'handlers': ['mlarchive'],
+            'level': 'INFO',
             'propagate': False,
         }
     }

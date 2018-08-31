@@ -7,12 +7,18 @@ from haystack_elasticsearch.elasticsearch5 import (Elasticsearch5SearchBackend,
 from django.conf import settings
 from django.utils import six
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 class ConfigurableElasticsearchBackend(Elasticsearch5SearchBackend):
+    '''
+    A custom ES backend that uses fixed field mappings from settings
+    instead of generating them.
+    '''
     def build_schema(self, fields):
         content_field_name = 'text'
         mapping = settings.ELASTICSEARCH_INDEX_MAPPINGS
-
         return (content_field_name, mapping)
 
 
@@ -167,6 +173,6 @@ class CustomElasticsearchQuery(Elasticsearch5SearchQuery):
 
 
 class ConfigurableElasticSearchEngine(Elasticsearch5SearchEngine):
-    # backend = ConfigurableElasticsearchBackend
-    backend = Elasticsearch5SearchBackend
+    # backend = Elasticsearch5SearchBackend
+    backend = ConfigurableElasticsearchBackend
     query = CustomElasticsearchQuery

@@ -167,8 +167,8 @@ HAYSTACK_XAPIAN_MAX_RETRIES = 5    # number or times to retry lookup, enquire.ge
 
 # ELASTICSEARCH SETTINGS
 ELASTICSEARCH_INDEX_MAPPINGS = {
-    "django_ct": {'type': 'keyword'},
-    "django_id": {'type': 'keyword'},
+    "django_ct": {'type': 'keyword'},       # "archive.message"
+    "django_id": {'type': 'long'},          # primary key of message
     "date": {"type": "date"},
     "email_list": {"type": "keyword"},
     "email_list_exact": {"type": "keyword"},
@@ -177,7 +177,8 @@ ELASTICSEARCH_INDEX_MAPPINGS = {
     "frm_name": {"type": "keyword"},
     "frm_name_exact": {"type": "keyword"},
     "from": {"type": "text"},
-    "id": {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}},
+    #"id": {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}},
+    "id": {"type": "keyword"},              # e.g. archive.message.1
     "msgid": {"type": "text"},
     "msgid_exact": {"type": "keyword"},
     "spam_score": {"type": "long"},

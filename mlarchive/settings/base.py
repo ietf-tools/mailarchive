@@ -156,16 +156,14 @@ HAYSTACK_DEFAULT_OPERATOR = 'AND'
 HAYSTACK_SIGNAL_PROCESSOR = 'celery_haystack.signals.CelerySignalProcessor'
 HAYSTACK_SEARCH_RESULTS_PER_PAGE = 40
 
-HAYSTACK_XAPIAN_PATH = '/a/mailarch/data/xapian.stub'
 HAYSTACK_CONNECTIONS = {
     'default': {
-        'ENGINE': 'haystack.backends.xapian_backend.XapianEngine',
-        'PATH': '/a/mailarch/data/archive_index',
+        'ENGINE': 'mlarchive.archive.backends.ConfigurableElasticSearchEngine',
+        'URL': 'http://127.0.0.1:9200/',
+        'INDEX_NAME': 'mail-archive', 
     },
 }
-HAYSTACK_XAPIAN_MAX_RETRIES = 5    # number or times to retry lookup, enquire.get_mset.
 
-# ELASTICSEARCH SETTINGS
 ELASTICSEARCH_INDEX_MAPPINGS = {
     "django_ct": {'type': 'keyword'},       # "archive.message"
     "django_id": {'type': 'long'},          # primary key of message

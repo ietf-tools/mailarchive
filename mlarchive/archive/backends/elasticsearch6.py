@@ -2,30 +2,32 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import datetime
+import warnings
 
+import haystack
 from django.conf import settings
-
 from haystack.backends import BaseEngine
-from haystack.backends.elasticsearch_backend import ElasticsearchSearchBackend, ElasticsearchSearchQuery
-from haystack.constants import DJANGO_CT
+from haystack.constants import DEFAULT_OPERATOR, DJANGO_CT
 from haystack.exceptions import MissingDependency
 from haystack.utils import get_identifier, get_model_ct
-from haystack.utils import log as logging
+
+from haystack_elasticsearch.constants import FUZZINESS
+from haystack_elasticsearch.elasticsearch import ElasticsearchSearchBackend, ElasticsearchSearchQuery
 
 try:
     import elasticsearch
-    if not ((2, 0, 0) <= elasticsearch.__version__ < (3, 0, 0)):
+    if not ((6, 0, 0) <= elasticsearch.__version__ < (7, 0, 0)):
         raise ImportError
     from elasticsearch.helpers import bulk, scan
 except ImportError:
-    raise MissingDependency("The 'elasticsearch2' backend requires the \
-                            installation of 'elasticsearch>=2.0.0,<3.0.0'. \
+    raise MissingDependency("The 'elasticsearch6' backend requires the \
+                            installation of 'elasticsearch>=6.0.0,<7.0.0'. \
                             Please refer to the documentation.")
 
 
-class Elasticsearch2SearchBackend(ElasticsearchSearchBackend):
+class Elasticsearch6SearchBackend(ElasticsearchSearchBackend):
     def __init__(self, connection_alias, **connection_options):
-        super(Elasticsearch2SearchBackend, self).__init__(connection_alias, **connection_options)
+        super(Elasticsearch6SearchBackend, self).__init__(connection_alias, **connection_options)
         self.content_field_name = None
 
     def clear(self, models=None, commit=True):
@@ -70,60 +72,73 @@ class Elasticsearch2SearchBackend(ElasticsearchSearchBackend):
             else:
                 self.log.error("Failed to clear Elasticsearch index: %s", e, exc_info=True)
 
-    def build_search_kwargs(self, query_string, sort_by=None, start_offset=0, end_offset=None,
-                            fields='', highlight=False, facets=None,
-                            date_facets=None, query_facets=None,
-                            narrow_queries=None, spelling_query=None,
-                            within=None, dwithin=None, distance_point=None,
-                            models=None, limit_to_registered_models=None,
-                            result_class=None):
-        kwargs = super(Elasticsearch2SearchBackend, self).build_search_kwargs(query_string, sort_by,
-                                                                              start_offset, end_offset,
-                                                                              fields, highlight,
-                                                                              spelling_query=spelling_query,
-                                                                              within=within, dwithin=dwithin,
-                                                                              distance_point=distance_point,
-                                                                              models=models,
-                                                                              limit_to_registered_models=
-                                                                              limit_to_registered_models,
-                                                                              result_class=result_class)
+    def _build_search_kwargs_default(self, content_field, query_string):
+        if query_string == '*:*':
+            return {
+                'query': {
+                    "match_all": {}
+                },
+            }
+        else:
+            return {
+                'query': {
+                    'query_string': {
+                        'default_field': content_field,
+                        'default_operator': DEFAULT_OPERATOR,
+                        'query': query_string,
+                        'analyze_wildcard': True,
+                        'auto_generate_phrase_queries': True,
+                        'fuzziness': FUZZINESS,
+                    },
+                },
+            }
 
-        filters = []
-        if start_offset is not None:
-            kwargs['from'] = start_offset
+    def _build_search_kwargs_fields(self, fields):
+        if fields:
+            if isinstance(fields, (list, set)):
+                fields = " ".join(fields)
 
-        if end_offset is not None:
-            kwargs['size'] = end_offset - start_offset
+        return 'stored_fields', fields
 
-        if narrow_queries is None:
-            narrow_queries = set()
+    def _build_search_kwargs_highlight(self, content_field, highlight):
+        result = {
+            'fields': {
+                content_field: {},
+            }
+        }
+        if isinstance(highlight, dict):
+            result.update(highlight)
+        return result
+
+    def _build_search_kwargs_facets(self, facets, date_facets,query_facets):
+        result = {}
 
         if facets is not None:
-            kwargs.setdefault('aggs', {})
-
+            index = haystack.connections[self.connection_alias]\
+                .get_unified_index()
             for facet_fieldname, extra_options in facets.items():
                 facet_options = {
                     'meta': {
                         '_type': 'terms',
                     },
                     'terms': {
-                        'field': facet_fieldname,
+                        'field': index.get_facet_fieldname(facet_fieldname),
                     }
                 }
                 if 'order' in extra_options:
                     facet_options['meta']['order'] = extra_options.pop('order')
-                # Special cases for options applied at the facet level (not the terms level).
+                # Special cases for options applied at the facet level
+                # (not the terms level).
                 if extra_options.pop('global_scope', False):
                     # Renamed "global_scope" since "global" is a python keyword.
                     facet_options['global'] = True
                 if 'facet_filter' in extra_options:
-                    facet_options['facet_filter'] = extra_options.pop('facet_filter')
+                    facet_options['facet_filter'] = extra_options.pop(
+                        'facet_filter')
                 facet_options['terms'].update(extra_options)
-                kwargs['aggs'][facet_fieldname] = facet_options
+                result[facet_fieldname] = facet_options
 
         if date_facets is not None:
-            kwargs.setdefault('aggs', {})
-
             for facet_fieldname, value in date_facets.items():
                 # Need to detect on gap_by & only add amount if it's more than one.
                 interval = value.get('gap_by').lower()
@@ -133,7 +148,7 @@ class Elasticsearch2SearchBackend(ElasticsearchSearchBackend):
                     # Just the first character is valid for use.
                     interval = "%s%s" % (value['gap_amount'], interval[:1])
 
-                kwargs['aggs'][facet_fieldname] = {
+                result[facet_fieldname] = {
                     'meta': {
                         '_type': 'date_histogram',
                     },
@@ -147,8 +162,10 @@ class Elasticsearch2SearchBackend(ElasticsearchSearchBackend):
                                 'field': facet_fieldname,
                                 'ranges': [
                                     {
-                                        'from': self._from_python(value.get('start_date')),
-                                        'to': self._from_python(value.get('end_date')),
+                                        'from': self._from_python(
+                                            value.get('start_date')),
+                                        'to': self._from_python(
+                                            value.get('end_date')),
                                     }
                                 ]
                             }
@@ -157,10 +174,8 @@ class Elasticsearch2SearchBackend(ElasticsearchSearchBackend):
                 }
 
         if query_facets is not None:
-            kwargs.setdefault('aggs', {})
-
             for facet_fieldname, value in query_facets:
-                kwargs['aggs'][facet_fieldname] = {
+                result[facet_fieldname] = {
                     'meta': {
                         '_type': 'query',
                     },
@@ -171,31 +186,23 @@ class Elasticsearch2SearchBackend(ElasticsearchSearchBackend):
                     },
                 }
 
-        for q in narrow_queries:
-            filters.append({
-                'query_string': {
-                    'query': q
-                }
-            })
+        return 'aggs', result
 
-        # if we want to filter, change the query type to filteres
+    def _build_search_filters_narrow_query(self, q):
+        return {
+            'query_string': {
+                'query': q
+            }
+        }
+
+    def _build_search_kwargs_query(self, filters, query):
         if filters:
-            kwargs["query"] = {"filtered": {"query": kwargs.pop("query")}}
-            filtered = kwargs["query"]["filtered"]
-            if 'filter' in filtered:
-                if "bool" in filtered["filter"].keys():
-                    another_filters = kwargs['query']['filtered']['filter']['bool']['must']
-                else:
-                    another_filters = [kwargs['query']['filtered']['filter']]
+            result = {"bool": {"must": query}}
+            if len(filters) == 1:
+                result['bool']["filter"] = filters[0]
             else:
-                another_filters = filters
-
-            if len(another_filters) == 1:
-                kwargs['query']['filtered']["filter"] = another_filters[0]
-            else:
-                kwargs['query']['filtered']["filter"] = {"bool": {"must": another_filters}}
-
-        return kwargs
+                result['bool']["filter"] = {"bool": {"must": filters}}
+        return result
 
     def more_like_this(self, model_instance, additional_query_string=None,
                        start_offset=0, end_offset=None, models=None,
@@ -239,10 +246,8 @@ class Elasticsearch2SearchBackend(ElasticsearchSearchBackend):
 
             if additional_query_string and additional_query_string != '*:*':
                 additional_filter = {
-                    "query": {
-                        "query_string": {
-                            "query": additional_query_string
-                        }
+                    "query_string": {
+                        "query": additional_query_string
                     }
                 }
                 narrow_queries.append(additional_filter)
@@ -266,8 +271,8 @@ class Elasticsearch2SearchBackend(ElasticsearchSearchBackend):
             if len(narrow_queries) > 0:
                 mlt_query = {
                     "query": {
-                        "filtered": {
-                            'query': mlt_query['query'],
+                        "bool": {
+                            'must': mlt_query['query'],
                             'filter': {
                                 'bool': {
                                     'must': list(narrow_queries)
@@ -295,7 +300,7 @@ class Elasticsearch2SearchBackend(ElasticsearchSearchBackend):
     def _process_results(self, raw_results, highlight=False,
                          result_class=None, distance_point=None,
                          geo_sort=False):
-        results = super(Elasticsearch2SearchBackend, self)._process_results(raw_results, highlight,
+        results = super(Elasticsearch6SearchBackend, self)._process_results(raw_results, highlight,
                                                                             result_class, distance_point,
                                                                             geo_sort)
         facets = {}
@@ -324,10 +329,13 @@ class Elasticsearch2SearchBackend(ElasticsearchSearchBackend):
         return results
 
 
-class Elasticsearch2SearchQuery(ElasticsearchSearchQuery):
-    pass
+class Elasticsearch6SearchQuery(ElasticsearchSearchQuery):
+    def add_field_facet(self, field, **options):
+        """Adds a regular facet on a field."""
+        # to be renamed to the facet fieldname by build_search_kwargs later
+        self.facets[field] = options.copy()
 
 
-class Elasticsearch2SearchEngine(BaseEngine):
-    backend = Elasticsearch2SearchBackend
-    query = Elasticsearch2SearchQuery
+class Elasticsearch6SearchEngine(BaseEngine):
+    backend = Elasticsearch6SearchBackend
+    query = Elasticsearch6SearchQuery

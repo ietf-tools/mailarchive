@@ -1,8 +1,8 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 from haystack.inputs import Clean, Exact, PythonData, Raw
-from haystack_elasticsearch.elasticsearch5 import (Elasticsearch5SearchBackend,
-    Elasticsearch5SearchQuery, Elasticsearch5SearchEngine)
+from mlarchive.archive.backends.elasticsearch6 import (Elasticsearch6SearchBackend,
+    Elasticsearch6SearchQuery, Elasticsearch6SearchEngine)
 
 from django.conf import settings
 from django.utils import six
@@ -11,7 +11,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class ConfigurableElasticsearchBackend(Elasticsearch5SearchBackend):
+class ConfigurableElasticsearchBackend(Elasticsearch6SearchBackend):
     '''
     A custom ES backend that uses fixed field mappings from settings
     instead of generating them.
@@ -63,7 +63,7 @@ class ConfigurableElasticsearchBackend(Elasticsearch5SearchBackend):
     '''
 
 
-class CustomElasticsearchQuery(Elasticsearch5SearchQuery):
+class CustomElasticsearchQuery(Elasticsearch6SearchQuery):
     def build_query_fragment(self, field, filter_type, value):
         """Custom version which excludes wildcards from 'contains' filter_type"""
         from haystack import connections
@@ -213,7 +213,7 @@ class CustomElasticsearchQuery(Elasticsearch5SearchQuery):
         self._spelling_suggestion = results.get('spelling_suggestion', None)
 
 
-class ConfigurableElasticSearchEngine(Elasticsearch5SearchEngine):
+class ConfigurableElasticSearchEngine(Elasticsearch6SearchEngine):
     # backend = Elasticsearch5SearchBackend
     backend = ConfigurableElasticsearchBackend
     query = CustomElasticsearchQuery

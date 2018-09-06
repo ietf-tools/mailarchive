@@ -8,10 +8,8 @@ AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
 
 # HAYSTACK SETTINGS
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
-HAYSTACK_CONNECTIONS['default']['INDEX_NAME'] = 'test'
-# xapian
-HAYSTACK_XAPIAN_PATH = os.path.join(DATA_ROOT, 'xapian.stub')
-HAYSTACK_CONNECTIONS['default']['PATH'] = HAYSTACK_XAPIAN_PATH
+HAYSTACK_CONNECTIONS['default']['INDEX_NAME'] = 'test-mail-archive'
+
 
 # use standard default of 20 as it's easier to test
 HAYSTACK_SEARCH_RESULTS_PER_PAGE = 20
@@ -37,13 +35,6 @@ CACHES = {
 # IMAP Interface
 EXPORT_DIR = os.path.join(DATA_ROOT, 'export')
 
-# uncomment to disable filters / facets
-# FILTER_CUTOFF = 0
-
-# Inspectors
-# INSPECTORS = {
-#    'ListIdSpamInspector': {'includes':['mpls']}
-# }
 
 # CLOUDFLARE  INTEGRATION
 USING_CDN = False

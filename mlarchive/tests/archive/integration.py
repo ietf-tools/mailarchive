@@ -293,7 +293,7 @@ def test_queries_so_param(client, messages):
     assert response.status_code == 200
     results = response.context['results']
     assert len(results) == 4
-    assert [x.object.msgid for x in results] == ['a03', 'a01', 'a04', 'a02']
+    assert [x.object.msgid for x in results] == ['a03', 'a01', 'a02', 'a04']
 
 
 @pytest.mark.django_db(transaction=True)
@@ -303,7 +303,7 @@ def test_queries_sso_param(client, messages):
     assert response.status_code == 200
     results = response.context['results']
     assert len(results) == 4
-    assert [x.object.msgid for x in results] == ['a03', 'a01', 'a04', 'a02']
+    assert [x.object.msgid for x in results] == ['a03', 'a01', 'a02', 'a04']
 
 
 # --------------------------------------------------

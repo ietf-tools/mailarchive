@@ -158,9 +158,9 @@ HAYSTACK_SEARCH_RESULTS_PER_PAGE = 40
 
 HAYSTACK_CONNECTIONS = {
     'default': {
-        'ENGINE': 'mlarchive.archive.backends.ConfigurableElasticSearchEngine',
+        'ENGINE': 'mlarchive.archive.backends.custom.ConfigurableElasticSearchEngine',
         'URL': 'http://127.0.0.1:9200/',
-        'INDEX_NAME': 'mail-archive', 
+        'INDEX_NAME': 'mail-archive',
     },
 }
 
@@ -175,8 +175,8 @@ ELASTICSEARCH_INDEX_MAPPINGS = {
     "frm_name": {"type": "keyword"},
     "frm_name_exact": {"type": "keyword"},
     "from": {"type": "text"},
-    #"id": {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}},
-    "id": {"type": "keyword"},              # e.g. archive.message.1
+    "id": {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}},
+    #"id": {"type": "keyword"},              # e.g. archive.message.1
     "msgid": {"type": "text"},
     "msgid_exact": {"type": "keyword"},
     "spam_score": {"type": "long"},
@@ -192,9 +192,6 @@ ELASTICSEARCH_INDEX_MAPPINGS = {
 ARCHIVE_HOST_URL = 'https://mailarchive.ietf.org'
 DATA_ROOT = '/a/mailarch/data'
 ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
-STATIC_INDEX_DIR = os.path.join(DATA_ROOT, 'static')
-STATIC_INDEX_MESSAGES_PER_PAGE = 500
-STATIC_INDEX_YEAR_MINIMUM = 750
 CONSOLE_STATS_FILE = os.path.join(DATA_ROOT, 'log/console.json')
 EXPORT_LIMIT = 5000             # maximum number of messages we will export
 ANONYMOUS_EXPORT_LIMIT = 100    # maximum number of messages a non-logged in user can export
@@ -203,7 +200,6 @@ LOG_DIR = '/var/log/mail-archive'
 LOG_FILE = os.path.join(LOG_DIR, 'mlarchive.log')
 MAILMAN_DIR = '/usr/lib/mailman'
 SERVER_MODE = 'production'
-STATIC_MODE_ENABLED = False
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # number of messages to load when scrolling search results
 SEARCH_SCROLL_BUFFER_SIZE = HAYSTACK_SEARCH_RESULTS_PER_PAGE
@@ -212,6 +208,12 @@ USE_EXTERNAL_PROCESSOR = False
 MAX_THREAD_DEPTH = 6
 THREAD_ORDER_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
 MIME_TYPES_PATH = os.path.join(BASE_DIR, 'mime.types')
+
+# Static Mode
+STATIC_MODE_ENABLED = True
+STATIC_INDEX_DIR = os.path.join(DATA_ROOT, 'static')
+STATIC_INDEX_MESSAGES_PER_PAGE = 500
+STATIC_INDEX_YEAR_MINIMUM = 750
 
 # spam_score bits
 MARK_BITS = {'NON_ASCII_HEADER': 0b0001,

@@ -1,4 +1,10 @@
 
+mailarch (2.0.1) ietf; urgency=normal
+
+* Fix Elasticsearch field mapping
+
+-- Ryan Cross <rcross@amsl.com>  9 September 2018 15:30:00 +0800
+
 mailarch (2.0.0) ietf; urgency=normal
 
 * Switch to Elasticsearch backend

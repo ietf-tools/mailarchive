@@ -18,7 +18,7 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 3500
 # RealtimeSignalProccessor updates the index immediately
 # HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.BaseSignalProcessor'
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
-HAYSTACK_CONNECTIONS['default']['ENGINE'] = 'mlarchive.archive.backends.ConfigurableElasticSearchEngine'
+HAYSTACK_CONNECTIONS['default']['ENGINE'] = 'mlarchive.archive.backends.custom.ConfigurableElasticSearchEngine'
 HAYSTACK_CONNECTIONS['default']['URL'] = 'http://127.0.0.1:9200/'
 HAYSTACK_CONNECTIONS['default']['INDEX_NAME'] = 'mail-archive'
 

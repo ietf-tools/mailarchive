@@ -134,16 +134,6 @@ def test_haystack_content(query_messages):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_queries_to_field(client, messages):
-    url = reverse('archive_search') + '?q=to:to@amsl.com'
-    response = client.get(url)
-    assert response.status_code == 200
-    results = response.context['results']
-    assert len(results) == 1
-    assert 'to@amsl.com' in results[0].to
-
-
-@pytest.mark.django_db(transaction=True)
 def test_queries_from_field(client, messages):
     url = reverse('archive_search') + '?q=from:larry@amsl.com'
     response = client.get(url)
@@ -225,17 +215,6 @@ def test_queries_email_list_with_bad_name(client, messages):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_queries_to_param(client, messages):
-    print [m.msgid for m in messages]
-    url = reverse('archive_search') + '?to=to@amsl.com'
-    response = client.get(url)
-    assert response.status_code == 200
-    results = response.context['results']
-    assert len(results) == 1
-    assert 'to@amsl.com' in results[0].to
-
-
-@pytest.mark.django_db(transaction=True)
 def test_queries_from_param(client, messages):
     url = reverse('archive_search') + '?from=larry@amsl.com'
     response = client.get(url)
@@ -294,6 +273,16 @@ def test_queries_so_param(client, messages):
     results = response.context['results']
     assert len(results) == 4
     assert [x.object.msgid for x in results] == ['a03', 'a01', 'a02', 'a04']
+
+
+@pytest.mark.django_db(transaction=True)
+def test_queries_so_param_subject(client, messages):
+    url = reverse('archive_search') + '?email_list=pubone&so=subject'
+    response = client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert len(results) == 4
+    assert [x.object.msgid for x in results] == ['a01', 'a02', 'a04', 'a03']
 
 
 @pytest.mark.django_db(transaction=True)

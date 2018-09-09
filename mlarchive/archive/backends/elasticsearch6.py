@@ -1,6 +1,16 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+'''
+
+NOTES:
+The index doc_type is going away.  We should change from "modelresult" to "_doc".  However
+doc_type is used in many methods setup(), update(), remove(), clear(), search(),
+more_like_this()
+
+Keyword: https://www.elastic.co/guide/en/elasticsearch/reference/current/keyword.html
+'''
+
 import datetime
 import warnings
 
@@ -53,6 +63,8 @@ class Elasticsearch6SearchBackend(ElasticsearchSearchBackend):
                     models_to_delete.append("%s:%s" % (DJANGO_CT, get_model_ct(model)))
 
                 # Delete using scroll API
+                # AMS TODO why not continue to use delete_by_query (see earlier backend)
+                # https://github.com/elastic/elasticsearch/issues/7052
                 query = {'query': {'query_string': {'query': " OR ".join(models_to_delete)}}}
                 generator = scan(self.conn, query=query, index=self.index_name, doc_type='modelresult')
                 actions = ({

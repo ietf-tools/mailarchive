@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 from haystack.inputs import Clean, Exact, PythonData, Raw
+from haystack.constants import DEFAULT_OPERATOR, DJANGO_CT, DJANGO_ID, ID
 from mlarchive.archive.backends.elasticsearch6 import (Elasticsearch6SearchBackend,
     Elasticsearch6SearchQuery, Elasticsearch6SearchEngine)
 
@@ -16,51 +17,55 @@ class ConfigurableElasticsearchBackend(Elasticsearch6SearchBackend):
     A custom ES backend that uses fixed field mappings from settings
     instead of generating them.
     '''
+
     def build_schema(self, fields):
         content_field_name = 'text'
         mapping = settings.ELASTICSEARCH_INDEX_MAPPINGS
         return (content_field_name, mapping)
 
     '''
-    DEFAULT_FIELD_MAPPING = {'type': 'text'}
-    FIELD_MAPPINGS = {
+    def build_schema(self, fields):
+        content_field_name = ''
+        mapping = {
+            DJANGO_CT: {'type': 'keyword'},
+            DJANGO_ID: {'type': 'long'},
+        }
+
+        for field_name, field_class in fields.items():
+            field_mapping = FIELD_MAPPINGS.get(field_class.field_type, DEFAULT_FIELD_MAPPING).copy()
+            if field_class.boost != 1.0:
+                field_mapping['boost'] = field_class.boost
+
+            if field_class.document is True:
+                content_field_name = field_class.index_fieldname
+
+            # Do this last to override `text` fields.
+            if field_mapping['type'] == 'text':
+                if field_class.indexed is False or hasattr(field_class, 'facet_for'):
+                    field_mapping['type'] = 'keyword'
+                    # field_mapping['index'] = False
+                    if 'analyzer' in field_mapping:
+                        del field_mapping['analyzer']
+
+            mapping[field_class.index_fieldname] = field_mapping
+
+        return (content_field_name, mapping)
+    '''
+
+
+DEFAULT_FIELD_MAPPING = {'type': 'text'}
+FIELD_MAPPINGS = {
     'edge_ngram': {'type': 'text', 'analyzer': 'edgengram_analyzer'},
     'ngram':      {'type': 'text', 'analyzer': 'ngram_analyzer'},
     'date':       {'type': 'date'},
     'datetime':   {'type': 'date'},
-
+    'string':     {'type': 'text'},
     'location':   {'type': 'geo_point'},
     'boolean':    {'type': 'boolean'},
     'float':      {'type': 'float'},
     'long':       {'type': 'long'},
     'integer':    {'type': 'long'},
 }
-
-    def build_schema(self, fields):
-    content_field_name = ''
-    mapping = {
-        DJANGO_CT: {'type': 'keyword'},
-        DJANGO_ID: {'type': 'long'},
-    }
-
-    for field_name, field_class in fields.items():
-        field_mapping = FIELD_MAPPINGS.get(field_class.field_type, DEFAULT_FIELD_MAPPING).copy()
-        if field_class.boost != 1.0:
-            field_mapping['boost'] = field_class.boost
-
-        if field_class.document is True:
-            content_field_name = field_class.index_fieldname
-
-        # Do this last to override `text` fields.
-        if field_mapping['type'] == 'text':
-            if field_class.indexed is False or hasattr(field_class, 'facet_for'):
-                field_mapping['index'] = False
-                del field_mapping['analyzer']
-
-        mapping[field_class.index_fieldname] = field_mapping
-
-    return (content_field_name, mapping)
-    '''
 
 
 class CustomElasticsearchQuery(Elasticsearch6SearchQuery):

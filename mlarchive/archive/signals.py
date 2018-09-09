@@ -2,6 +2,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import logging
 import os
+import requests
 import shutil
 import subprocess
 import sys
@@ -119,6 +120,8 @@ def purge_files_from_cache(message, created=True):
             logger.info('purging cached urls: {}'.format(urls))
         except CloudFlare.exceptions.CloudFlareAPIError as e:
             traceback.print_exc(file=sys.stdout)
+            logger.error(e)
+        except requests.exceptions.HTTPError as e:
             logger.error(e)
 
 

@@ -146,11 +146,14 @@ def get_order_fields(params, use_db=False):
 def map_sort_option(val, use_db=False):
     """This function takes a sort parameter and validates and maps it for use
     in an order_by clause.
+    TODO: do in a dictionary instead
     """
     if val not in VALID_SORT_OPTIONS:
         return ''
     if val in ('frm', '-frm') and not use_db:
         val = val + '_name'    # use just email portion of from
+    if val in ('subject', '-subject'):
+        val = val + '_base'
     return val
 
 

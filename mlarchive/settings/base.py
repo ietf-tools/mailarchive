@@ -165,26 +165,27 @@ HAYSTACK_CONNECTIONS = {
 }
 
 ELASTICSEARCH_INDEX_MAPPINGS = {
-    "django_ct": {'type': 'keyword'},       # "archive.message"
-    "django_id": {'type': 'long'},          # primary key of message
+    "django_ct": {'type': 'keyword'},           # "archive.message"
+    "django_id": {'type': 'long'},              # primary key of message
     "date": {"type": "date"},
     "email_list": {"type": "keyword"},
-    "email_list_exact": {"type": "keyword"},
+    "email_list_exact": {"type": "keyword"},    # can this be an alias?
     "frm": {"type": "text"},
-    "frm_exact": {"type": "keyword"},
+    # "frm_exact": {"type": "keyword"},         # don't need this, faceting on frm_name
     "frm_name": {"type": "keyword"},
-    "frm_name_exact": {"type": "keyword"},
-    "from": {"type": "text"},
+    "frm_name_exact": {"type": "keyword"},      # can this be an alias?
+    "from": {"type": "alias", "path": "frm"},   # make this an alias of frm to use as search keyword
     "id": {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}},
-    #"id": {"type": "keyword"},              # e.g. archive.message.1
-    "msgid": {"type": "text"},
-    "msgid_exact": {"type": "keyword"},
-    "spam_score": {"type": "long"},
+    # "id": {"type": "keyword"},                # combo of django_ct + django_id e.g. archive.message.1
+    "msgid": {"type": "keyword"},
+    # "msgid_exact": {"type": "keyword"},       # don't need
+    "spam_score": {"type": "integer"},
     "subject": {"type": "text"},
+    "subject_base": {"type": "keyword"},        # for sorting on subject
     "tdate": {"type": "date"},
     "text": {"type": "text"},
     "tid": {"type": "long"},
-    "to": {"type": "text"},
+    # "to": {"type": "text"},                   # get rid of this
     "torder": {"type": "long"}
 }
 

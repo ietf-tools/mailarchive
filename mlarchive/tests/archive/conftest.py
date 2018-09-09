@@ -47,6 +47,7 @@ def load_db():
                           thread=athread,
                           thread_order=0,
                           subject='Another message about RFC6759',
+                          base_subject=get_base_subject('Another message about RFC6759'),
                           msgid='a01',
                           date=datetime.datetime(2013, 1, 1))
     MessageFactory.create(email_list=pubone,

@@ -182,6 +182,7 @@ ELASTICSEARCH_INDEX_MAPPINGS = {
     "spam_score": {"type": "integer"},
     "subject": {"type": "text"},
     "subject_base": {"type": "keyword"},        # for sorting on subject
+    "base_subject": {"type": "alias", "path": "subject_base"},
     "tdate": {"type": "date"},
     "text": {"type": "text"},
     "tid": {"type": "long"},

@@ -151,9 +151,11 @@ def map_sort_option(val, use_db=False):
     if val not in VALID_SORT_OPTIONS:
         return ''
     if val in ('frm', '-frm') and not use_db:
-        val = val + '_name'    # use just email portion of from
-    if val in ('subject', '-subject'):
-        val = val + '_base'
+        val = val + '_name'
+    if val == 'subject':
+        val = 'base_subject'
+    if val == '-subject':
+        val = '-base_subject'
     return val
 
 

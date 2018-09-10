@@ -253,6 +253,17 @@ def test_browse_gbt(client, messages):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_browse_list_sort_subject(client, messages):
+    url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?so=subject'
+    response = client.get(url)
+    assert response.status_code == 200
+    assert len(response.context['results']) == 4
+
+    # assert proper order
+    assert [r.msgid for r in response.context['results']] == ['a01', 'a02', 'a04', 'a03']
+
+
+@pytest.mark.django_db(transaction=True)
 def test_browse_index_gbt(client, messages):
     message = messages.get(msgid='a02')
     url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?gbt=1&index={}'.format(message.hashcode.strip('='))

@@ -90,5 +90,5 @@ def test_get_order_fields():
     assert get_order_fields({'q': 'term', 'gbt': '1'}) == IDX_THREAD_SORT_FIELDS
     assert get_order_fields({'q': 'term', 'gbt': '1'}, use_db=True) == DB_THREAD_SORT_FIELDS
     assert get_order_fields({'q': 'term', 'gbt': '1', 'so': 'date'}) == IDX_THREAD_SORT_FIELDS      # gbt takes precedence
-    assert get_order_fields({'q': 'term', 'so': 'date', 'sso': 'subject'}) == ['date', 'subject_base']
+    assert get_order_fields({'q': 'term', 'so': 'date', 'sso': 'subject'}) == ['date', 'base_subject']
     assert get_order_fields({'q': 'term', 'so': 'frm'}) == ['frm_name']                         # frm gets mapped

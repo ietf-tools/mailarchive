@@ -1,4 +1,10 @@
 
+mailarch (2.0.2) ietf; urgency=normal
+
+* Fix bug with sorting by subject
+
+-- Ryan Cross <rcross@amsl.com>  10 September 2018 17:00:00 +0800
+
 mailarch (2.0.1) ietf; urgency=normal
 
 * Fix Elasticsearch field mapping

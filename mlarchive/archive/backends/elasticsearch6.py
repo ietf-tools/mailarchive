@@ -24,6 +24,9 @@ from haystack.utils import get_identifier, get_model_ct
 from haystack_elasticsearch.constants import FUZZINESS
 from haystack_elasticsearch.elasticsearch import ElasticsearchSearchBackend, ElasticsearchSearchQuery
 
+import logging
+logger = logging.getLogger(__name__)
+
 try:
     import elasticsearch
     if not ((6, 0, 0) <= elasticsearch.__version__ < (7, 0, 0)):
@@ -198,6 +201,7 @@ class Elasticsearch6SearchBackend(ElasticsearchSearchBackend):
                     },
                 }
 
+        logger.debug('aggs: {}'.format(result))
         return 'aggs', result
 
     def _build_search_filters_narrow_query(self, q):

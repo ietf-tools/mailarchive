@@ -257,9 +257,9 @@ class AdvancedSearchForm(FacetedSearchForm):
         return facets
 
     def process_query(self):
-        logger.info('Query String: %s' % self.q)
-        logger.debug('Query Params: %s' % self.data)
         if self.q:
+            logger.info('Query String: %s' % self.q)
+            logger.debug('Query Params: %s' % self.data)
             self.searchqueryset.query.raw_search(self.q)
 
         return self.searchqueryset

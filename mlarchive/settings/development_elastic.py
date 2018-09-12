@@ -27,3 +27,5 @@ ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
 CONSOLE_STATS_FILE = os.path.join(DATA_ROOT, 'log', 'console.json')
 SERVER_MODE = 'development'
 
+# LOGGING
+LOGGING['loggers']['mlarchive']['level'] = 'DEBUG'

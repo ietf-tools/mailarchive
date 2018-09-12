@@ -117,7 +117,8 @@ def purge_files_from_cache(message, created=True):
     with CloudFlare.CloudFlare(email=settings.CLOUDFLARE_AUTH_EMAIL, token=settings.CLOUDFLARE_AUTH_KEY) as cf:
         try:
             cf.zones.purge_cache.post(settings.CLOUDFLARE_ZONE_ID, data={'files': urls})
-            logger.info('purging cached urls: {}'.format(urls))
+            logger.info('purging cached urls for list {}'.format(message.email_list.name))
+            logger.debug('purging cached urls: {}'.format(urls))
         except CloudFlare.exceptions.CloudFlareAPIError as e:
             traceback.print_exc(file=sys.stdout)
             logger.error(e)

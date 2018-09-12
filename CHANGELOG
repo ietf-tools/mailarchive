@@ -1,4 +1,16 @@
 
+mailarch (2.0.3) ietf; urgency=normal
+
+* Adjust logging
+
+* Fix bin/check_index24 for Elasticsearch
+
+* Fix issue where search result table header row wraps on window resize.  Fixes #2581
+
+* Fix problem with attachment url pattern.  Fixes #2580
+
+-- Ryan Cross <rcross@amsl.com>  12 September 2018 14:00:00 +0800
+
 mailarch (2.0.2) ietf; urgency=normal
 
 * Fix bug with sorting by subject

@@ -694,7 +694,10 @@ var mailarch = {
                 $('.header').removeAttr('style');
         } else {
             $(".header").each(function (i){
-                $(this).width($($(".msg-table .xtr:first .xtd")[i]).css("width"));
+                // getBoundingClientRect returns full precision width of cell columns, then we round down,
+                // otherwise rounding errors in Firefox / JQuery can cause the header row to wrap
+                var width = Math.floor($(".msg-table .xtr:first .xtd")[i].getBoundingClientRect().width);
+                $(this).width(width);
             });
         }
     },

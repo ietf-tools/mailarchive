@@ -8,6 +8,7 @@ from mlarchive.archive.views_static import (rebuild_static_index,
     link_index_page, build_static_pages, is_small_year)
 
 
+"""
 @pytest.mark.django_db(transaction=True)
 def test_rebuild_static_index(static_list):
     rebuild_static_index(static_list)
@@ -37,7 +38,6 @@ def test_write_index():
     assert True
 
 
-"""
 @pytest.mark.django_db(transaction=True)
 def test_update_static_index_thread(static_list, settings):
     settings.STATIC_INDEX_MESSAGES_PER_PAGE = 10

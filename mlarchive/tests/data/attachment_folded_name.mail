@@ -1,7 +1,7 @@
 From: Joe <joe@example.com>
 To: Joe <joe@example.com>
 Date: Thu, 7 Nov 2013 17:54:55 +0000
-Message-ID: <attachment>
+Message-ID: <attachment.folded.name>
 Subject: This is a test
 MIME-version: 1.0
 Content-Type: multipart/mixed;
@@ -13,15 +13,15 @@ Content-Transfer-Encoding: quoted-printable
 Content-Type: text/plain;
         charset=us-ascii
 
-This is an example with a text attachment.
+This is an example with a text attachment with a folded
+name field (newlines in the field).
 
 
 --Apple-Mail=_50275E75-174F-4B49-8E98-1B832722CBE3
-Content-Disposition: attachment;
-        filename=skip32.c
-Content-Type: text/plain;
-        x-unix-mode=0644;
-        name="skip32.c"
+Content-Disposition: attachment; filename="this_is_a
+ really_long filename"
+Content-Type: text/plain; x-unix-mode=0644; name="this_is_a
+ really_long filename"
 Content-Transfer-Encoding: 7bit
 
 typedef unsigned char   BYTE; /* 8 bits */

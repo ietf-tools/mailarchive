@@ -478,20 +478,29 @@ def test_detail_cache_headers_private(admin_client):
 
 @pytest.mark.django_db(transaction=True)
 def test_attachment(client, attachment_messages_no_index):
-    # elist = EmailListFactory.create()
-    # msg = MessageFactory.create(email_list=elist)
-    # attachment = AttachmentFactory.create(message=msg)
-    attachment = Attachment.objects.first()
+    message = Message.objects.get(msgid='attachment')
+    attachment = message.attachment_set.first()
     url = reverse('archive_attachment', kwargs={'list_name': attachment.message.email_list.name,
                                                 'id': attachment.message.hashcode,
                                                 'sequence': attachment.sequence})
-    print url
-    print attachment.sequence, attachment.name, attachment.content_type
     response = client.get(url)
-    print response.items()
     assert response.status_code == 200
     assert response['Content-Type'] == 'text/plain'
     assert response['Content-Disposition'] == 'attachment; filename=skip32.c'
+    assert 'unsigned' in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_attachment_folded_name(client, attachment_messages_no_index):
+    message = Message.objects.get(msgid='attachment.folded.name')
+    attachment = message.attachment_set.first()
+    url = reverse('archive_attachment', kwargs={'list_name': attachment.message.email_list.name,
+                                                'id': attachment.message.hashcode,
+                                                'sequence': attachment.sequence})
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response['Content-Type'] == 'text/plain'
+    assert response['Content-Disposition'] == 'attachment; filename=this_is_a really_long filename'
     assert 'unsigned' in response.content
 
 

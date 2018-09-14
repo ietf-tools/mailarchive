@@ -869,14 +869,17 @@ class MessageWrapper(object):
         included, but merely referenced.
 
         NOTE: Python 3 has iter_attachments()
+        NOTE: get_filename() may return folded name so remove newlines
         """
         for sequence, part in enumerate(self.email_message.walk()):
             if is_attachment(part):
+                filename = get_filename(part)
+                filename = filename.replace('\r', '').replace('\n', '')
                 Attachment.objects.create(message=self.archive_message,
                                           description='',
                                           content_type=part.get_content_type(),
                                           content_disposition=get_content_disposition(part),
-                                          name=get_filename(part),
+                                          name=filename,
                                           sequence=sequence)
 
     def save(self, test=False):

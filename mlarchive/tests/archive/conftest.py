@@ -169,6 +169,8 @@ def attachment_messages_no_index(settings):
     content = StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'attachment.mail')
     call_command('load', path, listname='acme', summary=True, stdout=content)
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'attachment_folded_name.mail')
+    call_command('load', path, listname='acme', summary=True, stdout=content)
 
 
 @pytest.fixture()

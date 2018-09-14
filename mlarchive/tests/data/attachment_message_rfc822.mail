@@ -1,0 +1,34 @@
+From: Joe <joe@example.com>
+To: Joe <joe@example.com>
+Date: Thu, 7 Nov 2013 17:54:55 +0000
+Message-ID: <attachment.message.rfc822>
+Subject: This is a test
+MIME-version: 1.0
+Content-Type: multipart/mixed;
+ boundary="Apple-Mail=_50275E75-174F-4B49-8E98-1B832722CBE3"
+
+
+--Apple-Mail=_50275E75-174F-4B49-8E98-1B832722CBE3
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain;
+        charset=us-ascii
+
+This is an example with a text attachment.
+
+
+--Apple-Mail=_50275E75-174F-4B49-8E98-1B832722CBE3
+Content-Type: message/rfc822; name="subject of message"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline; filename="subject of message"
+
+Date: Thu, 9 Jun 2005 17:45:18 -0400
+From: Joe Smith <joe@example.com>
+To: fred@example.com 
+Subject: subject of message
+
+Hello,
+
+This is the inline message. 
+
+
+--Apple-Mail=_50275E75-174F-4B49-8E98-1B832722CBE3--

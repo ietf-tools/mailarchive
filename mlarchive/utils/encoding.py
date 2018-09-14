@@ -6,7 +6,7 @@ from email.header import HeaderParseError
 import logging
 
 DEFAULT_CHARSET = 'latin1'
-
+INLINE_MIME_TYPES = ['message/external-body', 'message/delivery-status', 'message/rfc822']
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ def is_attachment(sub_message):
     """Returns true if sub_messsage (email.message) is an attachment"""
     content_type = sub_message.get_content_type()
     filename = get_filename(sub_message)
-    if (filename and content_type != 'message/external-body' and content_type != 'message/delivery-status'):
+    if filename and content_type not in INLINE_MIME_TYPES:
         return True
     else:
         return False

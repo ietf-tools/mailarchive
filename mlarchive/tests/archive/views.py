@@ -505,6 +505,11 @@ def test_attachment_folded_name(client, attachment_messages_no_index):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_attachment_message_rfc822(client, attachment_messages_no_index):
+    assert Attachment.objects.filter(content_type='message/rfc822').count() == 0
+
+
+@pytest.mark.django_db(transaction=True)
 def test_export(admin_client, thread_messages):
     url = reverse('archive_export', kwargs={'type': 'mbox'}) + '?email_list=acme'
     response = admin_client.get(url)
@@ -518,11 +523,11 @@ def test_export_datatracker_api(client, thread_messages):
     '''Datatracker uses this interface from the complete-a-review view.
     Note: no login is required
     '''
-    params = {'subject':'anvil',
-              'email_list':'acme', 
-              'as':'1',
-              'qdr':'c',
-              'start_date':'2010-01-01'}
+    params = {'subject': 'anvil',
+              'email_list': 'acme',
+              'as': '1',
+              'qdr': 'c',
+              'start_date': '2010-01-01'}
     url = reverse('archive_export', kwargs={'type': 'mbox'}) + '?' + urlencode(params)
     response = client.get(url)
     assert response.status_code == 200

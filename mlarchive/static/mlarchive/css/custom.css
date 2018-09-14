@@ -1009,6 +1009,11 @@ ul.navbar-nav a.disabled, ul.navbar-nav a.disabled:hover {
 
 .attachment-list li {
     list-style: none;
+    margin: 8px;
+}
+
+.attachment-list li a {
+    font-size: 14px;
 }
 
 .btn-toolbar.msg-detail-toolbar {

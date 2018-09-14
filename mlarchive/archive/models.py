@@ -242,7 +242,7 @@ class Message(models.Model):
         return gen.as_text()
 
     def get_body_html(self, request=None):
-        """Returns the contents of the message body with as HTML, for use in display
+        """Returns the contents of the message body as HTML, for use in display
         """
         gen = Generator(self)
         return gen.as_html(request=request)

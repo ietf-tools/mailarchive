@@ -6,13 +6,17 @@
 {% block content %}
 
 <div class="container-fluid">
+
   {% include "includes/detail_navbar.html" %}
+  
   <div class="row">
     <div id="msg-aside" class="col-md-4 col-md-push-8">
     </div> <!-- msg-aside -->
 
     <div id="msg-detail" class="col-md-8 col-md-pull-4" data-static-date-index-url="{{ msg.get_static_date_index_url }}" data-static-thread-index-url="{{ msg.get_static_thread_index_url }}" data-date-index-url="{{ msg.get_date_index_url }}" data-thread-index-url="{{ msg.get_thread_index_url }}">
+      
       {{ msg.get_body_html|safe }}
+
       {% include "includes/message_thread.html" %}
 
       <div id="nav-outer">

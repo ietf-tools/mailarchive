@@ -66,7 +66,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         messages = Message.objects.all().order_by('date')
         url = urlparse.urljoin(self.live_server_url, messages[0].get_absolute_url())
         self.selenium.get(url)
-        self.selenium.find_element_by_id('next-in-list').click()
+        self.selenium.find_element_by_class_name('next-in-list').click()
 
         # Wait until the response is received
         WebDriverWait(self.selenium, timeout).until(
@@ -85,7 +85,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         self.assertEqual(len(messages), 4)
         url = urlparse.urljoin(self.live_server_url, messages[1].get_absolute_url())
         self.selenium.get(url)
-        self.selenium.find_element_by_id('previous-in-list').click()
+        self.selenium.find_element_by_class_name('previous-in-list').click()
 
         # Wait until the response is received
         WebDriverWait(self.selenium, timeout).until(
@@ -120,7 +120,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
             lambda driver: driver.find_element_by_tag_name('body'))
 
         # click next in search button
-        self.selenium.find_element_by_id('next-in-search').click()
+        self.selenium.find_element_by_class_name('next-in-search').click()
 
         # Wait until the response is received
         WebDriverWait(self.selenium, timeout).until(
@@ -227,6 +227,32 @@ class MySeleniumTests(StaticLiveServerTestCase):
 
         # End up back at advanced search
         self.assertEquals('Mail Archive Advanced Search', self.selenium.title)
+
+    @pytest.mark.usefixtures("thread_messages")
+    def test_message_detail_date_link(self):
+        '''Test toggle message header feature of message detail'''
+        # Set static mode
+        # self.selenium.add_cookie({'name': 'isStaticOn', 'value': 'true'})
+
+        message = Message.objects.first()
+        url = urlparse.urljoin(self.live_server_url, message.get_absolute_url())
+        self.selenium.get(url)
+
+        #
+        self.selenium.find_element_by_id('nav-settings-anchor').click()
+        self.selenium.find_element_by_id('toggle-static').click()
+
+        # Click date link
+        self.selenium.find_element_by_class_name('date-index').click()
+        WebDriverWait(self.selenium, timeout).until(
+            lambda driver: driver.find_element_by_tag_name('body'))
+
+        # Confirm index and message in focus
+        self.assertIn('Date Index', self.selenium.title)
+        self.assertTrue(self.is_element_focus(message.hashcode.strip('=')))
+
+    def is_element_focus(self, id):
+        return self.selenium.find_element_by_id(id) == self.selenium.switch_to.active_element
 
 """
     def test_static_mode(self):

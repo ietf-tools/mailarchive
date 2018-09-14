@@ -9,13 +9,13 @@ var mailarchDetails = {
     },
 
     doStaticNavLinks: function() {
-        $("#date-index").attr("href", $("#msg-detail").data('static-date-index-url'));
-        $("#thread-index").attr("href", $("#msg-detail").data('static-thread-index-url'));
+        $(".date-index").attr("href", $("#msg-detail").data('static-date-index-url'));
+        $(".thread-index").attr("href", $("#msg-detail").data('static-thread-index-url'));
     },
 
     doRegularNavLinks: function() {
-        $("#date-index").attr("href", $("#msg-detail").data('date-index-url'));
-        $("#thread-index").attr("href", $("#msg-detail").data('thread-index-url'));
+        $(".date-index").attr("href", $("#msg-detail").data('date-index-url'));
+        $(".thread-index").attr("href", $("#msg-detail").data('thread-index-url'));
     },
 
     staticOn: function() {

@@ -270,14 +270,16 @@ class Message(models.Model):
         return base + fragment
 
     def get_static_date_index_url(self):
-        date = '{}-{:02d}'.format(self.date.year, self.date.month)
-        url = reverse('archive_browse_static_date', kwargs={'list_name': self.email_list.name, 'date': date})
-        return url + '#{fragment}'.format(fragment=self.hashcode.rstrip('='))
+        return '{url}#{fragment}'.format(
+            url=self.get_static_date_page_url(),
+            fragment=self.hashcode.rstrip('='),
+        )
 
     def get_static_thread_index_url(self):
-        date = '{}-{:02d}'.format(self.thread.date.year, self.thread.date.month)
-        url = reverse('archive_browse_static_thread', kwargs={'list_name': self.email_list.name, 'date': date})
-        return url + '#{fragment}'.format(fragment=self.hashcode.rstrip('='))
+        return '{url}#{fragment}'.format(
+            url=self.get_static_thread_page_url(),
+            fragment=self.hashcode.rstrip('='),
+        )
 
     def get_static_date_page_url(self):
         today = datetime.datetime.today()

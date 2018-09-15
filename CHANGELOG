@@ -1,4 +1,14 @@
 
+mailarch (2.0.4) ietf; urgency=normal
+
+* Remove attachments with message/rfc822 MIME type.  Fixes #2586
+
+* Fix handling of attachments with folded filename (newline in filename).  Fixes #2585
+
+* Fix navigation links on message detail page (static mode).  Fixes #2582.  Fixes #2583
+
+-- Ryan Cross <rcross@amsl.com>  12 September 2018 14:00:00 +0800
+
 mailarch (2.0.3) ietf; urgency=normal
 
 * Adjust logging

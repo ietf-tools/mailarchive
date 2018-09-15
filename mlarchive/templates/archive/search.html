@@ -69,43 +69,37 @@
 
         <div id="msg-components">
         
-            <nav id="toolbar-left" class="navbar navbar-default">
-                <div class="container-fluid">
-                    <ul class="nav navbar-nav navbar-left">
-                        <li id="toggle-filters"><a href="#"><i class="fa fa-chevron-left toggle-pane" aria-hidden="true"></i></a></li>
+            <nav id="toolbar-left" class="navbar navbar-expand-sm navbar-light bg-light">
+                <!-- <div class="container-fluid"> -->
+                    <ul class="navbar-nav mr-auto">
+                        <li id="toggle-filters" class="nav-item"><a href="#"><i class="fa fa-chevron-left toggle-pane" aria-hidden="true"></i></a></li>
                     </ul>
-                </div>
+                <!-- </div> -->
             </nav>
 
-            <nav id="toolbar" class="navbar navbar-default">
+            <nav id="toolbar" class="navbar navbar-expand-md navbar-light bg-light">
                 <div class="container-fluid">
                     <div class="navbar-header">
-                        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#myNavbar" aria-expanded="false">
-                            <span class="sr-only">Toggle toolbar</span>
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                        </button>
+                          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#myNavbar" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                              <span class="navbar-toggler-icon"></span>
+                          </button>
                     </div> <!-- navbar-header -->
 
-                    <div class="collapse navbar-collapse" id="myNavbar">
-                        <ul class="nav navbar-nav navbar-left">
+                    <div class="collapse navbar-collapse justify-content-stretch" id="myNavbar">
+                        <ul class="navbar-nav ml-auto">
                             {% if modify_search_url %}
-                                <li><a id="modify-search" href="{{ modify_search_url }}" title="Modify Search">{% if browse_list %}<span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>{% else %}Modify Search{% endif %}</a></li>
+                                <li class="nav-item"><a id="modify-search" class="nav-link" href="{{ modify_search_url }}" title="Modify Search">{% if browse_list %}<span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>{% else %}Modify Search{% endif %}</a></li>
                             {% endif %}
                             <!-- <li><a id="clear-sort" href="#">Clear Sort</a></li> -->
                             {% if browse_list %}
-                                <li{% if not group_by_thread %} class="active"{% endif %}><a href="{{ view_date_url }}">Date</a></li>
-                                <li{% if group_by_thread %} class="active"{% endif %}><a id="gbt-link" href="{{ view_thread_url }}">Thread</a></li>
+                                <li class="nav-item{% if not group_by_thread %} active{% endif %}"><a class="nav-link" href="{{ view_date_url }}">Date</a></li>
+                                <li class="nav-item{% if group_by_thread %} active{% endif %}"><a id="gbt-link" class="nav-link" href="{{ view_thread_url }}">Thread</a></li>
                             {% endif %}
                         </ul>
                         
-                        <ul class="nav navbar-nav navbar-right">
-                            <li><a href="#" data-toggle="modal" data-target="#exampleModalLong">Export</a></li>
-                        </ul> <!-- nav navbar-nav -->
-                        <form name="search-form" id="id_search_form" class="navbar-form navbar-right" method="get">
+                        <form name="search-form" id="id_search_form" class="ml-3 my-auto d-inline w-100" method="get">
                             <div class="input-group">
-                                {% render_field form.q class="form-control" type="search" %}
+                                {% render_field form.q class="form-control form-control-sm" type="search" %}
                                 <span class="input-group-btn">
                                     <button class="btn btn-default" type="submit">
                                         <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
@@ -113,6 +107,10 @@
                                 </span>
                             </div>
                         </form>
+
+                        <ul class="navbar-nav ml-auto">
+                            <li class="nav-item"><a class="nav-link" href="#" data-toggle="modal" data-target="#exampleModalLong">Export</a></li>
+                        </ul> <!-- nav navbar-nav -->
 
                     </div> <!-- myNavbar -->
                 </div> <!-- container-fluid -->
@@ -129,7 +127,7 @@
                             <span>From</span>
                         </div><div class="header">
                             <span>Date</span>
-                        </div><div class="header{% if browse_list %} hidden{% endif %}">
+                        </div><div class="header{% if browse_list %} d-none{% endif %}">
                             <span>List</span>
                         </div>
                     {% else %}
@@ -139,7 +137,7 @@
                             <a id="sort-button-frm" class="unsorted sortbutton" href="#">From<i class="fa fa-sort" aria-hidden="true"></i></a>
                         </div><div class="header sortable">
                             <a id="sort-button-date" class="unsorted sortbutton" href="#">Date<i class="fa fa-sort" aria-hidden="true"></i></a>
-                        </div><div class="header sortable{% if browse_list %} hidden{% endif %}">
+                        </div><div class="header sortable{% if browse_list %} d-none{% endif %}">
                             <a id="sort-button-email_list" class="unsorted sortbutton" href="#">List<i class="fa fa-sort" aria-hidden="true"></i></a>
                         </div>
                     {% endif %}

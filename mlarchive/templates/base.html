@@ -8,9 +8,11 @@
 
     {% block prestyle %}{% endblock %}
 
-    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.css' %}" type="text/css">
-    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap-theme.css' %}" type="text/css">
+    <!-- <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.css' %}" type="text/css"> -->
+    <!-- <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap-theme.css' %}" type="text/css"> -->
 
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/css/bootstrap.min.css" integrity="sha384-Smlep5jCw/wG7hdkwQ/Z5nLIefveQRIY9nfy6xoR1uRYBtpZgI6339F5dgvm/e9B" crossorigin="anonymous">
+    
     {% block extrastyle %}{% endblock %}
 
     <link rel="stylesheet" href="{% static 'mlarchive/css/custom.css' %}" type="text/css">
@@ -26,7 +28,7 @@
 <!-- Container -->
 <div id="container">
 
-    <header class="navbar navbar-inverse navbar-fixed-top{% if server_mode != 'production' %} navbar-dev{% endif %}">
+    <header class="navbar navbar-inverse fixed-top{% if server_mode != 'production' %} navbar-dev{% endif %}">
         <div class="container-fluid">
             <div class="navbar-header pull-left">
                 <a class="navbar-brand" href="/">
@@ -53,19 +55,19 @@
                 {% if user.is_superuser %}
                 <div id="nav-admin" class="nav-menu dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin</a>
-                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                        <li><a href="{% url "archive_admin" %}">Remove Messages</a></li>
-                        <li><a href="{% url "archive_admin_guide" %}">Guide</a></li>
-                        <li><a href="{% url "archive_admin_console" %}">Console</a></li>
-                    </ul>
+                    <div class="dropdown-menu dropdown-menu-right" role="menu">
+                        <a class="dropdown-item" href="{% url "archive_admin" %}">Remove Messages</a>
+                        <a class="dropdown-item" href="{% url "archive_admin_guide" %}">Guide</a>
+                        <a class="dropdown-item" href="{% url "archive_admin_console" %}">Console</a>
+                    </div>
                 </div>
                 {% endif %}
                 {% if static_mode_enabled %}
                 <div id="nav-settings" class="nav-menu dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Settings</a>
-                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                        <li><a id="toggle-static" href="#">Turn Static Mode On</a></li>
-                    </ul>
+                    <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Settings</a>
+                    <div class="dropdown-menu">
+                        <a id="toggle-static" class="dropdown-item" href="#">Turn Static Mode On</a>
+                    </div>
                 </div>
                 {% endif %}
                 <div id="login" class="nav-menu noprint">
@@ -113,8 +115,12 @@
 
 {% block modal %}{% endblock %}
 
-<script type="text/javascript" src="{% static 'jquery/jquery-1.12.4.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.js' %}"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/js/bootstrap.min.js" integrity="sha384-o+RDsa0aLu++PJvFqy8fFScvbHFLtbvScb8AjopnFD+iEQ7wo/CG0xlczd+2O/em" crossorigin="anonymous"></script>
+
+<!-- <script type="text/javascript" src="{% static 'jquery/jquery-1.12.4.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.js' %}"></script> -->
 <script type="text/javascript" src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
 <script type="text/javascript" src="{% static 'mlarchive/js/base.js' %}"></script>
 {% block js %}{% endblock %}

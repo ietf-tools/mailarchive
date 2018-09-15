@@ -118,6 +118,10 @@ div:focus {
     background-image: none;
 }
 
+.navbar {
+    padding: 0;
+}
+
 .navbar-brand > img {
     display: inline;
     margin-top: -5px;

@@ -4,7 +4,7 @@
 {% block title %}Mail Archive Browse{% endblock %}
 
 {% block extrastyle %}
-<link rel="stylesheet" href="{% static 'selectize/css/selectize.bootstrap3.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'selectize/css/selectize.bootstrap4.css' %}" type="text/css">
 {% endblock %}
 
 {% block header %}{{ block.super }} - Browse{% endblock %}
@@ -17,7 +17,7 @@
         <form id="id_browse_form" name="browse-form" class="form-inline" action="." method="get">
             {% bootstrap_form form layout='inline' show_label=False %}
             <div class="form-group">
-                <button id="browse-button" type="submit" value="Go" class="btn btn-default">Go</button>
+                <button id="browse-button" type="submit" value="Go" class="btn btn-secondary">Go</button>
             </div>
         </form>
     </div>

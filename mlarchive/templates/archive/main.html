@@ -10,11 +10,11 @@
       <div>
         <div class="input-group">
           <input id="id_q" name="q" type="search" class="form-control typeahead" placeholder="Enter list name or search query..." {% if query %}value="{{ query }}"{% endif %}>
-          <span class="input-group-btn">
-            <button class="btn btn-default" type="submit">
-              <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
-            </button>
-          </span>
+          <div class="input-group-append">
+              <button class="btn btn-secondary" type="submit">
+                <span class="fa fa-search" aria-hidden="true"></span>
+              </button>
+          </div>
         </div><!-- input-group -->
       </div>
   </form>

@@ -4,7 +4,7 @@
 {% block title %}Mail Archive Advanced Search{% endblock %}
 
 {% block extrastyle %}
-<link rel="stylesheet" href="{% static 'selectize/css/selectize.bootstrap3.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'selectize/css/selectize.bootstrap4.css' %}" type="text/css">
 <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" type="text/css">
 {% endblock %}
 
@@ -90,7 +90,7 @@
             {% bootstrap_field form.email_list show_help=False show_label=False %}
         </fieldset>
 
-        <button class="btn btn-default" type="submit">Search</button>
+        <button class="btn btn-secondary" type="submit">Search</button>
         
         <div class="js-show">
             <br />

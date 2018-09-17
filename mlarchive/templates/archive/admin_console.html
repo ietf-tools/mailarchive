@@ -7,44 +7,44 @@
 
 <div id="admin_page" class="container-fluid">
     <div id="console-container">
-      <div class="row">
+      <div class="row mb-2">
         <div class="col-sm-4">
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h3 class="panel-title">Total Messages</h3>
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Total Messages</h5>
             </div>
-            <div class="panel-body">
-              <h3>{{ message_count }}</h3>
+            <div class="card-body">
+              <h5>{{ message_count }}</h5>
             </div>
           </div>
         </div>
         <div class="col-sm-4">
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h3 class="panel-title">Last Message</h3>
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Last Message</h5>
             </div>
-            <div class="panel-body">
-              <h3>{{ last_message.date }}</h3>
+            <div class="card-body">
+              <h5>{{ last_message.date }}</h5>
             </div>
           </div>
         </div>
         <div class="col-sm-4">
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h3 class="panel-title">Avg Response Time</h3>
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Avg Response Time</h5>
             </div>
-            <div class="panel-body">
-              <h3> - - - </h3>
+            <div class="card-body">
+              <h5> - - - </h5>
             </div>
           </div>
         </div>
       </div> <!-- row -->
 
 
-      <div class="row">
+      <div class="row mb-2">
         <div class="col-sm-12">
-          <div class="panel panel-default">
-            <div class="panel-body">
+          <div class="card">
+            <div class="card-body">
               <div id="top25-chart"></div>
             </div>
           </div>
@@ -53,8 +53,8 @@
 
       <div class="row">
         <div class="col-sm-12">
-          <div class="panel panel-default">
-            <div class="panel-body">
+          <div class="card">
+            <div class="card-body">
               <div id="weekly-chart"></div>
             </div>
           </div>

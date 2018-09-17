@@ -6,11 +6,11 @@
         </div>
         <div class="xtd from-col">{{ result.frm_name|truncatechars:35 }}</div>
         <div class="xtd date-col">{{ result.date|date:"Y-m-d" }}</div>
-        <div class="xtd list-col{% if browse_list %} hidden{% endif %}">{{ result.email_list.name }}</div>
-        <div class="xtd score-col hidden">{{ result.score }}</div>
-        <div class="xtd url-col hidden">{{ result.get_absolute_url }}</div>
-        <div class="xtd id-col hidden">{{ result.id }}</div>
-        <div class="xtd thread-col hidden">{{ result.thread_id }}</div>
+        <div class="xtd list-col{% if browse_list %} d-none{% endif %}">{{ result.email_list.name }}</div>
+        <div class="xtd score-col d-none">{{ result.score }}</div>
+        <div class="xtd url-col d-none">{{ result.get_absolute_url }}</div>
+        <div class="xtd id-col d-none">{{ result.id }}</div>
+        <div class="xtd thread-col d-none">{{ result.thread_id }}</div>
     </div>
     {% endwith %}
 {% empty %}

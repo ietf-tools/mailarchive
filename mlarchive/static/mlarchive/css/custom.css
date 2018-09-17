@@ -20,7 +20,6 @@ ul.messages li {
     font-size: 12px;
     display: block;
     padding: 4px 5px 4px 25px;
-    /* padding: 9px 5px 10px 25px; */
     margin: 0 0 3px 0;
     border-bottom: 1px solid #ddd;
     color: #666;
@@ -116,6 +115,10 @@ div:focus {
 .navbar-dev {
     background-color: #904141;
     background-image: none;
+}
+
+.navbar {
+    padding: 0;
 }
 
 .navbar-brand > img {
@@ -475,11 +478,6 @@ i.toggle-pane {
     list-style: none outside none;
 }
 
-.filter-options li input {
-    margin-left: 0;
-    margin-right: 4px;
-}
-
 .filter-options li .full {
     display: none;
 }
@@ -528,7 +526,7 @@ nav.navbar {
     margin: 10px 0;
 }
 
-.navbar-form #id_q {
+#id_search_form #id_q {
     width: calc(100vw - 760px);
 }
 

@@ -628,8 +628,8 @@ var mailarch = {
         // Progressive Javascript setup
         
         // hide page links in favor of infinite scroll
-        mailarch.$pageLinks.addClass('btn btn-default visible-xs-inline-block');
-        mailarch.$pageCount.addClass('visible-xs-inline-block');
+        mailarch.$pageLinks.addClass('btn btn-default d-xs-inline-block d-md-none');
+        mailarch.$pageCount.addClass('d-xs-inline-block d-md-none');
 
         if(!mailarch.isSmallViewport() && mailarch.showPreview) {
             mailarch.$msgList.removeClass('no-preview');
@@ -792,7 +792,7 @@ var mailarch = {
         $.cookie('showfilters','true');
         mailarch.$toggleFiltersIcon.addClass("fa-chevron-left");
         mailarch.$toggleFiltersIcon.removeClass("fa-chevron-right");
-        mailarch.$sidebar.removeClass('hidden');
+        mailarch.$sidebar.removeClass('d-none');
         $('#msg-components').removeClass('x-full-width');
         mailarch.setHeaderWidths();
     },
@@ -802,7 +802,7 @@ var mailarch = {
         $.cookie('showfilters','false');
         mailarch.$toggleFiltersIcon.removeClass("fa-chevron-left");
         mailarch.$toggleFiltersIcon.addClass("fa-chevron-right");
-        mailarch.$sidebar.addClass('hidden');
+        mailarch.$sidebar.addClass('d-none');
         $('#msg-components').addClass('x-full-width');
         mailarch.setHeaderWidths();
     },
@@ -823,8 +823,8 @@ var mailarch = {
         mailarch.$togglePreviewIcon.addClass("fa-chevron-down");
         mailarch.$togglePreviewIcon.removeClass("fa-chevron-up");
         mailarch.$listPane.animate({height:mailarch.splitterTop},function() {
-            mailarch.$viewPane.removeClass("hidden");
-            mailarch.$splitterPane.removeClass("hidden");
+            mailarch.$viewPane.removeClass("d-none");
+            mailarch.$splitterPane.removeClass("d-none");
             // mailarch.$viewPane.show();
             // mailarch.$splitterPane.show();
         });
@@ -844,8 +844,8 @@ var mailarch = {
         mailarch.$togglePreviewIcon.addClass("fa-chevron-up");
         //mailarch.$viewPane.hide();
         //mailarch.$splitterPane.hide();
-        mailarch.$viewPane.addClass("hidden");
-        mailarch.$splitterPane.addClass("hidden");
+        mailarch.$viewPane.addClass("d-none");
+        mailarch.$splitterPane.addClass("d-none");
         if (event.type == 'click'){
             mailarch.$listPane.animate({height:height});
         } else {

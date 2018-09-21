@@ -285,6 +285,11 @@ ul.browse_list li {
     padding-bottom: 30px;
 }
 
+#browse-button {
+    padding: 4px 12px;
+    margin-left: 4px;
+}
+
 /* ==========================================================================
    Static Index
    ========================================================================== */
@@ -335,6 +340,10 @@ ul.browse_list li {
 
 .removable .btn-remove {
     display: inline-block;
+}
+
+#rules-form div.form-group {
+    margin-right: 8px;
 }
 
 @media (min-width: 768px) {
@@ -524,11 +533,14 @@ i.toggle-pane {
 
 nav.navbar {
     margin: 10px 0;
+    border: 1px solid #e7e7e7;
 }
 
+/*
 #id_search_form #id_q {
     width: calc(100vw - 760px);
 }
+*/
 
 .navbar-collapse.in .navbar-form #id_q {
     width: 100%;
@@ -552,6 +564,12 @@ input[type="search"]::-webkit-search-cancel-button {
 
 #toolbar-left {
     float: left;
+    margin-right: 0.3em;
+}
+
+#toolbar-left a {
+    padding-left: 0.8em;
+    padding-right: 0.8em;
 }
 
 #toolbar-left .container-fluid {
@@ -824,7 +842,7 @@ table.msg-list-header-table th a.btn {
 
     #toolbar {
         height: 42px;
-        margin-left: 46px;
+        margin-left: 34px;
     }
 }
 
@@ -882,7 +900,7 @@ table.msg-list-header-table th a.btn {
 
 .header a {
     color: black;
-    padding: 8px;
+    padding: 4px 8px;
     display: inline-block;
     width: 100%;
 }
@@ -941,7 +959,7 @@ table.msg-list-header-table th a.btn {
     
     .header a, .header span {
         color: black;
-        padding: 8px;
+        padding: 4px 8px;
         display: inline-block;
         width: 100%;
     }

@@ -1,0 +1,10 @@
+// Custom.scss
+// Option A: Include all of Bootstrap
+
+// Your variable overrides
+// $body-bg: #000;
+// $body-color: #111;
+$enable-shadows:            true;
+$enable-gradients:          true;
+
+@import "../node_modules/bootstrap/scss/bootstrap";

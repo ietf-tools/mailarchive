@@ -76,7 +76,7 @@
 
         <div id="msg-components">
         
-            <nav id="toolbar-left" class="navbar navbar-expand-sm navbar-light bg-light rounded">
+            <nav id="toolbar-left" class="navbar navbar-light bg-light rounded shadow-sm">
                 <!-- <div class="container-fluid"> -->
                     <ul class="navbar-nav mr-auto">
                         <li id="toggle-filters" class="nav-item">
@@ -86,14 +86,14 @@
                 <!-- </div> -->
             </nav>
 
-            <nav id="toolbar" class="navbar navbar-expand-md navbar-light bg-light rounded">
+            <nav id="toolbar" class="navbar navbar-expand-md navbar-light bg-light rounded shadow-sm">
                 <div class="container-fluid">
                     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#myNavbar" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
                     </button>
 
                     <div class="collapse navbar-collapse justify-content-stretch" id="myNavbar">
-                        <ul class="navbar-nav ml-auto">
+                        <ul class="navbar-nav mx-2 flex-shrink-0">
                             {% if modify_search_url %}
                                 <li class="nav-item"><a id="modify-search" class="nav-link" href="{{ modify_search_url }}" title="Modify Search">{% if browse_list %}<span class="fa fa-arrow-left" aria-hidden="true"></span>{% else %}Modify Search{% endif %}</a></li>
                             {% endif %}
@@ -104,9 +104,9 @@
                             {% endif %}
                         </ul>
                         
-                        <form name="search-form" id="id_search_form" class="ml-3 my-auto d-inline w-100" method="get">
-                            <div class="input-group">
-                                {% render_field form.q class="form-control form-control-sm" type="search" %}
+                        <form name="search-form" id="id_search_form" class="ml-3 my-auto form-inline flex-grow-1" method="get">
+                            <div class="input-group input-group-sm w-100">
+                                {% render_field form.q class="form-control" type="search" %}
                                 <div class="input-group-append">
                                     <button class="btn btn-secondary" type="submit">
                                         <span class="fa fa-search" aria-hidden="true"></span>
@@ -115,7 +115,7 @@
                             </div>
                         </form>
 
-                        <ul class="navbar-nav ml-auto">
+                        <ul class="navbar-nav">
                             <li class="nav-item"><a class="nav-link" href="#" data-toggle="modal" data-target="#exampleModalLong">Export</a></li>
                         </ul> <!-- nav navbar-nav -->
 

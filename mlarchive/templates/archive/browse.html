@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static bootstrap3 %}
+{% load static bootstrap4 %}
 
 {% block title %}Mail Archive Browse{% endblock %}
 
@@ -11,7 +11,7 @@
 
 {% block content %}
 
-<div id="browse-page">
+<div id="browse-page" class="container">
 
     <div id="browse-top" class="col-md-offset-1">
         <form id="id_browse_form" name="browse-form" class="form-inline" action="." method="get">
@@ -24,31 +24,32 @@
 
     <div id="private-lists" class="browse_section section">
         {% if columns.private %}
-            <h3 class="col-md-offset-1 col-md-10">Private Lists</h3>
-            <div class="col-md-1"></div>
+            <h3 class="mx-auto">Private Lists</h3>
+            <div class="row">
             {% with columns.private as columns %}
                 {% include "includes/browse_columns.html" %}
             {% endwith %}
-            <div class="col-md-1"></div>
+            </div>
         {% endif %}
     </div> <!-- private-lists -->
 
+    <h3 class="mx-auto">Active Lists</h3>
     <div id="active-lists" class="browse_section section">
-        <h3 class="col-md-offset-1 col-md-10">Active Lists</h3>
+        <div class="row">
         {% with columns.active as columns %}
             {% include "includes/browse_columns.html" %}
         {% endwith %}
-        <div class="col-md-1"></div>
+        </div> <!-- row -->
     </div> <!-- active-lists -->
 
+    <h3 class="mx-auto">Inactive Lists</h3>
     <div id="inactive-lists" class="browse_section section">
         {% if columns.inactive %}
-            <h3 class="col-md-offset-1 col-md-10">Inactive Lists</h3>
-            <div class="col-md-1"></div>
+            <div class="row">
             {% with columns.inactive as columns %}
                 {% include "includes/browse_columns.html" %}
             {% endwith %}
-            <div class="col-md-1"></div>
+            </div>
         {% endif %}
     </div> <!-- inactive-lists -->
 

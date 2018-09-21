@@ -1,5 +1,5 @@
 {% for col in columns %}
-  <div class="browse_column col-md-2{% if forloop.first %} col-md-offset-1{% endif %}">
+  <div class="browse_column col-sm">
     <ul class="browse_list">
       {% for item in col %}
         <li><a class="browse-link" href="{% url "archive_browse_list" list_name=item.name %}">{{ item|truncatechars:19 }}</a></li>

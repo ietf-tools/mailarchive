@@ -155,15 +155,11 @@ div:focus {
 .nav-menu {
     color: white;
     display: inline-block;
-    margin-right: 15px;
+    margin: 12px 15px 12px 0;
 }
 
 .nav-menu > a:link, .nav-menu > a:visited {
     color: white;
-}
-
-#login {
-    margin: 12px 5px;
 }
 
 #login a:hover {

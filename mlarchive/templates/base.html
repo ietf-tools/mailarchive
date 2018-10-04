@@ -68,14 +68,16 @@
                     </ul>
                 </div>
                 {% endif %}
-                <div id="login" class="nav-menu noprint">
-                {% if user.is_authenticated %}
-                    <span class="login-user pipe">{{ user }}</span>
-                    <a href="{% url "archive_logout" %}">Sign out</a>
-                {% else %}
-                    <a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>
+                {% if not static_mode_on %}
+                    <div id="login" class="nav-menu noprint">
+                    {% if user.is_authenticated %}
+                        <span class="login-user pipe">{{ user }}</span>
+                        <a href="{% url "archive_logout" %}">Sign out</a>
+                    {% else %}
+                        <a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>
+                    {% endif %}
+                    </div>
                 {% endif %}
-                </div>
             {% endif %}
 
             </div> <!-- navbar-header -->

@@ -387,7 +387,9 @@ class BaseStaticIndexView(View):
             return render(self.request, 'archive/refresh.html', {'url': url})
 
     def get_context_data(self):
-        context = dict(email_list=self.kwargs['email_list'],
+        is_static_on = True if self.request.COOKIES.get('isStaticOn') == 'true' else False
+        context = dict(static_mode_on=is_static_on,
+                       email_list=self.kwargs['email_list'],
                        queryset=self.queryset,
                        group_by_thread=self.group_by_thread,
                        time_period=TimePeriod(year=self.year, month=self.month),

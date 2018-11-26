@@ -10,7 +10,7 @@
     <div id="msg-container">
         <div id="sidebar">
             <div id="search-filters">
-                <h4>FILTER BY TIME</h4>
+                <h5 class="mt-4">FILTER BY TIME</h5>
                 <ul class="filter-options" tabindex="-1">
                   <li class="filter-item"><a class="{% selected request 'qdr' '' %}" href="{% query_string '' 'qdr' %}">Anytime</a></li>
                   <li class="filter-item"><a class="{% selected request 'qdr' 'd' %}" href="{% query_string 'qdr=d' 'index' %}">Past day</a></li>
@@ -20,7 +20,7 @@
                 </ul>
                 <div id="filter-box" class="js-off">
                     {% if not browse_list %}
-                        <h4>FILTER BY LIST</h4>
+                        <h5 class="mt-4">FILTER BY LIST</h5>
                         <div id="list-filter" class="filter" tabindex="-1">
                             <form id="list-filter">
                             <ul class="filter-options" tabindex="-1">
@@ -41,7 +41,7 @@
                         </div> <!-- list-filter -->
                     {% endif %}
 
-                    <h4>FILTER BY FROM</h4>
+                    <h5 class="mt-4">FILTER BY FROM</h5>
                     <div id="from-filter" class="filter" tabindex="-1">
                         <form id="from-filter">
                         <ul class="filter-options" tabindex="-1">

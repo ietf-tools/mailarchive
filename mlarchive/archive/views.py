@@ -398,7 +398,7 @@ class BaseStaticIndexView(View):
         return context
 
     def render_to_response(self, context):
-        response = render(self.request, 'archive/static_index_date.html', context)
+        response = render(self.request, 'archive/static_index.html', context)
         if self.kwargs['email_list'].private:
             add_never_cache_headers(response)
         else:

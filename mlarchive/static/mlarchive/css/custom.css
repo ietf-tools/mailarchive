@@ -55,7 +55,7 @@ ul.messages li {
    Site Wide
    ========================================================================== */
 
-#msg-payload pre {
+.msg-payload pre {
     background-color: white;
     border: 0 none black;
 }
@@ -74,7 +74,7 @@ div:focus {
     border: 1px solid #FF8080;
 }
 
-#footer {
+.footer {
     position: absolute;
     bottom: 0;
     left: 0;
@@ -82,13 +82,27 @@ div:focus {
     background-color: white;
 }
 
-#footer p {
+.footer p {
     margin: 10px 0 17px;
 }
 
-#footer.scrolling {
+.footer.scrolling {
     position: static;
     clear: both;
+}
+
+.navbar {
+    padding: 0;
+}
+
+a.toggle:active, a.toggle:focus {
+    color: #337ab7;
+    text-decoration: none;
+}
+
+a.toggle:hover {
+    color: #23527c;
+    text-decoration: underline;
 }
 
 /* Progressive Enhancement Styling
@@ -105,10 +119,6 @@ div:focus {
     display: block;
 }
 
-.not_paginated {
-    display: none;
-}
-
 /* ==========================================================================
    Header
    ========================================================================== */
@@ -117,69 +127,23 @@ div:focus {
     background-image: none;
 }
 
-.navbar {
-    padding: 0;
-}
-
 .navbar-brand > img {
-    display: inline;
     margin-top: -5px;
     padding-right: 1em;
 }
 
-#nav-inner {
-    display: table;
-    margin: 0 auto;
+.pipe:after {
+    content: "|";
+    padding-right: 10px;
+    padding-left: 20px;
 }
 
-#navigation {
-    display: inline-block;
-    list-style-type: none;
-    margin: 10px auto;
-    padding: 0;
-}
-
-#navigation li {
-    border-right: 1px solid #5b80b2;;
-    display: inline;
-    padding: 0 10px 0 10px;
-}
-
-#navigation li:last-child {
-    border-right: none;
-}
-
-.pipe {
-    border-right: 1px solid #DDD;
-    margin-right: 0.5em;
-    padding-right: 0.8em;
-}
-
-.nav-menu {
-    color: white;
-    display: inline-block;
-    margin-right: 15px;
-}
-
-.nav-menu > a:link, .nav-menu > a:visited {
+.navbar-dark .nav-link, .navbar-dark .navbar-text {
     color: white;
 }
 
-#login {
-    margin: 12px 5px;
-}
-
-#login a:hover {
-    text-decoration: underline;
-}
-
-a.toggle:active, a.toggle:focus {
-    color: #337ab7;
-    text-decoration: none;
-}
-
-a.toggle:hover {
-    color: #23527c;
+.navbar-dark .navbar-nav .nav-link:hover {
+    color: white;
     text-decoration: underline;
 }
 
@@ -197,14 +161,10 @@ a.toggle:hover {
     width: 460px;
 }
 
-#login-container {
+.login-container {
     position: relative;
     margin: 130px auto 0;
     padding: 30px 10% 50px;
-}
-
-#login-button {
-    width: 100%;
 }
 
 @media (max-width: 767px) {
@@ -212,7 +172,7 @@ a.toggle:hover {
         width: 100%;
     }
 
-    #login-container {
+    .login-container {
         margin-top: 30px;
         padding: 0 10% 30px;
         width: 100%
@@ -222,31 +182,49 @@ a.toggle:hover {
 /* ==========================================================================
    Main Page
    ========================================================================== */
-#search-wrapper {
+.search-wrapper {
     margin: 0 auto;
     width: 680px;
 }
 
-#search-container {
+.search-container {
     position: relative;
     margin: 130px auto 0;
     padding: 30px 10% 10px;
 }
 
 @media (max-width: 767px) {
-    #header-text {
-        display: none;
-    }
-
-    #search-wrapper {
+    .search-wrapper {
         width: 100%;
     }
 
-    #search-container {
+    .search-container {
         margin-top: 30px;
         padding: 0 10% 10px;
         width: 100%
     }
+}
+
+.nav-inner {
+    display: table;
+    margin: 0 auto;
+}
+
+.navigation {
+    display: inline-block;
+    list-style-type: none;
+    margin: 10px auto;
+    padding: 0;
+}
+
+.navigation li {
+    border-right: 1px solid #5b80b2;;
+    display: inline;
+    padding: 0 10px 0 10px;
+}
+
+.navigation li:last-child {
+    border-right: none;
 }
 
 /* ==========================================================================
@@ -477,10 +455,6 @@ a.selected {
 
 i.toggle-pane {
     color: lightgrey;
-}
-
-#search-filters h4 {
-    margin-top: 25px;
 }
 
 .filter-options li {

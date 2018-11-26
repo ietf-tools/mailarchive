@@ -4,8 +4,8 @@
 
 {% block content %}
 
-<div id="search-wrapper">
-  <div id="search-container">
+<div class="search-wrapper">
+  <div class="search-container">
   <form id="id_search_form" name="search-form" action="search" method="get"{% if lists %} data-lists="{{ lists|join:',' }}"{% endif %}>
       <div>
         <div class="input-group">
@@ -19,18 +19,16 @@
       </div>
   </form>
   </div> <!-- search-input -->
-  
-  <div id="nav-outer">
-    <div id="nav-inner">
-    <ul id="navigation">
+
+  <div class="nav-outer">
+    <div class="nav-inner">
+    <ul class="navigation">
       <li><a href="{% url "archive_advsearch" %}">Advanced Search</a></li>
       <li><a href="{% url "archive_browse" %}">Browse</a></li>
-      {% if request.user.is_superuser %}
-        <li><a href="{% url "archive_admin" %}">Admin</a></li>
-      {% endif %}
     </ul>
     </div>
   </div>
+  
 </div> <!-- search-wrapper -->
 
 {% endblock %}

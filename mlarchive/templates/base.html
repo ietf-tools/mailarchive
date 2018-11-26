@@ -28,59 +28,59 @@
 <!-- Container -->
 <div id="container">
 
-    <header class="navbar navbar-inverse fixed-top{% if server_mode != 'production' %} navbar-dev{% endif %}">
+    <header class="navbar navbar-expand-sm navbar-dark fixed-top p-0{% if server_mode != 'production' %} navbar-dev{% endif %}">
         <div class="container-fluid">
-            <div class="navbar-header pull-left">
-                <a class="navbar-brand" href="/">
-                   <img alt="IETF Logo" src="{% static 'mlarchive/images/ietflogo-small-transparent.png' %}">
-
-                      <span id="header-text">
-                      {% if server_mode and server_mode == "production" %}
-                      Mail Archive
-                      {% else %}
-                      <b><i>Development mode</i></b>
-                      {% endif %}
-                      </span>
-
-                </a>
-            </div> <!-- navbar-header -->
+            <a class="navbar-brand p-0" href="/">
+                <img alt="IETF Logo" src="{% static 'mlarchive/images/ietflogo-small-transparent.png' %}">
+                <span class="navbar-text d-none d-md-inline-block">
+                {% if server_mode and server_mode == "production" %}
+                Mail Archive
+                {% else %}
+                <b><i>Dev mode</i></b>
+                {% endif %}
+                </span>
+            </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-main" aria-controls="navbar-main" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
             {% if not request.resolver_match.url_name == "django.contrib.auth.views.login" %}
-            <div class="navbar-header pull-right">
-                {% if not request.resolver_match.url_name == "archive_help" %}
-                <div id="nav-help" class="nav-menu">
-                    <a href="{% url "archive_help" %}">Help</a>
-                </div>
-                {% endif %}
-                {% if user.is_superuser %}
-                <div id="nav-admin" class="nav-menu dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin</a>
-                    <div class="dropdown-menu dropdown-menu-right" role="menu">
-                        <a class="dropdown-item" href="{% url "archive_admin" %}">Remove Messages</a>
-                        <a class="dropdown-item" href="{% url "archive_admin_guide" %}">Guide</a>
-                        <a class="dropdown-item" href="{% url "archive_admin_console" %}">Console</a>
-                    </div>
-                </div>
-                {% endif %}
-                {% if static_mode_enabled %}
-                <div id="nav-settings" class="nav-menu dropdown">
-                    <a id="nav-settings-anchor" href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Settings</a>
-                    <div class="dropdown-menu">
-                        <a id="toggle-static" class="dropdown-item" href="#">Turn Static Mode On</a>
-                    </div>
-                </div>
-                {% endif %}
-                <div id="login" class="nav-menu noprint">
-                {% if user.is_authenticated %}
-                    <span class="login-user pipe">{{ user }}</span>
-                    <a href="{% url "archive_logout" %}">Sign out</a>
-                {% else %}
-                    <a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>
-                {% endif %}
-                </div>
-            {% endif %}
-
+            <div id="navbar-main" class="navbar-header float-right collapse navbar-collapse">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url "archive_help" %}">Help</a>
+                    </li>
+                    {% if user.is_superuser %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbar-admin" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Admin</a>
+                        <div class="dropdown-menu" aria-labelledby="navbar-admin">
+                            <a class="dropdown-item" href="{% url "archive_admin" %}">Remove Messages</a>
+                            <a class="dropdown-item" href="{% url "archive_admin_guide" %}">Guide</a>
+                            <a class="dropdown-item" href="{% url "archive_admin_console" %}">Console</a>
+                        </div>
+                    </li>
+                    {% endif %}
+                    {% if static_mode_enabled %}
+                    <li class="nav-item dropdown mr-2">
+                        <a id="nav-settings-anchor" class="nav-link dropdown-toggle" href="#" id="navbar-settings" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Settings</a>
+                        <div class="dropdown-menu" aria-labelledby="navbar-settings">
+                            <a id="toggle-static" class="dropdown-item" href="#">Turn Static Mode On</a>
+                        </div>
+                    </li>
+                    {% endif %}
+                    {% if user.is_authenticated %}
+                    <span class="navbar-text pipe">{{ user }}</span>
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url "archive_logout" %}">Sign out</a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>
+                    </li>
+                    {% endif %}
+                </ul>
             </div> <!-- navbar-header -->
+            {% endif %}
         </div> <!-- container-fluid -->
     </header>
 

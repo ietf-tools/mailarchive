@@ -17,16 +17,19 @@
 
       {% include "includes/message_thread.html" %}
 
-      <div id="nav-outer">
-        <div id="nav-inner">
-        <ul id="navigation">
-          <li><a id="toggle-nav" class="toggle js-off" href="#">Hide Navigation Bar</a></li>
+      <div class="d-flex justify-content-center">
+        <ul id="navigation" class="list-inline">
+          <li class="list-inline-item">
+            <a id="toggle-nav" class="toggle js-off" href="#">Hide Navigation Bar</a>
+          </li>
           {% if request.user.is_staff %}
-            <li><a id="admin-link" href="{{ msg.get_admin_url }}">Admin Page</a></li>
+          <li class="list-inline-item">
+            <a id="admin-link" href="{{ msg.get_admin_url }}">Admin Page</a>
+          </li>
           {% endif %}
         </ul>
-        </div>
       </div>
+          
     </div> <!-- msg-detail -->
 
     <div id="msg-aside" class="col-md-4"></div>

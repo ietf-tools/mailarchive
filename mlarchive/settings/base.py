@@ -194,6 +194,7 @@ ELASTICSEARCH_INDEX_MAPPINGS = {
 ARCHIVE_HOST_URL = 'https://mailarchive.ietf.org'
 DATA_ROOT = '/a/mailarch/data'
 ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
+ARCHIVE_MBOX_DIR = os.path.join(DATA_ROOT, 'archive_mbox')
 CONSOLE_STATS_FILE = os.path.join(DATA_ROOT, 'log/console.json')
 EXPORT_LIMIT = 5000             # maximum number of messages we will export
 ANONYMOUS_EXPORT_LIMIT = 100    # maximum number of messages a non-logged in user can export

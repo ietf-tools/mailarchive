@@ -257,11 +257,12 @@ def static_list():
         thread.set_first()
     yield public
 
+
 @pytest.fixture(scope='session')
 def tmp_dir(tmpdir_factory):
     """Create temporary directory for this test run"""
     tmpdir = tmpdir_factory.mktemp('data')
-    return str(tmpdir)
+    yield str(tmpdir)
 
 
 @pytest.fixture()
@@ -281,7 +282,7 @@ def query_messages(data_dir):
     call_command('load', path, listname='acme', summary=True, stdout=content)
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'query_star.mail')
     call_command('load', path, listname='star', summary=True, stdout=content)
-
+    yield Message.objects.all()
 
 @pytest.fixture()
 def static_dir(data_dir):

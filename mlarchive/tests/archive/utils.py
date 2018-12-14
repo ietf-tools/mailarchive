@@ -1,4 +1,4 @@
-
+import mailbox
 import pytest
 import requests
 from factories import EmailListFactory, UserFactory
@@ -10,8 +10,9 @@ import subprocess   # noqa
 from django.conf import settings
 from django.core.cache import cache
 from django.contrib.auth.models import AnonymousUser
-from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user, lookup_user, process_members,
-    get_membership, check_inactive, EmailList)
+from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
+    lookup_user, process_members, get_membership, check_inactive, EmailList,
+    create_mbox_file)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -158,3 +159,16 @@ def test_check_inactive(mock_output, mock_input):
     check_inactive(prompt=False)
     assert EmailList.objects.filter(active=True).count() == 2
     assert EmailList.objects.filter(active=False).first() == support
+
+
+@pytest.mark.django_db(transaction=True)
+def test_create_mbox_file(tmpdir, settings, thread_messages):
+    print 'tmpdir: {}'.format(tmpdir)
+    settings.ARCHIVE_MBOX_DIR = str(tmpdir)
+    elist = EmailList.objects.get(name='acme')    
+    create_mbox_file(month=7, year=2016, elist=elist)
+    path = os.path.join(settings.ARCHIVE_MBOX_DIR, 'public', elist.name, '2016-07.mail')
+    assert os.path.exists(path)
+    mbox = mailbox.mbox(path)
+    assert len(mbox) == 4
+    mbox.close()

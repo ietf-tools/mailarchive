@@ -21,7 +21,7 @@ from mlarchive.utils.test_utils import message_from_file
 
 
 def teardown_module(module):
-    for path in (settings.LOG_FILE, settings.IMPORT_LOG_FILE):
+    for path in (settings.LOG_FILE):
         if os.path.exists(path):
             os.remove(path)
     content = StringIO()

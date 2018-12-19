@@ -16,3 +16,5 @@
 .DS_store
 # Simulated Subversion default ignores end here
 /env
+.pytest_cache
+.cache

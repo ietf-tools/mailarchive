@@ -19,12 +19,10 @@ SEARCH_SCROLL_BUFFER_SIZE = HAYSTACK_SEARCH_RESULTS_PER_PAGE
 ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
 STATIC_INDEX_DIR = os.path.join(DATA_ROOT, 'static')
 LOG_FILE = os.path.join(BASE_DIR, 'tests/tmp', 'mlarchive.log')
-IMPORT_LOG_FILE = os.path.join(BASE_DIR, 'tests/tmp', 'archive-mail.log')
 
 SERVER_MODE = 'development'
 
 LOGGING['handlers']['mlarchive']['filename'] = LOG_FILE
-LOGGING['handlers']['archive-mail_file_handler']['filename'] = IMPORT_LOG_FILE
 
 CACHES = {
     'default': {

@@ -21,9 +21,8 @@ from mlarchive.utils.test_utils import message_from_file
 
 
 def teardown_module(module):
-    for path in (settings.LOG_FILE):
-        if os.path.exists(path):
-            os.remove(path)
+    if os.path.exists(settings.LOG_FILE):
+        os.remove(settings.LOG_FILE)
     content = StringIO()
     call_command('clear_index', interactive=False, stdout=content)
 

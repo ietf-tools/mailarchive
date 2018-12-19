@@ -651,38 +651,6 @@ def detail(request, list_name, id, msg):
     return response
 
 
-@pad_id
-@check_access
-def detail_classic(request, list_name, id, msg):
-    """Displays the requested message.
-    NOTE: the "msg" argument is a Message object added by the check_access decorator
-    """
-    is_static_on = True if request.COOKIES.get('isStaticOn') == 'true' else False
-    queryid, sqs = get_cached_query(request)
-
-    if sqs and not is_static_on:
-        previous_in_search, next_in_search = get_query_neighbors(query=sqs, message=msg)
-        search_url = reverse('archive_search') + '?' + sqs.query_string
-    else:
-        previous_in_search = None
-        next_in_search = None
-        queryid = None
-        search_url = None
-
-    return render(request, 'archive/detail_classic.html', {
-        'msg': msg,
-        # cache items for use in template
-        'next_in_list': msg.next_in_list(),
-        'next_in_thread': msg.next_in_thread(),
-        'next_in_search': next_in_search,
-        'previous_in_list': msg.previous_in_list(),
-        'previous_in_thread': msg.previous_in_thread(),
-        'previous_in_search': previous_in_search,
-        'queryid': queryid,
-        'search_url': search_url,
-    })
-
-
 # removed login requirement until API is created
 # @login_required
 def export(request, type):

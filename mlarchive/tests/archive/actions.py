@@ -6,6 +6,10 @@ from mlarchive.archive.actions import remove_selected, not_spam, get_mbox_update
 from mlarchive.archive.models import Message, EmailList
 from mlarchive.utils.test_utils import get_request
 
+@pytest.mark.django_db(transaction=True)
+def test_temporary_directory(messages):
+    assert 'pytest' in messages.first().get_file_path()
+
 
 @pytest.mark.django_db(transaction=True)
 def test_get_mbox_updates(messages):

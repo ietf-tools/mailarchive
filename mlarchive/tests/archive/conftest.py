@@ -34,7 +34,35 @@ def pytest_configure(tmpdir_factory):
     # settings.configure()
 '''
 
+# -----------------------------------
+# Session Fixtures
+# -----------------------------------
 
+'''
+The following two fixtures cause the test run to use a temporary
+directory, /tmp/pytest-of-[user]/pytest-NNN, for data files
+'''
+
+@pytest.fixture(scope='session')
+def tmp_dir(tmpdir_factory):
+    """Create temporary directory for this test run"""
+    tmpdir = tmpdir_factory.mktemp('data')
+    yield str(tmpdir)
+
+
+@pytest.fixture(autouse=True)
+def data_dir(tmp_dir, settings):
+    """Use temporary directory"""
+    DATA_ROOT = tmp_dir
+    settings.ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
+    settings.EXPORT_DIR = os.path.join(DATA_ROOT, 'export')
+    yield
+
+# -----------------------------------
+# Regular Fixtures
+# -----------------------------------
+
+    
 def load_db():
     pubone = EmailListFactory.create(name='pubone')
     pubtwo = EmailListFactory.create(name='pubtwo')
@@ -174,6 +202,7 @@ def attachment_messages_no_index(settings):
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'attachment_message_rfc822.mail')
     call_command('load', path, listname='acme', summary=True, stdout=content)
 
+
 @pytest.fixture()
 def thread_messages():
     """Load some threads"""
@@ -256,26 +285,10 @@ def static_list():
         thread.email_list = public
         thread.set_first()
     yield public
-
-
-@pytest.fixture(scope='session')
-def tmp_dir(tmpdir_factory):
-    """Create temporary directory for this test run"""
-    tmpdir = tmpdir_factory.mktemp('data')
-    yield str(tmpdir)
-
+ 
 
 @pytest.fixture()
-def data_dir(tmp_dir, settings, autouse=True):
-    """Set ARCHIVE_DIR to temporary directory"""
-    DATA_ROOT = tmp_dir
-    settings.DATA_ROOT = DATA_ROOT
-    settings.ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
-    settings.STATIC_INDEX_DIR = os.path.join(DATA_ROOT, 'static')
-
-
-@pytest.fixture()
-def query_messages(data_dir):
+def query_messages():
     """Load some threads"""
     content = StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'query_acme.mail')
@@ -283,6 +296,7 @@ def query_messages(data_dir):
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'query_star.mail')
     call_command('load', path, listname='star', summary=True, stdout=content)
     yield Message.objects.all()
+
 
 @pytest.fixture()
 def static_dir(data_dir):

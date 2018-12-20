@@ -118,14 +118,9 @@ def test_console_access(client, admin_client):
 # Haystack Queries
 # --------------------------------------------------
 
-
 @pytest.mark.django_db(transaction=True)
 def test_haystack_content(query_messages):
-    assert 'pytest' in settings.DATA_ROOT
     sqs = SearchQuerySet().filter(content='data')
-    print settings.DATA_ROOT
-    for r in sqs:
-        print r.subject, r.date, r.text
     assert sqs.count() == 1
 
 # --------------------------------------------------

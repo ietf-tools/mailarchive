@@ -232,7 +232,7 @@ MARK_LOAD_SPAM = 11
 INSPECTORS = {
     'ListIdSpamInspector': {'includes': ['rfc-dist', 'rfc-interest', 'ipp', 'krb-wg']},
     'ListIdExistsSpamInspector': {'includes': ['httpbisa']},
-    'SpamLevelSpamInspector': {'includes': ['rfc-dist', 'rfc-interest', 'httpbisa', 'ipp', 'krb-wg']}
+    'SpamLevelSpamInspector': {'includes': ['rfc-dist', 'rfc-interest', 'httpbisa', 'ipp', 'krb-wg', 'ietf-dkim']}
 }
 
 # AUTH

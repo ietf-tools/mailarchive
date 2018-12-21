@@ -3,140 +3,12 @@ DEVELOPMENT AND TESTING
 
 What follows are instructions for setting up a development
 environment on Mac OSX.  These instructions were tested
-on a MacBook Pro running OS X v10.9.1 (Mavericks).  
+on a MacBook Pro running OSX 10.13.6 (High Sierra) 
 
 Prerequisites:
 - MySQL 5.6
 - Python 2.7
-- Xcode
-- virtualenv (ie. http://docs.python-guide.org/en/latest/dev/virtualenvs/)
 
-Setup Xapian in VirtualEnv
---------------------------
-From: http://nomad.coop/blog/installing-xapian-in-virtualenv-django/
-
-(within activated virtualenv)
-export VENV=$VIRTUAL_ENV
-mkdir $VENV/packages && cd $VENV/packages
-
-curl -O http://oligarchy.co.uk/xapian/1.2.17/xapian-core-1.2.17.tar.xz
-curl -O http://oligarchy.co.uk/xapian/1.2.17/xapian-bindings-1.2.17.tar.xz
-
-tar xzvf xapian-core-1.2.17.tar.xz
-tar xzvf xapian-bindings-1.2.17.tar.xz
-
-cd $VENV/packages/xapian-core-1.2.17
-./configure --prefix=$VENV && make && make install
-
-export LD_LIBRARY_PATH=$VENV/lib
-
-cd $VENV/packages/xapian-bindings-1.2.17
-./configure --prefix=$VENV --with-python && make && make install
-
-Test:
-python -c "import xapian" 
-
-
-Install additional packages
----------------------------
-$ pip install MySQL-python lxml six pyquery factory-boy pytest-django python-dateutil
-
-
-Settings configuration
----------------------------
-configure settings_local.py
-EXAMPLE:
-
----- snip ----
-DEBUG=True
-SERVER_MODE = 'development'
-ROOT_DIR = '/Users/ams/dev/mailarch'
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 's qlite3' or 'oracle'.
-        'NAME': 'archive',                      # Or path to database file if using sqlite3.
-        'TEST_NAME': 'archive_test',
-        'USER': 'django',                      # Not used with sqlite3.
-        'PASSWORD': 'secret',                  # Not used with sqlite3.
-        'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
-    }
-}
-
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'test-cache'
-    }
-}
-
-#HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.BaseSignalProcessor'
-HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
-HAYSTACK_XAPIAN_PATH = ROOT_DIR + '/data/archive_index'
-HAYSTACK_CONNECTIONS = {
-    'default': {
-        'ENGINE': 'haystack.backends.xapian_backend.XapianEngine',
-        'PATH': HAYSTACK_XAPIAN_PATH,
-    },
-}
-
-# ARCHIVE SETTINGS
-ARCHIVE_DIR = ROOT_DIR + '/data/archive'
-CONSOLE_STATS_FILE = ROOT_DIR + '/data/log/console.json'
-LOG_FILE = ROOT_DIR + '/data/log/mlarchive.log'
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'simple': {
-            'format': "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        }
-    },
-    'handlers': {
-        'watched_file':
-        {
-            'level' : 'DEBUG',
-            'formatter' : 'simple',
-            'class' : 'logging.handlers.WatchedFileHandler',
-            'filename' :   LOG_FILE, # full path works
-        },
-        'archive-mail_file_handler':
-        {
-            'level' : 'DEBUG',
-            'formatter' : 'simple',
-            'class' : 'logging.handlers.WatchedFileHandler',
-            'filename' :   LOG_FILE,
-        }
-    },
-    'loggers': {
-        'mlarchive.custom': {
-            'handlers': ['watched_file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'archive-mail': {
-            'handlers': ['archive-mail_file_handler'],
-            'level': 'DEBUG',
-            'propagate': True,
-        }
-    }
-}
----- snip ----
-
-configure settings_test.py:
-Use same path settings or remove enries altogether.
-
-Examples:
-ARCHIVE_DIR = '/Users/ams/dev/mailarch/data/archive/'
-HAYSTACK_XAPIAN_PATH = '/Users/ams/dev/mailarch/data/archive_index'
-HAYSTACK_CONNECTIONS = {
-    'default': {
-        'ENGINE': 'haystack.backends.xapian_backend.XapianEngine',
-        'PATH': HAYSTACK_XAPIAN_PATH,
-    },
-}
 
 
 RUNNING TESTS
@@ -148,10 +20,6 @@ RUNNING TESTS
 - py.test --flakes archive
 - py.test --pep8 archive
 
-As of Jan 2018, trunk includes support for Elasticsearch backend.  While the
-default backend is still Xapian, use this command to run tests using the 
-Elastic backend
-- py.test tests -c pytest_elastic.ini
 
 
 NOTES ON INFRASTRUCTURE

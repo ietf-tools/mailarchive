@@ -160,7 +160,7 @@ def get_export(sqs, export_type, request):
     # don't allow export of huge querysets and skip empty querysets
     count = sqs.count()
     redirect_url = '%s?%s' % (reverse('archive_search'), request.META['QUERY_STRING'])
-    if (count > settings.EXPORT_LIMIT) or (count > settings.ANONYMOUS_EXPORT_LIMIT and not request.user.is_authenticated()):  # noqa
+    if (count > settings.EXPORT_LIMIT) or (count > settings.ANONYMOUS_EXPORT_LIMIT and not request.user.is_authenticated):  # noqa
         messages.error(request, 'Too many messages to export.')
         return redirect(redirect_url)
     elif count == 0:

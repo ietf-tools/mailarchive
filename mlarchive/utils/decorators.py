@@ -30,7 +30,7 @@ def check_access(func):
             raise Http404
 
         if msg.email_list.private and not request.user.is_superuser:
-            if not request.user.is_authenticated() or not msg.email_list.members.filter(id=request.user.id):
+            if not request.user.is_authenticated or not msg.email_list.members.filter(id=request.user.id):
                 raise PermissionDenied
 
         kwargs['msg'] = msg
@@ -51,7 +51,7 @@ def check_list_access(func):
             raise Http404
 
         if email_list.private and not request.user.is_superuser:
-            if not request.user.is_authenticated() or not email_list.members.filter(id=request.user.id):
+            if not request.user.is_authenticated or not email_list.members.filter(id=request.user.id):
                 raise PermissionDenied
 
         kwargs['email_list'] = email_list
@@ -75,7 +75,7 @@ def check_ajax_list_access(func):
             raise Http404
 
         if email_list.private and not request.user.is_superuser:
-            if not request.user.is_authenticated() or not email_list.members.filter(id=request.user.id):
+            if not request.user.is_authenticated or not email_list.members.filter(id=request.user.id):
                 raise PermissionDenied
 
         return func(request, *args, **kwargs)

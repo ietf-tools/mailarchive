@@ -88,7 +88,7 @@ def get_lists_for_user(user):
     if not user.is_authenticated:
         return get_public_lists()
 
-    if user.is_authenticated():
+    if user.is_authenticated:
         if user.is_superuser:
             lists = get_lists()
         else:

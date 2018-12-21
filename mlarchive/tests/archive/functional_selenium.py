@@ -8,7 +8,8 @@ from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, HASH_SESSION_K
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.urls import reverse
 from pyquery import PyQuery
-from selenium.webdriver.phantomjs.webdriver import WebDriver
+from selenium.webdriver import ChromeOptions
+from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 from mlarchive.archive.models import Message
 
@@ -48,7 +49,9 @@ class MySeleniumTests(StaticLiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         super(MySeleniumTests, cls).setUpClass()
-        cls.selenium = WebDriver()
+        options = ChromeOptions()
+        options.add_argument('headless')
+        cls.selenium = WebDriver(chrome_options=options)
         cls.selenium.implicitly_wait(10)
         cls.selenium.set_window_size(1400, 1000)
         # cls.selenium.PhantomJS(service_log_path='tests/tmp/ghostdriver.log')

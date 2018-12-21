@@ -51,7 +51,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         super(MySeleniumTests, cls).setUpClass()
         options = ChromeOptions()
         options.add_argument('headless')
-        cls.selenium = WebDriver(chrome_options=options)
+        cls.selenium = WebDriver(options=options)
         cls.selenium.implicitly_wait(10)
         cls.selenium.set_window_size(1400, 1000)
         # cls.selenium.PhantomJS(service_log_path='tests/tmp/ghostdriver.log')

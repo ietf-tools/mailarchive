@@ -51,7 +51,7 @@ django-admin.py load [path-to-file/dir] -l [listname] --settings=mlarchive.setti
     <p>If you need to rebuild the index for messages updated within a specific date range,
     first stop the Celery worker from processing new index updates (the updates will safely
     queue in RabbitMQ and be processed when Celery is restarted.
-    <pre>sudo /etc/init.d/celeryd stop</pre>
+    <pre>sudo systemctl stop celeryd.service</pre>
     Then use the Haystack update_index command
     <pre>cd /a/mailarch/current
 source env/bin/activate
@@ -60,7 +60,7 @@ django-admin.py update_index --start='2014-01-14T00:00:00' --end='2014-01-16T23:
 -- or --
 django-admin.py update_index --age=1 --settings=mlarchive.settings.production</pre>
     Then restart Celery
-    <pre>sudo /etc/init.d/celeryd start</pre>
+    <pre>sudo systemctl start celeryd.service</pre>
     </p>
 
     <span id="subpoena"></span>
@@ -145,7 +145,7 @@ rabbitmqctl start_app</pre>
     Celery is the asynchronous task queue used to queue index updates.  It uses RabbitMQ as it's backend<br>
     <br>
     Restart
-    <pre># /etc/init.d/celeryd restart</pre>
+    <pre># systemctl restart celeryd.service</pre>
 
     <br>
     Admin:<br>
@@ -161,27 +161,19 @@ export PYTHONPATH=/a/mailarch/current
 export DJANGO_SETTINGS_MODULE=mlarchive.settings.production
 celery -A mlarchive flower</pre>
     <a href="http://{{ request.META.HTTP_HOST }}:5555/">Celery Management</a><br>
-    
-    <br>
-    Troubleshooting: start celery process with -x
-    <pre># sh -x /etc/init.d/celeryd start
--- or --
-# C_FAKEFORK=1 sh -x /etc/init.d/celeryd start</pre>
 
-    Troubleshooting: ensure perms correct on /a/mailarch/data/log/mlarchive.log<br>
+    Troubleshooting: ensure perms correct on /var/log/mail-archive/mlarchive.log<br>
     Troubleshooting: run worker manually to check for errors
     <pre>> Starting nodes...
 > worker1@ietfa.amsl.com: * Child terminated with errorcode 255
 FAILED
 
 # su - nobody
-$ /etc/init.d/celery start
 $ cd /a/mailarch/current
 $ export PYTHONPATH=$PWD
 $ celery worker -A mlarchive.celeryapp:app</pre>
     <br>
     Solutions for Log File Errors:<br>
-    DatabaseLockError: check perms on flintlock<br>
     DatabaseOpeningError: check perms on database files<br>
     DatabaseError:<br>
     <br>

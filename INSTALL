@@ -172,8 +172,8 @@ ietfarch-atompub-archive:               "|/a/ietf/scripts/call-archives atompub"
 
 
 Install and configure Celery  (after archive code is installed)
-cp INSTALL_DIR/celery/celeryd /etc/init.d
-cp INSTALL_DIR/celery/celeryd.conf /etc/default/celeryd
+cp INSTALL_DIR/celery/celeryd.service /etc/systemd/system
+cp INSTALL_DIR/celery/celeryd /etc/default/
 systemctl enable celeryd
 systemctl start celeryd
 systemctl status celeryd

@@ -1,8 +1,0 @@
-[Unit]
-Description=Xapian Replication Server
-
-[Service]
-ExecStart=/usr/bin/xapian-replicate-server /a/mailarch/data -p 7010
-
-[Install]
-WantedBy=multi-user.target

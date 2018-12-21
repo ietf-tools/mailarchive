@@ -32,9 +32,7 @@ DATABASES = {
         'USER': get_secret("DATABASES_USER"),
         'PASSWORD': get_secret("DATABASES_PASSWORD"),
         'OPTIONS': {'charset': 'utf8mb4'},
-        'TEST': {
-            'CHARSET': 'utf8mb4'
-        }
+        'TEST': {'CHARSET': 'utf8mb4'}
     }
 }
 

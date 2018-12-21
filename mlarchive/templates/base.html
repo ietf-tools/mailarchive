@@ -69,7 +69,8 @@
                     </li>
                     {% endif %}
                     {% if user.is_authenticated %}
-                    <span class="navbar-text pipe">{{ user }}</span>
+                    <li class="nav-item navbar-text pipe">{{ user}}</li>
+                    <!-- <span class="navbar-text pipe d-none d-md-inline-block">{{ user }}</span> -->
                     <li class="nav-item"> 
                         <a class="nav-link" href="{% url "archive_logout" %}">Sign out</a>
                     </li>

@@ -138,19 +138,9 @@ a.toggle:hover {
     padding-left: 20px;
 }
 
-.navbar-dark .nav-link, .navbar-dark .navbar-text {
-    color: white;
-}
-
 .navbar-dark .navbar-nav .nav-link:hover {
     color: white;
     text-decoration: underline;
-}
-
-@media (max-width: 767px) {
-    .login-user {
-        display: none;
-    }
 }
 
 /* ==========================================================================
@@ -230,9 +220,6 @@ a.toggle:hover {
 /* ==========================================================================
    Browse
    ========================================================================== */
-#browse-top {
-    margin-top: 30px;
-}
 
 .browse_section {
     margin: 0 auto;
@@ -333,18 +320,18 @@ ul.browse_list li {
 /* ==========================================================================
    Admin
    ========================================================================== */
-#admin-page h3 {
+.admin-page h3 {
     background-image: linear-gradient(to bottom, #5392b1 0%, #417690 100%);
     background-repeat: repeat-x;
     color: white;
     text-align: center;
 }
 
-#admin-top {
+.admin-top {
     margin-top: 30px;
 }
 
-#admin-top .form-control {
+.admin-top .form-control {
     width: 100%;
 }
 
@@ -383,24 +370,24 @@ ul.browse_list li {
     margin: 0;
 }
 
-#admin-page .result-table {
+.admin-page .result-table {
     table-layout: fixed;
 }
 
-#admin-page th.col1, #admin-page th.col2 {
+.admin-page th.col1, .admin-page th.col2 {
     width: 5%;
 }
 
-#admin-page th.col5 {
+.admin-page th.col5 {
     width: 10%;
 }
 
-#admin-page .tab-content {
+.admin-page .tab-content {
     height: calc(100vh - 345px);
     overflow: auto;
 }
 
-#admin-page .tab-content.spam-mode {
+.admin-page .tab-content.spam-mode {
     height: calc(100vh - 435px);
 }
 
@@ -991,6 +978,11 @@ ul.navbar-nav a.disabled, ul.navbar-nav a.disabled:hover {
     display: inline;
     margin: 0 12px;
 }
+
+.navbar-detail .nav-link {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+} 
 
 .attachment-list {
     margin: 2em 0;

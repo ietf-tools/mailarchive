@@ -21,6 +21,7 @@ urlpatterns = [
     url(r'^admin/console/$', views.admin_console, name='archive_admin_console'),
     url(r'^advsearch/', views.advsearch, name='archive_advsearch'),
     url(r'^browse/$', views.browse, name='archive_browse'),
+    url(r'^browse/static/$', views.browse_static, name='archive_browse_static'),
     url(r'^browse/(?P<list_name>[a-z0-9_\-\+\.]+)/$', custom_search_view_factory(
         form_class=AdvancedSearchForm,
         view_class=views.CustomBrowseView,

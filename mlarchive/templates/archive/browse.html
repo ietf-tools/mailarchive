@@ -13,7 +13,7 @@
 
 <div id="browse-page">
 
-    <div id="browse-top" class="col-md-offset-1">
+    <div id="browse-top" class="col-md-offset-1 col-md-10">
         <form id="id_browse_form" name="browse-form" class="form-inline" action="." method="get">
             {% bootstrap_form form layout='inline' show_label=False %}
             <div class="form-group">
@@ -22,33 +22,62 @@
         </form>
     </div>
 
+    
+    
     <div id="private-lists" class="browse_section section">
         {% if columns.private %}
-            <h3 class="col-md-offset-1 col-md-10">Private Lists</h3>
-            <div class="col-md-1"></div>
+            <div class="col-md-offset-1 col-md-10">
+              <h3>Private Lists
+                {% if force_static or is_static_on %}
+                  <span class="small"> static</span>
+                {% endif %}
+                {% if not is_static_on %}
+                  {% if force_static %}
+                    <a class="pull-right" href="{% url 'archive_browse'%}">Go to Regular View</a>
+                  {% else %}
+                    <a class="pull-right" href="{% url 'archive_browse_static'%}">Go to Static View</a>
+                  {% endif %}
+                {% endif %}
+              </h3>
+            </div>
             {% with columns.private as columns %}
-                {% include "includes/browse_columns.html" %}
+              {% include "includes/browse_columns.html" %}
             {% endwith %}
-            <div class="col-md-1"></div>
         {% endif %}
     </div> <!-- private-lists -->
 
     <div id="active-lists" class="browse_section section">
-        <h3 class="col-md-offset-1 col-md-10">Active Lists</h3>
+        <div class="col-md-offset-1 col-md-10">
+          <h3>Active Lists
+          {% if force_static or is_static_on %}
+            <span class="small"> static</span>
+          {% endif %}
+          {% if not is_static_on and not columns.private %}
+            {% if force_static %}
+              <a class="pull-right" href="{% url 'archive_browse'%}">Go to Regular View</a>
+            {% else %}
+              <a class="pull-right" href="{% url 'archive_browse_static'%}">Go to Static View</a>
+            {% endif %}
+          {% endif %}
+          </h3>
+        </div>
         {% with columns.active as columns %}
             {% include "includes/browse_columns.html" %}
         {% endwith %}
-        <div class="col-md-1"></div>
     </div> <!-- active-lists -->
 
     <div id="inactive-lists" class="browse_section section">
         {% if columns.inactive %}
-            <h3 class="col-md-offset-1 col-md-10">Inactive Lists</h3>
-            <div class="col-md-1"></div>
+            <div class="col-md-offset-1 col-md-10">
+              <h3>Inactive Lists
+              {% if force_static or is_static_on %}
+                <span class="small"> static</span>
+              {% endif %}  
+              </h3>
+            </div>
             {% with columns.inactive as columns %}
                 {% include "includes/browse_columns.html" %}
             {% endwith %}
-            <div class="col-md-1"></div>
         {% endif %}
     </div> <!-- inactive-lists -->
 

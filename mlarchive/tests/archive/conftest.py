@@ -19,6 +19,8 @@ from mlarchive.archive.models import Message, Thread
 
 # `pytest` automatically calls this function once when tests are run.
 
+# collect_ignore = ["actions.py"]
+
 '''
 def pytest_configure(tmpdir_factory):
     DATA_ROOT = str(tmpdir_factory.mktemp('data'))

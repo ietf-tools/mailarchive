@@ -311,7 +311,16 @@ def test_browse_qdr_invalid(client, messages):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_browse_static(client, static_list):
+def test_browse_static(client, messages):
+    url = reverse('archive_browse_static')
+    response = client.get(url)
+    assert response.status_code == 200
+    msg = messages.filter(email_list__private=False).first()
+    assert msg.email_list.name in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_static_date(client, static_list):
     url = reverse('archive_browse_static_date', kwargs={'list_name': static_list.name, 'date': '2017'})
     request = RequestFactory().get(url)
     request.COOKIES['isStaticOn'] = 'true'

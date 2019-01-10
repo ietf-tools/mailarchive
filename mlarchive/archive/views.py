@@ -578,7 +578,7 @@ def advsearch(request):
     })
 
 
-def browse(request):
+def browse(request, force_static=False):
     """Presents a list of Email Lists the user has access to.  There are
     separate sections for private, active and inactive.
     """
@@ -589,18 +589,26 @@ def browse(request):
         form = BrowseForm(request=request, data=request.GET)
         if form.is_valid():
             list_name = form.cleaned_data['list'].name
-            params = [('email_list', list_name)]
             if is_static_on:
-                return redirect('/arch/browse/{name}/index.html'.format(name=list_name))
+                url = reverse('archive_browse_static', kwargs={'list_name': list_name})
+                return redirect(url)
             else:
-                return redirect('{url}?{params}'.format(url=reverse('archive_search'), params=urllib.urlencode(params)))
+                url = reverse('archive_browse_list', kwargs={'list_name': list_name})
+                return redirect(url)
     else:
         form = BrowseForm(request=request)
 
     return render(request, 'archive/browse.html', {
         'form': form,
         'columns': columns,
+        'force_static': force_static,
+        'is_static_on': is_static_on,
     })
+
+
+def browse_static(request):
+    """Browse with links to static pages"""
+    return browse(request, force_static=True)
 
 
 def browse_static_redirect(request, list_name):
@@ -705,7 +713,6 @@ def main(request):
 
 
 class MessageDetailView(DetailView):
-
     model = Message
 
 

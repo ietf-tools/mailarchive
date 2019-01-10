@@ -3,6 +3,22 @@
 
 // Your variable overrides
 $enable-shadows:            true;
-$enable-gradients:          true;
+$enable-gradients:          true; 
+
+// Links
+//
+// Style anchor elements.
+
+//$link-color:                theme-color("primary") !default;
+//$link-decoration:           none !default;
+//$link-hover-color:          darken($link-color, 15%) !default;
+//$link-hover-decoration:     underline !default;
+
+
+$font-size-base:              0.875rem; // 14, Assumes the browser default, typically `16px`
+// $font-size-lg:                ($font-size-base * 1.25) !default;
+// $font-size-sm:                ($font-size-base * .875) !default;
+
+$line-height-base:            1.42857;
 
 @import "../node_modules/bootstrap/scss/bootstrap";

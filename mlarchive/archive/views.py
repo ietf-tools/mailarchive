@@ -387,7 +387,9 @@ class BaseStaticIndexView(View):
             return render(self.request, 'archive/refresh.html', {'url': url})
 
     def get_context_data(self):
-        context = dict(email_list=self.kwargs['email_list'],
+        is_static_on = True if self.request.COOKIES.get('isStaticOn') == 'true' else False
+        context = dict(static_mode_on=is_static_on,
+                       email_list=self.kwargs['email_list'],
                        queryset=self.queryset,
                        group_by_thread=self.group_by_thread,
                        time_period=TimePeriod(year=self.year, month=self.month),
@@ -576,7 +578,7 @@ def advsearch(request):
     })
 
 
-def browse(request):
+def browse(request, force_static=False):
     """Presents a list of Email Lists the user has access to.  There are
     separate sections for private, active and inactive.
     """
@@ -587,18 +589,26 @@ def browse(request):
         form = BrowseForm(request=request, data=request.GET)
         if form.is_valid():
             list_name = form.cleaned_data['list'].name
-            params = [('email_list', list_name)]
             if is_static_on:
-                return redirect('/arch/browse/{name}/index.html'.format(name=list_name))
+                url = reverse('archive_browse_static', kwargs={'list_name': list_name})
+                return redirect(url)
             else:
-                return redirect('{url}?{params}'.format(url=reverse('archive_search'), params=urllib.urlencode(params)))
+                url = reverse('archive_browse_list', kwargs={'list_name': list_name})
+                return redirect(url)
     else:
         form = BrowseForm(request=request)
 
     return render(request, 'archive/browse.html', {
         'form': form,
         'columns': columns,
+        'force_static': force_static,
+        'is_static_on': is_static_on,
     })
+
+
+def browse_static(request):
+    """Browse with links to static pages"""
+    return browse(request, force_static=True)
 
 
 def browse_static_redirect(request, list_name):
@@ -647,38 +657,6 @@ def detail(request, list_name, id, msg):
     if msg.email_list.private:
         add_never_cache_headers(response)
     return response
-
-
-@pad_id
-@check_access
-def detail_classic(request, list_name, id, msg):
-    """Displays the requested message.
-    NOTE: the "msg" argument is a Message object added by the check_access decorator
-    """
-    is_static_on = True if request.COOKIES.get('isStaticOn') == 'true' else False
-    queryid, sqs = get_cached_query(request)
-
-    if sqs and not is_static_on:
-        previous_in_search, next_in_search = get_query_neighbors(query=sqs, message=msg)
-        search_url = reverse('archive_search') + '?' + sqs.query_string
-    else:
-        previous_in_search = None
-        next_in_search = None
-        queryid = None
-        search_url = None
-
-    return render(request, 'archive/detail_classic.html', {
-        'msg': msg,
-        # cache items for use in template
-        'next_in_list': msg.next_in_list(),
-        'next_in_thread': msg.next_in_thread(),
-        'next_in_search': next_in_search,
-        'previous_in_list': msg.previous_in_list(),
-        'previous_in_thread': msg.previous_in_thread(),
-        'previous_in_search': previous_in_search,
-        'queryid': queryid,
-        'search_url': search_url,
-    })
 
 
 # removed login requirement until API is created
@@ -735,7 +713,6 @@ def main(request):
 
 
 class MessageDetailView(DetailView):
-
     model = Message
 
 

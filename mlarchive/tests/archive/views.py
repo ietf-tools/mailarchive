@@ -4,13 +4,15 @@ import pytest
 
 from django.conf import settings
 from django.contrib.auth import SESSION_KEY
+from django.test import RequestFactory
 from django.urls import reverse
 from django.utils.http import urlencode
 from factories import EmailListFactory, MessageFactory, UserFactory, AttachmentFactory
 from mlarchive.archive.models import Message, Attachment
 from mlarchive.archive.management.commands import _classes
 from mlarchive.archive.views import (TimePeriod, add_nav_urls, is_small_year,
-    add_one_month, get_this_next_periods, get_date_endpoints, get_thread_endpoints)
+    add_one_month, get_this_next_periods, get_date_endpoints, get_thread_endpoints,
+    DateStaticIndexView)
 from pyquery import PyQuery
 
 
@@ -309,10 +311,24 @@ def test_browse_qdr_invalid(client, messages):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_browse_static(client, static_list):
-    url = reverse('archive_browse_static_date', kwargs={'list_name': static_list.name, 'date': '2017'})
+def test_browse_static(client, messages):
+    url = reverse('archive_browse_static')
     response = client.get(url)
     assert response.status_code == 200
+    msg = messages.filter(email_list__private=False).first()
+    assert msg.email_list.name in response.content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_static_date(client, static_list):
+    url = reverse('archive_browse_static_date', kwargs={'list_name': static_list.name, 'date': '2017'})
+    request = RequestFactory().get(url)
+    request.COOKIES['isStaticOn'] = 'true'
+    response = DateStaticIndexView.as_view()(request, list_name=static_list.name, date='2017')
+    assert response.status_code == 200
+    # ensure no login info in header, we don't want it cached
+    q = PyQuery(response.content)
+    assert len(q('#login')) == 0
 
 
 @pytest.mark.django_db(transaction=True)

@@ -14,7 +14,6 @@
         <li><a href="#rebuild_index">How do I rebuild the index for a subset of messages?</a></li>
         <li><a href="#subpoena">How do I collect messages for response to a subpoena?</a></li>
         <li><a href="#admin">Using the Admin Page and Handling Spam</a></li>
-        <li><a href="#xapian">Xapian</a></li>
         <li><a href="#memcached">Memcached</a></li>
         <li><a href="#rabbitmq">RabbitMQ</a></li>
         <li><a href="#celery">Celery</a></li>
@@ -41,10 +40,10 @@ django-admin.py load [path-to-file/dir] -l [listname] --settings=mlarchive.setti
 
     <span id="delete_message"></span>
     <h2>How do I delete unwanted messages from the archive?</h2>
-    <p>Sign in (must have superuser privileges).  Click Admin link under simple search
-    box.  Use the form to search for messages.  Select the messages you want to delete.
-    Choose "Remove selected messages" Action and click Go.  Messages will be moved to the
-    [INSTALL]/data/archive/[listname]/_removed directory.<br>
+    <p>Sign in (must have superuser privileges).  Select Remove Messages from the Admin menu.
+    Use the form to search for messages.  Select the messages you want to delete.
+    Choose "Remove selected messages" action and click Go.  Messages will be moved to the
+    [INSTALL]/data/archive/[listname]/_removed directory and removed from the index.<br>
     <a href="{% url "archive_admin" %}">Archive Admin</a></p>
 
     <span id="rebuild_index"></span>
@@ -52,7 +51,7 @@ django-admin.py load [path-to-file/dir] -l [listname] --settings=mlarchive.setti
     <p>If you need to rebuild the index for messages updated within a specific date range,
     first stop the Celery worker from processing new index updates (the updates will safely
     queue in RabbitMQ and be processed when Celery is restarted.
-    <pre>sudo /etc/init.d/celeryd stop</pre>
+    <pre>sudo systemctl stop celeryd.service</pre>
     Then use the Haystack update_index command
     <pre>cd /a/mailarch/current
 source env/bin/activate
@@ -61,7 +60,7 @@ django-admin.py update_index --start='2014-01-14T00:00:00' --end='2014-01-16T23:
 -- or --
 django-admin.py update_index --age=1 --settings=mlarchive.settings.production</pre>
     Then restart Celery
-    <pre>sudo /etc/init.d/celeryd start</pre>
+    <pre>sudo systemctl start celeryd.service</pre>
     </p>
 
     <span id="subpoena"></span>
@@ -87,30 +86,6 @@ tar cvf sub012214.tar ./sub012214</pre></p>
 }</pre>
 SpamLevelSpamInspector checks the X-Spam-Level header for a score of 5 or greater.  There is also a utility script mlarchive/bin/check_spam.py which can be used to run an inspector on an existing archive and remove messages or mark them for manual inspection.
 </p>
-    <span id="xapian"></span>
-    <h2>Xapian Utilities</h2>
-    <p>The email archive uses the Xapian search engine library.<br><br>
-    To run a database integrity check:
-    <pre>cd /a/mailarch/data
-xapian-check ./archive_index</pre>
-    Show index stats
-    <pre>xapian-delve ./archive_index/
-UUID = 2995f642-6fd8-469a-93bb-ac69aea27325
-number of documents = 1473880
-average document length = 2439.13
-document length lower bound = 36
-document length upper bound = 3258372
-highest document id ever used = 1473883
-has positional information = true</pre>
-    Lookup a record in the search index by database primary key
-    <pre>$ xapian-delve -t Qarchive.message.[PK] ./archive_index
-Posting List for term `Qarchive.message.1721161' (termfreq 1, collfreq 1, wdf_max 1): 1716268
-
-$ xapian-delve -r 1716268 ./archive_index</pre>
-    Command line search tool
-    <pre>quest -d ./archive_index/ searchterm</pre>
-    </p>
-    <br>
 
     <h1>Auxiliary Services</h1>
     <span id="memcached"></span>
@@ -137,7 +112,7 @@ quit</pre>
 
     <span id="rabbitmq"></span>
     <h2>RabbitMQ</h2>
-    Rabbitmq is the messaging backend for the Email Archive.  It is used to queue index update requests because the Xapian index only support one writer process.  Celery is the corresponding piece that consumes the index update messages.<br><br>
+    Rabbitmq is the messaging backend for the Email Archive.  It is used to queue index update requests.  Celery is the corresponding piece that consumes the queued tasks.<br><br>
 
     Start / Stop Rabbitmq server
     <pre>service rabbitmq-server start|stop|restart
@@ -170,7 +145,7 @@ rabbitmqctl start_app</pre>
     Celery is the asynchronous task queue used to queue index updates.  It uses RabbitMQ as it's backend<br>
     <br>
     Restart
-    <pre># /etc/init.d/celeryd restart</pre>
+    <pre># systemctl restart celeryd.service</pre>
 
     <br>
     Admin:<br>
@@ -186,27 +161,19 @@ export PYTHONPATH=/a/mailarch/current
 export DJANGO_SETTINGS_MODULE=mlarchive.settings.production
 celery -A mlarchive flower</pre>
     <a href="http://{{ request.META.HTTP_HOST }}:5555/">Celery Management</a><br>
-    
-    <br>
-    Troubleshooting: start celery process with -x
-    <pre># sh -x /etc/init.d/celeryd start
--- or --
-# C_FAKEFORK=1 sh -x /etc/init.d/celeryd start</pre>
 
-    Troubleshooting: ensure perms correct on /a/mailarch/data/log/mlarchive.log<br>
+    Troubleshooting: ensure perms correct on /var/log/mail-archive/mlarchive.log<br>
     Troubleshooting: run worker manually to check for errors
     <pre>> Starting nodes...
 > worker1@ietfa.amsl.com: * Child terminated with errorcode 255
 FAILED
 
 # su - nobody
-$ /etc/init.d/celery start
 $ cd /a/mailarch/current
 $ export PYTHONPATH=$PWD
 $ celery worker -A mlarchive.celeryapp:app</pre>
     <br>
     Solutions for Log File Errors:<br>
-    DatabaseLockError: check perms on flintlock<br>
     DatabaseOpeningError: check perms on database files<br>
     DatabaseError:<br>
     <br>

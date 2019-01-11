@@ -21,6 +21,7 @@ urlpatterns = [
     url(r'^admin/console/$', views.admin_console, name='archive_admin_console'),
     url(r'^advsearch/', views.advsearch, name='archive_advsearch'),
     url(r'^browse/$', views.browse, name='archive_browse'),
+    url(r'^browse/static/$', views.browse_static, name='archive_browse_static'),
     url(r'^browse/(?P<list_name>[a-z0-9_\-\+\.]+)/$', custom_search_view_factory(
         form_class=AdvancedSearchForm,
         view_class=views.CustomBrowseView,
@@ -35,7 +36,6 @@ urlpatterns = [
     url(r'^logout/$', views.logout_view, name='archive_logout'),
     url(r'^msg/(?P<list_name>[a-z0-9_\-\+]+)/(?P<id>[a-zA-Z0-9_\-]+)(=)?(/)?$', views.detail, name='archive_detail'),
     url(r'^msg/(?P<list_name>[a-z0-9_\-\+]+)/(?P<id>[a-zA-Z0-9_\-]+)(=)?/(?P<sequence>\d+)(/)?$', views.attachment, name='archive_attachment'),
-    # url(r'^msg/classic/(?P<list_name>[a-z0-9_\-\+]+)/(?P<id>[a-zA-Z0-9_\-]+)(=)?(/)?$', views.detail_classic, name='archive_detail_classic'),
     url(r'^search/', search_view_factory(
         form_class=AdvancedSearchForm,
         view_class=views.CustomSearchView,

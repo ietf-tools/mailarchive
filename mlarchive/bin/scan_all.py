@@ -230,11 +230,14 @@ def check_thread_order(start,fix=False):
     print "Total: {}".format(total)
 
 
-def check_spam():
+def check_spam(elist):
     """Proceeding through the archive starting from most recent find spam, messages with
     X-Spam-Level: ***** or more
     """
-    for message in Message.objects.filter(date__year__gte=2014).order_by('-date'):
+    messages = Message.objects.filter(date__year__gte=1990).order_by('-date')
+    if elist:
+        messages = messages.filter(email_list__name=elist)
+    for message in messages:
         path = message.get_file_path()
         with open(path) as file:
             msg = email.message_from_file(file)

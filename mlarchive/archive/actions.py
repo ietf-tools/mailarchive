@@ -7,6 +7,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from django.contrib import messages
 from django.shortcuts import redirect
 
+from celery_haystack.tasks import update_mbox
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -16,6 +18,16 @@ def is_ajax(request):
         return True
     else:
         return False
+
+
+def get_mbox_updates(queryset):
+    """Returns the list of mbox files to rebuild, identified by the tuple
+    (month, year, list id)
+    """
+    results = set()
+    for message in queryset:
+        results.add((message.date.month, message.date.year, message.email_list.pk))
+    return list(results)
 
 
 def remove_selected(request, queryset):
@@ -32,7 +44,9 @@ def remove_selected(request, queryset):
     for message in queryset:
         logger.info('User %s removed message [list=%s,hash=%s,msgid=%s,pk=%s]' %
                     (request.user, message.email_list, message.hashcode, message.msgid, message.pk))
+    mbox_updates = get_mbox_updates(queryset)
     queryset.delete()
+    update_mbox.delay(mbox_updates)
     if not is_ajax(request):
         messages.success(request, '%d Message(s) Removed' % count)
         return redirect('archive_admin')

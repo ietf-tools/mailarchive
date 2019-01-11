@@ -6,6 +6,8 @@ from django.core.management import call_command
 from haystack.utils import get_identifier
 
 from mlarchive.celeryapp import app
+from mlarchive.archive.models import EmailList
+from mlarchive.archive.utils import create_mbox_file
 
 from .conf import settings
 
@@ -208,4 +210,11 @@ class CeleryXapianBatchRemove(Task):
 @app.task
 def add(x, y):
     return x + y
+
+
+@app.task
+def update_mbox(files):
+    for file in files:
+        elist = EmailList.objects.get(pk=file[2])
+        create_mbox_file(file[0], file[1], elist)
 

@@ -1,4 +1,35 @@
 
+mailarch (2.0.7) ietf; urgency=normal
+
+* Modify robots.txt to allow search engine crawling.  Add static browse
+  index to assist crawlers in finding static pages.  Fixes #2658
+
+-- Ryan Cross <rcross@amsl.com>  9 January 2019 18:00:00 +0800
+
+mailarch (2.0.6) ietf; urgency=normal
+
+* Migrate celery to systemd schema
+
+* Remove Xapian references from documentation and settings
+
+* Resolve various deprecation warnings
+
+* Change test suite to use pytest-django tmpdir_factory fixture.  Fixes #1637
+
+* Add svn:global-ignores
+
+-- Ryan Cross <rcross@amsl.com>  3 January 2019 17:00:00 +0800
+
+mailarch (2.0.5) ietf; urgency=normal
+
+* Create bin/update_mbox_archive.py which is used to maintain a copy of the
+  archive in mbox format.  Mbox files are rebuilt after messages are
+  removed using the admin interface.
+
+* Remove login info from header on static pages.  Fixes #2601
+
+-- Ryan Cross <rcross@amsl.com>  17 December 2018 15:30:00 +0800
+
 mailarch (2.0.4) ietf; urgency=normal
 
 * Remove attachments with message/rfc822 MIME type.  Fixes #2586

@@ -8,9 +8,9 @@ from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, HASH_SESSION_K
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.urls import reverse
 from pyquery import PyQuery
-from selenium import webdriver
+from selenium.webdriver import ChromeOptions
+from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from mlarchive.archive.models import Message
 
 
@@ -49,10 +49,9 @@ class MySeleniumTests(StaticLiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         super(MySeleniumTests, cls).setUpClass()
-        chrome_options = webdriver.ChromeOptions()
-        chrome_options.add_argument('--headless')
-        chrome_options.add_argument('--disable-dev-shm-usage')
-        cls.selenium = webdriver.Chrome(chrome_options=chrome_options)
+        options = ChromeOptions()
+        options.add_argument('headless')
+        cls.selenium = WebDriver(options=options)
         cls.selenium.implicitly_wait(10)
         cls.selenium.set_window_size(1400, 1000)
         # cls.selenium.PhantomJS(service_log_path='tests/tmp/ghostdriver.log')
@@ -210,7 +209,6 @@ class MySeleniumTests(StaticLiveServerTestCase):
 
     def test_back_to_advanced_search(self):
         # User performs search
-        # self.selenium.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
         url = urlparse.urljoin(self.live_server_url,
                                reverse('archive_advsearch'))
         self.selenium.get(url)

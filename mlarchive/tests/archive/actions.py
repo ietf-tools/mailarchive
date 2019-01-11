@@ -2,9 +2,21 @@ import os
 import pytest
 
 from factories import EmailListFactory, ThreadFactory, MessageFactory
-from mlarchive.archive.actions import remove_selected, not_spam
-from mlarchive.archive.models import Message
+from mlarchive.archive.actions import remove_selected, not_spam, get_mbox_updates
+from mlarchive.archive.models import Message, EmailList
 from mlarchive.utils.test_utils import get_request
+
+@pytest.mark.django_db(transaction=True)
+def test_temporary_directory(messages):
+    assert 'pytest' in messages.first().get_file_path()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_get_mbox_updates(messages):
+    apple = EmailList.objects.get(name='apple')
+    print apple.message_set.count()
+    result = get_mbox_updates(apple.message_set.all())
+    assert result == [(1,2017,apple.pk)]
 
 
 @pytest.mark.django_db(transaction=True)

@@ -17,7 +17,7 @@
 <p>By default terms are combined with the logical AND operator. For example, a search for 'ipv6 collision' returns documents containing both 'ipv6' and 'collision'. Use OR to find documents containing either term, 'ipv6 OR collision'. Use Parenthesis to create more complex queries, '( term1 OR term2 ) AND term3'.</p>
 
 <h3>Exclude Terms</h3>
-<p>Use a '-' to exclude a term from the search.  For example 'android -phone'.</p>
+<p>Use a '-' to exclude a term from the search.  For example 'android -phone' will find documents that contain 'android' but do not contain 'phone'.</p>
 
 <h3>Phrases</h3>
 <p>Use double quotes to find documents containing an exact phrase.</p>
@@ -29,7 +29,8 @@
 <p>Trailing wildcards are supported.  ie. "wildc*" will match "wildcard", "wildcat".</p>
 
 <h3>More...</h3>
-<p>The mail archive uses the Xapian Search Engine.  The complete Xapian query syntax is described here: <a href="http://xapian.org/docs/queryparser.html">http://xapian.org/docs/queryparser.html</a>.  While most of this query syntax is supported by the mail archive, full support is not gauranteed.</p>
+<p>The mail archive uses the Elasticsearch Engine, Query String Syntax.</p>
+<!-- https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax -->
 
 </div> <!-- admin_page -->
 

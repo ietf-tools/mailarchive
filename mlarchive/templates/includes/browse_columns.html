@@ -2,7 +2,11 @@
   <div class="browse_column col-sm">
     <ul class="browse_list">
       {% for item in col %}
-        <li><a class="browse-link" href="{% url "archive_browse_list" list_name=item.name %}">{{ item|truncatechars:19 }}</a></li>
+        {% if force_static %}
+          <li><a class="browse-link" href="{% url 'archive_browse_static' list_name=item.name %}">{{ item|truncatechars:19 }}</a></li>
+        {% else %}
+          <li><a class="browse-link" href="{% url 'archive_browse_list' list_name=item.name %}">{{ item|truncatechars:19 }}</a></li>
+        {% endif %}
       {% endfor %}
     </ul>
   </div>

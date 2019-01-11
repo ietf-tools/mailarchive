@@ -1,9 +1,0 @@
-[Unit]
-Description=Xapian Replication Client
-
-[Service]
-ExecStart=/usr/bin/xapian-replicate -h ietfa.amsl.com -p 7010 archive_index
-WorkingDirectory=/a/mailarch/data
-
-[Install]
-WantedBy=multi-user.target

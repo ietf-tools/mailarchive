@@ -3,9 +3,11 @@ from builtins import input
 
 import base64
 import datetime
+import email
 import hashlib
 import json
 import logging
+import mailbox
 import os
 import re
 import requests
@@ -86,7 +88,7 @@ def get_lists_for_user(user):
     if not user.is_authenticated:
         return get_public_lists()
 
-    if user.is_authenticated():
+    if user.is_authenticated:
         if user.is_superuser:
             lists = get_lists()
         else:
@@ -229,3 +231,23 @@ def check_inactive(prompt=True):
         else:
             return
     EmailList.objects.filter(name__in=to_inactive).update(active=False)
+
+
+def create_mbox_file(month, year, elist):
+    filename = '{:04d}-{:02d}.mail'.format(year, month)
+    path = os.path.join(settings.ARCHIVE_MBOX_DIR, 'public', elist.name, filename)
+    messages = elist.message_set.filter(date__month=month, date__year=year)
+    if os.path.exists(path):
+        os.remove(path)
+    if messages.count() == 0:
+        return
+    if not os.path.isdir(os.path.dirname(path)):
+        os.makedirs(os.path.dirname(path))
+    mbox = mailbox.mbox(path)
+    for message in messages:
+        # TODO: proper open?
+        with open(message.get_file_path()) as f:
+            msg = email.message_from_file(f)
+        mbox.add(msg)
+    mbox.close()
+    

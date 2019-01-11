@@ -50,7 +50,7 @@ General Instructions for Deployment of a New Release
 
  8. Restart apache::
 
-      sudo /etc/init.d/apache2 restart
+      systemctl restart apache2.service
 
  9. It's now also a good idea to go to the mailarchive front page:
 
@@ -67,48 +67,30 @@ General Instructions for Deployment of a New Release
 Installing from Scratch
 =======================
 
-DEPENDENCIES
+MAJOR DEPENDENCIES
 ============
 Python 2.7
 MySQL 5.6
-xapian-core 1.4.3
-python-xapian 1.4.3
-python-memcached
-lxml 3.3.1
-memcached 1.4.15
-RabbitMQ Server 3.5.8
-Celery v3.1.23
+Elasticsearch 6.4
+Memcached 1.4
+RabbitMQ Server 3.5
+Celery 4.2
 Django 1.11
 Haystack 2.6.0 (Included)
 
 
 Prerequisites
 -------------
-0. Search Backend
-
-== Elastic Search == 
-Install and configure Elasticsearch
+1. Install and configure Elasticsearch
 requires Java 1.8 (java -version)
-curl -L -O https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.4.0.rpm
-rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
-zypper install elasticsearch-5.4.0.rpm
+zypper addrepo -f https://artifacts.elastic.co/packages/6.x/yum
+zypper install elasticsearch
 edit /etc/elasticsearch/elasticsearch.yml
-  - set network.host
-  - set discovery.zen.ping.unicast.hosts (other nodes)
+  - set path.data and path.repo
 systemctl daemon-reload
 systemctl enable elasticsearch.service
 systemctl start elasticsearch.service
 
-- or - 
-
-== Xapian ==
-zypper install xapian-core python-xapian
-
-1. Install and configure memcached 
-zypper install memcached
-systemctl enable memcached
-systemctl start memcached
-systemctl status memcached
 
 2. Install and configure RabbitMQ
 zypper install rabbitmq-server
@@ -120,16 +102,6 @@ systemctl status rabbitmq-server
 
 see: http://www.rabbitmq.com/man/rabbitmqctl.1.man.html
 
-3. Install and configure celery
-# pip install celery==3.1.23
-cp INSTALL_DIR/celery/celeryd /etc/init.d
-cp INSTALL_DIR/celery/celeryd.conf /etc/default/celeryd
-systemctl enable celeryd
-systemctl start celeryd
-systemctl status celeryd
-# celery status
-** NOTE ** Celery will fail to start unless log/mlarchive.log and
-log/archive-mail.log exist and are writable
 
 SETUP:
 The following steps will refer to INSTALL_DIR (ie. /a/mailarch )
@@ -145,12 +117,12 @@ settings.  It should cotain the following settings:
 Example:
 {
     "FILENAME": "secrets.json",
-    "SECRET_KEY": [KEY],
+    "SECRET_KEY": [DJANGO SECRET KEY],
     "DATABASES_NAME": "archive",
     "DATABASES_TEST_NAME": "archive_test",
     "DATABASES_USER": [USER],
     "DATABASES_PASSWORD": [PASSORD],
-    "HTAUTH_PASSWD_FILENAME": "/Users/ams/dev/mailarch/htpasswd"
+    "HTAUTH_PASSWD_FILENAME": [PATH TO FILE]
 }
 
 4. Sample Apache Configuration
@@ -195,27 +167,20 @@ ietfarch-atompub-archive:               "|/a/ietf/scripts/archive-mail atompub"
 -> 
 
 ietfarch-atompub-archive:               "|/a/ietf/scripts/call-archives atompub"
-x) Install Cronscripts
+
+6) Install Cronscripts
 
 
-*** DEPRECATED ***
-6. Xapian Replication
-On the Server: add the following line to celeryd.conf:
-export XAPIAN_MAX_CHANGESETS=10
+Install and configure Celery  (after archive code is installed)
+cp INSTALL_DIR/celery/celeryd.service /etc/systemd/system
+cp INSTALL_DIR/celery/celeryd /etc/default/
+mkdir /var/log/celery (wwwrun:www)
+mkdir /var/run/celery (wwwrun:www)
+systemctl enable celeryd
+systemctl start celeryd
+systemctl status celeryd
+celery status
 
-Copy systemd/xapian-replicate-server.service to /etc/systemd/system/
-# systemctl enable xapian-replicate-server
-# systemctl start xapian-replicate-server
+** NOTE ** Celery will fail to start unless 
+/var/log/mail-archive/mlarchive.log exists and is writable
 
-On the Client: periodically run the following
-
-cd /a/mailarch/data
-xapian-replicate -o -h [server hostname] -p 7010 archive_index
-*** *** *** ***
-
-TESTING:
-Testing requires an instance of the message Xapian message index.  It must contain an
-import of the following lists:
-
-To run the tests
-$ py.test tests

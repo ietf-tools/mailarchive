@@ -12,7 +12,7 @@ urlpatterns = [
     url(r'^accounts/login/$', auth_views.LoginView.as_view(template_name='archive/login.html')),
     url(r'^arch/', include('mlarchive.archive.urls')),
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
-    url(r'^admin/', include(admin.site.urls)),
+    url(r'^admin/', admin.site.urls),
 ]
 
 if settings.DEBUG:

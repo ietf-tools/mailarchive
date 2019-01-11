@@ -8,9 +8,11 @@
 
     {% block prestyle %}{% endblock %}
 
-    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.css' %}" type="text/css">
-    <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap-theme.css' %}" type="text/css">
-
+    <!-- <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.css' %}" type="text/css"> -->
+    <!-- <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap-theme.css' %}" type="text/css"> -->
+    <link rel="stylesheet" href="{% static 'bootstrap4/css/customA.css' %}" type="text/css">
+    <!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/css/bootstrap.min.css" integrity="sha384-Smlep5jCw/wG7hdkwQ/Z5nLIefveQRIY9nfy6xoR1uRYBtpZgI6339F5dgvm/e9B" crossorigin="anonymous"> -->
+    
     {% block extrastyle %}{% endblock %}
 
     <link rel="stylesheet" href="{% static 'mlarchive/css/custom.css' %}" type="text/css">
@@ -26,61 +28,60 @@
 <!-- Container -->
 <div id="container">
 
-    <header class="navbar navbar-inverse navbar-fixed-top{% if server_mode != 'production' %} navbar-dev{% endif %}">
+    <header class="navbar navbar-expand-sm navbar-dark fixed-top p-0{% if server_mode != 'production' %} navbar-dev{% endif %}">
         <div class="container-fluid">
-            <div class="navbar-header pull-left">
-                <a class="navbar-brand" href="/">
-                   <img alt="IETF Logo" src="{% static 'mlarchive/images/ietflogo-small-transparent.png' %}">
-
-                      <span id="header-text">
-                      {% if server_mode and server_mode == "production" %}
-                      Mail Archive
-                      {% else %}
-                      <b><i>Development mode</i></b>
-                      {% endif %}
-                      </span>
-
-                </a>
-            </div> <!-- navbar-header -->
+            <a class="navbar-brand p-0" href="/">
+                <img alt="IETF Logo" src="{% static 'mlarchive/images/ietflogo-small-transparent.png' %}">
+                <span class="navbar-text d-none d-md-inline-block">
+                {% if server_mode and server_mode == "production" %}
+                Mail Archive
+                {% else %}
+                <b><i>Dev mode</i></b>
+                {% endif %}
+                </span>
+            </a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-main" aria-controls="navbar-main" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
             {% if not request.resolver_match.url_name == "django.contrib.auth.views.login" %}
-            <div class="navbar-header pull-right">
-                {% if not request.resolver_match.url_name == "archive_help" %}
-                <div id="nav-help" class="nav-menu">
-                    <a href="{% url "archive_help" %}">Help</a>
-                </div>
-                {% endif %}
-                {% if user.is_superuser %}
-                <div id="nav-admin" class="nav-menu dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Admin</a>
-                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                        <li><a href="{% url "archive_admin" %}">Remove Messages</a></li>
-                        <li><a href="{% url "archive_admin_guide" %}">Guide</a></li>
-                        <li><a href="{% url "archive_admin_console" %}">Console</a></li>
-                    </ul>
-                </div>
-                {% endif %}
-                {% if static_mode_enabled %}
-                <div id="nav-settings" class="nav-menu dropdown">
-                    <a id="nav-settings-anchor" href="#" class="dropdown-toggle" data-toggle="dropdown">Settings</a>
-                    <ul class="dropdown-menu dropdown-menu-right" role="menu">
-                        <li><a id="toggle-static" href="#">Turn Static Mode On</a></li>
-                    </ul>
-                </div>
-                {% endif %}
-                {% if not static_mode_on %}
-                    <div id="login" class="nav-menu noprint">
-                    {% if user.is_authenticated %}
-                        <span class="login-user pipe">{{ user }}</span>
-                        <a href="{% url "archive_logout" %}">Sign out</a>
-                    {% else %}
-                        <a href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>
+            <div id="navbar-main" class="navbar-header float-right collapse navbar-collapse">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url "archive_help" %}">Help</a>
+                    </li>
+                    {% if user.is_superuser %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbar-admin" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Admin</a>
+                        <div class="dropdown-menu" aria-labelledby="navbar-admin">
+                            <a class="dropdown-item" href="{% url "archive_admin" %}">Remove Messages</a>
+                            <a class="dropdown-item" href="{% url "archive_admin_guide" %}">Guide</a>
+                            <a class="dropdown-item" href="{% url "archive_admin_console" %}">Console</a>
+                        </div>
+                    </li>
                     {% endif %}
-                    </div>
-                {% endif %}
-            {% endif %}
-
+                    {% if static_mode_enabled %}
+                    <li class="nav-item dropdown mr-2">
+                        <a id="nav-settings-anchor" class="nav-link dropdown-toggle" href="#" id="navbar-settings" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Settings</a>
+                        <div class="dropdown-menu" aria-labelledby="navbar-settings">
+                            <a id="toggle-static" class="dropdown-item" href="#">Turn Static Mode On</a>
+                        </div>
+                    </li>
+                    {% endif %}
+                    {% if user.is_authenticated %}
+                    <li class="nav-item navbar-text pipe">{{ user}}</li>
+                    <!-- <span class="navbar-text pipe d-none d-md-inline-block">{{ user }}</span> -->
+                    <li class="nav-item"> 
+                        <a class="nav-link" href="{% url "archive_logout" %}">Sign out</a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>
+                    </li>
+                    {% endif %}
+                </ul>
             </div> <!-- navbar-header -->
+            {% endif %}
         </div> <!-- container-fluid -->
     </header>
 
@@ -115,8 +116,12 @@
 
 {% block modal %}{% endblock %}
 
-<script type="text/javascript" src="{% static 'jquery/jquery-1.12.4.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.js' %}"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/js/bootstrap.min.js" integrity="sha384-o+RDsa0aLu++PJvFqy8fFScvbHFLtbvScb8AjopnFD+iEQ7wo/CG0xlczd+2O/em" crossorigin="anonymous"></script>
+
+<!-- <script type="text/javascript" src="{% static 'jquery/jquery-1.12.4.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'bootstrap/js/bootstrap.js' %}"></script> -->
 <script type="text/javascript" src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
 <script type="text/javascript" src="{% static 'mlarchive/js/base.js' %}"></script>
 {% block js %}{% endblock %}

@@ -1,29 +1,27 @@
 {% extends "base.html" %}
-{% load static bootstrap3 %}
+{% load static bootstrap4 %}
 
 {% block title %}Mail Archive Browse{% endblock %}
 
 {% block extrastyle %}
-<link rel="stylesheet" href="{% static 'selectize/css/selectize.bootstrap3.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'selectize/css/selectize.bootstrap4.css' %}" type="text/css">
 {% endblock %}
 
 {% block header %}{{ block.super }} - Browse{% endblock %}
 
 {% block content %}
 
-<div id="browse-page">
+<div id="browse-page" class="container">
 
-    <div id="browse-top" class="col-md-offset-1 col-md-10">
+    <div class="col-md-offset-1 mt-4">
         <form id="id_browse_form" name="browse-form" class="form-inline" action="." method="get">
             {% bootstrap_form form layout='inline' show_label=False %}
             <div class="form-group">
-                <button id="browse-button" type="submit" value="Go" class="btn btn-default">Go</button>
+                <button id="browse-button" type="submit" value="Go" class="btn btn-secondary">Go</button>
             </div>
         </form>
     </div>
 
-    
-    
     <div id="private-lists" class="browse_section section">
         {% if columns.private %}
             <div class="col-md-offset-1 col-md-10">
@@ -41,7 +39,7 @@
               </h3>
             </div>
             {% with columns.private as columns %}
-              {% include "includes/browse_columns.html" %}
+                {% include "includes/browse_columns.html" %}
             {% endwith %}
         {% endif %}
     </div> <!-- private-lists -->

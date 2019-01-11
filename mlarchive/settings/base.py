@@ -131,7 +131,7 @@ INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.admindocs',
     'django.contrib.humanize',
-    'bootstrap3',
+    'bootstrap4',
     'celery_haystack',
     'haystack',
     'htauth',

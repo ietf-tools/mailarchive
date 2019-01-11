@@ -10,7 +10,7 @@
     <div id="msg-container">
         <div id="sidebar">
             <div id="search-filters">
-                <h4>FILTER BY TIME</h4>
+                <h5 class="mt-4">FILTER BY TIME</h5>
                 <ul class="filter-options" tabindex="-1">
                   <li class="filter-item"><a class="{% selected request 'qdr' '' %}" href="{% query_string '' 'qdr' %}">Anytime</a></li>
                   <li class="filter-item"><a class="{% selected request 'qdr' 'd' %}" href="{% query_string 'qdr=d' 'index' %}">Past day</a></li>
@@ -20,13 +20,16 @@
                 </ul>
                 <div id="filter-box" class="js-off">
                     {% if not browse_list %}
-                        <h4>FILTER BY LIST</h4>
+                        <h5 class="mt-4">FILTER BY LIST</h5>
                         <div id="list-filter" class="filter" tabindex="-1">
                             <form id="list-filter">
                             <ul class="filter-options" tabindex="-1">
                             {% if facets.fields.email_list %}
                                 {% for list in facets.fields.email_list %}
-                                    <li class="filter-option"><input class="list-facet facetchk" type="checkbox" name="f_list" value="{{ list.0 }}" {% checked request 'f_list' list.0 %}>{{ list.0 }} ({{ list.1 }})</li>
+                                    <li class="filter-option form-check">
+                                        <input class="form-check-input list-facet facetchk" type="checkbox" id="id_f_list_{{ forloop.counter }}" name="f_list" value="{{ list.0 }}" {% checked request 'f_list' list.0 %}>
+                                        <label class="form-check-label" for="id_f_list_{{ forloop.counter }}">{{ list.0 }} ({{ list.1 }})</label>
+                                    </li>
                                 {% endfor %}
                                 {% if facets.fields.email_list|length > 6 %}
                                     <li class="control"><a class="more-link" href="">more...</a></li>
@@ -38,13 +41,17 @@
                         </div> <!-- list-filter -->
                     {% endif %}
 
-                    <h4>FILTER BY FROM</h4>
+                    <h5 class="mt-4">FILTER BY FROM</h5>
                     <div id="from-filter" class="filter" tabindex="-1">
                         <form id="from-filter">
                         <ul class="filter-options" tabindex="-1">
                          {% if facets.fields.frm_name %}
                             {% for name in facets.fields.frm_name %}
-                                <li class="filter-option"><input class="from-facet facetchk" type="checkbox" name="f_from" value="{{ name.0 }}" {% checked request 'f_from' name.0 %}><span class="truncated">{{ name.0|truncatechars:24 }}</span><span class="full">{{ name.0|truncatechars:48 }}</span> ({{ name.1 }})</li>
+                                <li class="filter-option form-check">
+                                    <input class="form-check-input from-facet facetchk" type="checkbox" id="id_f_from_{{ forloop.counter }}"" name="f_from" value="{{ name.0 }}" {% checked request 'f_from' name.0 %}>
+                                    <label class="form-check-label truncated" for="id_f_from_{{ forloop.counter }}">{{ name.0|truncatechars:24 }}</label>
+                                    <label class="form-check-label full" for="id_f_from_{{ forloop.counter }}">{{ name.0|truncatechars:48 }}</label> ({{ name.1 }})
+                                </li>
                             {% endfor %}
                             {% if facets.fields.frm_name|length > 6 %}
                                 <li class="control"><a class="more-link" href="">more...</a></li>
@@ -69,50 +76,48 @@
 
         <div id="msg-components">
         
-            <nav id="toolbar-left" class="navbar navbar-default">
-                <div class="container-fluid">
-                    <ul class="nav navbar-nav navbar-left">
-                        <li id="toggle-filters"><a href="#"><i class="fa fa-chevron-left toggle-pane" aria-hidden="true"></i></a></li>
+            <nav id="toolbar-left" class="navbar navbar-light bg-light rounded shadow-sm my-2">
+                <!-- <div class="container-fluid"> -->
+                    <ul class="navbar-nav mr-auto">
+                        <li id="toggle-filters" class="nav-item">
+                            <a href="#" class="nav-link"><i class="fa fa-chevron-left toggle-pane" aria-hidden="true"></i></a>
+                        </li>
                     </ul>
-                </div>
+                <!-- </div> -->
             </nav>
 
-            <nav id="toolbar" class="navbar navbar-default">
+            <nav id="toolbar" class="navbar navbar-expand-md navbar-light bg-light rounded shadow-sm my-2">
                 <div class="container-fluid">
-                    <div class="navbar-header">
-                        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#myNavbar" aria-expanded="false">
-                            <span class="sr-only">Toggle toolbar</span>
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                            <span class="icon-bar"></span>
-                        </button>
-                    </div> <!-- navbar-header -->
+                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#myNavbar" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
 
-                    <div class="collapse navbar-collapse" id="myNavbar">
-                        <ul class="nav navbar-nav navbar-left">
+                    <div class="collapse navbar-collapse justify-content-stretch" id="myNavbar">
+                        <ul class="navbar-nav mx-2 flex-shrink-0">
                             {% if modify_search_url %}
-                                <li><a id="modify-search" href="{{ modify_search_url }}" title="Modify Search">{% if browse_list %}<span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>{% else %}Modify Search{% endif %}</a></li>
+                                <li class="nav-item"><a id="modify-search" class="nav-link" href="{{ modify_search_url }}" title="Modify Search">{% if browse_list %}<span class="fa fa-arrow-left" aria-hidden="true"></span>{% else %}Modify Search{% endif %}</a></li>
                             {% endif %}
                             <!-- <li><a id="clear-sort" href="#">Clear Sort</a></li> -->
                             {% if browse_list %}
-                                <li{% if not group_by_thread %} class="active"{% endif %}><a href="{{ view_date_url }}">Date</a></li>
-                                <li{% if group_by_thread %} class="active"{% endif %}><a id="gbt-link" href="{{ view_thread_url }}">Thread</a></li>
+                                <li class="nav-item{% if not group_by_thread %} active{% endif %}"><a class="nav-link" href="{{ view_date_url }}">Date</a></li>
+                                <li class="nav-item{% if group_by_thread %} active{% endif %}"><a id="gbt-link" class="nav-link" href="{{ view_thread_url }}">Thread</a></li>
                             {% endif %}
                         </ul>
                         
-                        <ul class="nav navbar-nav navbar-right">
-                            <li><a href="#" data-toggle="modal" data-target="#exampleModalLong">Export</a></li>
-                        </ul> <!-- nav navbar-nav -->
-                        <form name="search-form" id="id_search_form" class="navbar-form navbar-right" method="get">
-                            <div class="input-group">
+                        <form name="search-form" id="id_search_form" class="ml-3 my-auto form-inline flex-grow-1" method="get">
+                            <div class="input-group input-group-sm w-100">
                                 {% render_field form.q class="form-control" type="search" %}
-                                <span class="input-group-btn">
-                                    <button class="btn btn-default" type="submit">
-                                        <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+                                <div class="input-group-append">
+                                    <button class="btn btn-secondary" type="submit">
+                                        <span class="fa fa-search" aria-hidden="true"></span>
                                     </button>
-                                </span>
+                                </div>
                             </div>
                         </form>
+
+                        <ul class="navbar-nav">
+                            <li class="nav-item"><a class="nav-link" href="#" data-toggle="modal" data-target="#exampleModalLong">Export</a></li>
+                        </ul> <!-- nav navbar-nav -->
 
                     </div> <!-- myNavbar -->
                 </div> <!-- container-fluid -->
@@ -129,7 +134,7 @@
                             <span>From</span>
                         </div><div class="header">
                             <span>Date</span>
-                        </div><div class="header{% if browse_list %} hidden{% endif %}">
+                        </div><div class="header{% if browse_list %} d-none{% endif %}">
                             <span>List</span>
                         </div>
                     {% else %}
@@ -139,13 +144,13 @@
                             <a id="sort-button-frm" class="unsorted sortbutton" href="#">From<i class="fa fa-sort" aria-hidden="true"></i></a>
                         </div><div class="header sortable">
                             <a id="sort-button-date" class="unsorted sortbutton" href="#">Date<i class="fa fa-sort" aria-hidden="true"></i></a>
-                        </div><div class="header sortable{% if browse_list %} hidden{% endif %}">
+                        </div><div class="header sortable{% if browse_list %} d-none{% endif %}">
                             <a id="sort-button-email_list" class="unsorted sortbutton" href="#">List<i class="fa fa-sort" aria-hidden="true"></i></a>
                         </div>
                     {% endif %}
 
                     <div id="msg-list" class="msg-list wrapper no-preview" tabindex="-1" data-results-per-page="{{ results_per_page }}" data-queryid="{{ queryid }}" data-queryset-offset="{{ queryset_offset }}" data-selected-offset="{{ selected_offset }}" data-export-token="{{ export_token }}" data-browse-list="{{ browse_list|default_if_none:"" }}" data-gbt="{% if group_by_thread %}1{% endif %}"{% if browse_list %} data-static-off-url="{{ static_off_url }}" data-static-on-url="{{ static_on_url }}"{% endif %}>
-                        <div class="table table-condensed msg-table xtable{% if group_by_thread %} thread-sorted{% endif %}">
+                        <div class="table msg-table xtable{% if group_by_thread %} thread-sorted{% endif %}">
                             <div class="xtbody">
                                 {% with page as results %}
                                     {% include "includes/results_divs.html" %}
@@ -161,9 +166,9 @@
                             </div>
                         </div>
                         <div class="list-control page-nav">
-                            {% if page.has_previous %}<a class="pull-left" href="{{ previous_page_url }}">Previous</a>{% endif %}
+                            {% if page.has_previous %}<a class="float-left" href="{{ previous_page_url }}">Previous</a>{% endif %}
                             <span class="current-page">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
-                            {% if page.has_next %}<a class="pull-right" href="{{ next_page_url }}">Next</a>{% endif %}
+                            {% if page.has_next %}<a class="float-right" href="{{ next_page_url }}">Next</a>{% endif %}
                         </div>
                         <div id="toggle-preview"><a href="#"><i class="fa fa-chevron-down toggle-pane" aria-hidden="true"></i></a></div>
                     </div> <!-- msg-list-controls -->
@@ -205,9 +210,9 @@
             </div>
           </div>
           <div class="modal-footer">
-              <a class="btn btn-default export-link{% if not user.is_authenticated or count > export_limit %} disabled{% endif %}" href="{{ export_mbox }}">Mbox</a>
-              <a class="btn btn-default export-link{% if not user.is_authenticated or count > export_limit %} disabled{% endif %}" href="{{ export_maildir }}">Maildir</a>
-              <a class="btn btn-default export-link{% if not user.is_authenticated or count > export_limit %} disabled{% endif %}" href="{{ export_url }}">URLs</a>
+              <a class="btn btn-secondary export-link{% if not user.is_authenticated or count > export_limit %} disabled{% endif %}" href="{{ export_mbox }}">Mbox</a>
+              <a class="btn btn-secondary export-link{% if not user.is_authenticated or count > export_limit %} disabled{% endif %}" href="{{ export_maildir }}">Maildir</a>
+              <a class="btn btn-secondary export-link{% if not user.is_authenticated or count > export_limit %} disabled{% endif %}" href="{{ export_url }}">URLs</a>
           </div>
         </div>
       </div>

@@ -1,15 +1,15 @@
 {% extends "base.html" %}
-{% load bootstrap3 %}
+{% load bootstrap4 %}
 
 {% block title %}Mail Archive{% endblock %}
 
 {% block content %}
 
 <div class="corral">
-  <div id="login-container">
+  <div class="login-container">
     <form action="." method="post">{% csrf_token %}
         {% bootstrap_form form show_label=False %}
-        <button id="login-button" type="submit" value="Login" class="btn btn-primary">Log In</button>
+        <button id="login-button" type="submit" value="Login" class="btn btn-primary btn-block">Log In</button>
     </form>
   </div>  <!-- login-container -->
 </div> <!-- .corral -->

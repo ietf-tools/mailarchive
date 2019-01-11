@@ -1,4 +1,4 @@
-        <table class="table table-responsive result-table">
+        <table class="table result-table">
             <thead>
                 <tr>
                     <th class="col1"></th>
@@ -17,7 +17,7 @@
                     <td>{{ item.object.subject }}</td>
                     <td>{{ item.object.frm }}</td>
                     <td class="text-nowrap">{{ item.object.date|date:"Y-m-d" }}</td>
-                    <td class="hidden">{{ item.object.pk }}</td>
+                    <td class="d-none">{{ item.object.pk }}</td>
                   </tr>
                 {% endfor %}
             {% else %}

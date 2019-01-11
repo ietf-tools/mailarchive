@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% load static bootstrap3 widget_tweaks %}
+{% load static bootstrap4 widget_tweaks %}
 
 {% block extrastyle %}
-<link rel="stylesheet" href="{% static 'selectize/css/selectize.bootstrap3.css' %}" type="text/css">
+<link rel="stylesheet" href="{% static 'selectize/css/selectize.bootstrap4.css' %}" type="text/css">
 <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" type="text/css">
 {% endblock %}
 
@@ -12,13 +12,13 @@
 
 {% block content %}
 
-<div id="admin-page">
-    <div id="admin-top">
-        <div id="admin-view-pane" class="hidden"></div>
+<div class="container-fluid admin-page">
+    <div class="admin-top">
+        <div id="admin-view-pane" class="d-none"></div>
         <div id="admin_search_form">
-            <form id="id_admin_form" name="admin-search-form" class="form-inline" action="." method="get">
+            <form id="id_admin_form" name="admin-search-form" action="." method="get">
                 <div class="row">
-                    <div class="col-md-4 col-md-offset-2">
+                    <div class="col-md-4 offset-md-2">
                         {% render_field form.subject class="form-control" placeholder="Subject" %}
                     </div>
                     <div class="col-md-4">
@@ -26,7 +26,7 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-4 col-md-offset-2">
+                    <div class="col-md-4 offset-md-2">
                         {% render_field form.frm class="form-control" placeholder="From" %}
                     </div>
                     <div class="col-md-4">
@@ -34,21 +34,22 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-4 col-md-offset-2">
-                        <div class="subrow">
-                        <div class="col-md-6 subrow-left">
-                          {% render_field form.start_date class="form-control" placeholder="Start Date" %}
-                        </div>
-                        <div class="col-md-6 subrow-right">
-                            {% render_field form.end_date class="form-control" placeholder="End Date" %}
-                        </div>
+                    <div class="col-md-4 offset-md-2">
+                        <div class="form-row">
+                            <div class="col-md-6 subrow-left">
+                              {% render_field form.start_date class="form-control" placeholder="Start Date" %}
+                            </div>
+                            <div class="col-md-6 subrow-right">
+                                {% render_field form.end_date class="form-control" placeholder="End Date" %}
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-2">
-                        <button class="btn btn-default" type="submit">Search</button>
+                    <div class="col-md-1">
+                        <button class="btn btn-secondary" type="submit">Search</button>
                     </div>
-                    <div class="col-md-2">
-                        <label class="checkbox-inline"><input type="checkbox" name="exclude_whitelisted_senders" value="exclude_whitelisted_senders">Exclude Whitelisted Senders</label>
+                    <div class="col-md-3 form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="exclude-checkbox" name="exclude_whitelisted_senders" value="exclude_whitelisted_senders">
+                        <label class="form-check-label" for="exclude-checkbox">Exclude Whitelisted Senders</label>
                     </div>
                 </div>
             </form>
@@ -57,13 +58,14 @@
 
     <div id="result-list" class="section" tabindex="-1">
         <h3>Results{% if results %} ({{ results|length }}){% endif %}</h3>
-        <form id="id_admin_action" class="form-inline" name="admin-action-form" action="." method="post">{% csrf_token %}
+        <form id="id_admin_action" name="admin-action-form" action="." method="post">{% csrf_token %}
 
         <div class="row">
-            <div class="col-md-1 col-md-offset-1">
-                <label class="checkbox-inline"><input type="checkbox" id="selectall" name="selectall" value="selectall">Select All</label>
+            <div class="col-md-1 offset-md-1 form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="selectall" name="selectall" value="selectall">
+                <label class="form-check-label" for="selectall">Select All</label>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-4 form-inline">
                 <label class="sr-only" for="action-select">Action</label>
                 {{ action_form.action.errors }}
                 <select id="action-select" name="action" class="form-control" placeholder="Select action">
@@ -72,28 +74,28 @@
                     <option value="not_spam">Mark selected not spam</option>
                 </select>
                 <input type="hidden" class="select-across" value="0" name="select_across" />
-                <button type="submit" class="btn btn-default" title="Run the selected action" name="index" value="0">Go</button>
+                <button type="submit" class="btn btn-secondary" title="Run the selected action" name="index" value="0">Go</button>
             </div>
             <div class="col-md-3">
                 <div class="btn-group" role="group" aria-label="spam buttons">
                     <button id="spam-toggle" type="button" class="btn btn-primary" data-toggle="button" aria-pressed="false" autocomplete="off">Spam Mode</button>
                     <button id="spam-process" type="button" class="btn btn-primary disabled" data-toggle="button" aria-pressed="false" autocomplete="off">Process Spam</button>
-                    <span class="spinner hidden"><i class="fa fa-refresh fa-spin" style="font-size:24px"></i></span>
+                    <span class="spinner d-none"><i class="fa fa-refresh fa-spin" style="font-size:24px"></i></span>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="checkbox-inline hidden">
-                    <label class="checkbox-inline"><input type="checkbox" id="move-subject" value="" checked>Move identical subject</label>
+                <div class="form-check form-check-inline d-none">
+                    <label class="form-check-label" for="move-subject">Move identical subject</label>
+                    <input class="form-check-input" type="checkbox" id="move-subject" value="" checked>
                 </div>
-                
             </div>
         </div> <!-- row -->
 
-        <ul class="nav nav-tabs hidden">
+        <ul class="nav nav-tabs d-none">
           <div class="alert alert-warning" role="alert">Use left and right arrow keys to sort messages.  Right = spam, Left = not spam.  Use Process Spam button to remove spam and mark clean messages.</div>
-          <li role="presentation"><a data-toggle="tab" href="#clean-pane">Clean - 0</a></li>
-          <li role="presentation" class="active"><a data-toggle="tab" href="#search-pane">Search - {{ results|length }}</a></li>
-          <li role="presentation"><a data-toggle="tab" href="#spam-pane">Spam - 0</a></li>
+          <li class="nav-item"><a data-toggle="tab" href="#clean-pane">Clean - 0</a></li>
+          <li class="nav-item" class="active"><a data-toggle="tab" href="#search-pane">Search - {{ results|length }}</a></li>
+          <li class="nav-item"><a data-toggle="tab" href="#spam-pane">Spam - 0</a></li>
         </ul>
 
         <div class="tab-content" tabindex="0">
@@ -133,8 +135,8 @@
           <p>Move all messages with the same subject to spam?</p>
         </div>
         <div class="modal-footer">
-          <button id="yes-move" type="button" class="btn btn-default">Yes</button>
-          <button id="no-move" type="button" class="btn btn-default">No</button>
+          <button id="yes-move" type="button" class="btn btn-secondary">Yes</button>
+          <button id="no-move" type="button" class="btn btn-secondary">No</button>
         </div>
     </div>
 

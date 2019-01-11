@@ -1,75 +1,72 @@
-<nav class="navbar navbar-default navbar-msg-detail">
-  <div class="container-fluid">
-    <!-- Brand and toggle get grouped for better mobile display -->
-    <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
-        <span class="sr-only">Toggle navigation</span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
+<nav class="navbar navbar-expand-md navbar-light bg-light rounded shadow-sm navbar-msg-detail">
+  <!-- <div class="container-fluid">-->
+      <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#{{ target }}" aria-expanded="false">
+        <span class="navbar-toggler-icon"></span>
       </button>
-      {# <a class="navbar-brand" href="#">Brand</a> #}
-    </div>
 
     <!-- Collect the nav links, forms, and other content for toggling -->
-    <div class="collapse navbar-collapse">
-      <ul class="nav navbar-nav">
-        <li title="Previous by date">
+    <div class="collapse navbar-collapse navbar-detail px-5" id="{{ target }}">
+      <ul class="navbar-nav">
+        <li class="nav-item" title="Previous by date">
           {% if previous_in_list %}
-            <a class="previous-in-list" href="{{ previous_in_list.get_absolute_url }}" aria-label="previous in list">
+            <a class="nav-link previous-in-list" href="{{ previous_in_list.get_absolute_url }}" aria-label="previous in list">
           {% else %}
-            <a class="previous-in-list" class="disabled">
+            <a class="nav-link previous-in-list disabled">
           {% endif %}
-            <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+            <span class="fa fa-chevron-left" aria-hidden="true"></span>
             </a>
         </li>
-        <li title="Date Index"><a class="date-index" href="{{ msg.get_date_index_url }}">Date</a></li>
-        <li title="Next by date">
+        <li class="nav-item" title="Date Index">
+          <a class="nav-link date-index" href="{{ msg.get_date_index_url }}">Date</a>
+        </li>
+        <li class="nav-item" title="Next by date">
           {% if next_in_list %}
-            <a class="next-in-list" href="{{ next_in_list.get_absolute_url }}" aria-label="next in list">
+            <a class="nav-link next-in-list" href="{{ next_in_list.get_absolute_url }}" aria-label="next in list">
           {% else %}
-            <a class="next-in-list" class="disabled">
+            <a class="nav-link next-in-list" class="disabled">
           {% endif %}
-            <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+            <span class="fa fa-chevron-right" aria-hidden="true"></span>
             </a>
         </li>
-        <li title="Previous in thread">
+        <li class="nav-item" title="Previous in thread">
           {% if previous_in_thread %}
-            <a class="previous-in-thread" href="{{ previous_in_thread.get_absolute_url }}" aria-label="previous in thread">
+            <a class="nav-link previous-in-thread" href="{{ previous_in_thread.get_absolute_url }}" aria-label="previous in thread">
           {% else %}
-            <a class="previous-in-thread" class="disabled">
+            <a class="nav-link previous-in-thread" class="disabled">
           {% endif %}
-            <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+            <span class="fa fa-chevron-left" aria-hidden="true"></span>
             </a>
         </li>
-        <li title="Thread Index"><a class="thread-index" href="{{ msg.get_thread_index_url }}">Thread</a></li>
-        <li title="Next in thread">
+        <li class="nav-item" title="Thread Index">
+          <a class="nav-link thread-index" href="{{ msg.get_thread_index_url }}">Thread</a>
+        </li>
+        <li class="nav-item" title="Next in thread">
           {% if next_in_thread %}
-            <a class="next-in-thread" href="{{ next_in_thread.get_absolute_url }}" aria-label="next in thread">
+            <a class="nav-link next-in-thread" href="{{ next_in_thread.get_absolute_url }}" aria-label="next in thread">
           {% else %}
-            <a class="next-in-thread" class="disabled">
+            <a class="nav-link next-in-thread" class="disabled">
           {% endif %}
-            <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+            <span class="fa fa-chevron-right" aria-hidden="true"></span>
             </a>
         </li>
         {% if queryid %}
-          <li title="Previous in search results">
+          <li class="nav-item" title="Previous in search results">
             {% if previous_in_search %}
-              <a class="previous-in-search" href="{{ previous_in_search.get_absolute_url }}/?qid={{ queryid }}" aria-label="previous in search">
+              <a class="nav-link previous-in-search" href="{{ previous_in_search.get_absolute_url }}/?qid={{ queryid }}" aria-label="previous in search">
             {% else %}
-              <a class="previous-in-search" class="disabled">
+              <a class="nav-link previous-in-search" class="disabled">
             {% endif %}
-              <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+              <span class="fa fa-chevron-left" aria-hidden="true"></span>
               </a>
           </li>
-          <li title="Return to search"><a class="return-to-search" href="{{ search_url }}">Search</a></li>
-          <li title="Next in search results">
+          <li class="nav-item" title="Return to search"><a class="return-to-search" href="{{ search_url }}">Search</a></li>
+          <li class="nav-item" title="Next in search results">
             {% if next_in_search %}
-              <a class="next-in-search" href="{{ next_in_search.get_absolute_url }}/?qid={{ queryid }}" aria-label="next in search">
+              <a class="nav-link next-in-search" href="{{ next_in_search.get_absolute_url }}/?qid={{ queryid }}" aria-label="next in search">
             {% else %}
-              <a class="next-in-search" class="disabled">
+              <a class="nav-link next-in-search" class="disabled">
             {% endif %}
-              <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+              <span class="fa fa-chevron-right" aria-hidden="true"></span>
               </a>
           </li>
         {% endif %}
@@ -77,5 +74,5 @@
       <ul class="nav navbar-nav navbar-right">
       </ul>
     </div><!-- /.navbar-collapse -->
-  </div><!-- /.container-fluid -->
+  <!-- </div><!-- /.container-fluid -->
 </nav>

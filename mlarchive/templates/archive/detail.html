@@ -7,35 +7,37 @@
 
 <div class="container-fluid">
 
-  {% include "includes/detail_navbar.html" %}
+  {% include "includes/detail_navbar.html" with target="id-navbar-top" %}
   
   <div class="row">
-    <div id="msg-aside" class="col-md-4 col-md-push-8">
-    </div> <!-- msg-aside -->
 
-    <div id="msg-detail" class="col-md-8 col-md-pull-4" data-static-date-index-url="{{ msg.get_static_date_index_url }}" data-static-thread-index-url="{{ msg.get_static_thread_index_url }}" data-date-index-url="{{ msg.get_date_index_url }}" data-thread-index-url="{{ msg.get_thread_index_url }}">
+    <div id="msg-detail" class="col-md-8" data-static-date-index-url="{{ msg.get_static_date_index_url }}" data-static-thread-index-url="{{ msg.get_static_thread_index_url }}" data-date-index-url="{{ msg.get_date_index_url }}" data-thread-index-url="{{ msg.get_thread_index_url }}">
       
       {{ msg.get_body_html|safe }}
 
       {% include "includes/message_thread.html" %}
 
-      <div id="nav-outer">
-        <div id="nav-inner">
-        <ul id="navigation">
-          <li><a id="toggle-nav" class="toggle js-off" href="#">Hide Navigation Bar</a></li>
+      <div class="d-flex justify-content-center">
+        <ul id="navigation" class="list-inline">
+          <li class="list-inline-item">
+            <a id="toggle-nav" class="toggle js-off" href="#">Hide Navigation Bar</a>
+          </li>
           {% if request.user.is_staff %}
-            <li><a id="admin-link" href="{{ msg.get_admin_url }}">Admin Page</a></li>
+          <li class="list-inline-item">
+            <a id="admin-link" href="{{ msg.get_admin_url }}">Admin Page</a>
+          </li>
           {% endif %}
         </ul>
-        </div>
       </div>
-
+          
     </div> <!-- msg-detail -->
+
+    <div id="msg-aside" class="col-md-4"></div>
 </div> <!-- row -->
 
     {% include "includes/detail_buttons.html" %}
 
-    {% include "includes/detail_navbar.html" %}
+    {% include "includes/detail_navbar.html" with target="id-navbar-bottom" %}
 
 </div>
 

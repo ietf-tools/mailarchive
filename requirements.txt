@@ -9,7 +9,7 @@ cloudflare>=2.1.0
 cryptography
 Django>=1.11,<2.0
 django-appconf		# 0.6 was installed
-django-bootstrap3>=8.0.0
+django-bootstrap4
 django-debug-toolbar>=1.7
 django-widget-tweaks>=1.3
 django-haystack==2.8.1

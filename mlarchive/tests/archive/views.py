@@ -176,9 +176,9 @@ def test_admin_search_from(client,messages):
 def test_admin_menu(client, admin_client):
     url = reverse('archive')
     response = client.get(url)
-    assert 'id="nav-admin"' not in response.content
+    assert 'id="navbar-admin"' not in response.content
     response = admin_client.get(url)
-    assert 'id="nav-admin"' in response.content
+    assert 'id="navbar-admin"' in response.content
 
 
 @pytest.mark.django_db(transaction=True)

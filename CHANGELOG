@@ -1,5 +1,5 @@
 
-mailarch (2.0.7) ietf; urgency=normal
+mailarch (2.0.7) ietf; urgency=high
 
 * Modify robots.txt to allow search engine crawling.  Add static browse
   index to assist crawlers in finding static pages.  Fixes #2658

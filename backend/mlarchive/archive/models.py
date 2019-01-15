@@ -453,7 +453,7 @@ class Attachment(models.Model):
 
 class Legacy(models.Model):
     email_list_id = models.CharField(max_length=40)
-    msgid = models.CharField(max_length=200, db_index=True)
+    msgid = models.CharField(max_length=240, db_index=True)
     number = models.IntegerField()
 
     def __unicode__(self):

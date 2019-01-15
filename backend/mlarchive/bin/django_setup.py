@@ -18,7 +18,7 @@ def do_setup(django_settings=None):
         django_settings = DEFAULT_DJANGO_SETTINGS_MODULE
 
     # Virtualenv support
-    virtualenv_activation = os.path.join(path, "env", "bin", "activate_this.py")
+    virtualenv_activation = os.path.join(os.path.dirname(path), "env", "bin", "activate_this.py")
     if os.path.exists(virtualenv_activation):
         execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
 
@@ -30,6 +30,6 @@ def do_setup(django_settings=None):
     django.setup()
 
     from django.conf import settings
-    print settings.SERVER_MODE
-    print settings.DEBUG
-    print settings.HAYSTACK_SIGNAL_PROCESSOR
+    # print settings.SERVER_MODE
+    # print settings.DEBUG
+    # print settings.HAYSTACK_SIGNAL_PROCESSOR

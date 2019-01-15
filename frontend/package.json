@@ -5,7 +5,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "build": "node-sass -o ../mlarchive/externals/static/bootstrap4/css/ scss/"
+    "build": "node-sass -o ../backend/mlarchive/externals/static/bootstrap4/css/ scss/"
   },
   "dependencies": {
     "bootstrap": "^4.1.3",

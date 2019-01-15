@@ -103,7 +103,7 @@ def get_msgid(fp):
 
 
 def main():
-    aparser = argparse.ArgumentParser(description='Scan archive for spam.')
+    aparser = argparse.ArgumentParser(description='Get legacy MHonArc message numbers')
     aparser.add_argument('list', nargs="?", default='*')     # positional argument
     aparser.add_argument('-v', '--verbose', help='verbose output', action='store_true')
     aparser.add_argument('-c', '--check', help="check only, dont't import", action='store_true')
@@ -121,7 +121,7 @@ def main():
 
     else:
         # scan full archive or one list
-        pattern = '/a/www/ietf-mail-archive/web*/{}/current/'.format(args.list)
+        pattern = '/a/www/ietf-mail-archive/web/{}/current/'.format(args.list)
         dirs = glob.glob(pattern)
         process_dirs(dirs, args)
 

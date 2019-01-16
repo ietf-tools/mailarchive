@@ -1,6 +1,10 @@
 // Custom.scss
 // Option A: Include all of Bootstrap
 
+@import "../node_modules/bootstrap/scss/functions";
+@import "../node_modules/bootstrap/scss/variables";
+@import "../node_modules/bootstrap/scss/mixins";
+
 // Your variable overrides
 $enable-shadows:            true;
 $enable-gradients:          true; 
@@ -15,10 +19,19 @@ $enable-gradients:          true;
 //$link-hover-decoration:     underline !default;
 
 
+// Fonts
+
 $font-size-base:              0.875rem; // 14, Assumes the browser default, typically `16px`
 // $font-size-lg:                ($font-size-base * 1.25) !default;
 // $font-size-sm:                ($font-size-base * .875) !default;
 
 $line-height-base:            1.42857;
+
+// Navbar
+
+$navbar-dark-color:                 $white;
+$navbar-dark-hover-color:           rgba($white, .75);
+// $navbar-dark-active-color:          $white !default;
+// $navbar-dark-disabled-color:        rgba($white, .25) !default;
 
 @import "../node_modules/bootstrap/scss/bootstrap";

@@ -73,7 +73,7 @@ var mailarch = {
         mailarch.$toggleFiltersIcon = $('#toggle-filters a i');
         mailarch.$togglePreviewLink = $('#toggle-preview a');
         mailarch.$togglePreviewIcon = $('#toggle-preview a i');
-        mailarch.$viewPane = $('#view-pane');
+        mailarch.$viewPane = $('.view-pane');
         mailarch.$window = $(window);
     },
 

@@ -11,7 +11,7 @@
   
   <div class="row">
 
-    <div id="msg-detail" class="col-md-8" data-static-date-index-url="{{ msg.get_static_date_index_url }}" data-static-thread-index-url="{{ msg.get_static_thread_index_url }}" data-date-index-url="{{ msg.get_date_index_url }}" data-thread-index-url="{{ msg.get_thread_index_url }}">
+    <div class="msg-detail col-md-8 pt-3" data-static-date-index-url="{{ msg.get_static_date_index_url }}" data-static-thread-index-url="{{ msg.get_static_thread_index_url }}" data-date-index-url="{{ msg.get_date_index_url }}" data-thread-index-url="{{ msg.get_thread_index_url }}">
       
       {{ msg.get_body_html|safe }}
 
@@ -32,7 +32,7 @@
           
     </div> <!-- msg-detail -->
 
-    <div id="msg-aside" class="col-md-4"></div>
+    <div class="msg-aside col-md-4"></div>
 </div> <!-- row -->
 
     {% include "includes/detail_buttons.html" %}

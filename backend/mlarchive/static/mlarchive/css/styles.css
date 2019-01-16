@@ -92,7 +92,7 @@ div:focus {
 }
 
 /* customize bootstrap navbar */
-.navbar {
+nav.navbar {
     padding: 0;
     border: 1px solid #e7e7e7;
 }
@@ -140,9 +140,8 @@ a.toggle:hover {
     padding-left: 20px;
 }
 
-.navbar-dark .navbar-nav .nav-link:hover {
-    color: white;
-    text-decoration: underline;
+header.navbar {
+    min-height: 44px;
 }
 
 /* ==========================================================================
@@ -550,7 +549,7 @@ input[type="search"]::-webkit-search-cancel-button {
 .msg-list {
     border-top: 1px solid #D6D6D6;
     cursor: pointer;
-    height: calc(100% - 73px);
+    height: calc(100% - 63px);
     overflow: auto;
     position: relative;
 }
@@ -694,7 +693,7 @@ table.msg-list-header-table th a.btn {
     height: 8px;
 }
 
-#view-pane {
+.view-pane {
     border: 1px solid #D6D6D6;
     bottom: 0;
     left: 0;
@@ -796,7 +795,7 @@ table.msg-list-header-table th a.btn {
 
 @media (max-width: 767px)
 {
-    #sidebar, #splitter-pane, #view-pane, #message-count, #toggle-preview, #toolbar-left {
+    #sidebar, #splitter-pane, .view-pane, #message-count, #toggle-preview, #toolbar-left {
         display: none;
     }
     
@@ -933,34 +932,14 @@ ul.navbar-nav a.disabled, ul.navbar-nav a.disabled:hover {
     color: #d6d6d6;
 }
 
-#msg-detail {
-    padding-top: 15px;
-}
-
-#msg-aside ul {
+.msg-aside ul {
     margin: 15px 0 0 0;
     padding: 0;
     list-style-type: none;
     text-align: center;
 }
 
-#msg-aside ul li {
-    display: inline;
-    margin: 0 12px;
-}
-
-#msg-nav {
-    margin-bottom: 60px;
-}
-
-#msg-nav ul {
-    margin: 0;
-    padding: 0;
-    list-style-type: none;
-    text-align: center;
-}
-
-#msg-nav ul li {
+.msg-aside ul li {
     display: inline;
     margin: 0 12px;
 }
@@ -1011,11 +990,11 @@ ul.navbar-nav a.disabled, ul.navbar-nav a.disabled:hover {
 
 @media (min-width: 768px)
 {
-    #msg-aside ul {
+    .msg-aside ul {
         text-align: left;
     }
     
-    #msg-aside ul li {
+    .msg-aside ul li {
         margin: 1em 0;
         display: block;
     }
@@ -1034,7 +1013,7 @@ ul.navbar-nav a.disabled, ul.navbar-nav a.disabled:hover {
    Admin Guide
    ========================================================================== */
 /* fix for fragment identifier and fixed header */
-#admin_page h2:before { 
+.admin-guide h2:before { 
   display: block; 
   content: " "; 
   margin-top: -44px; 
@@ -1042,24 +1021,15 @@ ul.navbar-nav a.disabled, ul.navbar-nav a.disabled:hover {
   visibility: hidden; 
 }
 
-#topics {
-    margin-top: 20px;
-}
-
 /* ==========================================================================
    Admin Console
    ========================================================================== */
 
-#admin_page {
+.admin-console {
     background: #f6f6f6;
 }
 
-#console-container {
-    margin-top: 10px;
-}
 /* ==========================================================================
    Test
    ========================================================================== */
-#view-pane {
-    /* background-color: #F0FFFF; */
-}
+

@@ -24,11 +24,11 @@
 <!-- Container -->
 <div id="container">
 
-    <header class="navbar navbar-expand navbar-dark fixed-top p-0{% if server_mode != 'production' %} navbar-dev{% endif %}">
+    <header class="navbar navbar-expand navbar-dark fixed-top px-3 py-0{% if server_mode != 'production' %} navbar-dev{% endif %}">
         <div class="container-fluid">
             <a class="navbar-brand p-0" href="/">
                 <img alt="IETF Logo" src="{% static 'mlarchive/images/ietflogo-small-transparent.png' %}">
-                <span class="navbar-text d-none d-md-inline-block text-light">
+                <span class="navbar-text d-none d-md-inline-block">
                 {% if server_mode and server_mode == "production" %}
                 Mail Archive
                 {% else %}
@@ -44,7 +44,7 @@
             <div id="navbar-main" class="navbar-header float-right collapse navbar-collapse">
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item">
-                        <a class="nav-link text-light" href="{% url "archive_help" %}">Help</a>
+                        <a class="nav-link" href="{% url "archive_help" %}">Help</a>
                     </li>
                     {% if user.is_superuser %}
                     <li class="nav-item dropdown">

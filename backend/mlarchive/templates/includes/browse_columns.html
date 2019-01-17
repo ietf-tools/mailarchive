@@ -1,6 +1,6 @@
 {% for col in columns %}
-  <div class="browse_column col-sm">
-    <ul class="browse_list">
+  <div class="browse-column col-md-2{% if forloop.first %} offset-md-1{% endif %}">
+    <ul class="browse-list">
       {% for item in col %}
         {% if force_static %}
           <li><a class="browse-link" href="{% url 'archive_browse_static' list_name=item.name %}">{{ item|truncatechars:19 }}</a></li>

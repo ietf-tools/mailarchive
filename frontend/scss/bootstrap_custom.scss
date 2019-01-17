@@ -9,13 +9,19 @@
 $enable-shadows:            true;
 $enable-gradients:          true; 
 
+// Colors
+$primary:                     #337ab7;
+$theme-colors: (
+  primary: #337ab7
+);
+
 // Links
 //
 // Style anchor elements.
 
-//$link-color:                theme-color("primary") !default;
+$link-color:                theme-color("primary");
 //$link-decoration:           none !default;
-//$link-hover-color:          darken($link-color, 15%) !default;
+$link-hover-color:          darken($link-color, 15%);
 //$link-hover-decoration:     underline !default;
 
 

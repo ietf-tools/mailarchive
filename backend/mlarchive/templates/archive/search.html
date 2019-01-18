@@ -76,17 +76,15 @@
 
         <div id="msg-components">
         
-            <nav id="toolbar-left" class="navbar navbar-light bg-light rounded shadow-sm my-2">
-                <!-- <div class="container-fluid"> -->
-                    <ul class="navbar-nav mr-auto">
-                        <li id="toggle-filters" class="nav-item">
-                            <a href="#" class="nav-link"><i class="fa fa-chevron-left toggle-pane" aria-hidden="true"></i></a>
-                        </li>
-                    </ul>
-                <!-- </div> -->
+            <nav id="toolbar-left" class="navbar navbar-light bg-light rounded shadow-sm float-left toolbar">
+              <ul class="navbar-nav mr-auto">
+                <li id="toggle-filters" class="nav-item">
+                  <a href="#" class="nav-link"><i class="fa fa-chevron-left toggle-pane" aria-hidden="true"></i></a>
+                </li>
+              </ul>
             </nav>
 
-            <nav id="toolbar" class="navbar navbar-expand-md navbar-light bg-light rounded shadow-sm my-2">
+            <nav id="toolbar" class="navbar navbar-expand-md navbar-light bg-light rounded shadow-sm toolbar">
                 <div class="container-fluid">
                     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#myNavbar" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
@@ -161,9 +159,8 @@
 
                     <div id="msg-list-controls">
                         <div id="message-count" class="list-control">{{ count }} Messages</div>
-                        <div class="progress progress-striped active">
-                            <div class="progress-bar progress-bar-custom" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:100%">
-                            </div>
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated w-100" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
                         <div class="list-control page-nav">
                             {% if page.has_previous %}<a class="float-left" href="{{ previous_page_url }}">Previous</a>{% endif %}

@@ -42,10 +42,10 @@ var mailarchAdmin = {
         mailarchAdmin.$spamNoButton.on('click', mailarchAdmin.moveSelectedToSpam);
         mailarchAdmin.$spamProcessButton.on('click', mailarchAdmin.processSpam);
         $( document ).ajaxStart(function() {
-            $(".spinner").removeClass("hidden");
+            $(".spinner").removeClass("d-none");
         });
         $( document ).ajaxStop(function() {
-            $(".spinner").addClass("hidden");
+            $(".spinner").addClass("d-none");
         });
     },
 
@@ -217,7 +217,7 @@ var mailarchAdmin = {
     },
 
     processSpam: function(){
-        $(".spinner").removeClass("hidden");
+        $(".spinner").removeClass("d-none");
         mailarchAdmin.processPane($("#spam-pane"), "remove_selected");
         mailarchAdmin.processPane($("#clean-pane"), "not_spam");
     },
@@ -280,22 +280,21 @@ var mailarchAdmin = {
         if ($(this).hasClass('active')) {
             mailarchAdmin.spamModeActive = false;
             $('body').css('overflow', 'visible');
-            $('ul.nav-tabs').addClass('hidden');
-            mailarchAdmin.$viewPane.addClass('hidden');
-            $('#admin_search_form').removeClass('hidden');
+            $('.spam-top').addClass('d-none');
+            mailarchAdmin.$viewPane.addClass('d-none');
+            $('#admin_search_form').removeClass('d-none');
             mailarchAdmin.$spamProcessButton.addClass('disabled');
-            $("#move-subject").parents('div.checkbox-inline').addClass('hidden');
+            $("#move-subject").parents('div.checkbox-inline').addClass('d-none');
             mailarchAdmin.$tabContent.removeClass('spam-mode');
         } else {
             mailarchAdmin.spamModeActive = true;
-            $('body').css('overflow', 'hidden');
-            //$(document).keydown(mailarchAdmin.messageNav);
-            $('ul.nav-tabs').removeClass('hidden');
-            mailarchAdmin.$viewPane.removeClass('hidden');
-            $('#admin_search_form').addClass('hidden');
+            $('body').css('overflow', 'd-none');
+            $('.spam-top').removeClass('d-none');
+            mailarchAdmin.$viewPane.removeClass('d-none');
+            $('#admin_search_form').addClass('d-none');
             mailarchAdmin.$spamProcessButton.removeClass('disabled');
             mailarchAdmin.loadMessage($('.row-selected'));
-            $("#move-subject").parents('div.checkbox-inline').removeClass('hidden');
+            $("#move-subject").parents('div.checkbox-inline').removeClass('d-none');
             mailarchAdmin.$tabContent.addClass('spam-mode');
         }
     }

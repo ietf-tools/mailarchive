@@ -13,49 +13,49 @@
 {% block content %}
 
 <div class="container">
-<div id="adv-search-container" class="col-md-offset-1 col-md-10">
+<div class="adv-search-page col-md-offset-1 col-md-10 mt-4">
   <div id="adv-search" class="adv-search">
-      <form id="rules-form" class="advanced js-show" action="../search" method="get">
-        <fieldset class="term-set">
-        <h4>Include:</h4>
-        {% for form in query_formset.forms %}
-            <div id="query_chunk_{{ forloop.counter0 }}" class="chunk query_chunk form-inline">
-            {% if form.non_field_errors %}
-              {{ form.non_field_errors }}
-            {% endif %}
-            {% bootstrap_field form.field show_label=False %}
-            {% bootstrap_field form.qualifier show_label=False %}
-            {% bootstrap_field form.value show_label=False %}
-            <button class="btn btn-danger btn-remove" type="button">Delete</button>
+      <form class="rules-form advanced js-show" action="../search" method="get">
+        <fieldset class="form-group">
+          <h4>Include:</h4>
+          {% for form in query_formset.forms %}
+            <div id="query_chunk_{{ forloop.counter0 }}" class="form-group chunk query_chunk form-inline">
+              {% if form.non_field_errors %}
+                {{ form.non_field_errors }}
+              {% endif %}
+              {% bootstrap_field form.field show_label=False %}
+              {% bootstrap_field form.qualifier show_label=False %}
+              {% bootstrap_field form.value show_label=False %}
+              <button class="btn btn-danger btn-remove" type="button">Delete</button>
             </div>
-        {% endfor %}
-        <a class="addChunk" href="#">Add another</a>
+          {% endfor %}
+          <a class="addChunk" href="#">Add another</a>
         </fieldset>
 
-        <fieldset class="term-set">
-        <h4>Do not Include:</h4>
-        {% for form in not_formset.forms %}
-            <div id="not_chunk_{{ forloop.counter0 }}" class="chunk not_chunk form-inline">
-            {% if form.non_field_errors %}
-              {{ form.non_field_errors }}
-            {% endif %}
-            {% bootstrap_field form.field show_label=False %}
-            {% bootstrap_field form.qualifier show_label=False %}
-            {% bootstrap_field form.value show_label=False %}
-            <button class="btn btn-danger btn-remove" type="button">Delete</button>
+        <fieldset class="form-group">
+          <h4>Do not Include:</h4>
+          {% for form in not_formset.forms %}
+            <div id="not_chunk_{{ forloop.counter0 }}" class="form-group chunk not_chunk form-inline">
+              {% if form.non_field_errors %}
+                {{ form.non_field_errors }}
+              {% endif %}
+              {% bootstrap_field form.field show_label=False %}
+              {% bootstrap_field form.qualifier show_label=False %}
+              {% bootstrap_field form.value show_label=False %}
+              <button class="btn btn-danger btn-remove" type="button">Delete</button>
             </div>
-        {% endfor %}
-        <a class="addChunk" href="#">Add another</a>
+          {% endfor %}
+          <a class="addChunk" href="#">Add another</a>
         </fieldset>
       </form>
 
       <form id="advanced-search-form" class="advanced" action="../search" method="get">
         
         <div class="js-hide">
-            <fieldset class="term-set">
+            <fieldset class="form-group">
                 <h4>Include:</h4>
                 {% for form in nojs_query_formset.forms %}
-                    <div class="form-inline chunk">
+                    <div class="form-inline form-group">
                     {% if form.non_field_errors %}
                       {{ form.non_field_errors }}
                     {% endif %}
@@ -66,10 +66,10 @@
                 {% endfor %}
             </fieldset>
 
-            <fieldset class="term-set">
+            <fieldset class="form-group">
                 <h4>Do Not Include:</h4>
                 {% for form in nojs_not_formset.forms %}
-                    <div class="form-inline chunk">
+                    <div class="form-inline form-group">
                     {% if form.non_field_errors %}
                       {{ form.non_field_errors }}
                     {% endif %}
@@ -84,18 +84,20 @@
 
         <fieldset>
         <h4>Filter Results By:</h4>
-            {% bootstrap_field form.qdr show_label=False %}
-            {% bootstrap_field form.start_date form_group_class="form-group date-field" %}
-            {% bootstrap_field form.end_date form_group_class="form-group date-field" %}
-            {% bootstrap_field form.email_list show_help=False show_label=False %}
+          {% bootstrap_field form.qdr show_label=False %}
+          <div class="date-fields pl-3">
+            {% bootstrap_field form.start_date form_group_class="form-group" %}
+            {% bootstrap_field form.end_date form_group_class="form-group" %}
+          </div>
+          {% bootstrap_field form.email_list show_help=False show_label=False %}
         </fieldset>
 
-        <button class="btn btn-secondary" type="submit">Search</button>
+        <div class="form-group">
+          <button class="btn btn-secondary" type="submit">Search</button>
+        </div>
         
-        <div class="js-show">
-            <br />
-            <hr />
-            <input id="id_q" type="text" name="q" readonly="readonly" />
+        <div class="js-show form-group mt-5">
+            <input id="id_q" type="text" class="form-control" name="q" readonly="readonly" />
         </div>
 
         <input id="as" type="hidden" name="as" value="1" />
@@ -107,6 +109,11 @@
 
 {% endblock %}
 
+{% block footer %}
+  {% with extra_class="scrolling" %}
+    {% include "includes/footer.html" %}
+  {% endwith %}
+{% endblock %}
 
 {% block js %}
 <script type="text/javascript" src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>

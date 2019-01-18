@@ -5,7 +5,7 @@
 
 {% block content %}
 
-    <div id="static-page" class="container-fluid">
+    <div class="static-page container-fluid">
         <h3 class="mt-4">{{ email_list.name }} Discussion Archive - {% if group_by_thread %}Thread{% else %}Date{% endif %} Index - {{ date_string }}</h3>
 
         {% include "includes/static_index_nav.html" %}

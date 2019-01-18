@@ -18,13 +18,13 @@ ul.messages li {
   display: block;
   padding: 4px 5px 4px 25px;
   margin: 0 0 3px 0;
-  border-bottom: 1px solid #ddd;
-  color: #666; }
+  border-bottom: 1px solid #dee2e6;
+  color: #6c757d; }
 
 .info, .success, .warning, .error, .validation {
   padding: 4px 5px 4px 25px;
   margin: 0 0 3px 0;
-  border-bottom: 1px solid #ddd; }
+  border-bottom: 1px solid #dee2e6; }
 
 .info {
   background: #ffc url(../admin/img/icon_success.gif) 5px 0.3em no-repeat; }
@@ -68,8 +68,8 @@ div:focus {
 
 /* customize bootstrap navbar */
 nav.navbar {
-  padding: 0;
-  border: 1px solid #e7e7e7; }
+  padding: 3px 0;
+  border: 1px solid #dee2e6; }
 
 /* Progressive Enhancement Styling
    ========================================================================== */
@@ -169,7 +169,7 @@ header.navbar {
 .browse-page h3 {
   padding: 4px 0;
   text-align: left;
-  border-bottom: 1px solid #d6d6d6; }
+  border-bottom: 1px solid #ced4da; }
 
 .browse-page h3 a {
   font-size: 16px;
@@ -190,20 +190,14 @@ ul.browse-list li {
   overflow: auto;
   padding-bottom: 30px; }
 
-#browse-button {
-  margin-left: 4px; }
-
 /* ==========================================================================
    Static Index
    ========================================================================== */
-#static-page {
-  line-height: 1.2; }
+.static-page {
+  line-height: 1.42857143; }
 
 .static-index li {
   list-style: none outside none; }
-
-.static-index li .name-col {
-  margin-left: 1em; }
 
 .static-index strong {
   margin: 4px 0 4px -10px; }
@@ -211,32 +205,17 @@ ul.browse-list li {
 /* ==========================================================================
    Advanced Search
    ========================================================================== */
-#adv-search-container {
-  margin-top: 30px; }
-
-.date-field {
-  margin-left: 15px; }
-
-.advanced #id_q {
-  width: 100%; }
-
-.term-set {
-  margin-bottom: 10px; }
-
-.chunk {
-  margin-bottom: 10px; }
-
 .btn-remove {
   display: none; }
 
 .removable .btn-remove {
   display: inline-block; }
 
-#rules-form div.form-group {
-  margin-right: 8px; }
+.rules-form .form-control {
+  margin-right: .5rem; }
 
 @media (min-width: 768px) {
-  #rules-form .operand {
+  .rules-form .operand {
     width: 325px; } }
 
 /* ==========================================================================
@@ -248,38 +227,10 @@ ul.browse-list li {
   color: white;
   text-align: center; }
 
-.admin-top {
-  margin-top: 30px; }
-
-.admin-top .form-control {
-  width: 100%; }
-
-#id_admin_form .row {
-  margin-bottom: 15px; }
-
-#id_admin_form .subrow .subrow-left {
-  padding-left: 0; }
-
-#id_admin_form .subrow .subrow-right {
-  padding-right: 0; }
-
-#result-list .row {
-  margin-bottom: 15px; }
-
-.nav-tabs > li, .nav-pills > li {
-  float: none;
-  display: inline-block; }
-
-.nav-tabs, .nav-pills {
-  text-align: center; }
-
 #admin-view-pane {
   height: 132px;
   overflow-y: scroll;
   padding: 0 20px; }
-
-.result-list .row {
-  margin: 0; }
 
 .admin-page .result-table {
   table-layout: fixed; }
@@ -301,14 +252,6 @@ ul.browse-list li {
   margin: 0 20px; }
 
 /* ==========================================================================
-   Help
-   ========================================================================== */
-#help_page {
-  margin-left: 10%;
-  margin-right: 10%;
-  overflow: auto; }
-
-/* ==========================================================================
    Export
    ========================================================================== */
 ul.export-buttons li {
@@ -323,7 +266,7 @@ ul.export-buttons li {
    Search
    ========================================================================== */
 #sidebar {
-  color: #808080;
+  color: #6c757d;
   float: left;
   height: calc(100vh - 44px);
   padding-left: 20px;
@@ -340,7 +283,7 @@ a.selected {
   text-decoration: underline; }
 
 i.toggle-pane {
-  color: lightgrey; }
+  color: #ced4da; }
 
 .filter-options li {
   list-style: none outside none; }
@@ -350,9 +293,9 @@ i.toggle-pane {
 
 .filter-popup {
   background: none repeat scroll 0 0 white;
-  border: 1px solid #d6d6d6;
-  box-shadow: 0 2px 4px #d6d6d6;
-  color: #333333;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 2px 4px #dee2e6;
+  color: #343a40;
   line-height: 17px;
   padding-bottom: 5px;
   padding-top: 5px;
@@ -397,23 +340,19 @@ input[type="search"]::-webkit-search-cancel-button {
 #msg-components.x-full-width {
   width: 100%; }
 
+.toolbar {
+  margin-top: 6px;
+  margin-bottom: 6px; }
+
+#toolbar .dropdown-menu {
+  z-index: 1002; }
+
 #toolbar-left {
-  float: left;
-  margin-right: 0.3em; }
+  margin-right: 0.3rem; }
 
 #toolbar-left a {
   padding-left: 0.8em;
   padding-right: 0.8em; }
-
-#toolbar-left .container-fluid {
-  padding-left: 0;
-  padding-right: 0; }
-
-#toolbar .collapse, #toolbar .container-fluid {
-  /* padding-right: 0; */ }
-
-#toolbar .dropdown-menu {
-  z-index: 1002; }
 
 #msg-panes {
   position: relative;
@@ -424,14 +363,14 @@ input[type="search"]::-webkit-search-cancel-button {
   margin-bottom: 8px; }
 
 .msg-list {
-  border-top: 1px solid #d6d6d6;
+  border-top: 1px solid #dee2e6;
   cursor: pointer;
-  height: calc(100% - 63px);
+  height: calc(100% - 65px);
   overflow: auto;
   position: relative; }
 
 #msg-list-controls {
-  border-top: 1px solid #d6d6d6;
+  border-top: 1px solid #dee2e6;
   padding: 8px 1em 8px 1em; }
 
 .page-nav {
@@ -443,7 +382,7 @@ table.msg-table > thead > tr > th {
   padding: 0 0 0 8px; }
 
 table.msg-table th:hover {
-  background-color: #eeeeee; }
+  background-color: #dee2e6; }
 
 table.msg-table th a {
   color: black;
@@ -474,7 +413,7 @@ table.msg-list-header-table th a.btn {
   padding-top: 3px; }
 
 #list-pane {
-  border: 1px solid #d6d6d6;
+  border: 1px solid #dee2e6;
   height: 100%;
   left: 0;
   position: absolute;
@@ -482,7 +421,7 @@ table.msg-list-header-table th a.btn {
   top: 0; }
 
 .row-selected {
-  background-color: #DDECFE; }
+  background-color: #ddecfe; }
 
 .date-col {
   white-space: nowrap; }
@@ -532,8 +471,8 @@ table.msg-list-header-table th a.btn {
   background-repeat: no-repeat;
   background-image: url("../images/horizontal-grip.png");
   background-color: #f6f6f6;
-  border-left: 1px solid #d6d6d6;
-  border-right: 1px solid #d6d6d6;
+  border-left: 1px solid #dee2e6;
+  border-right: 1px solid #dee2e6;
   position: absolute;
   left: 0;
   right: 0;
@@ -542,7 +481,7 @@ table.msg-list-header-table th a.btn {
   height: 8px; }
 
 .view-pane {
-  border: 1px solid #d6d6d6;
+  border: 1px solid #dee2e6;
   bottom: 0;
   left: 0;
   overflow-y: scroll;
@@ -585,7 +524,7 @@ table.msg-list-header-table th a.btn {
 
 #msg-link {
   background: white;
-  border-top: 1px solid #ccc;
+  border-top: 1px solid #dee2e6;
   bottom: 0;
   padding: 2px 5px;
   position: fixed;
@@ -598,28 +537,22 @@ table.msg-list-header-table th a.btn {
 #message-count {
   float: left; }
 
-.progress {
-  background: whitesmoke;
-  border: 0px solid whitesmoke;
-  border-radius: 4px;
-  height: 15px; }
-
-.progress-bar-custom {
-  background: #337ab7; }
-
-.progress-striped .progress-bar-custom {
-  background-color: #337ab7;
-  background-image: -webkit-gradient(linear, 0 100%, 100% 0, color-stop(0.25, rgba(255, 255, 255, 0.15), color-stop(0.25, transparent), color-stop(0.5, transparent), color-stop(0.5, rgba(255, 255, 255, 0.15)), color-stop(0.75, rgba(255, 255, 255, 0.15)), color-stop(0.75, transparent), to(transparent)));
-  background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
-  background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
-  background-size: 40px 40px; }
-
+/*
+.progress {background: rgba(245, 245, 245, 1); border: 0px solid rgba(245, 245, 245, 1); border-radius: 4px; height: 15px;}
+.progress-bar-custom {background: rgba(51, 122, 183, 1);} 
+.progress-striped .progress-bar-custom {background-color: rgba(51, 122, 183, 1); background-image: -webkit-gradient(linear,0 100%,100% 0,color-stop(0.25,rgba(255, 255, 255, 0.15),color-stop(0.25,transparent),color-stop(0.5,transparent),color-stop(0.5,rgba(255, 255, 255, 0.15)),color-stop(0.75,rgba(255, 255, 255, 0.15)),color-stop(0.75,transparent),to(transparent))); background-image: -webkit-linear-gradient(45deg,rgba(255, 255, 255, 0.15) 25%,transparent 25%,transparent 50%,rgba(255, 255, 255, 0.15) 50%,rgba(255, 255, 255, 0.15) 75%,transparent 75%,transparent); background-image: linear-gradient(45deg,rgba(255, 255, 255, 0.15) 25%,transparent 25%,transparent 50%,rgba(255, 255, 255, 0.15) 50%,rgba(255, 255, 255, 0.15) 75%,transparent 75%,transparent); background-size: 40px 40px;}
+*/
 .progress {
   display: none;
   width: calc(100% - 350px);
   float: left;
   margin-left: 80px;
-  margin-top: 2px; }
+  margin-top: 4px;
+  height: 10px; }
+
+.progress-bar {
+  height: 10px;
+  background-color: rgba(51, 122, 183, 0.5); }
 
 #toggle-preview {
   float: right; }
@@ -659,7 +592,7 @@ table.msg-list-header-table th a.btn {
   float: right; }
 
 .xtr {
-  border: 1px solid #d6d6d6;
+  border: 1px solid #dee2e6;
   margin: 8px 4px;
   padding: 4px 8px;
   box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12); }
@@ -670,7 +603,7 @@ table.msg-list-header-table th a.btn {
 
 .header a {
   color: black;
-  padding: 4px 8px;
+  padding: 6px 8px;
   display: inline-block;
   width: 100%; }
 
@@ -680,7 +613,7 @@ table.msg-list-header-table th a.btn {
   .xthead {
     display: table-header-group; }
   .xtd {
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #dee2e6;
     display: table-cell;
     padding: 6px 8px;
     line-height: 1.42857143;
@@ -694,16 +627,16 @@ table.msg-list-header-table th a.btn {
     box-shadow: none;
     display: table-row; }
   .xtable.thread-sorted .xtr.thread-border .xtd {
-    border-top: 1px solid #ddd; }
+    border-top: 1px solid #dee2e6; }
   #msg-list.no-preview .xtable:not(.thread-sorted) .xtr.date-border .xtd {
-    border-top: 1px solid #585858; }
+    border-top: 1px solid #495057; }
   .list-col {
     float: none; }
   .subj-col, .from-col, .date-col {
     border-right: 1px solid #f6f6f6; }
   .header a, .header span {
     color: black;
-    padding: 4px 8px;
+    padding: 6px 8px;
     display: inline-block;
     width: 100%; }
   .header {
@@ -711,7 +644,7 @@ table.msg-list-header-table th a.btn {
     border-top: 0;
     font-weight: bold; }
   .header.sortable:hover {
-    background-color: #eeeeee; }
+    background-color: #dee2e6; }
   .header a:hover {
     text-decoration: none; } }
 
@@ -719,7 +652,7 @@ table.msg-list-header-table th a.btn {
    Message Detail
    ========================================================================== */
 ul.navbar-nav a.disabled, ul.navbar-nav a.disabled:hover {
-  color: #d6d6d6; }
+  color: #dee2e6; }
 
 .msg-aside ul {
   margin: 15px 0 0 0;

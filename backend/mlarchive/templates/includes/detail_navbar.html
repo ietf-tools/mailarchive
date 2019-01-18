@@ -23,7 +23,7 @@
           {% if next_in_list %}
             <a class="nav-link next-in-list" href="{{ next_in_list.get_absolute_url }}" aria-label="next in list">
           {% else %}
-            <a class="nav-link next-in-list" class="disabled">
+            <a class="nav-link next-in-list disabled">
           {% endif %}
             <span class="fa fa-chevron-right" aria-hidden="true"></span>
             </a>
@@ -32,7 +32,7 @@
           {% if previous_in_thread %}
             <a class="nav-link previous-in-thread" href="{{ previous_in_thread.get_absolute_url }}" aria-label="previous in thread">
           {% else %}
-            <a class="nav-link previous-in-thread" class="disabled">
+            <a class="nav-link previous-in-thread disabled">
           {% endif %}
             <span class="fa fa-chevron-left" aria-hidden="true"></span>
             </a>
@@ -44,7 +44,7 @@
           {% if next_in_thread %}
             <a class="nav-link next-in-thread" href="{{ next_in_thread.get_absolute_url }}" aria-label="next in thread">
           {% else %}
-            <a class="nav-link next-in-thread" class="disabled">
+            <a class="nav-link next-in-thread disabled">
           {% endif %}
             <span class="fa fa-chevron-right" aria-hidden="true"></span>
             </a>
@@ -54,7 +54,7 @@
             {% if previous_in_search %}
               <a class="nav-link previous-in-search" href="{{ previous_in_search.get_absolute_url }}/?qid={{ queryid }}" aria-label="previous in search">
             {% else %}
-              <a class="nav-link previous-in-search" class="disabled">
+              <a class="nav-link previous-in-search disabled">
             {% endif %}
               <span class="fa fa-chevron-left" aria-hidden="true"></span>
               </a>
@@ -64,7 +64,7 @@
             {% if next_in_search %}
               <a class="nav-link next-in-search" href="{{ next_in_search.get_absolute_url }}/?qid={{ queryid }}" aria-label="next in search">
             {% else %}
-              <a class="nav-link next-in-search" class="disabled">
+              <a class="nav-link next-in-search disabled">
             {% endif %}
               <span class="fa fa-chevron-right" aria-hidden="true"></span>
               </a>

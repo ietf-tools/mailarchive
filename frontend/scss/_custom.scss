@@ -1,0 +1,24 @@
+// Custom.scss
+// Option A: Include all of Bootstrap
+
+// Other variables are derived from these, so they must be overriden
+// before importing the bootstrap partials
+
+$primary:                     #337ab7;
+$line-height-base:            1.42857;
+$font-size-base:              0.875rem;
+
+@import "../node_modules/bootstrap/scss/functions";
+@import "../node_modules/bootstrap/scss/variables";
+@import "../node_modules/bootstrap/scss/mixins";
+
+// Your variable overrides
+$enable-shadows:            true;
+$enable-gradients:          true; 
+
+// Navbar
+
+$navbar-dark-color:                 $white;
+$navbar-dark-hover-color:           rgba($white, .75);
+// $navbar-dark-active-color:          $white !default;
+// $navbar-dark-disabled-color:        rgba($white, .25) !default;

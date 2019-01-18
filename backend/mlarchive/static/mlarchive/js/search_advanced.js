@@ -23,7 +23,7 @@ var advancedSearch = {
     cacheDom : function() {
         advancedSearch.$addLinks = $('.addChunk');
         advancedSearch.$builtQuery = $('#built-query');
-        advancedSearch.$dateFields = $('.date-field');
+        advancedSearch.$dateFields = $('.date-fields');
         advancedSearch.$emailList = $('#id_email_list');
         advancedSearch.$endDate = $('#id_end_date');
         advancedSearch.$operands = $('input.operand');
@@ -31,7 +31,7 @@ var advancedSearch = {
         advancedSearch.$qdr = $('#id_qdr');
         advancedSearch.$qualifiers = $('select.qualifier');
         advancedSearch.$removeButtons = $('.btn-remove');
-        advancedSearch.$rulesForm = $('#rules-form');
+        advancedSearch.$rulesForm = $('.rules-form');
         advancedSearch.$startDate = $('#id_start_date');
     },
     

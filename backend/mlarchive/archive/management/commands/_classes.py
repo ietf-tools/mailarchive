@@ -394,7 +394,7 @@ def call_remote_backup(path):
         directory = os.path.dirname(target_path)
         if not os.path.exists(directory):
             os.makedirs(directory)
-            os.chmod(directory, 02777)
+            os.chmod(directory, 0o2777)
         shutil.copy2(path, target_path)
 
     elif hasattr(settings, 'REMOTE_BACKUP_COMMAND'):
@@ -433,11 +433,11 @@ def write_file(path, data):
     directory = os.path.dirname(path)
     if not os.path.exists(directory):
         os.makedirs(directory)
-        os.chmod(directory, 02777)
+        os.chmod(directory, 0o2777)
     with open(path, 'w') as f:
         f.write(data)
         f.flush()
-    os.chmod(path, 0666)
+    os.chmod(path, 0o666)
     # call_remote_backup(path)
 
 
@@ -578,9 +578,10 @@ class Loader(object):
         try:
             mw = MessageWrapper(msg, self.listname, private=self.private)
         except Exception as e:
-            import sys
-            raise type(e), type(e)(e.message + ' happens at {} with text: {}'.format(
-                self.filename, msg.as_string()[:120])), sys.exc_info()[2]
+            print(self.filename)
+            raise
+            # import sys
+            # raise e.with_traceback(sys.exc_info()[2])
 
         # filter using Legacy archive
         if self.options.get('firstrun') and mw.date < (datetime.datetime.now() - datetime.timedelta(days=30)) and mw.created_id is False:  # noqa

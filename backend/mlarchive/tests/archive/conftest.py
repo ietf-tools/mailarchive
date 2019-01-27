@@ -3,7 +3,7 @@
 This module contains pytest fixtures
 '''
 
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import datetime
 import os
@@ -176,13 +176,13 @@ def index_resource():
     # build index
     content = StringIO()
     call_command('update_index', stdout=content)
-    print content.read()
+    print(content.read())
 
     yield
 
     # uncomment to remove index after test
     # call_command('clear_index', interactive=False, stdout=content)
-    print content.read()
+    print(content.read())
 
 
 @pytest.fixture()

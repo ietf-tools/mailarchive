@@ -19,7 +19,7 @@ factory-boy>=2.6.0
 flower
 html5lib
 lxml>=3.3.5
-MySQL-python>=1.2.5
+mysqlclient
 mock>=2.0.0
 pyopenssl
 pyquery>=1.2.13

@@ -231,7 +231,7 @@ class Message(models.Model):
         path = self.email_list.attachments_dir
         if not os.path.exists(path):
             os.makedirs(path)
-            os.chmod(path, 02777)
+            os.chmod(path, 0o2777)
         return path
 
     def get_body(self):

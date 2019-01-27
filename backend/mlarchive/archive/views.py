@@ -702,7 +702,7 @@ def main(request):
 
     if os.path.exists(settings.LOG_FILE):
         try:
-            os.chmod(settings.LOG_FILE, 0666)
+            os.chmod(settings.LOG_FILE, 0o666)
         except OSError:
             pass
 

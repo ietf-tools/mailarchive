@@ -42,7 +42,7 @@ def _message_remove(sender, instance, **kwargs):
     target_dir = instance.get_removed_dir()
     if not os.path.exists(target_dir):
         os.mkdir(target_dir)
-        os.chmod(target_dir, 02777)
+        os.chmod(target_dir, 0o2777)
     target_path = os.path.join(target_dir, os.path.basename(path))
     if os.path.exists(target_path):
         os.remove(path)
@@ -137,7 +137,7 @@ def _export_lists():
             os.mkdir(settings.EXPORT_DIR)
         with open(path, 'w') as file:
             file.write(data)
-            os.chmod(path, 0666)
+            os.chmod(path, 0o666)
     except Exception as error:
         logger.error('Error creating export file: {}'.format(error))
         return

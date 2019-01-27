@@ -161,9 +161,9 @@ def flatten_message(msg):
     """Returns the message flattened to a string, for use in writing to a file.  NOTE:
     use this instead of message.as_string() to avoid mangling message.
     """
-    from cStringIO import StringIO
+    import io
     from email.generator import Generator
-    fp = StringIO()
+    fp = io.StringIO()
     g = Generator(fp, mangle_from_=False)
     g.flatten(msg)
     return fp.getvalue()

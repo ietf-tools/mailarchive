@@ -22,7 +22,6 @@ import re
 import shutil
 import subprocess
 import sys
-from StringIO import StringIO
 from dateutil.parser import parse
 
 progname = sys.argv[0]

@@ -1,13 +1,13 @@
 import datetime
 import email
 import glob
+import io
 import mailbox
 import os
 import pytest
 import pytz
 import shutil
 import six
-from StringIO import StringIO
 
 from django.conf import settings
 from django.core.management import call_command
@@ -23,7 +23,7 @@ from mlarchive.utils.test_utils import message_from_file
 def teardown_module(module):
     if os.path.exists(settings.LOG_FILE):
         os.remove(settings.LOG_FILE)
-    content = StringIO()
+    content = io.StringIO()
     call_command('clear_index', interactive=False, stdout=content)
 
 

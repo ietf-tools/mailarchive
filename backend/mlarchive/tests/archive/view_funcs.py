@@ -1,11 +1,11 @@
 import email
 import glob
+import io
 import mailbox
 import os
 import pytest
 import tarfile
 from factories import EmailListFactory, UserFactory
-from StringIO import StringIO
 
 from haystack.query import SearchQuerySet
 from django.http import HttpResponse
@@ -104,7 +104,7 @@ def test_get_export_mbox(client, thread_messages, tmpdir):
     response = get_export(sqs, 'mbox', request)
     assert response.status_code == 200
     assert response.has_header('content-disposition')
-    tar = tarfile.open(mode="r:gz", fileobj=StringIO(response.content))
+    tar = tarfile.open(mode="r:gz", fileobj=io.StringIO(response.content))
     assert len(tar.getmembers()) == 1
     path = tmpdir.mkdir('sub').strpath
     tar.extractall(path)
@@ -124,7 +124,7 @@ def test_get_export_maildir(client, thread_messages, tmpdir):
     response = get_export(sqs, 'maildir', request)
     assert response.status_code == 200
     assert response.has_header('content-disposition')
-    tar = tarfile.open(mode="r:gz", fileobj=StringIO(response.content))
+    tar = tarfile.open(mode="r:gz", fileobj=io.StringIO(response.content))
     assert len(tar.getmembers()) == 4
     path = tmpdir.mkdir('sub').strpath
     tar.extractall(path)

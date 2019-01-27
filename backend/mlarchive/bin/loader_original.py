@@ -21,12 +21,12 @@ import sys
 
 from django.core.management import call_command
 from optparse import OptionParser
-from StringIO import StringIO
 
 import ast
 import datetime
 import gc
 import glob
+import io
 import os
 import time
 
@@ -76,7 +76,7 @@ def main():
             private = False
 
         # save output from command so we can aggregate statistics
-        content = StringIO()
+        content = io.StringIO()
         listname = os.path.basename(dir)
         if listname.endswith('.old'):       # strip .old from listname
             listname = listname[:-4]

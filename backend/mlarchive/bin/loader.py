@@ -10,11 +10,11 @@ do_setup(django_settings='mlarchive.settings.noindex')
 # -------------------------------------------------------------------------------------
 
 from django.core.management import call_command
-from StringIO import StringIO
 
 import argparse
 import ast
 import datetime
+import io
 import os
 import time
 
@@ -42,7 +42,7 @@ def main():
         private = False
 
         # save output from command so we can aggregate statistics
-        content = StringIO()
+        content = io.StringIO()
         listname = os.path.basename(dir)
 
         call_command('load', dir, listname=listname, summary=True,

@@ -14,7 +14,6 @@ import os
 import shutil
 import subprocess
 import sys
-from StringIO import StringIO
 
 from django.conf import settings
 from mlarchive.bin.scan_utils import get_messages

@@ -6,6 +6,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from builtins import range
 
 import datetime
+import io
 import math
 import os
 import random
@@ -13,7 +14,6 @@ import re
 import string
 import tarfile
 import tempfile
-from StringIO import StringIO
 
 from django.conf import settings
 from django.contrib import messages
@@ -190,7 +190,7 @@ def get_export_tar(sqs, export_type, request):
     to the appropriate mail box type, in a zipped tarfile.  The function returns the
     tarfile, with seek(0) to reset for reading, and the filename as a string.
     """
-    tardata = StringIO()
+    tardata = io.StringIO()
     tar = tarfile.open(fileobj=tardata, mode='w:gz')
     basename = get_random_basename(prefix=export_type)
     filename = basename + '.tar.gz'

@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import os
 import pytest
 
@@ -14,7 +16,7 @@ def test_temporary_directory(messages):
 @pytest.mark.django_db(transaction=True)
 def test_get_mbox_updates(messages):
     apple = EmailList.objects.get(name='apple')
-    print apple.message_set.count()
+    print(apple.message_set.count())
     result = get_mbox_updates(apple.message_set.all())
     assert result == [(1,2017,apple.pk)]
 

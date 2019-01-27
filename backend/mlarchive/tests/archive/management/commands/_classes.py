@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import datetime
 import email
 import glob
@@ -118,7 +120,7 @@ def test_archive_message_encoded_word(client):
     response = client.get(url)
     assert len(response.context['results']) == 1
     message = Message.objects.first()
-    assert message.frm == u'J\xe4rvinen <jarvinen@example.com>'
+    assert message.frm == 'J\xe4rvinen <jarvinen@example.com>'
 
 
 @pytest.mark.django_db(transaction=True)
@@ -138,7 +140,7 @@ def test_archive_message_encoded_word_alternate(client):
     response = client.get(url)
     assert len(response.context['results']) == 1
     message = Message.objects.first()
-    assert message.frm == u'" J\xe4rvinen " <jarvinen@example.com>'
+    assert message.frm == '" J\xe4rvinen " <jarvinen@example.com>'
 
 
 @pytest.mark.django_db(transaction=True)
@@ -155,7 +157,7 @@ def test_archive_message_encoded_word_high_plane(client):
     response = client.get(url)
     assert len(response.context['results']) == 1
     message = Message.objects.first()
-    assert message.frm == u'\U0001f513Joe <joe@example.com>'
+    assert message.frm == '\U0001f513Joe <joe@example.com>'
 
 
 def test_clean_spaces():
@@ -165,13 +167,13 @@ def test_clean_spaces():
 
 def test_get_base_subject():
     data = [('[ANCP] =?iso-8859-1?q?R=FCckruf=3A_Welcome_to_the_=22ANCP=22_mail?=\n\t=?iso-8859-1?q?ing_list?=',
-             u'R\xfcckruf: Welcome to the "ANCP" mailing list'),
-            ('Re: [IAB] Presentation at IAB Tech Chat (fwd)', u'Presentation at IAB Tech Chat'),
-            ('Re: [82companions] [Bulk]  Afternoon North Coast tour', u'Afternoon North Coast tour'),
-            ('''[cdni-footprint] Fwd: Re: [CDNi] Rough Agenda for today's "CDNI Footprint/Capabilties Design Team Call"''', u'''Rough Agenda for today's "CDNI Footprint/Capabilties Design Team Call"'''),
-            ('[dccp] [Fwd: Re: [Tsvwg] Fwd: WGLC for draft-ietf-dccp-quickstart-03.txt]', u'WGLC for draft-ietf-dccp-quickstart-03.txt'),
-            ('[ANCP] Fw: note the boilerplate change', u'note the boilerplate change'),
-            ('Re: [ANCP] RE: draft-ieft-ancp-framework-00.txt', u'draft-ieft-ancp-framework-00.txt')]
+             'R\xfcckruf: Welcome to the "ANCP" mailing list'),
+            ('Re: [IAB] Presentation at IAB Tech Chat (fwd)', 'Presentation at IAB Tech Chat'),
+            ('Re: [82companions] [Bulk]  Afternoon North Coast tour', 'Afternoon North Coast tour'),
+            ('''[cdni-footprint] Fwd: Re: [CDNi] Rough Agenda for today's "CDNI Footprint/Capabilties Design Team Call"''', '''Rough Agenda for today's "CDNI Footprint/Capabilties Design Team Call"'''),
+            ('[dccp] [Fwd: Re: [Tsvwg] Fwd: WGLC for draft-ietf-dccp-quickstart-03.txt]', 'WGLC for draft-ietf-dccp-quickstart-03.txt'),
+            ('[ANCP] Fw: note the boilerplate change', 'note the boilerplate change'),
+            ('Re: [ANCP] RE: draft-ieft-ancp-framework-00.txt', 'draft-ieft-ancp-framework-00.txt')]
 
     message = email.message_from_string('From: rcross@amsl.com')
     mw = MessageWrapper(message, 'test')
@@ -225,9 +227,9 @@ def test_get_header_date():
             ('Date: Thu, 28 May 92 9:18:58 PDT',
             datetime.datetime(1992, 5, 28, 16, 18, 58)),     # 2-digit year, char tz
             ('Date: Thursday, 28 May 1992 12:06:31 EDT',
-            datetime.datetime(1992, 5, 28, 16, 06, 31)),     # full day name, char tz
+            datetime.datetime(1992, 5, 28, 16, 6, 31)),     # full day name, char tz
             ('Date: Fri, 29 May 1992 18:02:45 -0400 (EDT)',
-            datetime.datetime(1992, 5, 29, 22, 02, 45)),     # numeric & char tz
+            datetime.datetime(1992, 5, 29, 22, 2, 45)),     # numeric & char tz
             ('Date: 27 Jan 2002 21:46:45 +0000',
             datetime.datetime(2002, 1, 27, 21, 46, 45)),     # no day of week
             ('Sent: Thu, 28 May 92 9:18:58 PDT',
@@ -437,7 +439,7 @@ def test_MessageWrapper_process_attachments_rfc2231_filename():
     mw.process_attachments()
     assert mw.archive_message.attachment_set.count() == 1
     attachment = mw.archive_message.attachment_set.first()
-    assert attachment.name == six.u('satellite-\u6d77\u6dc0\u533a\u5317\u6d3c\u8def4\u53f7.png')
+    assert attachment.name == six.u('satellite-\\u6d77\\u6dc0\\u533a\\u5317\\u6d3c\\u8def4\\u53f7.png')
 
 
 def test_lookup_extension():

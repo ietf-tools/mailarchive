@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import mailbox
 import pytest
 import requests
@@ -24,7 +26,7 @@ def test_get_noauth():
     private1.members.add(user)
     lists = get_noauth(user)
     assert len(lists) == 1
-    assert lists == [u'private2']
+    assert lists == ['private2']
 
 
 @pytest.mark.django_db(transaction=True)
@@ -41,14 +43,14 @@ def test_get_noauth_updates(settings):
         user_id = user.id
 
     key = '{:04d}-noauth'.format(user_id)
-    print "key {}:{}".format(key, cache.get(key))
+    print("key {}:{}".format(key, cache.get(key)))
     assert 'public' not in get_noauth(user)
-    print "key {}:{}".format(key, cache.get(key))
+    print("key {}:{}".format(key, cache.get(key)))
     # assert cache.get(key) == []
     public.private = True
     public.save()
     assert 'public' in get_noauth(user)
-    print "key {}:{}".format(key, cache.get(key))
+    print("key {}:{}".format(key, cache.get(key)))
     # assert False
 
 
@@ -163,7 +165,7 @@ def test_check_inactive(mock_output, mock_input):
 
 @pytest.mark.django_db(transaction=True)
 def test_create_mbox_file(tmpdir, settings, thread_messages):
-    print 'tmpdir: {}'.format(tmpdir)
+    print('tmpdir: {}'.format(tmpdir))
     settings.ARCHIVE_MBOX_DIR = str(tmpdir)
     elist = EmailList.objects.get(name='acme')    
     create_mbox_file(month=7, year=2016, elist=elist)

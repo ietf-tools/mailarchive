@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import datetime
 import os
 import pytest
@@ -42,7 +44,7 @@ def test_add_nav_urls(static_list, settings):
     add_nav_urls(context)
     assert '2015' in context['previous_page'] 
     assert '2017-12' in context['next_page']
-    context['time_period'] = TimePeriod(year=2015, month=06)
+    context['time_period'] = TimePeriod(year=2015, month=6)
     add_nav_urls(context)
     assert context['previous_page'] == ''
     context['time_period'] = TimePeriod(year=2017, month=12)
@@ -372,7 +374,7 @@ def test_browse_static_small_year_year(client, static_list, settings):
     url = reverse('archive_browse_static_date', kwargs={'list_name': static_list.name, 'date': '2015'})
     response = client.get(url)
     assert response.status_code == 200
-    print response.content
+    print(response.content)
     q = PyQuery(response.content)
     assert len(q('ul.static-index li')) == 15
 
@@ -572,7 +574,7 @@ def test_export_limit(admin_client, messages, settings):
     settings.EXPORT_LIMIT = 0
     url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'})
     response = admin_client.get(url)
-    print response.content
+    print(response.content)
     assert response.status_code == 200
     assert 'Export is limited to 0 messages.' in response.content
     q = PyQuery(response.content)

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import pytest
 
@@ -55,7 +56,7 @@ def test_auth_browse(client):
     response = client.get(url)
     assert response.status_code == 200
     q = PyQuery(response.content)
-    print response.content
+    print(response.content)
     assert len(q('#private-lists li')) == 1
 
 
@@ -322,8 +323,8 @@ def test_queries_boolean_two_term_or(client, messages):
     assert response.status_code == 200
     results = response.context['results']
     from mlarchive.utils.test_utils import get_search_backend
-    print get_search_backend()
-    print len(results.object_list), results.object_list[0].msgid
+    print(get_search_backend())
+    print(len(results.object_list), results.object_list[0].msgid)
     assert len(results) == 2
     assert results[0].msgid in ['a02', 'a04']
     assert results[1].msgid in ['a02', 'a04']
@@ -377,7 +378,7 @@ def test_queries_two_periods(client, messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_queries_unicode(client, messages):
-    url = reverse('archive_search') + u'?q=frm%3ABj%C3%B6rn'
+    url = reverse('archive_search') + '?q=frm%3ABj%C3%B6rn'
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']

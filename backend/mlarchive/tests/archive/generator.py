@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import email
 import os
 import pytest
@@ -39,7 +41,7 @@ def test_generator_as_text(client):
     msg = Message.objects.first()
     g = Generator(msg)
     text = g.as_text()
-    assert text == u'Hello,\r\n\r\nThis is a test email.  database\r\n'
+    assert text == 'Hello,\r\n\r\nThis is a test email.  database\r\n'
 
 
 @pytest.mark.django_db(transaction=True)
@@ -60,7 +62,7 @@ def test_handle_text_html_text_only(client, messages):
     g = Generator(Message.objects.first())
     g.text_only = True
     output = g._handle_text_html(msg)
-    assert output.strip() == u'linkname'
+    assert output.strip() == 'linkname'
 
 
 @pytest.mark.django_db(transaction=True)
@@ -152,7 +154,7 @@ def test_generator_clean_headers():
             ('Subject', 'Hello Bj\xf6rn'),
             ('To', 'text'))
     output = Generator._clean_headers(data)
-    assert output[2][1] == u'Hello Bj\xf6rn'
+    assert output[2][1] == 'Hello Bj\xf6rn'
 
 
 @pytest.mark.django_db(transaction=True)
@@ -163,4 +165,4 @@ def test_generator_multipart_malformed(client):
     msg = Message.objects.first()
     g = Generator(msg)
     text = g.as_text()
-    assert isinstance(text, basestring)
+    assert isinstance(text, str)

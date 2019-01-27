@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import email
 import glob
 import io
@@ -142,7 +144,7 @@ def test_get_export_url(messages):
     request = get_request(url=url)
     sqs = SearchQuerySet().filter(email_list__in=['pubone'])
     for r in sqs:
-        print r.msgid, r.object
+        print(r.msgid, r.object)
     response = get_export(sqs, 'url', request)
     assert response.status_code == 200
     assert sqs[0].object.get_absolute_url() in response.content

@@ -1,4 +1,4 @@
-''' tests.archive.forms.py'''
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import pytest
 from django.contrib.auth.models import AnonymousUser
@@ -17,7 +17,7 @@ def test_get_base_query():
     qd = QueryDict('?q=database&f_list=saag&so=date')
     result = get_base_query(qd)
     assert isinstance(result, QueryDict)
-    assert result.items() == [(u'f_list', u'saag'), (u'?q', u'database')]
+    assert list(result.items()) == [('f_list', 'saag'), ('?q', 'database')]
 
 
 @pytest.mark.django_db(transaction=True)
@@ -91,7 +91,7 @@ def test_asf_get_facets(client, messages):
     assert 'frm_name' in facets['fields']
 
     # ensure email_list correct
-    assert facets['fields']['email_list'] == [(u'apple', 6)]
+    assert facets['fields']['email_list'] == [('apple', 6)]
 
     # ensure facet totals are equal
     email_list_total = sum([c for x, c in facets['fields']['email_list']])
@@ -161,7 +161,7 @@ def test_asf_search_qdr(client, messages):
     assert response.status_code == 200
     results = response.context['results']
     for m in Message.objects.all():
-        print m.msgid, m.date
+        print(m.msgid, m.date)
     # message from yesterday may not be included due to test timing
     assert len(results) in [4, 5]
 

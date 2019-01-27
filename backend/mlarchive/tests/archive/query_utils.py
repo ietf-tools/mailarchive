@@ -1,3 +1,4 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import pytest
 
@@ -85,7 +86,7 @@ def test_parse_query():
 
 def test_get_order_fields():
     assert get_order_fields({'q': 'term'}) == [DEFAULT_SORT]
-    assert get_order_fields({'q': 'term', 'so': u''}) == [DEFAULT_SORT]                         # empty param, "?q=term&so="
+    assert get_order_fields({'q': 'term', 'so': ''}) == [DEFAULT_SORT]                         # empty param, "?q=term&so="
     assert get_order_fields({'q': 'term', 'so': 'date'}) == ['date']
     assert get_order_fields({'q': 'term', 'gbt': '1'}) == IDX_THREAD_SORT_FIELDS
     assert get_order_fields({'q': 'term', 'gbt': '1'}, use_db=True) == DB_THREAD_SORT_FIELDS

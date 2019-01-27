@@ -1,8 +1,8 @@
-'''Selenium Functional Tests'''
+from __future__ import absolute_import, division, print_function, unicode_literals
 
-import urlparse
 import pytest
 
+from requests.compat import urljoin
 from importlib import import_module
 from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, HASH_SESSION_KEY
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
@@ -38,7 +38,7 @@ def force_login(user, driver, base_url):
     }
 
     cookies = driver.get_cookies()
-    print cookies
+    print(cookies)
 
     driver.add_cookie(cookie)
     driver.refresh()
@@ -67,7 +67,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
     def test_message_detail_next_list(self):
         '''Test next message in list button of message detail'''
         messages = Message.objects.all().order_by('date')
-        url = urlparse.urljoin(self.live_server_url, messages[0].get_absolute_url())
+        url = urljoin(self.live_server_url, messages[0].get_absolute_url())
         self.selenium.get(url)
         self.selenium.find_element_by_class_name('next-in-list').click()
 
@@ -86,7 +86,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         '''Test previous message in list button of message detail'''
         messages = Message.objects.all().order_by('date')
         self.assertEqual(len(messages), 4)
-        url = urlparse.urljoin(self.live_server_url, messages[1].get_absolute_url())
+        url = urljoin(self.live_server_url, messages[1].get_absolute_url())
         self.selenium.get(url)
         self.selenium.find_element_by_class_name('previous-in-list').click()
 
@@ -106,7 +106,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         '''Test next message in search results button of message detail'''
         # perform regular search
         url = reverse('archive_search') + '?q=anvil'
-        url = urlparse.urljoin(self.live_server_url, url)
+        url = urljoin(self.live_server_url, url)
         self.selenium.get(url)
         q = PyQuery(self.selenium.page_source)
         assert len(q('.xtr')) == 4
@@ -137,7 +137,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
     def test_message_detail_toggle_nav(self):
         '''Test toggle navigation bar feature of message detail'''
         message = Message.objects.first()
-        url = urlparse.urljoin(self.live_server_url, message.get_absolute_url())
+        url = urljoin(self.live_server_url, message.get_absolute_url())
         self.selenium.get(url)
 
         # navbar is there
@@ -162,7 +162,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
     def test_message_detail_toggle_msg_header(self):
         '''Test toggle message header feature of message detail'''
         message = Message.objects.first()
-        url = urlparse.urljoin(self.live_server_url, message.get_absolute_url())
+        url = urljoin(self.live_server_url, message.get_absolute_url())
         self.selenium.get(url)
 
         # header is hidden
@@ -186,7 +186,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
 
     def test_back_to_search(self):
         # User performs search
-        url = urlparse.urljoin(self.live_server_url, reverse('archive'))
+        url = urljoin(self.live_server_url, reverse('archive'))
         self.selenium.get(url)
         query_input = self.selenium.find_element_by_id('id_q')
         query_input.send_keys('data')
@@ -205,11 +205,11 @@ class MySeleniumTests(StaticLiveServerTestCase):
             lambda driver: driver.find_element_by_tag_name('body'))
 
         # End up back at basic search
-        self.assertEquals('Mail Archive', self.selenium.title)
+        self.assertEqual('Mail Archive', self.selenium.title)
 
     def test_back_to_advanced_search(self):
         # User performs search
-        url = urlparse.urljoin(self.live_server_url,
+        url = urljoin(self.live_server_url,
                                reverse('archive_advsearch'))
         self.selenium.get(url)
         query_input = self.selenium.find_element_by_id('id_query-0-value')
@@ -229,7 +229,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
             lambda driver: driver.find_element_by_tag_name('body'))
 
         # End up back at advanced search
-        self.assertEquals('Mail Archive Advanced Search', self.selenium.title)
+        self.assertEqual('Mail Archive Advanced Search', self.selenium.title)
 
     @pytest.mark.usefixtures("thread_messages")
     def test_message_detail_date_link(self):
@@ -238,7 +238,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         # self.selenium.add_cookie({'name': 'isStaticOn', 'value': 'true'})
 
         message = Message.objects.first()
-        url = urlparse.urljoin(self.live_server_url, message.get_absolute_url())
+        url = urljoin(self.live_server_url, message.get_absolute_url())
         self.selenium.get(url)
 
         #
@@ -260,7 +260,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
 """
     def test_static_mode(self):
         main_url = reverse('archive')
-        url = urlparse.urljoin(self.live_server_url, main_url)
+        url = urljoin(self.live_server_url, main_url)
         print url
         self.selenium.get(url)
         print self.selenium.page_source
@@ -304,7 +304,7 @@ class AdminSeleniumTests(StaticLiveServerTestCase):
         '''Test Spam Mode of admin view'''
         email_list = EmailList.objects.first()
         admin_url = reverse('archive_admin') + '?email_list=' + str(email_list.pk)
-        url = urlparse.urljoin(self.live_server_url, admin_url)
+        url = urljoin(self.live_server_url, admin_url)
         user = User.objects.get(username='admin')
         force_login(user, self.selenium, self.live_server_url)
         self.selenium.get(url)

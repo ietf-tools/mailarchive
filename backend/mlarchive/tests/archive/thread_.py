@@ -1,4 +1,5 @@
-'''thread_.py tests for thread module'''
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import datetime
 from collections import namedtuple, defaultdict
 
@@ -112,7 +113,7 @@ def test_compute_thread():
         thread_depth=0,
         thread_order=0)
     info = compute_thread(thread)
-    info_iter = iter(info.values())
+    info_iter = iter(list(info.values()))
     thread_info = info_iter.next()
     assert thread_info.order == 0
     assert thread_info.depth == 0
@@ -360,7 +361,7 @@ def test_process_corrupt_refs_2():
     # we'll end up with a empty root_node and empty top-level
     # nodes with 2 messages as children
     results = [c.message.msgid for c in root_node.child.walk() if not c.is_empty()]
-    assert results == [u'000@example.com', u'001@example.com']
+    assert results == ['000@example.com', '001@example.com']
 
 
 @pytest.mark.django_db(transaction=True)
@@ -452,7 +453,7 @@ def test_sort_thread():
     root_node = find_root_set(id_table)
     sort_thread(root_node)
     order = [c.message.msgid for c in root_node.walk() if not c.is_empty()]
-    assert order == [u'003@example.com', u'001@example.com', u'002@example.com']
+    assert order == ['003@example.com', '001@example.com', '002@example.com']
 
 
 @pytest.mark.django_db(transaction=True)

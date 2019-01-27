@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import datetime
 import pytest
 
@@ -70,12 +72,12 @@ def test_message_get_from_line(client):
     '''Test that non-ascii text doesn't cause errors'''
     elist = EmailListFactory.create()
     msg = MessageFactory.create(email_list=elist)
-    msg.frm = u'studypsychologyonline\xe2\xa0@rethod.xyz'
+    msg.frm = 'studypsychologyonline\xe2\xa0@rethod.xyz'
     msg.from_line = ''
     msg.save()
     assert msg.get_from_line()
 
-    msg.from_line = u'studypsychologyonline\xe2\xa0@rethod.xyz'
+    msg.from_line = 'studypsychologyonline\xe2\xa0@rethod.xyz'
     msg.save()
     assert msg.get_from_line()
 
@@ -88,42 +90,42 @@ def test_message_get_references(client):
     msg = MessageFactory.create(email_list=elist)
 
     # typical contents
-    msg.references = u'<001-954@example.com> <002-945@example.com>'
+    msg.references = '<001-954@example.com> <002-945@example.com>'
     msg.save()
     expected = ['001-954@example.com', '002-945@example.com']
     assert msg.get_references() == expected
 
     # no space separator
-    msg.references = u'<001-954@example.com><002-945@example.com>'
+    msg.references = '<001-954@example.com><002-945@example.com>'
     msg.save()
     expected = ['001-954@example.com', '002-945@example.com']
     assert msg.get_references() == expected
 
     # alternate separator
-    msg.references = u'<001-954@example.com>\n\t<002-945@example.com>'
+    msg.references = '<001-954@example.com>\n\t<002-945@example.com>'
     msg.save()
     expected = ['001-954@example.com', '002-945@example.com']
     assert msg.get_references() == expected
 
     # extra whitespace
-    msg.references = u'<001- 954@example.com> <002-945@example.com>'
+    msg.references = '<001- 954@example.com> <002-945@example.com>'
     msg.save()
     expected = ['001-954@example.com', '002-945@example.com']
     assert msg.get_references() == expected
 
-    msg.references = u'<001-954@example.com> <002-945@example\t.com>'
+    msg.references = '<001-954@example.com> <002-945@example\t.com>'
     msg.save()
     expected = ['001-954@example.com', '002-945@example.com']
     assert msg.get_references() == expected
 
     # extra text
-    msg.references = u'[acme] durable goods <001-954@example.com> <002-945@example.com>'
+    msg.references = '[acme] durable goods <001-954@example.com> <002-945@example.com>'
     msg.save()
     expected = ['001-954@example.com', '002-945@example.com']
     assert msg.get_references() == expected
 
     # truncated field
-    msg.references = u'<001-954@example.com> <002-945@exam'
+    msg.references = '<001-954@example.com> <002-945@exam'
     msg.save()
     expected = ['001-954@example.com']
     assert msg.get_references() == expected

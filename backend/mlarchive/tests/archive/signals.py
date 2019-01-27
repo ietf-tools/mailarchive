@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 import datetime
 import os
 import pytest
@@ -58,7 +60,7 @@ def test_get_lists_as_xml(client):
     xml = _get_lists_as_xml()
     root = ET.fromstring(xml)
 
-    print xml
+    print(xml)
 
     public_anonymous = root.find("shared_root/[@name='public']").find("user/[@name='anonymous']")
     assert public_anonymous.attrib['access'] == 'read'
@@ -75,7 +77,7 @@ def test_get_purge_cache_urls(messages):
     message = messages.get(msgid='c02')
     urls = get_purge_cache_urls(message)
     assert urls
-    print urls
+    print(urls)
     # previous in list
     msg = messages.get(msgid='c01')
     assert msg.get_absolute_url_with_host() in urls

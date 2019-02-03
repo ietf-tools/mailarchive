@@ -16,6 +16,12 @@ import uuid
 from collections import deque
 from email.utils import parsedate_tz, getaddresses, make_msgid
 
+# for Python 2/3 compatability
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 from django.conf import settings
 from django.core.cache import cache
 from django.core.management.base import CommandError
@@ -161,9 +167,8 @@ def flatten_message(msg):
     """Returns the message flattened to a string, for use in writing to a file.  NOTE:
     use this instead of message.as_string() to avoid mangling message.
     """
-    import io
     from email.generator import Generator
-    fp = io.StringIO()
+    fp = StringIO()
     g = Generator(fp, mangle_from_=False)
     g.flatten(msg)
     return fp.getvalue()

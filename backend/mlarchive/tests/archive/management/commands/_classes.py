@@ -22,10 +22,17 @@ from factories import EmailListFactory, MessageFactory, ThreadFactory
 from mlarchive.utils.test_utils import message_from_file
 
 
+# for Python 2/3 compatability
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
+
 def teardown_module(module):
     if os.path.exists(settings.LOG_FILE):
         os.remove(settings.LOG_FILE)
-    content = io.StringIO()
+    content = StringIO()
     call_command('clear_index', interactive=False, stdout=content)
 
 
@@ -439,7 +446,7 @@ def test_MessageWrapper_process_attachments_rfc2231_filename():
     mw.process_attachments()
     assert mw.archive_message.attachment_set.count() == 1
     attachment = mw.archive_message.attachment_set.first()
-    assert attachment.name == six.u('satellite-\\u6d77\\u6dc0\\u533a\\u5317\\u6d3c\\u8def4\\u53f7.png')
+    assert attachment.name == u'satellite-\u6d77\u6dc0\u533a\u5317\u6d3c\u8def4\u53f7.png'
 
 
 def test_lookup_extension():

@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import datetime
 import os
 import pytest
+import six
 
 from django.conf import settings
 from django.contrib.auth import SESSION_KEY
@@ -574,9 +575,10 @@ def test_export_limit(admin_client, messages, settings):
     settings.EXPORT_LIMIT = 0
     url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'})
     response = admin_client.get(url)
-    print(response.content)
+    # print(response.content)
+    print(type(response.content))
     assert response.status_code == 200
-    assert 'Export is limited to 0 messages.' in response.content
+    assert 'Export is limited to 0 messages.' in six.u(response.content)
     q = PyQuery(response.content)
     assert len(q('.export-link.disabled')) == 3
     url = reverse('archive_export', kwargs={'type': 'mbox'}) + '?email_list=pubone'

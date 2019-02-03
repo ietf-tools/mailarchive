@@ -30,7 +30,7 @@ import traceback
 from subprocess import Popen, PIPE, STDOUT
     
 MHONARC = '/a/ietf/scripts/archive-mail.pl'
-MAILARCH= '/a/mailarch/current/mlarchive/bin/archive-mail.py'
+MAILARCH= '/a/mailarch/current/backend/mlarchive/bin/archive-mail.py'
 MAILTO = ['rcross@amsl.com', 'glen@amsl.com']    # send errors to these addrs
 
 def handle_error(error):

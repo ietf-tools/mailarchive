@@ -21,6 +21,8 @@ def decode_rfc2047_header(text):
 
 def decode_safely(data, charset=DEFAULT_CHARSET):
     """Return data decoded according to charset, but do so safely."""
+    if isinstance(data, six.text_type):
+        return data
     try:
         return unicode(data, charset or DEFAULT_CHARSET)
     except (UnicodeDecodeError, LookupError):

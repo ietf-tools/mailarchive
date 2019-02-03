@@ -19,6 +19,13 @@ from mlarchive.archive.models import EmailList
 from mlarchive.utils.test_utils import get_request
 
 
+# for Python 2/3 compatability
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
+
 def test_chunks():
     result = list(chunks([1, 2, 3, 4, 5, 6, 7, 8, 9], 3))
     assert len(result) == 3
@@ -106,7 +113,7 @@ def test_get_export_mbox(client, thread_messages, tmpdir):
     response = get_export(sqs, 'mbox', request)
     assert response.status_code == 200
     assert response.has_header('content-disposition')
-    tar = tarfile.open(mode="r:gz", fileobj=io.StringIO(response.content))
+    tar = tarfile.open(mode="r:gz", fileobj=StringIO(response.content))
     assert len(tar.getmembers()) == 1
     path = tmpdir.mkdir('sub').strpath
     tar.extractall(path)
@@ -126,7 +133,7 @@ def test_get_export_maildir(client, thread_messages, tmpdir):
     response = get_export(sqs, 'maildir', request)
     assert response.status_code == 200
     assert response.has_header('content-disposition')
-    tar = tarfile.open(mode="r:gz", fileobj=io.StringIO(response.content))
+    tar = tarfile.open(mode="r:gz", fileobj=StringIO(response.content))
     assert len(tar.getmembers()) == 4
     path = tmpdir.mkdir('sub').strpath
     tar.extractall(path)

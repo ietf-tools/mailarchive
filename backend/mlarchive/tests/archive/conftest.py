@@ -5,8 +5,13 @@ This module contains pytest fixtures
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+# for Python 2/3 compatability
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
 import datetime
-import io
 import os
 import pytest
 import subprocess
@@ -174,7 +179,7 @@ def index_resource():
     if not Message.objects.first():
         load_db()
     # build index
-    content = io.StringIO()
+    content = StringIO()
     call_command('update_index', stdout=content)
     print(content.read())
 
@@ -196,7 +201,7 @@ def messages(index_resource):
 @pytest.fixture()
 def attachment_messages_no_index(settings):
     settings.HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.BaseSignalProcessor'
-    content = io.StringIO()
+    content = StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'attachment.mail')
     call_command('load', path, listname='acme', summary=True, stdout=content)
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'attachment_folded_name.mail')
@@ -208,7 +213,7 @@ def attachment_messages_no_index(settings):
 @pytest.fixture()
 def thread_messages():
     """Load some threads"""
-    content = io.StringIO()
+    content = StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'thread.mail')
     call_command('load', path, listname='acme', summary=True, stdout=content)
 
@@ -292,7 +297,7 @@ def static_list():
 @pytest.fixture()
 def query_messages():
     """Load some threads"""
-    content = io.StringIO()
+    content = StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'query_acme.mail')
     call_command('load', path, listname='acme', summary=True, stdout=content)
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'query_star.mail')

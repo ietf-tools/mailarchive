@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import email
 import os
 import pytest
+import six
 
 from django.conf import settings
 from django.test.client import RequestFactory
@@ -17,10 +18,10 @@ from pyquery import PyQuery
 # Some data
 # --------------------------------------------------
 
-data = '''From: Ryan Cross <rcross@amsl.com>
-To: Ryan Cross <rcross@amsl.com>
+data = '''From: Joe <joe@example.com>
+To: Joe <joe@example.com>
 Date: Thu, 7 Nov 2013 17:54:55 +0000
-Message-ID: <0000000002@amsl.com>
+Message-ID: <0000000002@example.com>
 Content-Type: text/plain; charset="us-ascii"
 Subject: This is a test
 
@@ -149,10 +150,10 @@ def test_handle_message_external_body_type_b(client):
 
 
 def test_generator_clean_headers():
-    data = (('Date', 'Thu, 7 Nov 2013 17:54:55 +0000'),
-            ('From', 'Ryan Cross <rcross@amsl.com>'),
-            ('Subject', 'Hello Bj\xf6rn'),
-            ('To', 'text'))
+    data = (('Date', six.b('Thu, 7 Nov 2013 17:54:55 +0000')),
+            ('From', six.b('Joe <joe@example.com>')),
+            ('Subject', six.b('Hello Bj\xf6rn')),
+            ('To', six.b('text')))
     output = Generator._clean_headers(data)
     assert output[2][1] == 'Hello Bj\xf6rn'
 
@@ -165,4 +166,5 @@ def test_generator_multipart_malformed(client):
     msg = Message.objects.first()
     g = Generator(msg)
     text = g.as_text()
-    assert isinstance(text, str)
+    print(type(text))
+    assert isinstance(text, six.text_type)

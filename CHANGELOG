@@ -1,4 +1,20 @@
 
+mailarch (2.1.1) ietf; urgency=normal
+
+* Change copy url icon in message preview pane to link icon. Fixes #2644
+
+* Fix issue where static view of empty list causes 500 error. Fixes #2645
+
+* Add bin/index_snapshot.sh to use for nightly index snapshots.  Fixes #2649
+
+* Changes to make 403 error page more informative. Fixes #2680
+ 
+* Move license files to subdirectory
+
+* Various changes for Python 3 compatibility
+
+-- Ryan Cross <rcross@amsl.com>  12 February 2019 12:00:00 +0800
+
 mailarch (2.1.0) ietf; urgency=normal
 
 * Migrate from Bootstrap 3 to 4

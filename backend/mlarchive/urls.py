@@ -9,7 +9,7 @@ admin.autodiscover()
 
 urlpatterns = [
     url(r'^$', RedirectView.as_view(pattern_name='archive',permanent=True)),
-    url(r'^accounts/login/$', auth_views.LoginView.as_view(template_name='archive/login.html')),
+    url(r'^accounts/login/$', auth_views.LoginView.as_view(template_name='archive/login.html'), name='login'),
     url(r'^arch/', include('mlarchive.archive.urls')),
     # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
     url(r'^admin/', admin.site.urls),

@@ -432,6 +432,16 @@ def test_browse_static_redirect(client, static_list, settings):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_browse_static_redirect_empty(client):
+    elist = EmailListFactory.create()
+    year = datetime.datetime.now().year
+    url = reverse('archive_browse_static', kwargs={'list_name': elist.name})
+    response = client.get(url)
+    assert response.status_code == 302
+    assert response['location'] == reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': year})
+
+
+@pytest.mark.django_db(transaction=True)
 def test_detail(client):
     elist = EmailListFactory.create()
     msg = MessageFactory.create(email_list=elist)

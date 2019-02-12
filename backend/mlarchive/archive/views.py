@@ -614,13 +614,19 @@ def browse_static(request):
 def browse_static_redirect(request, list_name):
     email_list = get_object_or_404(EmailList, name=list_name)
     last_message = email_list.message_set.order_by('-date').first()
-    return redirect(last_message.get_static_date_page_url())
+    if last_message:
+        return redirect(last_message.get_static_date_page_url())
+    else:
+        return redirect('archive_browse_static_date', list_name=list_name, date=datetime.datetime.now().year)
 
 
 def browse_static_thread_redirect(request, list_name):
     email_list = get_object_or_404(EmailList, name=list_name)
     last_message = email_list.message_set.order_by('-date').first()
-    return redirect(last_message.get_static_thread_page_url())
+    if last_message:
+        return redirect(last_message.get_static_thread_page_url())
+    else:
+        return redirect('archive_browse_static_thread', list_name=list_name, date=datetime.datetime.now().year)
 
 
 @pad_id

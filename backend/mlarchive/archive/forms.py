@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import hashlib
+import six
 import time
 from collections import OrderedDict
 
@@ -148,8 +149,8 @@ class LowerCaseModelMultipleChoiceField(forms.ModelMultipleChoiceField):
     def prepare_value(self, value):
         if not value:
             return []
-        if hasattr(value, '__iter__') and isinstance(value[0], basestring):
-            value = [v.lower() for v in value if isinstance(v, basestring)]
+        if hasattr(value, '__iter__') and isinstance(value[0], six.string_types):
+            value = [v.lower() for v in value if isinstance(v, six.string_types)]
         return super(LowerCaseModelMultipleChoiceField, self).prepare_value(value)
 
 

@@ -176,6 +176,7 @@ var mailarch = {
     },
     
     copyUrlToClipboard: function() {
+        // not used as of 2019-02-11
         var url = $('#msg-body').data('message-url');
         var el = document.createElement('textarea');
         el.value = url;
@@ -552,8 +553,9 @@ var mailarch = {
                     $('#msg-header').toggle();
                     $(this).html(($('#toggle-msg-header').text() == 'Show header') ? 'Hide header' : 'Show header');
                 });
-                $('#msg-body').prepend('<a href="#" class="copy-link" title="Copy Message URL to Clipboard"><i class="fa fa-copy fa-lg" aria-hidden="true"></i></a>');
-                $('#msg-body a.copy-link').on('click', mailarch.copyUrlToClipboard);
+                var url = $('#msg-body').data('message-url');
+                var html = '<a href="' + url + '" class="detail-link" title="Message Detail"><i class="fa fa-link fa-lg" aria-hidden="true"></i></a>'
+                $('#msg-body').prepend(html);
                 mailarch.$viewPane.scrollTop(0);    // should this be msg-body?
             });
         }

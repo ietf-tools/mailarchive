@@ -518,7 +518,7 @@ table.msg-list-header-table th a.btn {
   word-wrap: normal;
   word-break: normal; }
 
-#msg-body a.copy-link {
+#msg-body a.detail-link {
   position: absolute;
   top: 8px;
   right: 12px;

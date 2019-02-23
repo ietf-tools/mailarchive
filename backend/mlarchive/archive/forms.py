@@ -102,7 +102,7 @@ class DatepickerDateField(forms.DateTimeField):
         self.widget.attrs["data-date-format"] = date_format
         if "placeholder" not in self.widget.attrs:
             self.widget.attrs["placeholder"] = date_format
-        for k, v in picker_settings.iteritems():
+        for k, v in picker_settings.items():
             self.widget.attrs["data-date-%s" % k] = v
 
 

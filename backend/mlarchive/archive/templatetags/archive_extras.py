@@ -175,9 +175,9 @@ def query_string(parser, token):
     try:
         tag_name, add_string, remove_string = token.split_contents()
     except ValueError:
-        raise template.TemplateSyntaxError, "%r tag requires two arguments" % token.contents.split()[0]
+        raise template.TemplateSyntaxError("%r tag requires two arguments" % token.contents.split()[0])
     if not (add_string[0] == add_string[-1] and add_string[0] in ('"', "'")) or not (remove_string[0] == remove_string[-1] and remove_string[0] in ('"', "'")):  # noqa
-        raise template.TemplateSyntaxError, "%r tag's argument should be in quotes" % tag_name
+        raise template.TemplateSyntaxError("%r tag's argument should be in quotes" % tag_name)
 
     add = string_to_dict(add_string[1:-1])
     remove = string_to_list(remove_string[1:-1])

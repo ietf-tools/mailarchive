@@ -249,6 +249,7 @@ def test_get_header_date():
         assert date == item[1]
 
 
+@pytest.mark.skip(reason='2019-03-02: only supporting standard mbox files')
 def test_get_mb():
     files = glob.glob(os.path.join(settings.BASE_DIR, 'tests', 'data', 'mailbox_*'))
     for file in files:

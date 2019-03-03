@@ -24,18 +24,9 @@ def decode_safely(data, charset=DEFAULT_CHARSET):
     if isinstance(data, six.text_type):
         return data
     try:
-        return unicode(data, charset or DEFAULT_CHARSET)
+        return str(data, charset or DEFAULT_CHARSET)
     except (UnicodeDecodeError, LookupError):
-        return unicode(data, DEFAULT_CHARSET, errors='replace')
-
-
-def to_str(unicode_or_str):
-    """Return byte string given unicode or string object"""
-    if isinstance(unicode_or_str, unicode):
-        value = unicode_or_str.encode('utf-8')
-    else:
-        value = unicode_or_str
-    return value    # Instance of str
+        return str(data, DEFAULT_CHARSET, errors='replace')
 
 
 def get_filename(sub_message):

@@ -34,6 +34,6 @@ def get_search_backend():
 
 def message_from_file(filename):
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', filename)
-    with open(path) as f:
-        msg = email.message_from_file(f)
+    with open(path, 'rb') as f:
+        msg = email.message_from_binary_file(f)
     return msg

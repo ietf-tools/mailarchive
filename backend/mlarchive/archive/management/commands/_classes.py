@@ -14,7 +14,7 @@ import tempfile
 import traceback
 import uuid
 from collections import deque
-from email.utils import parsedate_tz, getaddresses, make_msgid
+from email.utils import parsedate_tz, getaddresses, make_msgid, parsedate_to_datetime
 
 # for Python 2/3 compatability
 try:
@@ -66,15 +66,15 @@ date_formats = ["%a %b %d %H:%M:%S %Y",
                 "%a %b %d %H:%M:%S %Y %Z"]
 
 MBOX_SEPARATOR_PATTERN = re.compile(r'^From .* (Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+')
-SEPARATOR_PATTERNS = [re.compile(r'^Return-[Pp]ath:'),
-                      re.compile(r'^Envelope-to:'),
-                      re.compile(r'^Received:'),
-                      re.compile(r'^X-Envelope-From:'),
-                      re.compile(r'^From:'),
-                      re.compile(r'^Date:'),
-                      re.compile(r'^To:'),
-                      re.compile(r'^Path:'),
-                      re.compile(r'^20[0-1][0-9]$')]      # odd one, see forces
+SEPARATOR_PATTERNS = [re.compile(b'^Return-[Pp]ath:'),
+                      re.compile(b'^Envelope-to:'),
+                      re.compile(b'^Received:'),
+                      re.compile(b'^X-Envelope-From:'),
+                      # re.compile(b'^From:'),
+                      re.compile(b'^Date:'),
+                      re.compile(b'^To:'),
+                      re.compile(b'^Path:'),
+                      re.compile(b'^20[0-1][0-9]$')]      # odd one, see forces
 
 HEADER_PATTERN = re.compile(r'^[\041-\071\073-\176]{1,}:')
 SENT_PATTERN = re.compile(
@@ -292,15 +292,18 @@ def get_mb(path):
     "^A^A^A^A" -> MMDF
     [another header line] -> Custom Type
     """
-    with open(path) as f:
+    with open(path, 'rb') as f:
         line = f.readline()
         while not line or line == '\n':
             line = f.readline()
-        if line.startswith('From '):                # most common mailbox type, MBOX
-            return CustomMbox(path, separator=MBOX_SEPARATOR_PATTERN)
-        elif line == '\x01\x01\x01\x01\n':          # next most common type, MMDF
+        if line.startswith(b'From '):                # most common mailbox type, MBOX
+            # return CustomMbox(path, separator=MBOX_SEPARATOR_PATTERN)
+            return mailbox.mbox(path)
+        elif line == b'\x01\x01\x01\x01\n':          # next most common type, MMDF
             return CustomMMDF(path)
-        for pattern in SEPARATOR_PATTERNS:          # less common types
+        # TODO currently not supported
+        # for pattern in SEPARATOR_PATTERNS:          # less common types
+        for pattern in []:
             if pattern.match(line):
                 return CustomMbox(path, separator=pattern)
 
@@ -330,24 +333,6 @@ def is_aware(date):
     if date.tzinfo and date.tzinfo.utcoffset(date) is not None:
         return True
     return False
-
-
-def parsedate_to_datetime(date):
-    """Returns a datetime object from string.  May return naive or aware datetime.
-
-    This function is from email standard library v3.3, converted to 2.x
-    http://python.readthedocs.org/en/latest/library/email.util.html
-    """
-    try:
-        tuple = parsedate_tz(date)
-        if not tuple:
-            return None
-        tz = tuple[-1]
-        if tz is None:
-            return datetime.datetime(*tuple[:6])
-        return datetime.datetime(*tuple[:6], tzinfo=tzoffset(None, tz))
-    except ValueError:
-        return None
 
 
 def save_failed_msg(data, listname, error):
@@ -503,7 +488,7 @@ class CustomMbox(mailbox.mbox):
     """
     def __init__(self, *args, **kwargs):
         self._separator = kwargs.pop('separator')
-        self._false_separator = re.compile(r'^From .* message (Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+')
+        self._false_separator = re.compile(b'^From .* message (Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+')
         # can't use super because mbox is old style class
         mailbox.mbox.__init__(self, *args, **kwargs)
 
@@ -723,9 +708,12 @@ class MessageWrapper(object):
         Similar to the popular Web Email Archive, mail-archive.com
         see: https://www.mail-archive.com/faq.html#msgid
         """
-        sha = hashlib.sha1(self.msgid)
-        sha.update(self.listname)
-        return base64.urlsafe_b64encode(sha.digest())
+        msgid = self.msgid.encode('utf8')
+        listname = self.listname.encode('utf8')
+        sha = hashlib.sha1(msgid)
+        sha.update(listname)
+        b64 = base64.urlsafe_b64encode(sha.digest())
+        return b64.decode('utf8')
 
     def get_msgid(self):
         msgid = self.normalize(self.email_message.get('Message-ID', ''))

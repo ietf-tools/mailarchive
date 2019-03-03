@@ -10,8 +10,10 @@ import tarfile
 from factories import EmailListFactory, UserFactory
 
 from haystack.query import SearchQuerySet
+from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponse
 from django.urls import reverse
+from django.utils.encoding import smart_text
 
 from mlarchive.archive.view_funcs import (chunks, initialize_formsets, get_columns,
     get_export, get_query_neighbors, custom_search_view_factory)
@@ -55,10 +57,21 @@ def test_initialize_formsets():
 def test_get_columns():
     user = UserFactory.create()
     EmailListFactory.create(name='public')
+    EmailListFactory.create(name='secret', private=True)
     private = EmailListFactory.create(name='private', private=True)
     private.members.add(user)
     request = get_request(user=user)
+    #request = get_request(user=AnonymousUser())
     columns = get_columns(request)
+    from mlarchive.archive.utils import get_noauth, get_lists_for_user
+    q = EmailList.objects.all().exclude(name__in=get_noauth(user))
+    print(get_lists_for_user(user))
+    print(user.is_authenticated)
+    print(q.count(), q[0].name, q[1].name)
+    print(get_noauth(user))
+    print(user.is_superuser)
+    print(columns)
+    print(EmailList.objects.all())
     assert len(columns) == 3
     assert len(columns['active']) == 1
     assert len(columns['private']) == 1
@@ -113,7 +126,7 @@ def test_get_export_mbox(client, thread_messages, tmpdir):
     response = get_export(sqs, 'mbox', request)
     assert response.status_code == 200
     assert response.has_header('content-disposition')
-    tar = tarfile.open(mode="r:gz", fileobj=StringIO(response.content))
+    tar = tarfile.open(mode="r:gz", fileobj=io.BytesIO(response.content))
     assert len(tar.getmembers()) == 1
     path = tmpdir.mkdir('sub').strpath
     tar.extractall(path)
@@ -133,7 +146,7 @@ def test_get_export_maildir(client, thread_messages, tmpdir):
     response = get_export(sqs, 'maildir', request)
     assert response.status_code == 200
     assert response.has_header('content-disposition')
-    tar = tarfile.open(mode="r:gz", fileobj=StringIO(response.content))
+    tar = tarfile.open(mode="r:gz", fileobj=io.BytesIO(response.content))
     assert len(tar.getmembers()) == 4
     path = tmpdir.mkdir('sub').strpath
     tar.extractall(path)
@@ -154,7 +167,7 @@ def test_get_export_url(messages):
         print(r.msgid, r.object)
     response = get_export(sqs, 'url', request)
     assert response.status_code == 200
-    assert sqs[0].object.get_absolute_url() in response.content
+    assert sqs[0].object.get_absolute_url() in smart_text(response.content)
 
 
 @pytest.mark.django_db(transaction=True)

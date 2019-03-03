@@ -53,8 +53,8 @@ def get_cache_key(request):
     base_query = get_base_query(request.GET)
     ordered = OrderedDict(sorted(base_query.items()))
     m = hashlib.md5()
-    m.update(urlencode(ordered))
-    m.update(str(request.user))
+    m.update(urlencode(ordered).encode('utf8'))
+    m.update(str(request.user).encode('utf8'))
     return m.hexdigest()
 
 

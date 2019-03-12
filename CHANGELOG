@@ -1,4 +1,10 @@
 
+mailarch (2.1.2) ietf; urgency=normal
+
+* Various SEO changes.  Including addition of sitemap.xml.
+
+-- Ryan Cross <rcross@amsl.com>  11 March 2019 17:30:00 +0800
+
 mailarch (2.1.1) ietf; urgency=normal
 
 * Change copy url icon in message preview pane to link icon. Fixes #2644

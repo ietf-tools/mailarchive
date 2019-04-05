@@ -44,7 +44,7 @@ def process_dirs(dirs, args):
     for dir in sorted(dirs):
         listname = dir.split('/')[-3]
         print("Importing %s" % listname)
-        files = glob.glob(dir + 'msg?????.html')
+        files = glob.glob(dir + 'msg*.html')
         process_files(listname, files, args)
 
 
@@ -56,7 +56,7 @@ def process_files(listname, files, args):
             print('File: %s' % file)
         with io.open(file, 'rb') as fp:
             msgid = get_msgid(fp)
-            number = int(os.path.basename(file)[3:8])
+            number = int(os.path.basename(file)[3:-5])
             process_message(listname, msgid, number, args)
 
 

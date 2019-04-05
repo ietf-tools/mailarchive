@@ -22,8 +22,9 @@ def process(query):
     for legacy in query:
         try:
             message = Message.objects.get(email_list__name=legacy.email_list_id,msgid=legacy.msgid)
-            message.legacy_number = legacy.number
-            message.save()
+            if message.legacy_number != legacy.number:
+                message.legacy_number = legacy.number
+                message.save()
         except Message.DoesNotExist:
             pass
         except Message.MultipleObjectsReturned:

@@ -1,4 +1,6 @@
 #!/usr/bin/python
+from __future__ import division
+# from __future__ import print_function
 """
 Generic scan script to scan the archive for messages with particular attributes.
 Define a scan as a function.  Specifiy the function as the first command line argument.
@@ -357,6 +359,23 @@ def html_only():
                 if msg.get_content_type() == 'text/html':
                     print msg['message-id']
 
+def legacy():
+    """Gather stats on mhonarc mappings"""
+    cutoff = datetime.datetime(2019,1,14)
+    for elist in EmailList.objects.filter(private=False, name='ietf'):
+        lcount = Legacy.objects.filter(email_list_id=elist.name).count()
+        mcount = elist.message_set.filter(date__lte=cutoff).count()
+        if lcount < mcount:
+            delta = (mcount - lcount) / mcount
+        else:
+            delta = 0
+        if delta > 0.01:
+            mark = '**'
+        else:
+            mark = ''
+        print "{:25} {:10} {:10} {:.2f} {:4}".format(elist.name, mcount, lcount, delta, mark)
+
+    
 def lookups():
     """Test the message find routines"""
     from mlarchive.archive.view_funcs import find_message_date, find_message_date_reverse, find_message_gbt

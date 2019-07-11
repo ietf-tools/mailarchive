@@ -42,7 +42,8 @@ def test_generate_queryid():
 def test_get_filter_params():
     assert get_filter_params(QueryDict('f_list=pub')) == ['f_list']
     assert get_filter_params(QueryDict('f_from=joe')) == ['f_from']
-    assert get_filter_params(QueryDict('f_list=pub&f_from=joe')) == ['f_list', 'f_from']
+    assert 'f_list' in get_filter_params(QueryDict('f_list=pub&f_from=joe'))
+    assert 'f_from' in get_filter_params(QueryDict('f_list=pub&f_from=joe'))
     assert get_filter_params(QueryDict('f_list=')) == []
 
 

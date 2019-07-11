@@ -215,7 +215,7 @@ def get_base_subject(text):
 
 
 def get_content_disposition(part):
-    cd = part.get('content-disposition')
+    cd = str(part.get('content-disposition'))
     if cd:
         try:
             text = cd[:10].lower().split(';')[0]

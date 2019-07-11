@@ -435,7 +435,7 @@ def test_MessageWrapper_process_attachments_non_ascii_filename():
     mw.process()
     mw.archive_message.save()
     mw.process_attachments()
-    assert mw.archive_message.attachment_set.count() == 0
+    assert mw.archive_message.attachment_set.count() == 1
 
 
 @pytest.mark.django_db(transaction=True)

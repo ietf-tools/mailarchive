@@ -42,7 +42,19 @@ def test_generator_as_text(client):
     msg = Message.objects.first()
     g = Generator(msg)
     text = g.as_text()
-    assert text == 'Hello,\n\nThis is a test email.  database\n'
+    # 2TO3: Python 2 mailbox leaves \r\n intact, while Python 3 mailbox
+    #       converts to \n
+    textn = 'Hello,\n\nThis is a test email.  database\n'
+    textrn = 'Hello,\r\n\r\nThis is a test email.  database\r\n'
+    #print(":".join("{:02x}".format(ord(c)) for c in text))
+    #print(":".join("{:02x}".format(ord(c)) for c in t))
+    #print(text)
+    #print(t)
+    #print(type(text))
+    #print(type(t))
+    #print(len(text))
+    #print(len(t))
+    assert text == textn or text == textrn
 
 
 @pytest.mark.django_db(transaction=True)

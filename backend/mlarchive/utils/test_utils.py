@@ -8,6 +8,12 @@ from django.contrib.messages.storage.fallback import FallbackStorage
 from haystack.query import SearchQuerySet
 from django.test import RequestFactory
 
+# for Python 2/3 compatability
+try:
+    from email import message_from_binary_file
+except ImportError:
+    from email import message_from_file as message_from_binary_file
+
 
 def get_request(url='/', user=None):
     """Returns an HTTPRequest object suitable for testing a view.  Includes all
@@ -35,5 +41,5 @@ def get_search_backend():
 def message_from_file(filename):
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', filename)
     with open(path, 'rb') as f:
-        msg = email.message_from_binary_file(f)
+        msg = message_from_binary_file(f)
     return msg

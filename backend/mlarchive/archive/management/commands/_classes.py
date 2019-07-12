@@ -14,13 +14,33 @@ import tempfile
 import traceback
 import uuid
 from collections import deque
-from email.utils import parsedate_tz, getaddresses, make_msgid, parsedate_to_datetime
+from email.utils import parsedate_tz, getaddresses, make_msgid
 
 # for Python 2/3 compatability
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
+
+try:
+    from email.utils import parsedate_to_datetime
+except ImportError:
+    def parsedate_to_datetime(date):
+	"""Returns a datetime object from string.  May return naive or aware datetime.
+
+	This function is from email standard library v3.3, converted to 2.x
+	http://python.readthedocs.org/en/latest/library/email.util.html
+	"""
+	try:
+	    tuple = parsedate_tz(date)
+	    if not tuple:
+		return None
+	    tz = tuple[-1]
+	    if tz is None:
+		return datetime.datetime(*tuple[:6])
+	    return datetime.datetime(*tuple[:6], tzinfo=tzoffset(None, tz))
+	except ValueError:
+	    return None
 
 from django.conf import settings
 from django.core.cache import cache

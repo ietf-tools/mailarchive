@@ -134,7 +134,6 @@ INSTALLED_APPS = [
     'bootstrap4',
     'celery_haystack',
     'haystack',
-    'htauth',
     'mlarchive.archive.apps.ArchiveConfig',
     'widget_tweaks',
 ]
@@ -235,7 +234,7 @@ INSPECTORS = {
 
 # AUTH
 LOGIN_REDIRECT_URL = '/arch/'
-AUTHENTICATION_BACKENDS = ('htauth.backend.HtauthBackend',)
+AUTHENTICATION_BACKENDS = ('mlarchive.archive.backends.authbackend.HtauthBackend',)
 HTAUTH_PASSWD_FILENAME = get_secret("HTAUTH_PASSWD_FILENAME")
 
 # Cache settings

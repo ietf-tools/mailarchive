@@ -1,4 +1,12 @@
 
+mailarch (2.1.3) ietf; urgency=normal
+
+* Fix issue with 6 digit mhonarc message numbers in bin/get_legacy_numbers.py
+
+* Fix invalid HTML that causes issues in Seamonkey browser
+
+-- Ryan Cross <rcross@amsl.com>  18 October 2019 17:30:00 +0800
+
 mailarch (2.1.2) ietf; urgency=normal
 
 * Various SEO changes.  Including addition of sitemap.xml.

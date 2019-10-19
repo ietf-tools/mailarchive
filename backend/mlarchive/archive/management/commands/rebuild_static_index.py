@@ -28,7 +28,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         stats = {}
-        print options
+        print(options)
         if options['resume'] and not options['listname']:
             raise CommandError('Must provide listname with --resume option')
 

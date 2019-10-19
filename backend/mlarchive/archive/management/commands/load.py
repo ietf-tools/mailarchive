@@ -96,7 +96,7 @@ class Command(BaseCommand):
             sorted_mboxs = sorted(mboxs)
             full = [os.path.join(source, x) for x in sorted_mboxs]
             # exclude directories and empty files
-            files = filter(isfile, full)
+            files = list(filter(isfile, full))
         else:
             raise CommandError("%s is not a file or directory" % source)
 
@@ -114,7 +114,7 @@ class Command(BaseCommand):
             try:
                 loader = _classes.Loader(filename, **options)
                 loader.process()
-                for key, val in loader.stats.items():          # compile stats
+                for key, val in list(loader.stats.items()):          # compile stats
                     stats[key] = stats.get(key, 0) + val
             except _classes.UnknownFormat as error:
                 # save failed message
@@ -131,7 +131,7 @@ class Command(BaseCommand):
         if options.get('summary'):
             return stats.__str__()
         else:
-            items = ['%s:%s' % (k, v) for k, v in stats.items() if k != 'time']
+            items = ['%s:%s' % (k, v) for k, v in list(stats.items()) if k != 'time']
             items.append('Elapsed Time:%s' % str(datetime.timedelta(seconds=stats['time'])))
             items.append('\n')
             return '\n'.join(items)

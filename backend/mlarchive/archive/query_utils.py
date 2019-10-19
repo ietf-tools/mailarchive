@@ -1,4 +1,4 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
+
 
 import random
 import re
@@ -60,7 +60,7 @@ def clean_queryid(query_id):
 
 def get_filter_params(query):
     """Return list of filter parameters that appear in the query"""
-    return [k for k, v in query.items() if k in FILTER_PARAMS and v]
+    return [k for k, v in list(query.items()) if k in FILTER_PARAMS and v]
 
 
 def get_kwargs(data):
@@ -168,7 +168,7 @@ def parse_query(request):
     elif 'nojs' in request.META['QUERY_STRING']:
         query = []
         not_query = []
-        items = filter(is_nojs_value, request.GET.items())
+        items = list(filter(is_nojs_value, list(request.GET.items())))
         for key, value in items:
             field = request.GET[key.replace('value', 'field')]
             # qualifier = request.GET[key.replace('value','qualifier')]

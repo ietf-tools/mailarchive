@@ -14,12 +14,7 @@ import string
 import tarfile
 import tempfile
 from io import BytesIO
-
-# for Python 2/3 compatability
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import StringIO
 
 from django.conf import settings
 from django.contrib import messages

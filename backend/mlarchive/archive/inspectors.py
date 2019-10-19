@@ -1,7 +1,7 @@
 '''This module contains classes which inherit from Inspector.  They are used
 to inspect incoming messages and perform some auxiliary processing.  ie. spam
 checkers'''
-from __future__ import absolute_import, division, print_function, unicode_literals
+
 
 from django.conf import settings
 
@@ -23,11 +23,10 @@ class InspectorMeta(type):
         super(InspectorMeta, cls).__init__(name, bases, dct)
 
 
-class Inspector(object):
+class Inspector(object, metaclass=InspectorMeta):
     '''The base class for inspector classes.  Takes a MessageWrapper object and listname
     (string).  Inherit from this class and implement has_condition(), handle_file(),
     raise_error() methods.  Call inspect() to run inspection.'''
-    __metaclass__ = InspectorMeta
 
     def __init__(self, message_wrapper, options=None):
         self.message_wrapper = message_wrapper

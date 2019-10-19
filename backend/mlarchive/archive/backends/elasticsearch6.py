@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
+
 
 '''
 
@@ -131,7 +131,7 @@ class Elasticsearch6SearchBackend(ElasticsearchSearchBackend):
         if facets is not None:
             index = haystack.connections[self.connection_alias]\
                 .get_unified_index()
-            for facet_fieldname, extra_options in facets.items():
+            for facet_fieldname, extra_options in list(facets.items()):
                 facet_options = {
                     'meta': {
                         '_type': 'terms',
@@ -154,7 +154,7 @@ class Elasticsearch6SearchBackend(ElasticsearchSearchBackend):
                 result[facet_fieldname] = facet_options
 
         if date_facets is not None:
-            for facet_fieldname, value in date_facets.items():
+            for facet_fieldname, value in list(date_facets.items()):
                 # Need to detect on gap_by & only add amount if it's more than one.
                 interval = value.get('gap_by').lower()
 
@@ -327,7 +327,7 @@ class Elasticsearch6SearchBackend(ElasticsearchSearchBackend):
                 'queries': {},
             }
 
-            for facet_fieldname, facet_info in raw_results['aggregations'].items():
+            for facet_fieldname, facet_info in list(raw_results['aggregations'].items()):
                 facet_type = facet_info['meta']['_type']
                 if facet_type == 'terms':
                     facets['fields'][facet_fieldname] = [(individual['key'], individual['doc_count']) for individual in facet_info['buckets']]

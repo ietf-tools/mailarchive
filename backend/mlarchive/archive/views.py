@@ -1,10 +1,10 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
+
 
 import datetime
 import json
 import os
 import re
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from operator import itemgetter
 from collections import namedtuple
 
@@ -470,7 +470,7 @@ def admin(request):
                 results = SearchQuerySet().filter(**kwargs).order_by('date').load_all()
                 if form.cleaned_data.get('exclude_whitelisted_senders'):
                     whitelist = Message.objects.filter(spam_score=-1).values_list('frm', flat=True).distinct()
-                    results = filter(is_not_whitelisted, results)
+                    results = list(filter(is_not_whitelisted, results))
 
     # perfom action on checked messages
     elif request.method == 'POST':
@@ -529,7 +529,7 @@ def get_top25_data():
     for message in Message.objects.filter(date__gte=start, date__lt=end).select_related('email_list'):
         name = message.email_list.name
         counts[name] = counts.get(name, 0) + 1
-    data = sorted(counts.items(), key=itemgetter(1), reverse=True)[:25]
+    data = sorted(list(counts.items()), key=itemgetter(1), reverse=True)[:25]
     return data
 
 

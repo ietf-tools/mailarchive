@@ -1,4 +1,4 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
+
 
 import hashlib
 import six
@@ -102,7 +102,7 @@ class DatepickerDateField(forms.DateTimeField):
         self.widget.attrs["data-date-format"] = date_format
         if "placeholder" not in self.widget.attrs:
             self.widget.attrs["placeholder"] = date_format
-        for k, v in picker_settings.items():
+        for k, v in list(picker_settings.items()):
             self.widget.attrs["data-date-%s" % k] = v
 
 
@@ -181,7 +181,7 @@ class AdvancedSearchForm(FacetedSearchForm):
     spam_score = forms.CharField(max_length=3, required=False)
     # group and filter fields
     gbt = forms.BooleanField(required=False)                     # group by thread
-    qdr = forms.ChoiceField(choices=TIME_CHOICES, required=False, label=u'Time')  # qualified date range
+    qdr = forms.ChoiceField(choices=TIME_CHOICES, required=False, label='Time')  # qualified date range
     f_list = forms.CharField(max_length=255, required=False)
     f_from = forms.CharField(max_length=255, required=False)
     to = forms.CharField(max_length=255, required=False)

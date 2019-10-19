@@ -15,33 +15,9 @@ import traceback
 import uuid
 from collections import deque
 from email.utils import parsedate_tz, getaddresses, make_msgid
+from io import StringIO
 
-# for Python 2/3 compatability
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
-try:
-    from email.utils import parsedate_to_datetime
-except ImportError:
-    def parsedate_to_datetime(date):
-        """Returns a datetime object from string.  May return naive or aware datetime.
-
-        This function is from email standard library v3.3, converted to 2.x
-        http://python.readthedocs.org/en/latest/library/email.util.html
-        """
-        try:
-            tuple = parsedate_tz(date)
-            if not tuple:
-                return None
-            tz = tuple[-1]
-            if tz is None:
-                return datetime.datetime(*tuple[:6])
-            return datetime.datetime(*tuple[:6], tzinfo=tzoffset(None, tz))
-        except ValueError:
-            return None
-
+from email.utils import parsedate_to_datetime
 from django.conf import settings
 from django.core.cache import cache
 from django.core.management.base import CommandError
@@ -588,7 +564,7 @@ class Loader(object):
         try:
             mw = MessageWrapper(msg, self.listname, private=self.private)
         except Exception as e:
-            print(self.filename)
+            print((self.filename))
             raise
             # import sys
             # raise e.with_traceback(sys.exc_info()[2])
@@ -648,7 +624,7 @@ class MessageWrapper(object):
         self.bytes = len(flatten_message(email_message))
 
         # fail right away if no headers
-        if not self.email_message.items():         # no headers, something is wrong
+        if not list(self.email_message.items()):         # no headers, something is wrong
             raise NoHeaders
 
         self.msgid = self.get_msgid()

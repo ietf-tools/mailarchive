@@ -10,7 +10,7 @@ still possibly encoded using the Content-Type charset.
 string.decode(codec) decodes a string using the codec provided.  Returns a
 unicode object.
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
+
 
 import email
 import mailbox
@@ -290,7 +290,7 @@ class Generator:
     def parse_body(self, request=None):
         """Using internal or external function, convert a MIME email object to a string.
         """
-        headers = self.mdmsg.items()
+        headers = list(self.mdmsg.items())
         if settings.USE_EXTERNAL_PROCESSOR:
             parts = [self.msg.as_html()]
         else:

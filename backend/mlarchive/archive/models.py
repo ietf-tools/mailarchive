@@ -7,7 +7,6 @@ import logging
 import os
 import re
 import subprocess
-import urllib
 
 from django.conf import settings
 from django.contrib.auth.models import User

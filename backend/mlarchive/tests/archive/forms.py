@@ -14,10 +14,12 @@ from mlarchive.archive.models import Message
 
 
 def test_get_base_query():
-    qd = QueryDict('?q=database&f_list=saag&so=date')
+    qd = QueryDict('q=database&f_list=saag&so=date')
     result = get_base_query(qd)
     assert isinstance(result, QueryDict)
-    assert list(result.items()) == [('f_list', 'saag'), ('?q', 'database')]
+    assert 'q' in result
+    assert 'f_list' in result
+    assert 'so' not in result
 
 
 @pytest.mark.django_db(transaction=True)

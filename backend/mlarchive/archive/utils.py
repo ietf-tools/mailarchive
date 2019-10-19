@@ -19,7 +19,7 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.db.models import signals
 from django.http import HttpResponse
-
+from django.utils.encoding import smart_bytes
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.signals import _export_lists, _list_save_handler
 from mlarchive.utils.test_utils import get_search_backend
@@ -61,13 +61,12 @@ def get_noauth(user):
 
 
 def get_lists():
-    """Returns OrderedDict of all EmailLists"""
+    """Returns list of all EmailList names"""
     lists = cache.get('lists')
     if lists:
         return lists
     else:
         lists = EmailList.objects.all().order_by('name').values_list('name', flat=True)
-        lists = OrderedDict([(k, None) for k in lists])
         cache.set('lists', lists)
         return lists
 
@@ -77,8 +76,7 @@ def get_public_lists():
     if lists:
         return lists
     else:
-        public = EmailList.objects.filter(private=False).order_by('name').values_list('name', flat=True)
-        lists = OrderedDict([(k, None) for k in public])
+        lists = EmailList.objects.filter(private=False).order_by('name').values_list('name', flat=True)
         cache.set('lists_public', lists)
         return lists
 
@@ -90,12 +88,9 @@ def get_lists_for_user(user):
 
     if user.is_authenticated:
         if user.is_superuser:
-            lists = get_lists()
-        else:
-            lists = EmailList.objects.all().exclude(name__in=get_noauth(user))
-            lists = OrderedDict([(k, None) for k in lists])
+            return get_lists()
 
-    return lists
+    return EmailList.objects.all().exclude(name__in=get_noauth(user)).order_by('name').values_list('name', flat=True)
 
 
 def jsonapi(fn):
@@ -181,7 +176,7 @@ def get_membership(options, args):
         except subprocess.CalledProcessError:
             continue
 
-        sha = hashlib.sha1(output)
+        sha = hashlib.sha1(smart_bytes(output))
         digest = base64.urlsafe_b64encode(sha.digest())
         if mlist.members_digest != digest:
             has_changed = True
@@ -222,7 +217,7 @@ def check_inactive(prompt=True):
                 print("{}  => inactive.  SKIPPING last message date = {}".format(elist.name, messages.first().date))
                 continue
             print("{}  => inactive".format(elist.name))
-            to_inactive.append(elist)
+            to_inactive.append(elist.name)
 
     if prompt:
         answer = input('Update lists y/n?')
@@ -230,6 +225,7 @@ def check_inactive(prompt=True):
             print('OK')
         else:
             return
+
     EmailList.objects.filter(name__in=to_inactive).update(active=False)
 
 

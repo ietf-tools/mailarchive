@@ -5,6 +5,7 @@ import pytest
 
 from django.conf import settings
 from django.urls import reverse
+from django.utils.encoding import smart_text
 from factories import EmailListFactory, UserFactory
 from haystack.query import SearchQuerySet
 from mlarchive.archive.models import Message
@@ -55,7 +56,10 @@ def test_auth_browse(client):
     url = reverse('archive_browse')
     response = client.get(url)
     assert response.status_code == 200
-    q = PyQuery(response.content)
+    q = PyQuery(smart_text(response.content))
+    print(elist.name, elist.private, elist.members.all())
+    print(user)
+    print(type(response.content))
     print(response.content)
     assert len(q('#private-lists li')) == 1
 
@@ -68,7 +72,7 @@ def test_not_logged_browse_private_list(client, messages):
     message = Message.objects.filter(email_list__name='private').first()
     url = reverse('archive_search') + '?email_list=private&index={}'.format(message.hashcode.strip('='))
     response = client.get(url)
-    assert 'No results found' in response.content
+    assert 'No results found' in smart_text(response.content)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -119,6 +123,7 @@ def test_console_access(client, admin_client):
 # Haystack Queries
 # --------------------------------------------------
 
+# @pytest.mark.skip(reason="hangs")
 @pytest.mark.django_db(transaction=True)
 def test_haystack_content(query_messages):
     sqs = SearchQuerySet().filter(content='data')

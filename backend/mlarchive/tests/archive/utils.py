@@ -68,11 +68,13 @@ def test_get_lists_for_user(admin_user):
     user1 = UserFactory.create(username='user1')
     private1.members.add(user1)
     anonymous = AnonymousUser()
+    print(anonymous.is_authenticated)
+    print(EmailList.objects.filter(private=False).count())
     assert len(get_lists_for_user(admin_user)) == 3
     assert len(get_lists_for_user(anonymous)) == 1
     lists = get_lists_for_user(user1)
-    assert private1 in lists
-    assert private2 not in lists
+    assert private1.name in lists
+    assert private2.name not in lists
 
 
 @patch('requests.post')
@@ -85,11 +87,11 @@ def test_lookup_user(mock_post):
     assert user is None
     # test no user object
     response.status_code = 200
-    response._content = '{"person.person": {"1": {"user": ""}}}'
+    response._content = b'{"person.person": {"1": {"user": ""}}}'
     user = lookup_user('joe@example.com')
     assert user is None
     # test success
-    response._content = '{"person.person": {"1": {"user": {"username": "joe@example.com"}}}}'
+    response._content = b'{"person.person": {"1": {"user": {"username": "joe@example.com"}}}}'
     user = lookup_user('joe@example.com')
     assert user == 'joe@example.com'
 
@@ -99,7 +101,7 @@ def test_lookup_user(mock_post):
 def test_process_members(mock_post):
     response = requests.Response()
     response.status_code = 200
-    response._content = '{"person.person": {"1": {"user": {"username": "joe@example.com"}}}}'
+    response._content = b'{"person.person": {"1": {"user": {"username": "joe@example.com"}}}}'
     mock_post.return_value = response
     email_list = EmailListFactory.create(name='private', private=True)
     assert email_list.members.count() == 0
@@ -123,7 +125,7 @@ def test_get_membership(mock_post, mock_output):
     response = requests.Response()
     mock_post.return_value = response
     response.status_code = 200
-    response._content = '{"person.person": {"1": {"user": {"username": "joe@example.com"}}}}'
+    response._content = b'{"person.person": {"1": {"user": {"username": "joe@example.com"}}}}'
     assert private.members.count() == 0
     options = DummyOptions()
     options.quiet = True

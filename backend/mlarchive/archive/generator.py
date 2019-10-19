@@ -12,9 +12,11 @@ unicode object.
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from email.utils import collapse_rfc2231_value
+import email
 import mailbox
+import six
 
+from email.utils import collapse_rfc2231_value
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -65,7 +67,7 @@ class Generator:
         self.text_only = False
         self.error = None
         try:
-            with open(msg.get_file_path()) as f:
+            with open(msg.get_file_path(), 'rb') as f:
                 self.mdmsg = mailbox.MaildirMessage(f)
         except IOError:
             logger.error('Error reading message file: %s' % msg.get_file_path())
@@ -116,9 +118,10 @@ class Generator:
         - first decode using Content-Transfer-Encoding
         - then decode using the Content-Type charset or DEFAULT_CHARSET
         """
-        charset = part.get_content_charset()
-        payload = part.get_payload(decode=True)
-        return decode_safely(payload, charset)
+        # charset = part.get_content_charset()
+        # payload = part.get_payload(decode=True)
+        # return decode_safely(payload, charset)
+        return part.get_payload()
 
     # multipart handlers ----------------------------------------------------------
 
@@ -137,12 +140,12 @@ class Generator:
         """Handler for Message/External-body
 
         Two common supported formats:
-        A) in content type parameters
-        Content-Type: Message/External-body; name="draft-ietf-alto-reqs-03.txt";
+        A) message/external-body access-type ANON_FTP
+        Content-Type: message/external-body; name="draft-ietf-alto-reqs-03.txt";
             site="ftp.ietf.org"; access-type="anon-ftp";
             directory="internet-drafts"
 
-        B) as an attachment
+        B) message/external-body URL non-standard
         Content-Type: message/external-body; name="draft-howlett-radsec-knp-01.url"
         Content-Description: draft-howlett-radsec-knp-01.url
         Content-Disposition: attachment; filename="draft-howlett-radsec-knp-01.url";
@@ -150,6 +153,8 @@ class Generator:
             modification-date="Mon, 14 Mar 2011 22:39:25 GMT"
         Content-Transfer-Encoding: base64
 
+        X19fX19fX1 ...
+        
         TODO:
         - there are A/B types that don't conform to this model.  see:
         - B: abfab:hCAW0Vg4mRA_TJC0iievdbPQGBo=
@@ -161,15 +166,18 @@ class Generator:
             return None
 
         # handle B format
+        # this format is not handled correctly by the email parser.
+        # You would expect to use get_payload(decode=True), instead you
+        # need to get the content-transfer-encoding from the top-level
+        # mime part, then manually decode the payload of the inner message part
         filename = get_filename(part)
         if filename and filename.endswith('url'):
-            codec = part['Content-Transfer-Encoding']
+            encoding = part['Content-Transfer-Encoding']
             inner = part.get_payload()
             payload = inner[0].get_payload()
-            try:
-                return payload.decode(codec)
-            except (UnicodeDecodeError, LookupError):
-                return None
+            if encoding == 'base64':
+                bpayload = email.base64mime.decode(payload)     # returns bytes
+                return bpayload.decode()                        # return unicode
 
         # handle A format
         if part.get_param('access-type') == 'anon-ftp':
@@ -315,9 +323,9 @@ class Generator:
         parts = []
         output = self._dispatch(entity)
         if output:
-            if hasattr(output, '__iter__'):
-                parts.extend(output)
-            else:
+            if isinstance(output, six.string_types):
                 parts.append(output)
+            else:
+                parts.extend(output)
 
         return parts

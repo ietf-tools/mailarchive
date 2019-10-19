@@ -41,7 +41,8 @@ def test_ajax_get_msg(client, admin_client, admin_user):
     url = '%s/?id=%s' % (reverse('ajax_get_msg'), msg.pk)
     response = client.get(url)
     assert response.status_code == 200
-    assert response.content.find('This is a test') != -1
+    print(type(response.content))
+    assert response.content.find(b'This is a test') != -1
 
     # test unauthorized access to restricted Message
     url = '%s/?id=%s' % (reverse('ajax_get_msg'), primsg.pk)
@@ -56,6 +57,7 @@ def test_ajax_get_msg(client, admin_client, admin_user):
 
 @pytest.mark.django_db(transaction=True)
 def test_ajax_get_msg_thread_links(client, thread_messages):
+    print(Message.objects.count())
     msg = Message.objects.get(msgid='00002@example.com')
     url = '%s/?id=%s' % (reverse('ajax_get_msg'), msg.pk)
     response = client.get(url)

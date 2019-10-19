@@ -53,8 +53,8 @@ def get_cache_key(request):
     base_query = get_base_query(request.GET)
     ordered = OrderedDict(sorted(base_query.items()))
     m = hashlib.md5()
-    m.update(urlencode(ordered))
-    m.update(str(request.user))
+    m.update(urlencode(ordered).encode('utf8'))
+    m.update(str(request.user).encode('utf8'))
     return m.hexdigest()
 
 
@@ -102,7 +102,7 @@ class DatepickerDateField(forms.DateTimeField):
         self.widget.attrs["data-date-format"] = date_format
         if "placeholder" not in self.widget.attrs:
             self.widget.attrs["placeholder"] = date_format
-        for k, v in picker_settings.iteritems():
+        for k, v in picker_settings.items():
             self.widget.attrs["data-date-%s" % k] = v
 
 

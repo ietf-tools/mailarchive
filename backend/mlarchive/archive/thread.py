@@ -598,7 +598,7 @@ def sort_siblings(siblings, reverse=False):
         key=methodcaller('sort_date'),
         reverse=reverse)
     sorted_siblings_iter = iter(sorted_siblings)
-    prev = sorted_siblings_iter.next()
+    prev = next(sorted_siblings_iter)
     for container in sorted_siblings_iter:
         prev.next = container
         prev = container

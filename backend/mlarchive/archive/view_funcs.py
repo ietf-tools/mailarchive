@@ -13,6 +13,7 @@ import re
 import string
 import tarfile
 import tempfile
+from io import BytesIO
 
 # for Python 2/3 compatability
 try:
@@ -26,12 +27,12 @@ from django.forms.formsets import formset_factory
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.utils.encoding import smart_text
 from haystack.views import SearchView
 
 from mlarchive.archive.forms import RulesForm
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_lists_for_user
-from mlarchive.utils.encoding import to_str
 
 
 contain_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\((?P<value>[^\)]+)\)')
@@ -195,7 +196,7 @@ def get_export_tar(sqs, export_type, request):
     to the appropriate mail box type, in a zipped tarfile.  The function returns the
     tarfile, with seek(0) to reset for reading, and the filename as a string.
     """
-    tardata = StringIO()
+    tardata = BytesIO()
     tar = tarfile.open(fileobj=tardata, mode='w:gz')
     basename = get_random_basename(prefix=export_type)
     filename = basename + '.tar.gz'
@@ -264,7 +265,7 @@ def build_mbox_tar(sqs, tar, basename):
 
         with open(result.object.get_file_path()) as input:
             # add envelope header
-            from_line = to_str(result.object.get_from_line()) + '\n'
+            from_line = smart_text(result.object.get_from_line()) + '\n'
             mbox_file.write(from_line)
             mbox_file.write(input.read())
             mbox_file.write('\n')

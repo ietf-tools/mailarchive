@@ -114,10 +114,10 @@ def test_compute_thread():
         thread_order=0)
     info = compute_thread(thread)
     info_iter = iter(list(info.values()))
-    thread_info = info_iter.next()
+    thread_info = next(info_iter)
     assert thread_info.order == 0
     assert thread_info.depth == 0
-    thread_info = info_iter.next()
+    thread_info = next(info_iter)
     assert thread_info.order == 1
     assert thread_info.depth == 1
 

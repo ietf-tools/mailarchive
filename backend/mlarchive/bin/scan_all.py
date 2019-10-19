@@ -112,6 +112,25 @@ def is_ascii(s):
 # Scan Functions
 # ---------------------------------------------------------
 
+def archived_at():
+    """Find messages whose Archived-At header does not match url"""
+    from email.parser import Parser
+    parser = Parser()
+    count = 0
+    start = datetime.datetime(2014,1,1)
+    messages = Message.objects.filter(date__gte=start)
+    print 'Processing: {}'.format(messages.count())
+    for n, message in enumerate(messages):
+        if n % 10000 == 0:
+            print 'Processed: {} ({})'.format(n, count)
+        msg = parser.parsestr(message.get_body_raw(), headersonly=True)
+        if msg['archived-at'] and 'mailarchive' in msg['archived-at']:
+            if message.hashcode.strip('=') not in msg['archived-at']:
+                count = count + 1
+                print message.pk, message.hashcode, msg['archived-at']
+    
+    print 'Total checked: {}'.format(count)
+        
 def bodies():
     """Call get_body_html() and get_body() for every message in db. Use logging in
     generator_handler methods to gather stats.

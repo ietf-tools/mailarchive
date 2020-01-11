@@ -67,13 +67,16 @@ General Instructions for Deployment of a New Release
 Installing from Scratch
 =======================
 
-MAJOR DEPENDENCIES
-============
+EXTERNAL DEPENDENCIES
+=====================
 Python 2.7
 MySQL 5.6
 Elasticsearch 6.4
 Memcached 1.4
 RabbitMQ Server 3.5
+
+DEPENDENCIES PROVIDED BY PYTHON VIRTUAL ENV
+===========================================
 Celery 4.2
 Django 1.11
 Haystack 2.6.0 (Included)
@@ -104,15 +107,20 @@ see: http://www.rabbitmq.com/man/rabbitmqctl.1.man.html
 
 
 SETUP:
-The following steps will refer to INSTALL_DIR (ie. /a/mailarch )
+The following steps will refer to INSTALL_DIR (ie. /a/mailarch/ )
 
-1. Download software via SVN checkout
-svn checkout http://svn.tools.ietf.org/svn/tools/mailarch/trunk
+1. Download software via SVN checkout (use appropriate version)
+cd INSTALL_DIR
+svn checkout https://svn.tools.ietf.org/svn/tools/mailarch/tags/N.N.N
 
-2. Create a symlink to the release directory, INSTALL_DIR/current -> INSTALL_DIR/trunk
 
-3. Create (or copy) INSTALL_DIR/current/mlarchive/settings/secrets.json which contains production
-settings.  It should cotain the following settings: 
+2. Create a symlink to the release directory
+ln -s N.N.N current
+
+
+3. Create (or copy) INSTALL_DIR/current/backend/mlarchive/settings/secrets.json
+which contains production settings.  It should contain the following 
+settings: 
 
 Example:
 {
@@ -125,12 +133,13 @@ Example:
     "HTAUTH_PASSWD_FILENAME": [PATH TO FILE]
 }
 
+
 4. Sample Apache Configuration
 
         RemoveHandler cgi-script .py
-        Alias /static/ /a/mailarch/current/static/
+        Alias /static/ /a/mailarch/current/backend/static/
 
-        WSGIScriptAlias / /a/mailarch/current/mlarchive/productions.wsgi
+        WSGIScriptAlias / /a/mailarch/current/backend/mlarchive/productions.wsgi
         WSGIApplicationGroup %{GLOBAL}
         WSGIProcessGroup mailarchive.ietf.org
 
@@ -140,12 +149,12 @@ Example:
             Options FollowSymLinks
         </Directory>
 
-        <Directory /a/mailarch/current/static>
+        <Directory /a/mailarch/current/backend/static>
             Order allow,deny
             Allow from all
         </Directory>
 
-        <Directory /a/mailarch/current/mlarchive>
+        <Directory /a/mailarch/current/backend/mlarchive>
         <Files wsgi.py>
             Order deny,allow
             Allow from all
@@ -155,7 +164,8 @@ Example:
 
 5. Configure mailmain
 
-copy INSTALL_DIR/trunk/mlarchive/bin/call-archives.py /a/ietf/scripts
+copy INSTALL_DIR/current/backend/mlarchive/bin/call-archives.py /a/ietf/scripts
+
 /a/mailman/Mailman/mm_cfg:
 PUBLIC_EXTERNAL_ARCHIVER = '/a/ietf/scripts/call-archives.py %(listname)s --public'
 PRIVATE_EXTERNAL_ARCHIVER = '/a/ietf/scripts/call-archives.py %(listname)s --private'
@@ -168,18 +178,25 @@ ietfarch-atompub-archive:               "|/a/ietf/scripts/archive-mail atompub"
 
 ietfarch-atompub-archive:               "|/a/ietf/scripts/call-archives atompub"
 
-6) Install Cronscripts
+
+6. Install Cronscripts
 
 
-Install and configure Celery  (after archive code is installed)
-cp INSTALL_DIR/celery/celeryd.service /etc/systemd/system
-cp INSTALL_DIR/celery/celeryd /etc/default/
+7. Setup Celery service
+Celery is provided in the Python virtual environment. What remains is to copy
+systemd files into place and enable/start the service.
+INSTALL_DIR=/a/mailarch
+
+cp INSTALL_DIR/current/backend/celery/celeryd.service /etc/systemd/system
+cp INSTALL_DIR/current/backend/celery/celeryd /etc/default/
 mkdir /var/log/celery (wwwrun:www)
 mkdir /var/run/celery (wwwrun:www)
 systemctl enable celeryd
 systemctl start celeryd
+
+-- Test Status --
 systemctl status celeryd
-celery status
+INSTALL_DIR/current/env/bin/celery status
 
 ** NOTE ** Celery will fail to start unless 
 /var/log/mail-archive/mlarchive.log exists and is writable

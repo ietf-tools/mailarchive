@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 Related to Ticket #2197
 https://trac.tools.ietf.org/tools/ietfdb/ticket/2197
@@ -7,7 +7,7 @@ Locate threads that don't have a "first" value and fix
 
 '''
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 
@@ -23,7 +23,7 @@ def get_first(thread):
     oldest = thread.message_set.order_by('date').first()
     first = thread.message_set.order_by('thread_order').first()
     if first != oldest:
-        print "Warning: first != oldest ({})".format(thread)
+        print("Warning: first != oldest ({})".format(thread))
     return oldest
 
 deleted = 0
@@ -38,5 +38,5 @@ for thread in threads:
         thread.first = first
         thread.save()
 
-print 'Threads processed: {}'.format(threads.count())
-print 'Empty Threads deleted: {}'.format(deleted)
+print('Threads processed: {}'.format(threads.count()))
+print('Empty Threads deleted: {}'.format(deleted))

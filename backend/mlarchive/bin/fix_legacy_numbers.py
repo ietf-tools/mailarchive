@@ -1,5 +1,5 @@
-#!/usr/bin/python
-from __future__ import absolute_import, division, print_function, unicode_literals
+#!../../../env/bin/python
+
 
 '''
 This script scans the MHonArc web archive, and creates a record in Legacy for each message

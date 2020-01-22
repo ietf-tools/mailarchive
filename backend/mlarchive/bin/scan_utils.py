@@ -1,8 +1,8 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 """
 Utilities for running scans on mailbox files
 """
-from __future__ import print_function
+
 import glob
 import mailbox
 import os
@@ -27,7 +27,7 @@ def all_mboxs(listnames=None):
     for dir in dirs:
         all = [ os.path.join(dir,f) for f in os.listdir(dir) ]
         all = sorted(all)
-        files = filter(is_mbox, all)
+        files = list(filter(is_mbox, all))
         for file in files:
             size = os.stat(file).st_size
             if size != 0:
@@ -71,7 +71,7 @@ def is_mmdf(filename):
 def get_mboxs(listname):
     """Returns mbox objects for listname"""
     all = sorted(glob.glob('/a/www/ietf-mail-archive/text/%s/*' % listname))
-    files = filter(is_mbox, all)
+    files = list(filter(is_mbox, all))
     for fil in files:
         mb = _classes.get_mb(fil)
         yield mb
@@ -100,7 +100,7 @@ def process(names):
     """
     for name in names:
         all = sorted(glob.glob('/a/www/ietf-mail-archive/text/%s/*' % name))
-        files = filter(is_mbox, all)
+        files = list(filter(is_mbox, all))
         for fil in files:
             mb = _classes.get_mb(fil)
             for msg in mb:

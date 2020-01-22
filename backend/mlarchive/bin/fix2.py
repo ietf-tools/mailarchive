@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 Fix unindented Received lines.
 
@@ -6,7 +6,7 @@ Based on a short survey we are assuming Received lines immediately follow
 envelope.  We use the "From:" header to signify done reading Received lines.
 '''
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 
@@ -47,7 +47,7 @@ def main():
                     inheader = False
                     continue
                 if inheader:
-                    print "%s:%s:%s" % (file,count,line)
+                    print("%s:%s:%s" % (file,count,line))
 
 if __name__ == "__main__":
     main()

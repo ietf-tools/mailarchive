@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 This script checks all active private lists memberships, if membership has changed since
 last time it was run, the list membership db table is updated.  This script can be run
@@ -6,7 +6,7 @@ periodically by cron.
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 

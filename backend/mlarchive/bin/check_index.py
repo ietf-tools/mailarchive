@@ -1,14 +1,14 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 This script will search for index records that have no corresponding db object.
 For best performance set HAYSTACK_ITERATOR_LOAD_PRE_QUERY = 10000
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
-from __future__ import absolute_import, division, print_function, unicode_literals
+
 
 import argparse
 import os
@@ -50,8 +50,8 @@ def main():
             # _ = input('Return to continue')
 
     print(count)
-    for k, v in stat.items():
-        print("{}:{}".format(k, v))
+    for k, v in list(stat.items()):
+        print(("{}:{}".format(k, v)))
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
-#!/usr/bin/python
-from __future__ import print_function
+#!../../../env/bin/python
+
 
 '''
 Script to retrieve active lists, identify inactive lists, and update the db
@@ -7,7 +7,7 @@ Script to retrieve active lists, identify inactive lists, and update the db
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 

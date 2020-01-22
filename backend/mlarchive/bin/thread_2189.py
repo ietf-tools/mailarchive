@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 Related to Ticket #2189
 https://trac.tools.ietf.org/tools/ietfdb/ticket/2189
@@ -8,7 +8,7 @@ subject line but weren't
 
 '''
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 
@@ -67,7 +67,7 @@ def main():
     previous_date = date
     for thread in threads:
         if thread.date.month != previous_date.month:
-            print '{}:{}'.format(previous_date.strftime("%Y-%m"),monthly_total)
+            print('{}:{}'.format(previous_date.strftime("%Y-%m"),monthly_total))
             previous_date = thread.date
             monthly_total = 0
         msg = thread.first
@@ -79,13 +79,13 @@ def main():
                 total = total + 1
                 monthly_total = monthly_total + 1
                 if args.verbose:
-                    print "Found {},{},{} should be {}".format(
+                    print("Found {},{},{} should be {}".format(
                         msg.pk,
                         get_ascii(msg.subject),
                         msg.date,
-                        messages.first().thread.pk)
+                        messages.first().thread.pk))
 
-    print 'Total: {}'.format(total)
+    print('Total: {}'.format(total))
 
 if __name__ == "__main__":
     main()

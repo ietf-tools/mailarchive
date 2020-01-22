@@ -1,11 +1,11 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 This script will produce a thread ordered view of messages for a given list
 comparable to the MHonArc thread view.
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 
@@ -29,7 +29,7 @@ def signal_handler(signal, frame):
         global TLIST_ORDER
         print('You pressed Ctrl+C!')
         for line in TLIST_ORDER: 
-            print line
+            print(line)
         sys.exit(0)
 
 
@@ -46,7 +46,7 @@ def do_thread(message,level):
     repls = []
     srepls = []
     
-    print 'do_thread: {}'.format(message.msgid)
+    print('do_thread: {}'.format(message.msgid))
     
     # get replies
     if message in REPLIES:
@@ -67,13 +67,13 @@ def do_thread(message,level):
     if repls:
         for r in repls:
             if r in COUNTED:
-                print 'repls loop detected: {}'.format(r.msgid)
+                print('repls loop detected: {}'.format(r.msgid))
                 sys.exit()
             do_thread(r, level + 1 + HAS_REF_DEPTH[r])
     if srepls:
         for r in srepls:
             if r in COUNTED:
-                print 'srepls loop detected: {}'.format(r.msgid)
+                print('srepls loop detected: {}'.format(r.msgid))
                 sys.exit()
             do_thread(r, level + 1 + HAS_REF_DEPTH[r])
 
@@ -87,7 +87,7 @@ def main():
     
     elist = EmailList.objects.get(name=args.list)
     
-    print 'List: {}'.format(elist.name)
+    print('List: {}'.format(elist.name))
 
     first_subject2index = {}
     has_ref = {}
@@ -95,11 +95,11 @@ def main():
 
     # sort by date first for subject based threads
     thread_list = Message.objects.filter(email_list=elist).order_by('date')
-    print 'Messages: {}'.format(thread_list.count())
+    print('Messages: {}'.format(thread_list.count()))
     
     # find first occurrances of subjects
     # might replace with Message.objects.filter(base_subject=xx,references='').order_by('date').first()
-    print 'Finding first subjects...'
+    print('Finding first subjects...')
     for message in thread_list:
         if not message.base_subject:
             continue
@@ -108,7 +108,7 @@ def main():
         first_subject2index[message.base_subject] = message
     
     # compute thread data
-    print 'Compute thread data...'
+    print('Compute thread data...')
     for message in thread_list:
         if message.references:
             depth = 0
@@ -117,7 +117,7 @@ def main():
                     try:
                         reference = Message.objects.get(msgid=reference_id,email_list=elist)
                     except Message.MultipleObjectsReturned:
-                        print 'Dupe: {}'.format(reference_id)
+                        print('Dupe: {}'.format(reference_id))
                         sys.exit()
                     has_ref[message] = reference
                     HAS_REF_DEPTH[message] = depth
@@ -138,17 +138,17 @@ def main():
     # calculate thread listing order
     for num,message in enumerate(Message.objects.filter(email_list=elist).order_by('-date')):
         if ( message not in COUNTED and message not in has_ref ):
-            print '='*40
-            print 'Calculated {} of {}'.format(num,thread_list.count())
-            print '{}'.format(message.msgid)
+            print('='*40)
+            print('Calculated {} of {}'.format(num,thread_list.count()))
+            print('{}'.format(message.msgid))
             if message in REPLIES:
-                print 'REPLIES: {}'.format(REPLIES[message])
+                print('REPLIES: {}'.format(REPLIES[message]))
             if message in SREPLIES:
-                print 'REPLIES: {}'.format(SREPLIES[message])
+                print('REPLIES: {}'.format(SREPLIES[message]))
             do_thread(message, 0)
 
     for m in TLIST_ORDER:
-        print m.subject + ' .. ' + m.frm.encode('ascii','replace') + ' .. ' + m.msgid
+        print(m.subject + ' .. ' + m.frm.encode('ascii','replace') + ' .. ' + m.msgid)
 
 if __name__ == "__main__":
     main()

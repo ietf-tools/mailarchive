@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 """
 Script to load messages that were excluded from the initial import.  Takes one
 positional argument, the path to the "filtered" directory of files to load.  This must
@@ -11,7 +11,7 @@ score FH_DATE_IS_19XX 0.1   # lower score of two digit date
 
 """
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup(django_settings='mlarchive.settings.noindex')
 # -------------------------------------------------------------------------------------
 
@@ -38,7 +38,7 @@ logger = logging.getLogger('mlarchive.custom')
 def ensure_dir(path):
     if not os.path.exists(path):
         os.makedirs(path)
-        os.chmod(path,02777)
+        os.chmod(path,0o2777)
 
 def main():
     parser = argparse.ArgumentParser(description='Scan message and import.')
@@ -71,13 +71,13 @@ def main():
                 # scan
                 subprocess.check_call(['spamc','-c'],stdin=fp)
                 if args.verbose:
-                    print '%s: clean' % file
+                    print('%s: clean' % file)
             except subprocess.CalledProcessError:
                 # the message is spam
                 fp.close()
                 logger.warning('%s: found spam (%s)' % (progname,fullpath))
                 if args.verbose:
-                    print "%s: spam" % file
+                    print("%s: spam" % file)
                 if not args.check:
                     spam_dir = os.path.join(settings.ARCHIVE_DIR,listname,'_spam')
                     ensure_dir(spam_dir)

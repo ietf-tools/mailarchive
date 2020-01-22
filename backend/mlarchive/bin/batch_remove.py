@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 Bulk removal of messages from the archive / index.  Takes one argument, the 
 integer to use for identifying spam_score of messages to delete.  This script
@@ -15,7 +15,7 @@ References:
 https://trac.xapian.org/wiki/FAQ/UniqueIds
 '''
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 from builtins import range
@@ -25,7 +25,7 @@ import base64
 import json
 import os
 import time
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 from django.conf import settings
 from celery_haystack.tasks import CeleryXapianBatchRemove
@@ -42,13 +42,13 @@ def get_queue():
     username = 'guest'
     password = 'guest'
     url = 'http://127.0.0.1:15672/api/queues'
-    req = urllib2.Request(url)
+    req = urllib.request.Request(url)
     base64string = base64.encodestring('%s:%s' % (username, password))[:-1]
     authheader = "Basic %s" % base64string
     req.add_header("Authorization", authheader)
     try:
-        handle = urllib2.urlopen(req)
-    except urllib2.URLError:
+        handle = urllib.request.urlopen(req)
+    except urllib.error.URLError:
         return None
     data = json.load(handle)
     for q in data:

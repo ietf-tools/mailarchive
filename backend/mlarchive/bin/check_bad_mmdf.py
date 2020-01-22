@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 
 '''
 Some legacy mbox files in the archive start out in one format,
@@ -7,7 +7,7 @@ mid-file.  See ietf list.  This script will identify such files.
 
 ./check_bad_mmdf [dir]
 '''
-from __future__ import absolute_import, division, print_function, unicode_literals
+
 
 import os
 import sys

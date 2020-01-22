@@ -1,10 +1,10 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 """
 Script to scan through archive and identify messages that have archive generated
 msgid, then add that id to the message file on disk.
 """
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 
@@ -53,11 +53,11 @@ def main():
             continue
         
         if orig_msgid and orig_msgid != '<>' and orig_msgid != message.msgid:
-            print "WARNING Mismatch: db:{}  file:{} [{}]".format(message.msgid,orig_msgid,file)
+            print("WARNING Mismatch: db:{}  file:{} [{}]".format(message.msgid,orig_msgid,file))
         elif not args.check:
             updated = updated + 1
             if args.verbose:
-                print "replacing {} with {}".format(orig_msgid,message.msgid)
+                print("replacing {} with {}".format(orig_msgid,message.msgid))
 
             # adjust headers
             msg.add_header('X-Message-ID',orig_msgid)
@@ -80,11 +80,11 @@ def main():
             output = re.sub("\r(?!\n)|(?<!\r)\n", "\r\n", _classes.flatten_message(msg))
             with open(file,'w') as out:
                 out.write(output)
-            os.chmod(file,0660)
+            os.chmod(file,0o660)
     
     # print stats
-    print "Total messages: {}".format(messages.count())
-    print "Messages updated {}".format(updated)
+    print("Total messages: {}".format(messages.count()))
+    print("Messages updated {}".format(updated))
 
 if __name__ == "__main__":
     main()

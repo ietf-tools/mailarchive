@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 Compare legacy archive with new archive and report descrepencies
 
@@ -8,7 +8,7 @@ Example:
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 
@@ -50,7 +50,7 @@ def check_message(message, listname, load):
                 status_message = 'import failed'
         else:
             status_message = ''
-        print "%s, %s, %s, %s" % (listname,message['subject'][:20],message['date'],status_message)
+        print("%s, %s, %s, %s" % (listname,message['subject'][:20],message['date'],status_message))
     
 def main():
     parser = argparse.ArgumentParser()
@@ -89,7 +89,7 @@ def main():
                     if start_date <= msg_date <= end_date:
                         check_message(message, listname, args.load)
 
-    print "Total: %d\nMissing: %d\nImported: %d" % (TOTAL, MISSING, IMPORTED)
+    print("Total: %d\nMissing: %d\nImported: %d" % (TOTAL, MISSING, IMPORTED))
 
 if __name__ == "__main__":
     main()

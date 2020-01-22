@@ -1,9 +1,9 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 """
 Script to scan through archive of mbox files and produce a spam report.
 """
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ logger = getLogger('mlarchive.custom')
 def ensure_dir(path):
     if not os.path.exists(path):
         os.makedirs(path)
-        os.chmod(path,02777)
+        os.chmod(path,0o2777)
 
 def main():
     parser = argparse.ArgumentParser(description='Scan archive for spam.')
@@ -40,7 +40,7 @@ def main():
         parser.error('{} must be a directory'.format(args.path))
 
     fullnames = [ os.path.join(args.path,n) for n in os.listdir(args.path) ]
-    elists = filter(os.path.isdir,fullnames)
+    elists = list(filter(os.path.isdir,fullnames))
 
     for elist in elists:
         total = 0
@@ -56,10 +56,10 @@ def main():
                 # the message is spam
                 spam += 1
                 if args.verbose:
-                    print "%s: spam" % elist
+                    print("%s: spam" % elist)
 
         # print stats
-        print "{}, {}:{}".format(os.path.basename(elist),total,spam)
+        print("{}, {}:{}".format(os.path.basename(elist),total,spam))
 
 if __name__ == "__main__":
     main()

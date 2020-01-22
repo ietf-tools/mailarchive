@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 This is a utility script that handles loading multiple archives
 Use "-f" to load entire archive, otherwise the script uses the
@@ -68,7 +68,7 @@ def main():
         dirs = [ x for x in ALL if os.path.basename(x) in SUBSET ]
 
     for dir in dirs:
-        print 'Loading: %s' % dir
+        print('Loading: %s' % dir)
 
         if 'text-secure' in dir:
             private = True
@@ -88,17 +88,17 @@ def main():
         content.seek(0)
         output = content.read()
         results = ast.literal_eval(output)
-        for key,val in results.items():
+        for key,val in list(results.items()):
             stats[key] = stats.get(key,0) + val
 
     elapsed_time = int(time.time() - start_time)
     #print 'Messages Pocessed: %d' % stats['count']
     #print 'Errors: %d' % stats['errors']
     #print 'Elapsed Time: %s' % str(datetime.timedelta(seconds=elapsed_time))
-    items = [ '%s:%s' % (k,v) for k,v in stats.items() if k != 'time']
+    items = [ '%s:%s' % (k,v) for k,v in list(stats.items()) if k != 'time']
     items.append('Elapsed Time:%s' % str(datetime.timedelta(seconds=elapsed_time)))
     items.append('\n')
-    print '\n'.join(items)
+    print('\n'.join(items))
 
 if __name__ == "__main__":
     main()

@@ -1,11 +1,11 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 This script will query all messages new as of yesterday and ensure
 that they exist in the archive
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 
@@ -36,9 +36,9 @@ def main():
     for message in messages:
         sqs = SearchQuerySet().filter(msgid=message.msgid,email_list=message.email_list.name)
         if sqs.count() != 1:
-            print "Message not indexed.  {list}: {msgid}".format(
+            print("Message not indexed.  {list}: {msgid}".format(
                 list=message.email_list,
-                msgid=message.msgid)
+                msgid=message.msgid))
             count = count + 1
             logging.warning(message.msgid + '\n')
             stat[message.email_list.name] = stat.get(message.email_list.name,0) + 1
@@ -46,11 +46,11 @@ def main():
                 message.save()
             
 
-    print "Index Check {date}".format(date=start.strftime('%Y-%m-%d'))
-    print "Checked {count}".format(count=messages.count())
-    print "Missing {count}".format(count=count)
-    for k,v in stat.items():
-        print "{}:{}".format(k,v)
+    print("Index Check {date}".format(date=start.strftime('%Y-%m-%d')))
+    print("Checked {count}".format(count=messages.count()))
+    print("Missing {count}".format(count=count))
+    for k,v in list(stat.items()):
+        print("{}:{}".format(k,v))
     
 if __name__ == "__main__":
     main()

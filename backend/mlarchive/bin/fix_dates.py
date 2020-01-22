@@ -1,11 +1,11 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 """
 Script to scan through a maildir directory find messages with unsupported date
 header, see regex, and replace with proper format.  Original date header is saved
 as X-Date, and original file is saved in a backup directory.
 """
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 
@@ -61,7 +61,7 @@ def main():
         parser.error('{} must be a directory'.format(args.path))
 
     fullnames = [ os.path.join(args.path,n) for n in os.listdir(args.path) ]
-    files = filter(os.path.isfile,fullnames)
+    files = list(filter(os.path.isfile,fullnames))
 
     total = 0
     tomorrow = datetime.datetime.now() + datetime.timedelta(days=1)
@@ -76,14 +76,14 @@ def main():
         elif msg['sent']:
             dfield = 'sent'
         else:
-            print "No date: {}".format(file)
+            print("No date: {}".format(file))
             continue
             
         # check for future date
         try:
             is_future = parse(msg[dfield],ignoretz=True) > tomorrow
         except Exception as error:
-            print "Parse failed {} ({},{})".format(error,msg[dfield],file)
+            print("Parse failed {} ({},{})".format(error,msg[dfield],file))
             continue
             
         if DATE_PATTERN.match(msg[dfield]) or dfield == 'sent' or is_future:
@@ -92,15 +92,15 @@ def main():
             try:
                 new = convert_date(msg)
             except:
-                print "DateError: {} : {}".format(os.path.basename(file),msg[dfield])
+                print("DateError: {} : {}".format(os.path.basename(file),msg[dfield]))
                 continue
                 
             if not new:
-                print "DateError: {} : {}".format(os.path.basename(file),msg[dfield])
+                print("DateError: {} : {}".format(os.path.basename(file),msg[dfield]))
                 continue
                 
             if args.check or args.verbose:
-                print "{}: {} -> {}".format(os.path.basename(file),msg[dfield],new)
+                print("{}: {} -> {}".format(os.path.basename(file),msg[dfield],new))
             
             if not args.check:
                 # adjust headers
@@ -121,10 +121,10 @@ def main():
                 output = _classes.flatten_message(msg)
                 with open(file,'w') as out:
                     out.write(output)
-                os.chmod(file,0660)
+                os.chmod(file,0o660)
                 
     # print stats
-    print "Modified messages: {}".format(total)
+    print("Modified messages: {}".format(total))
 
 if __name__ == "__main__":
     main()

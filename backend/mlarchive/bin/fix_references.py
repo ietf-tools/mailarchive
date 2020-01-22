@@ -1,10 +1,10 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 """
 Script to locate and fix a specific thread of messages that have bracketed text
 in their references header which is causing failure of the threading function 
 """
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 from builtins import input
@@ -70,15 +70,15 @@ def main():
                 else:
                     new_refs.append(ref)
             new_references = ' '.join(new_refs)
-            print message.msgid
-            print old_references
-            print '-----------------'
-            print new_references
-            print '================='
-            input('Press enter to continue')
+            print(message.msgid)
+            print(old_references)
+            print('-----------------')
+            print(new_references)
+            print('=================')
+            eval(input('Press enter to continue'))
 
             if not args.check:
-                print 'saving...'
+                print('saving...')
                 # update db
                 message.references = new_references
                 message.save()
@@ -102,10 +102,10 @@ def main():
                 output = _classes.flatten_message(msg)
                 with open(file,'w') as out:
                     out.write(output)
-                os.chmod(file,0660)
+                os.chmod(file,0o660)
                 
     # print stats
-    print "Modified messages: {}".format(total)
+    print("Modified messages: {}".format(total))
 
 
 if __name__ == "__main__":

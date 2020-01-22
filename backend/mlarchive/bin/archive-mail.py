@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 This is the Mailman External Archive interface for the Email Archive.  It takes an email message
 on standard input and saves the message in the archive.  The message listname is required as the
@@ -6,7 +6,7 @@ first argument.  Use --public to specifiy a public list or --private to specify 
 The default is public.
 '''
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 

@@ -1,10 +1,10 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 This script reviews messages removed by corruption_remove and runs corruption check
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 from builtins import input
@@ -49,7 +49,7 @@ def exhibits_corruption(message):
         return True
     
     # any header field contains embedded from line
-    for k,v in message.items():
+    for k,v in list(message.items()):
         if EMBEDDED_FROM_PATTERN.match(v):
             #print "corrupt header: embedded from"
             return True
@@ -67,12 +67,12 @@ def main():
             message = email.message_from_file(fp)
         if not exhibits_corruption(message):
             uncorrupted.append(path)
-            print "not corrupt: {}".format(path)
+            print("not corrupt: {}".format(path))
             listname = path.split('/')[-3]
             call_command('load', path, listname=listname)
-            _ = input('Return to continue')
+            _ = eval(input('Return to continue'))
 
-    _ = input('Return to continue')
+    _ = eval(input('Return to continue'))
     for p in uncorrupted:
         ndir = os.path.dirname(os.path.dirname(p))
         nbase = os.path.basename(p)
@@ -80,8 +80,8 @@ def main():
         if os.path.exists(npath) and os.path.getsize(npath) == os.path.getsize(p):
             os.remove(p)
             
-    print "Reviewed: {}".format(len(lines))
-    print "Total unCorrupted: {}".format(len(uncorrupted))
+    print("Reviewed: {}".format(len(lines)))
+    print("Total unCorrupted: {}".format(len(uncorrupted)))
     
 if __name__ == "__main__":
     main()

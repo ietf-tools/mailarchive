@@ -1,10 +1,10 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 Script to gather some archive statistics and save them in a file for use on the console page.
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 

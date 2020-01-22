@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 
 '''
 Script to analyze apache logs of mail archive and gather statistics on response times
@@ -34,29 +34,29 @@ def main():
     args = parser.parse_args()
 
     with open(args.file) as file:
-        print "Inspecting %s" % args.file
+        print("Inspecting %s" % args.file)
         for line in file.readlines():
             parse_line(line, exclude=args.exclude)
 
-    data = filter(lambda x: x['path'].startswith('/arch/'), DATA)
+    data = [x for x in DATA if x['path'].startswith('/arch/')]
     response = sorted(data, key=lambda x: int(itemgetter("generation_time_sec")(x)), reverse=True)
 
     if args.urls:
         for line in data:
-            print "%s" % line['path']
+            print("%s" % line['path'])
         sys.exit()
 
     if args.exclude:
-        print "Excluded: {}".format(args.exclude)
-    print "Records processed: %d" % len(DATA)
-    print "Searches processed: %d" % len(data)
+        print("Excluded: {}".format(args.exclude))
+    print("Records processed: %d" % len(DATA))
+    print("Searches processed: %d" % len(data))
     nums = [int(x['generation_time_sec']) for x in response]
-    print nums[:25]
-    print "Mean: %s" % numpy.mean(nums)
-    print "Median: %s" % numpy.median(nums)
+    print(nums[:25])
+    print("Mean: %s" % numpy.mean(nums))
+    print("Median: %s" % numpy.median(nums))
 
     for item in response[:30]:
-        print "{} {}".format(item['path'], item['generation_time_sec'])
+        print("{} {}".format(item['path'], item['generation_time_sec']))
 
 
 if __name__ == "__main__":

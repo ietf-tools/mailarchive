@@ -1,11 +1,11 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 This is a utility script that handles loading multiple list archives.
 
 Note all archives will be loaded as public
 '''
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup(django_settings='mlarchive.settings.noindex')
 # -------------------------------------------------------------------------------------
 
@@ -33,10 +33,10 @@ def main():
     start_time = time.time()
 
     all = [ os.path.join(args.path,x) for x in os.listdir(args.path) ]
-    dirs = filter(os.path.isdir, all)
+    dirs = list(filter(os.path.isdir, all))
     
     for dir in dirs:
-        print 'Loading: %s' % dir
+        print('Loading: %s' % dir)
         
         # TODO: add option to load private lists
         private = False
@@ -52,14 +52,14 @@ def main():
         content.seek(0)
         output = content.read()
         results = ast.literal_eval(output)
-        for key,val in results.items():
+        for key,val in list(results.items()):
             stats[key] = stats.get(key,0) + val
 
     elapsed_time = int(time.time() - start_time)
-    items = [ '%s:%s' % (k,v) for k,v in stats.items() if k != 'time']
+    items = [ '%s:%s' % (k,v) for k,v in list(stats.items()) if k != 'time']
     items.append('Elapsed Time:%s' % str(datetime.timedelta(seconds=elapsed_time)))
     items.append('\n')
-    print '\n'.join(items)
+    print('\n'.join(items))
 
 if __name__ == "__main__":
     main()

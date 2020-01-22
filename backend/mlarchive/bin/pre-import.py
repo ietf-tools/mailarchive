@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 This script scans the MHonArc web archive, and creates a record in Legacy for each message
 (about 1.4 million as of 05-15-13).  This table in turn can be used by the initial import
@@ -7,13 +7,13 @@ work that was done purging spam from the web archives.  The Leagcy table will al
 for redirecting requests to the old archive to the new one.
 '''
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 
 from mlarchive.archive.models import *
 from email.utils import parseaddr
-import HTMLParser
+import html.parser
 import glob
 import mailbox
 import os
@@ -28,10 +28,10 @@ def main():
     PATTERN = re.compile(r'<!--X-Message-Id:\s+(.*)\s+-->')
     dirs = glob.glob('/a/www/ietf-mail-archive/web*/*/current/')
     #dirs = glob.glob('/a/www/ietf-mail-archive/web/pwe3/current/')
-    html_parser = HTMLParser.HTMLParser()
+    html_parser = html.parser.HTMLParser()
     for dir in sorted(dirs):
         listname = dir.split('/')[-3]
-        print "Importing %s" % listname
+        print("Importing %s" % listname)
         for fil in glob.glob(dir + 'msg?????.html'):
             count += 1
             with open(fil) as f:
@@ -52,17 +52,17 @@ def main():
 
                 try:
                     if found:
-                        u = unicode(msgid) # test for unknown encodings
+                        u = str(msgid) # test for unknown encodings
                         number = int(os.path.basename(fil)[3:8])
                         Legacy.objects.create(msgid=msgid,email_list_id=listname,number=number)
                     else:
                         raise Exception("No Message Id: %s" % fil)
                 except Exception as error:
-                    print "Import Error [{0}, {1}]".format(fil,error.args)
+                    print("Import Error [{0}, {1}]".format(fil,error.args))
                     errors += 1
-    print "Errors: %d" % errors
-    print "Files: %d" % count
-    print "NO IDs: %d" % noid
+    print("Errors: %d" % errors)
+    print("Files: %d" % count)
+    print("NO IDs: %d" % noid)
 
 if __name__ == "__main__":
     # debug version: treat warnings as errors

@@ -1,10 +1,10 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 """
 Script to scan through a maildir directory (or entire archive) find messages with
 no Date header, and add one.
 """
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 
@@ -56,14 +56,14 @@ def main():
     listname = ''
     for message in messages:
         if message.email_list.name != listname:
-            print '{}:{}'.format(listname,stat.get(listname,0))
+            print('{}:{}'.format(listname,stat.get(listname,0)))
             listname = message.email_list.name
 
         path = message.get_file_path()
         with open(path) as fp:
             msg = email.message_from_file(fp)
 
-        if msg.has_key('Date'):
+        if 'Date' in msg:
             continue
 
         stat[listname] = stat.get(listname,0) + 1
@@ -91,16 +91,16 @@ def main():
             output = _classes.flatten_message(msg)
             with open(path,'w') as out:
                 out.write(output)
-            os.chmod(path,0660)
+            os.chmod(path,0o660)
                 
     # print stats
-    print
-    for k,v in sorted(stat.items(), key=operator.itemgetter(1)):
-        print "{}:{}".format(k,v)
+    print()
+    for k,v in sorted(list(stat.items()), key=operator.itemgetter(1)):
+        print("{}:{}".format(k,v))
         
-    print
-    print "Total scanned: {}".format(scanned)
-    print "Missing date: {}".format(missing_date)
+    print()
+    print("Total scanned: {}".format(scanned))
+    print("Missing date: {}".format(missing_date))
 
 if __name__ == "__main__":
     main()

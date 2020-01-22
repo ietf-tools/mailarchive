@@ -17,11 +17,6 @@ def do_setup(django_settings=None):
     else:
         django_settings = DEFAULT_DJANGO_SETTINGS_MODULE
 
-    # Virtualenv support
-    virtualenv_activation = os.path.join(os.path.dirname(path), "env", "bin", "activate_this.py")
-    if os.path.exists(virtualenv_activation):
-        execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
-
     if not path in sys.path:
         sys.path.insert(0, path)
 

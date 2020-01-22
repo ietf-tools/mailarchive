@@ -1,12 +1,12 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 Script to test threading functions on archive.
 '''
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
-from __future__ import absolute_import, division, print_function, unicode_literals
+
 
 import argparse
 import time
@@ -21,7 +21,7 @@ def timeit(method):
         result = method(*args, **kw)
         te = time.time()
 
-        print('%r (%r, %r) %2.2f sec' % (method.__name__, args, kw, te - ts))
+        print(('%r (%r, %r) %2.2f sec' % (method.__name__, args, kw, te - ts)))
         return result
 
     return timed
@@ -47,10 +47,10 @@ def do_thread(elist, args):
         if c.is_empty():
             empty = empty + 1
 
-    print("Messages: {}, Containers: {}, Empty {}".format(
+    print(("Messages: {}, Containers: {}, Empty {}".format(
         queryset.count(),
         count,
-        empty))
+        empty)))
 
 
 def main():

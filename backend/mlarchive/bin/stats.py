@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 Script to output some stats about the archive.  Run from cron and email to someone:
 
@@ -7,7 +7,7 @@ MAILTO="rcross@amsl.com"
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ recs = Message.objects.filter(updated__gte=yesterday,updated__lt=today).count()
 output = subprocess.check_output(['delve','/a/mailarch/data/archive_index'])
 index = output.split('\n')[1].split()[-1]
 
-print 'mailmam posts: %d' % posts
-print 'db records: %d' % recs
-print 'index records: %s' % index
+print('mailmam posts: %d' % posts)
+print('db records: %d' % recs)
+print('index records: %s' % index)
 

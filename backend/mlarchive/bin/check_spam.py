@@ -1,11 +1,11 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 This script will scan messages in the archive, identify spam and remove it (move it
 to the _spam directory)
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 
@@ -68,8 +68,8 @@ def main():
             if args.remove:
                 message.delete()
 
-    for k,v in stat.items():
-        print "{}:{}".format(k,v)
+    for k,v in list(stat.items()):
+        print("{}:{}".format(k,v))
     
 if __name__ == "__main__":
     main()

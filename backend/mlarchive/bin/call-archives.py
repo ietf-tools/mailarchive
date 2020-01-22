@@ -1,5 +1,5 @@
-#!/usr/bin/python
-from __future__ import print_function
+#!../../../env/bin/python
+
 
 '''
 The purpose of this script is to allow mailman to use multiple archiving systems.

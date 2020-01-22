@@ -1,5 +1,5 @@
-#!/usr/bin/python
-from __future__ import print_function
+#!../../../env/bin/python
+
 
 '''
 Script to check for missing message files in the archive
@@ -7,7 +7,7 @@ Script to check for missing message files in the archive
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 import glob

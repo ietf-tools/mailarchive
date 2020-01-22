@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 Update secondary mbox archive with current messages
 
@@ -8,7 +8,7 @@ Example:
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 
@@ -30,7 +30,7 @@ def month_year_iter(start_month, start_year, end_month, end_year):
 
 def build_mbox(month, year, elist, verbose=False):
     if verbose:
-        print 'Building {:04d}-{:02d} {}'.format(year, month, elist.name)
+        print('Building {:04d}-{:02d} {}'.format(year, month, elist.name))
     queryset = elist.message_set.filter(date__month=month, date__year=year)
     if bool(queryset):
         create_mbox_file(month=month, year=year, elist=elist)

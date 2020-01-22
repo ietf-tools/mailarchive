@@ -1,10 +1,10 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 This script will recreate attachments for specified messages
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 
@@ -22,5 +22,5 @@ for pk in pks:
     mw._archive_message = message
     message.attachment_set.all().delete()
     mw.process_attachments()
-    print "MSG {}: {}".format(pk, message.attachment_set.all())
+    print("MSG {}: {}".format(pk, message.attachment_set.all()))
 

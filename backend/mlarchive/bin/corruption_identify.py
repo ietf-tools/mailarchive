@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 This script will identify various forms of mbox source file corruption.
 Some can be fixed using command line option, --fix, and some are marked via the
@@ -6,7 +6,7 @@ spam_score field.  See the handle_typeN functions below for details.
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 from builtins import range
@@ -18,7 +18,7 @@ import re
 import shutil
 from collections import deque
 from pprint import pprint
-from scan_utils import all_mboxs, is_mmdf
+from .scan_utils import all_mboxs, is_mmdf
 from mlarchive.archive.management.commands import _classes
 from mlarchive.archive.models import Message
 
@@ -76,7 +76,7 @@ def get_from_chunk(line):
     line"""
     match = EMBEDDED_FROM_PATTERN.match(line)
     if not match:
-        print "FROM PATTERN UNMATCHED: {}".format(line)
+        print("FROM PATTERN UNMATCHED: {}".format(line))
     return match.groups()[0]
 
 
@@ -95,7 +95,7 @@ def handle_type1(path, line, args):
     '''
     if args.type1:
         if args.verbose:
-            print "{}:{}".format(path, line)
+            print("{}:{}".format(path, line))
         if args.fix:
             basename = os.path.basename(path)
             assert TYPE1_FILE_RE.match(basename)
@@ -127,7 +127,7 @@ def handle_type2(path, line, args, last_two):
         if TYPE2_ID_RE.match(last_two[1]):
             STATS['type2_per_file'][path] = STATS['type2_per_file'].get(path, 0) + 1
         if args.verbose:
-            print "{}:{}".format(path, line)
+            print("{}:{}".format(path, line))
             pprint(last_two)
         if args.fix:
             # these were fixed with sed a command
@@ -153,7 +153,7 @@ def handle_type3(path, index, args):
     try:
         start = find_top(lines, index)
     except IndexError:
-        print "top not found: {}.{}".format(path, index)
+        print("top not found: {}.{}".format(path, index))
         STATS['type3_errors'] += 1
         return
 
@@ -166,24 +166,24 @@ def handle_type3(path, index, args):
     # use TOC to find message in mailbox
     mb = _classes.get_mb(path)
     mb._generate_toc()
-    for k, v in mb._toc.items():
+    for k, v in list(mb._toc.items()):
         if v[0] == begin_byte:
             toc_index = k
             break
     else:
-        print "no match to {}".format(begin_byte)
+        print("no match to {}".format(begin_byte))
         return
 
     # match to messages in archive
     if args.verbose:
-        print "toc index: {}".format(toc_index)
+        print("toc index: {}".format(toc_index))
     mw = _classes.MessageWrapper(mb[toc_index], listname)
     try:
         message = Message.objects.get(email_list__name=listname,
             msgid=mw.archive_message.msgid)
         mark_messages(message)
     except Message.DoesNotExist:
-        print "failed, {}:{}".format(listname, mw.archive_message.msgid)
+        print("failed, {}:{}".format(listname, mw.archive_message.msgid))
         STATS['type3_missing'] += 1
 
 
@@ -210,7 +210,7 @@ def process_mbox(path, args):
                 STATS['type3_per_list'][listname] = STATS['type3_per_list'].get(listname, 0) + 1
                 efcount += 1
                 if args.verbose:
-                    print "{}:{}:{}".format(listname, num + 1, line)
+                    print("{}:{}:{}".format(listname, num + 1, line))
                 handle_type3(path, num, args)
     TOTAL_EFCOUNT = TOTAL_EFCOUNT + efcount
 
@@ -241,7 +241,7 @@ def process_mmdf(path, args):
                     handle_type2(path, num, args, last_two)
                 else:
                     if args.verbose:
-                        print "{}:{}".format(path, num)
+                        print("{}:{}".format(path, num))
                         pprint(last_two)
                     STATS['unhandled'] += 1
 
@@ -293,19 +293,19 @@ def main():
         else:
             process_mbox(mbox, args)
 
-    print "Total Embedded From Lines: {}".format(TOTAL_EFCOUNT)
+    print("Total Embedded From Lines: {}".format(TOTAL_EFCOUNT))
 
     # print stats
     exceptions = ['type2_files', 'type3_files', 'type3_per_list']  # don't print these stats
-    items = ['%s:%s' % (k, v) for k, v in STATS.items() if k not in exceptions]
+    items = ['%s:%s' % (k, v) for k, v in list(STATS.items()) if k not in exceptions]
     items.append('\n')
-    print '\n'.join(items)
-    print
+    print('\n'.join(items))
+    print()
     # print '\n'.join(STATS['type3_files'])
-    print "Total: {}".format(len(STATS['type3_files']))
-    out = sorted(STATS['type3_per_list'].items(), key=operator.itemgetter(1))
+    print("Total: {}".format(len(STATS['type3_files'])))
+    out = sorted(list(STATS['type3_per_list'].items()), key=operator.itemgetter(1))
     for k, v in out:
-        print "{}:{}".format(k, v)
+        print("{}:{}".format(k, v))
 
 
 if __name__ == "__main__":

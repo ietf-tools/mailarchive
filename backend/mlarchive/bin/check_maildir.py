@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 Given a maildir archive directory and listname this script
 will check for each message in the archive db.
@@ -8,7 +8,7 @@ Example
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 
@@ -31,9 +31,9 @@ def check_archive(msg,elist):
     msgid = msgid.strip('<>')
     try:
         Message.objects.get(email_list=elist,msgid=msgid)
-        print "Found: {}".format(msgid)
+        print("Found: {}".format(msgid))
     except:
-        print "Missing: {} {} {}".format(msg['date'][:17],msg['subject'][:10],msgid)
+        print("Missing: {} {} {}".format(msg['date'][:17],msg['subject'][:10],msgid))
 
 def main():
     parser = argparse.ArgumentParser(description='Check maildir contents in archive')

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!../../../env/bin/python
 '''
 This script iterates over Legacy records for one list or all and populates the 
 Message.legacy field to allow redirection of old archive URLs.
@@ -9,7 +9,7 @@ get_legacy_numbers.py testlist
 
 '''
 # Standalone broilerplate -------------------------------------------------------------
-from django_setup import do_setup
+from .django_setup import do_setup
 do_setup(django_settings='mlarchive.settings.noindex')
 # -------------------------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ def process(query):
         except Message.DoesNotExist:
             pass
         except Message.MultipleObjectsReturned:
-            print "Warning: MultipleObjectsReturned {}:{}".format(legacy.email_list_id.name, legacy.msgid)
+            print("Warning: MultipleObjectsReturned {}:{}".format(legacy.email_list_id.name, legacy.msgid))
 
 def main():
     aparser = argparse.ArgumentParser(description='Migrate legacy numbers')
@@ -38,10 +38,10 @@ def main():
     args = aparser.parse_args()
     
     if args.check:
-        print "Check only..."
+        print("Check only...")
 
     if args.list:
-        print "List: {}".format(args.list)
+        print("List: {}".format(args.list))
         query = Legacy.objects.filter(email_list_id=args.list)
 
     else:
@@ -49,7 +49,7 @@ def main():
 
     process(query)
 
-    print "{} records processed.".format(query.count())
+    print("{} records processed.".format(query.count()))
 
 if __name__ == "__main__":
     main()

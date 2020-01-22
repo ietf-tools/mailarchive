@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import datetime
 
@@ -43,7 +43,7 @@ def fix_threads(apps, schema_editor):
     for message in messages:
         thread = get_references_or_reply_to_thread(apps, message)
         if thread and message.thread != thread:
-            print "ID: {}-{}. {} => {}".format(message.id, message.email_list.name, message.thread.id, thread.id)
+            print("ID: {}-{}. {} => {}".format(message.id, message.email_list.name, message.thread.id, thread.id))
             abandoned_threads.add(message.thread)
             modified_threads.add(thread)
             message.thread = thread
@@ -52,16 +52,16 @@ def fix_threads(apps, schema_editor):
     # remove empty threads
     for thread in abandoned_threads:
         if thread.message_set.count() == 0:
-            print "Removing empty thread: {}".format(thread)
+            print("Removing empty thread: {}".format(thread))
             thread.delete()
 
     # recompute modified threads
     for thread in modified_threads:
-        print "Recomputing thread: {}".format(thread)
+        print("Recomputing thread: {}".format(thread))
         compute_thread(thread)
 
-    print "Removed threads: {}".format(len(abandoned_threads))
-    print "Modified threads: {}".format(len(modified_threads))
+    print("Removed threads: {}".format(len(abandoned_threads)))
+    print("Modified threads: {}".format(len(modified_threads)))
 
 
 def reverse_fix_threads(apps, schema_editor):

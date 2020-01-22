@@ -38,19 +38,20 @@ def test_ajax_get_msg(client, admin_client, admin_user):
             os.makedirs(os.path.dirname(m.get_file_path()))
         shutil.copyfile(path, m.get_file_path())
 
-    url = '%s/?id=%s' % (reverse('ajax_get_msg'), msg.pk)
+    url = '%s?id=%s' % (reverse('ajax_get_msg'), msg.pk)
     response = client.get(url)
+    print(url)
     assert response.status_code == 200
     print(type(response.content))
     assert response.content.find(b'This is a test') != -1
 
     # test unauthorized access to restricted Message
-    url = '%s/?id=%s' % (reverse('ajax_get_msg'), primsg.pk)
+    url = '%s?id=%s' % (reverse('ajax_get_msg'), primsg.pk)
     response = client.get(url)
     assert response.status_code == 403
 
     # test authorized access to restricted Message
-    url = '%s/?id=%s' % (reverse('ajax_get_msg'), primsg.pk)
+    url = '%s?id=%s' % (reverse('ajax_get_msg'), primsg.pk)
     response = admin_client.get(url)
     assert response.status_code == 200
 
@@ -59,7 +60,7 @@ def test_ajax_get_msg(client, admin_client, admin_user):
 def test_ajax_get_msg_thread_links(client, thread_messages):
     print(Message.objects.count())
     msg = Message.objects.get(msgid='00002@example.com')
-    url = '%s/?id=%s' % (reverse('ajax_get_msg'), msg.pk)
+    url = '%s?id=%s' % (reverse('ajax_get_msg'), msg.pk)
     response = client.get(url)
     assert response.status_code == 200
 
@@ -73,7 +74,7 @@ def test_ajax_get_messages(client, messages, settings):
     settings.CACHES = {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
 
     # run initial query to setup cache
-    url = '%s/?email_list=pubone&email_list=pubtwo' % reverse('archive_search')
+    url = '%s?email_list=pubone&email_list=pubtwo' % reverse('archive_search')
     response = client.get(url)
     assert response.status_code == 200
     # for x in response.context['results']:
@@ -86,20 +87,20 @@ def test_ajax_get_messages(client, messages, settings):
     print(cache.get(id))
 
     # test successful get_messages call
-    url = '%s/?qid=%s&referenceitem=2&direction=next' % (reverse('ajax_messages'), id)
+    url = '%s?qid=%s&referenceitem=2&direction=next' % (reverse('ajax_messages'), id)
     response = client.get(url)
     assert response.status_code == 200
     q = PyQuery(response.content)
     assert len(q('.xtr')) > 1
 
     # test end of results
-    url = '%s/?qid=%s&referenceitem=40&direction=next' % (reverse('ajax_messages'), id)
+    url = '%s?qid=%s&referenceitem=40&direction=next' % (reverse('ajax_messages'), id)
     response = client.get(url)
     assert response.status_code == 204
 
     # test expired cache
     cache.delete(id)
-    url = '%s/?qid=%s&referenceitem=20&direction=next' % (reverse('ajax_messages'), id)
+    url = '%s?qid=%s&referenceitem=20&direction=next' % (reverse('ajax_messages'), id)
     response = client.get(url)
     assert response.status_code == 404
 
@@ -110,7 +111,7 @@ def test_ajax_messages_security(client, messages):
     messages = messages.filter(email_list__name='private').order_by('-date')
     message = messages.first()
     assert messages.count() > 1
-    url = '{}/?qid=&referenceitem=1&browselist=pubone&referenceid={}&gbt=&direction=next'.format(
+    url = '{}?qid=&referenceitem=1&browselist=pubone&referenceid={}&gbt=&direction=next'.format(
         reverse('ajax_messages'), message.pk)
     response = client.get(url)
     assert response.status_code == 204
@@ -119,7 +120,7 @@ def test_ajax_messages_security(client, messages):
 @pytest.mark.django_db(transaction=True)
 def test_ajax_get_messages_browse(client, messages):
     message = messages.filter(email_list__name='pubone').order_by('-date').first()
-    url = '{}/?qid=&referenceitem=1&browselist=pubone&referenceid={}&gbt=&direction=next'.format(
+    url = '{}?qid=&referenceitem=1&browselist=pubone&referenceid={}&gbt=&direction=next'.format(
         reverse('ajax_messages'), message.pk)
     response = client.get(url)
     assert response.status_code == 200
@@ -130,7 +131,7 @@ def test_ajax_get_messages_browse(client, messages):
 def test_ajax_get_messages_browse_private_unauth(client, messages):
     '''Test that unauthorized person cannot retrieve private messages'''
     message = messages.filter(email_list__name='private').order_by('-date').first()
-    url = '{}/?qid=&referenceitem=1&browselist=private&referenceid={}&gbt=&direction=next'.format(
+    url = '{}?qid=&referenceitem=1&browselist=private&referenceid={}&gbt=&direction=next'.format(
         reverse('ajax_messages'), message.pk)
     response = client.get(url)
     assert response.status_code == 403
@@ -141,7 +142,7 @@ def test_ajax_get_messages_browse_gbt(client, messages):
     threads = Thread.objects.filter(email_list__name='pubone').order_by('-date')
     messages = threads[1].message_set.all().order_by('thread_order')
     last_message = threads[0].message_set.all().order_by('thread_order').last()
-    url = '{}/?qid=&referenceitem=1&browselist=pubone&referenceid={}&gbt=1&direction=next'.format(
+    url = '{}?qid=&referenceitem=1&browselist=pubone&referenceid={}&gbt=1&direction=next'.format(
         reverse('ajax_messages'), last_message.pk)
     response = client.get(url)
     assert response.status_code == 200
@@ -155,7 +156,7 @@ def test_ajax_get_messages_browse_gbt(client, messages):
 def test_ajax_get_messages_browse_so(client, messages):
     messages = messages.filter(email_list__name='apple').order_by('frm')
     last_message = messages[2]
-    url = '{}/?qid=&referenceitem=3&browselist=apple&referenceid={}&so=frm&direction=next'.format(
+    url = '{}?qid=&referenceitem=3&browselist=apple&referenceid={}&so=frm&direction=next'.format(
         reverse('ajax_messages'), last_message.pk)
     response = client.get(url)
     assert response.status_code == 200
@@ -167,7 +168,7 @@ def test_ajax_get_messages_browse_so(client, messages):
 def test_get_query_results(client, messages, settings):
     settings.CACHES = {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
     # run initial query to setup cache
-    url = '%s/?email_list=pubthree&so=-date' % reverse('archive_search')
+    url = '%s?email_list=pubthree&so=-date' % reverse('archive_search')
     response = client.get(url)
     print(response.content)
     assert response.status_code == 200

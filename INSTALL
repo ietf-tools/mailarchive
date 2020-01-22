@@ -24,7 +24,7 @@ General Instructions for Deployment of a New Release
 
     Optionally set up a Python virtual environment::
 
-      virtualenv env 
+      python3 -m venv env 
       source env/bin/activate               
 
  4. Install requirements (make sure your pip is reasonably fresh first).
@@ -33,9 +33,9 @@ General Instructions for Deployment of a New Release
 
       pip install -I -r requirements.txt
 
- 5. Change into the directory of the new release and run migrations::
+ 5. Run migrations::
 
-      cd $releasenumber
+      cd backend
       export PYTHONPATH=$PWD 
       django-admin.py migrate --settings=mlarchive.settings.production
 

@@ -36,7 +36,7 @@ def fix_encoded_words(apps, schema_editor):
             line = f.readline()
 
     for pk in pks:
-        print "Processing: %s" % pk
+        print(("Processing: %s" % pk))
         message = Message.objects.get(pk=pk)
         for db_header, header in (('frm', 'from'), ('subject', 'subject')):
             msg = email.message_from_string(get_body_raw(message))
@@ -49,7 +49,7 @@ def fix_encoded_words(apps, schema_editor):
                         message.base_subject = get_base_subject(text)
                     message.save()
 
-    print "%s Messages fixed" % count
+    print(("%s Messages fixed" % count))
 
 
 def get_body_raw(message):

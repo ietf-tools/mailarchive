@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 import re
 
@@ -52,8 +52,8 @@ def get_replies(apps, schema_editor):
                     message.save()
                 except ValueError:
                     import sys
-                    print "message:{}:{}".format(message.pk, type(message))
-                    print "reply_message:{}:{}".format(reply_message.pk, type(reply_message))
+                    print(("message:{}:{}".format(message.pk, type(message))))
+                    print(("reply_message:{}:{}".format(reply_message.pk, type(reply_message))))
                     sys.exit()
 
 

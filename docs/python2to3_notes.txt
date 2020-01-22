@@ -3,11 +3,13 @@ x bs4
 x raw_input
 x except as
 x xrange
+x htauth replace w/ passlib
+- execfile removed
 - from builtins import dict, str
+- dict.keys(), dict.values(), dict.items()
 - HTMLParser
 - urllib -> requests
 - urllib parse
-- dict.keys(), dict.values(), dict.items()
 - print function
 - unicode_literals
 - basestring
@@ -15,7 +17,6 @@ x xrange
 - StringIO
 - open -> io.open
 - super
-- htauth replace w/ passlib
 - python 3 bytesparser
 '''
 

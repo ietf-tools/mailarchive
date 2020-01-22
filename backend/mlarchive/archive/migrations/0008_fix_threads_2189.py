@@ -6,7 +6,7 @@ NOTE: run with --settings=noindex and update_index after completion
 '''
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
+
 
 import datetime
 
@@ -34,9 +34,9 @@ def fix_threads(apps, schema_editor):
             else:
                 continue
 
-            print "Moving message:{} from thread:{} to thread:{}".format(msg.pk, thread.pk, found_thread.pk)
+            print("Moving message:{} from thread:{} to thread:{}".format(msg.pk, thread.pk, found_thread.pk))
             if thread == found_thread:
-                print "WARNING: same thread"
+                print("WARNING: same thread")
                 continue
             total = total + 1
             for message in thread.message_set.all():
@@ -46,7 +46,7 @@ def fix_threads(apps, schema_editor):
             assert thread.message_set.count() == 0
             thread.delete()
 
-    print "Total: {}".format(total)
+    print("Total: {}".format(total))
 
 
 def reverse_fix_threads(apps, schema_editor):

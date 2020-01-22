@@ -3,9 +3,12 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from django import template
 from django.conf import settings
 from django.utils.safestring import mark_safe
-from django.utils.http import urlquote_plus
+from django.utils.http import urlquote_plus, urlencode
 
 register = template.Library()
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 # --------------------------------------------------
@@ -194,31 +197,25 @@ class QueryStringNode(template.Node):
         p = {}
         for k, v in context["request"].GET.items():
             p[k] = v
-        return get_query_string(p, self.add, self.remove, context)
+        return get_query_string(p, self.add, self.remove)
 
-
-def get_query_string(p, new_params, remove, context):
-    """
-    Add and remove query parameters. From `django.contrib.admin`.
-    """
+def get_query_string(p, new_params=None, remove=None):
+    if new_params is None:
+        new_params = {}
+    if remove is None:
+        remove = []
+    #p = self.params.copy()
     for r in remove:
         for k in list(p):
             if k.startswith(r):
                 del p[k]
     for k, v in new_params.items():
-        if k in p and v is None:
-            del p[k]
-        elif v is not None:
+        if v is None:
+            if k in p:
+                del p[k]
+        else:
             p[k] = v
-
-    for k, v in p.items():
-        try:
-            p[k] = template.Variable(v).resolve(context)
-        except:  # noqa
-            p[k] = v
-
-    return mark_safe('?' + '&amp;'.join([u'%s=%s' % (urlquote_plus(k), urlquote_plus(v)) for k, v in p.items()]))
-
+    return '?%s' % urlencode(sorted(p.items()))
 
 # Taken from lib/utils.py
 def string_to_dict(string):

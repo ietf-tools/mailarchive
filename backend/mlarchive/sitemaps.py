@@ -1,6 +1,6 @@
 # sitemaps.py
 from django.contrib import sitemaps
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from mlarchive.archive.models import EmailList, Message
 

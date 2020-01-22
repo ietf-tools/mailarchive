@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+
 
 from django.db import models, migrations
 import django.db.models.deletion
@@ -74,7 +74,7 @@ class Migration(migrations.Migration):
                 ('subject', models.CharField(max_length=512, blank=True)),
                 ('to', models.TextField(default=b'', blank=True)),
                 ('updated', models.DateTimeField(auto_now=True)),
-                ('email_list', models.ForeignKey(to='archive.EmailList')),
+                ('email_list', models.ForeignKey(to='archive.EmailList',on_delete=django.db.models.deletion.SET_NULL)),
             ],
             options={
             },
@@ -99,13 +99,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='message',
             name='thread',
-            field=models.ForeignKey(to='archive.Thread'),
+            field=models.ForeignKey(to='archive.Thread',on_delete=django.db.models.deletion.SET_NULL),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='attachment',
             name='message',
-            field=models.ForeignKey(to='archive.Message'),
+            field=models.ForeignKey(to='archive.Message',on_delete=django.db.models.deletion.SET_NULL),
             preserve_default=True,
         ),
     ]

@@ -132,6 +132,8 @@ def test_asf_search_simple_query(client, messages):
 @pytest.mark.django_db(transaction=True)
 def test_asf_search_email_list(client, messages):
     url = reverse('archive_search') + '?email_list=pubone&as=1'
+    print(url)
+    print(type(url))
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']

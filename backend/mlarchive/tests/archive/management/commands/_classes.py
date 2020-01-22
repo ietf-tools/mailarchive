@@ -55,13 +55,13 @@ This is a test email.  database
     # ensure message in db
     assert Message.objects.all().count() == 1
     # ensure message in index
-    url = '%s/?q=database' % reverse('archive_search')
+    url = '%s?q=database' % reverse('archive_search')
     response = client.get(url)
     assert len(response.context['results']) == 1
     # ensure message on disk
     # TODO
     # test that thread date is correct in index
-    url = reverse('archive_search') + '/?q=tdate:20131107175455'
+    url = reverse('archive_search') + '?q=tdate:20131107175455'
     assert len(response.context['results']) == 1
 
 
@@ -124,7 +124,7 @@ def test_archive_message_encoded_word(client):
     # ensure message in db
     assert Message.objects.all().count() == 1
     # ensure message in index
-    url = '%s/?q=encoded' % reverse('archive_search')
+    url = '%s?q=encoded' % reverse('archive_search')
     response = client.get(url)
     assert len(response.context['results']) == 1
     message = Message.objects.first()
@@ -144,7 +144,7 @@ def test_archive_message_encoded_word_alternate(client):
     # ensure message in db
     assert Message.objects.all().count() == 1
     # ensure message in index
-    url = '%s/?q=encoded' % reverse('archive_search')
+    url = '%s?q=encoded' % reverse('archive_search')
     response = client.get(url)
     assert len(response.context['results']) == 1
     message = Message.objects.first()
@@ -161,7 +161,7 @@ def test_archive_message_encoded_word_high_plane(client):
     # ensure message in db
     assert Message.objects.all().count() == 1
     # ensure message in index
-    url = '%s/?q=encoded' % reverse('archive_search')
+    url = '%s?q=encoded' % reverse('archive_search')
     response = client.get(url)
     assert len(response.context['results']) == 1
     message = Message.objects.first()

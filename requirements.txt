@@ -7,9 +7,10 @@ beautifulsoup4
 celery>=4.0,<5.0
 cloudflare>=2.1.0
 cryptography
-Django>=1.11,<2.0
+Django
+Django>=2.0,<3.0
 django-appconf		# 0.6 was installed
-django-bootstrap4==0.0.7    # upgrade to 1.0 after Python 3
+django-bootstrap4
 django-debug-toolbar>=1.7
 django-widget-tweaks>=1.3
 django-haystack==2.8.1
@@ -19,11 +20,13 @@ factory-boy>=2.6.0
 flower
 html5lib
 lxml>=3.3.5
+# mysqlclient==1.3.14     # stay with this until on Django 2
 mysqlclient
 mock>=2.0.0
+passlib
 pyopenssl
-pyquery>=1.2.13
-pytest>=3.0.0,<4.0.0
+pyquery
+pytest
 pytest-cov>=2.5.1
 pytest-flakes
 pytest-pycodestyle

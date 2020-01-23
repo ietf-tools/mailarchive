@@ -163,15 +163,18 @@ celery -A mlarchive flower</pre>
     <a href="http://{{ request.META.HTTP_HOST }}:5555/">Celery Management</a><br>
 
     Troubleshooting: ensure perms correct on /var/log/mail-archive/mlarchive.log<br>
-    Troubleshooting: run worker manually to check for errors
+    Troubleshooting: inspect log, run worker manually to check for errors
     <pre>> Starting nodes...
 > worker1@ietfa.amsl.com: * Child terminated with errorcode 255
 FAILED
 
+# journalctl --unit=celeryd
+
 # su - nobody
-$ cd /a/mailarch/current
+$ cd /a/mailarch/current/backend
 $ export PYTHONPATH=$PWD
-$ celery worker -A mlarchive.celeryapp:app</pre>
+$ export DJANGO_SETTINGS_MODULE=mlarchive.settings.production
+$ /a/mailarch/current/env/bin/celery worker -A mlarchive.celeryapp:app</pre>
     <br>
     Solutions for Log File Errors:<br>
     DatabaseOpeningError: check perms on database files<br>

@@ -118,10 +118,10 @@ class Generator:
         - first decode using Content-Transfer-Encoding
         - then decode using the Content-Type charset or DEFAULT_CHARSET
         """
-        # charset = part.get_content_charset()
-        # payload = part.get_payload(decode=True)
-        # return decode_safely(payload, charset)
-        return part.get_payload()
+        charset = part.get_content_charset()
+        payload = part.get_payload(decode=True)
+        return decode_safely(payload, charset)
+        # return part.get_payload()
 
     # multipart handlers ----------------------------------------------------------
 

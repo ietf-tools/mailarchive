@@ -564,7 +564,7 @@ class Loader(object):
         try:
             mw = MessageWrapper(msg, self.listname, private=self.private)
         except Exception as e:
-            print((self.filename))
+            print(self.filename)
             raise
             # import sys
             # raise e.with_traceback(sys.exc_info()[2])

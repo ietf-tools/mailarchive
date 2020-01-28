@@ -6,7 +6,7 @@ spam_score field.  See the handle_typeN functions below for details.
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from .django_setup import do_setup
+from django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 from builtins import range
@@ -18,7 +18,7 @@ import re
 import shutil
 from collections import deque
 from pprint import pprint
-from .scan_utils import all_mboxs, is_mmdf
+from scan_utils import all_mboxs, is_mmdf
 from mlarchive.archive.management.commands import _classes
 from mlarchive.archive.models import Message
 

@@ -5,7 +5,7 @@ This is a utility script that handles loading multiple list archives.
 Note all archives will be loaded as public
 '''
 # Standalone broilerplate -------------------------------------------------------------
-from .django_setup import do_setup
+from django_setup import do_setup
 do_setup(django_settings='mlarchive.settings.noindex')
 # -------------------------------------------------------------------------------------
 

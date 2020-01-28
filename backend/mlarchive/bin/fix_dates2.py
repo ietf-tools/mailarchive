@@ -4,7 +4,7 @@ Script to scan through a maildir directory (or entire archive) find messages wit
 no Date header, and add one.
 """
 # Standalone broilerplate -------------------------------------------------------------
-from .django_setup import do_setup
+from django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 

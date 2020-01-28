@@ -7,7 +7,7 @@ Locate threads that don't have a "first" value and fix
 
 '''
 # Standalone broilerplate -------------------------------------------------------------
-from .django_setup import do_setup
+from django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 

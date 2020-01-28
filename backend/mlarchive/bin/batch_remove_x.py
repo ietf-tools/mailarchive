@@ -13,10 +13,10 @@ References:
 https://trac.xapian.org/wiki/FAQ/UniqueIds
 '''
 # Standalone broilerplate -------------------------------------------------------------
-from .django_setup import do_setup
+from django_setup import do_setup
 do_setup(django_settings='mlarchive.settings.noindex')
 # -------------------------------------------------------------------------------------
-
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import argparse
 import os
@@ -36,7 +36,7 @@ def remove_messages(messages):
     database.delete_document().  These index actions will be batched by Xapian.  Then
     delete the messages from the db, filesystem
     '''
-    print(('Deleting {} messages.'.format(messages.count())))
+    print('Deleting {} messages.'.format(messages.count()))
     database = xapian.WritableDatabase(settings.HAYSTACK_XAPIAN_PATH, xapian.DB_OPEN)
     for message in messages:
         idterm = 'Qarchive.message.{pk}'.format(pk=message.pk)

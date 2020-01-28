@@ -5,7 +5,7 @@ header, see regex, and replace with proper format.  Original date header is save
 as X-Date, and original file is saved in a backup directory.
 """
 # Standalone broilerplate -------------------------------------------------------------
-from .django_setup import do_setup
+from django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 

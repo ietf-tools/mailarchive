@@ -5,7 +5,7 @@ For best performance set HAYSTACK_ITERATOR_LOAD_PRE_QUERY = 10000
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from .django_setup import do_setup
+from django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 
@@ -51,7 +51,7 @@ def main():
 
     print(count)
     for k, v in list(stat.items()):
-        print(("{}:{}".format(k, v)))
+        print("{}:{}".format(k, v))
 
 
 if __name__ == "__main__":

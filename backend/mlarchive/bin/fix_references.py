@@ -4,7 +4,7 @@ Script to locate and fix a specific thread of messages that have bracketed text
 in their references header which is causing failure of the threading function 
 """
 # Standalone broilerplate -------------------------------------------------------------
-from .django_setup import do_setup
+from django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 from builtins import input

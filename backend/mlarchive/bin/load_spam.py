@@ -11,7 +11,7 @@ score FH_DATE_IS_19XX 0.1   # lower score of two digit date
 
 """
 # Standalone broilerplate -------------------------------------------------------------
-from .django_setup import do_setup
+from django_setup import do_setup
 do_setup(django_settings='mlarchive.settings.noindex')
 # -------------------------------------------------------------------------------------
 

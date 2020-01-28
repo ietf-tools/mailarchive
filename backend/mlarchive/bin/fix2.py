@@ -6,7 +6,7 @@ Based on a short survey we are assuming Received lines immediately follow
 envelope.  We use the "From:" header to signify done reading Received lines.
 '''
 # Standalone broilerplate -------------------------------------------------------------
-from .django_setup import do_setup
+from django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 

@@ -4,7 +4,7 @@ Quick dump of subject lines, listid_true.txt and listid_false.txt
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from .django_setup import do_setup
+from django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 

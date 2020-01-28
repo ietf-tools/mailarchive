@@ -4,7 +4,7 @@ Script to gather some archive statistics and save them in a file for use on the 
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from .django_setup import do_setup
+from django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 

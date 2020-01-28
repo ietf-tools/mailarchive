@@ -4,7 +4,7 @@ This script reviews messages marked with spam_score bit 16 and removes messages 
 archive that exhibit signs of corruption
 '''
 # Standalone broilerplate -------------------------------------------------------------
-from .django_setup import do_setup
+from django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 from builtins import input

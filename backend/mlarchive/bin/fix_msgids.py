@@ -4,7 +4,7 @@ Script to scan through archive and identify messages that have archive generated
 msgid, then add that id to the message file on disk.
 """
 # Standalone broilerplate -------------------------------------------------------------
-from .django_setup import do_setup
+from django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 

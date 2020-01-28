@@ -3,7 +3,7 @@
 Script to scan through archive of mbox files and produce a spam report.
 """
 # Standalone broilerplate -------------------------------------------------------------
-from .django_setup import do_setup
+from django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 

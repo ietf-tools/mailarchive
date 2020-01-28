@@ -7,7 +7,7 @@ work that was done purging spam from the web archives.  The Leagcy table will al
 for redirecting requests to the old archive to the new one.
 '''
 # Standalone broilerplate -------------------------------------------------------------
-from .django_setup import do_setup
+from django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 

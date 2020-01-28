@@ -4,7 +4,7 @@ This script reviews messages removed by corruption_remove and runs corruption ch
 '''
 
 # Standalone broilerplate -------------------------------------------------------------
-from .django_setup import do_setup
+from django_setup import do_setup
 do_setup()
 # -------------------------------------------------------------------------------------
 from builtins import input

@@ -72,7 +72,7 @@ class Thread(models.Model):
     # first message in thread, by date
     first = models.ForeignKey('Message', on_delete=models.SET_NULL, related_name='thread_key', blank=True, null=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return str(self.id)
 
     def get_snippet(self):
@@ -110,7 +110,7 @@ class EmailList(models.Model):
     private = models.BooleanField(default=False, db_index=True)
     updated = models.DateTimeField(auto_now=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     @staticmethod
@@ -165,7 +165,7 @@ class Message(models.Model):
     class Meta:
         indexes = [models.Index(fields=['email_list', 'date'])]
 
-    def __unicode__(self):
+    def __str__(self):
         return self.msgid
 
     def as_html(self):
@@ -432,7 +432,7 @@ class Attachment(models.Model):
     content_disposition = models.CharField(max_length=150, blank=True, null=True)
     sequence = models.PositiveSmallIntegerField(default=1)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def get_absolute_url(self):
@@ -455,5 +455,5 @@ class Legacy(models.Model):
     msgid = models.CharField(max_length=240, db_index=True)
     number = models.IntegerField()
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s:%s' % (self.email_list_id, self.msgid)

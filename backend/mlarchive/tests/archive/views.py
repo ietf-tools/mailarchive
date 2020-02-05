@@ -519,6 +519,18 @@ def test_attachment(client, attachment_messages_no_index):
     assert response['Content-Disposition'] == 'attachment; filename=skip32.c'
     assert 'unsigned' in smart_text(response.content)
 
+@pytest.mark.django_db(transaction=True)
+def test_attachment_bad_sequence(client, attachment_messages_no_index):
+    elist = EmailListFactory.create()
+    msg = MessageFactory.create(email_list=elist)
+    url = reverse('archive_detail', kwargs={'list_name': elist.name, 'id': msg.hashcode})
+    response = client.get(url + 'xyz)/')
+    assert response.status_code == 404
+
+    # message = Message.objects.get(msgid='attachment')
+    # attachment = message.attachment_set.first()
+    # response = client.get(url)
+    # assert response.status_code == 404
 
 @pytest.mark.django_db(transaction=True)
 def test_attachment_folded_name(client, attachment_messages_no_index):

@@ -37,7 +37,7 @@ urlpatterns = [
     # url(r'^msg/(?P<list_name>[a-z0-9_\-\+]+)/(?P<id>[a-zA-Z0-9_\-]+)(=)?(/)?$', views.detail, name='archive_detail'),
     # url(r'^msg/(?P<list_name>[a-z0-9_\-\+]+)/(?P<id>[a-zA-Z0-9_\-]+)(=)?/(?P<sequence>\d+)(/)?$', views.attachment, name='a
     path('msg/<list_name>/<id>/', views.detail, name='archive_detail'),
-    path('msg/<list_name>/<id>/<sequence>/', views.attachment, name='archive_attachment'),
+    path('msg/<list_name>/<id>/<int:sequence>/', views.attachment, name='archive_attachment'),
     path('search/', search_view_factory(
         form_class=AdvancedSearchForm,
         view_class=views.CustomSearchView,

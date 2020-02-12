@@ -306,13 +306,6 @@ LOGGING = {
             'formatter': 'simple',
             'class': 'logging.handlers.WatchedFileHandler',
             'filename': LOG_FILE,
-        },
-        'archive-mail_file_handler':
-        {
-            'level': 'DEBUG',
-            'formatter': 'simple',
-            'class': 'logging.handlers.WatchedFileHandler',
-            'filename': os.path.join(LOG_DIR, 'archive-mail.log'),
         }
     },
     'loggers': {

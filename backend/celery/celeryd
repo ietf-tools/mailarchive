@@ -25,4 +25,4 @@ CELERYD_LOG_LEVEL="INFO"
 
 # Custom for Django App
 DJANGO_SETTINGS_MODULE="mlarchive.settings.production"
-PYTHONPATH=/a/mailarch/current
+PYTHONPATH=/a/mailarch/current/backend

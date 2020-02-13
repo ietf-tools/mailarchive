@@ -1,24 +1,18 @@
 #!/a/mailarch/current/env/bin/python
-from __future__ import print_function
 
 '''
 The purpose of this script is to allow mailman to use multiple archiving systems.
-The script should be configured in mm_cfg.py as follows:
 
-PUBLIC_EXTERNAL_ARCHIVER = '/a/ietf/scripts/call-archives.py %(listname)s --public'
-PRIVATE_EXTERNAL_ARCHIVER = '/a/ietf/scripts/call-archives.py %(listname)s --private'
+The script takes one input argument, the full path to the message file. It should
+have a syntax like:
 
-This script is also called from /a/postfix/aliases.  Example:
+[listname].[public|private].[unique value]
 
-ietfarch-itu+ietf-web-archive:          "|/a/ietf/scripts/call_archives.py itu+ietf -web"
-
-The script will save STDIN and use it to make calls to both archive systems.
+The script will make appropriate calls to both archive systems.
 It first calls the mhonarc system then the new archiver.  If either fail handle_error()
 is called.
-
-When the time comes to end parallel archiving this script should be replaced by one that
-stashes the message, queues the import, and notifies on any failures
 '''
+
 import email
 import getpass
 import logging
@@ -44,6 +38,7 @@ def handle_error(error):
     logger.addHandler(handler)
     logger.error(error)
     
+'''
 old_args = sys.argv[1:]
 new_args = old_args[:]
 
@@ -63,14 +58,22 @@ try:
     msg_details = 'Message Details:\nFrom:{}\nDate:{}\nMessage ID:{}\n\n'.format(msg.get('from'), msg.get('date'), msg.get('message-id'))
 except Exception:
     msg_details = 'Message Details:\n(not available)'
+'''
 
-# for command in ([MHONARC] + old_args, [MAILARCH] + new_args):
+path = sys.argv[1]
+with open(path, 'rb') as f:
+    data = f.read()
+
+listname, access, _ = os.path.basename(path).split('.')
+old_args = [listname, '-' + access]
+new_args = [listname, '--' + access]
+
 command = [MHONARC] + old_args
 try:
     p = Popen(command, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
     (stdoutdata, stderrdata) = p.communicate(input=data)
     if p.returncode != 0:
-        handle_error('script failed: {}\n\n (exit_code={})\n\n {}\n\n{}'.format(command[0],p.returncode,stdoutdata, msg_details))
+        handle_error('script failed: {}\n\n (exit_code={})\n\n {}\n\n{}'.format(command[0],p.returncode,stdoutdata, path))
 except Exception as error:
     handle_error(traceback.format_exc())
 
@@ -80,7 +83,7 @@ try:
     p = Popen(command, stdin=PIPE, stdout=PIPE, stderr=STDOUT, cwd=cwd)
     (stdoutdata, stderrdata) = p.communicate(input=data)
     if p.returncode != 0:
-        handle_error('script failed: {}\n\n (exit_code={})\n\n {}\n\n{}'.format(command[0],p.returncode,stdoutdata, msg_details))
+        handle_error('script failed: {}\n\n (exit_code={})\n\n {}\n\n{}'.format(command[0],p.returncode,stdoutdata, path))
 except Exception as error:
     handle_error(traceback.format_exc())
     

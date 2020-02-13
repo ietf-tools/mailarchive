@@ -10,6 +10,7 @@ import tarfile
 from factories import EmailListFactory, UserFactory
 
 from haystack.query import SearchQuerySet
+from haystack.models import SearchResult
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponse
 from django.urls import reverse
@@ -133,6 +134,32 @@ def test_get_export_mbox(client, thread_messages, tmpdir):
     mboxs = glob.glob(os.path.join(path, '*', 'acme', '*.mbox'))
     mbox = mailbox.mbox(mboxs[0])
     assert len(mbox) == 4
+
+
+@pytest.mark.django_db(transaction=True)
+def test_get_export_mbox_latin1(client, latin1_messages, tmpdir):
+    url = '%s?%s' % (reverse('archive_export', kwargs={'type': 'mbox'}), 'q=anvil')
+    request = get_request(url=url)
+    EmailList.objects.get(name='acme')
+    sqs = SearchQuerySet().filter(email_list__in=['acme'])
+    print(sqs.count())
+    print(sqs[0])
+    
+    # create a dummy SearchQuerySet
+    # sqs = [SearchResult('archive','message',1,1)]
+
+    # validate response is valid tarball with mbox file, with 4 messages
+    response = get_export(sqs, 'mbox', request)
+    assert response.status_code == 200
+    assert response.has_header('content-disposition')
+    tar = tarfile.open(mode="r:gz", fileobj=io.BytesIO(response.content))
+    assert len(tar.getmembers()) == 1
+    path = tmpdir.mkdir('sub').strpath
+    print(path)
+    tar.extractall(path)
+    mboxs = glob.glob(os.path.join(path, '*', 'acme', '*.mbox'))
+    mbox = mailbox.mbox(mboxs[0])
+    assert len(mbox) == 1
 
 
 @pytest.mark.django_db(transaction=True)

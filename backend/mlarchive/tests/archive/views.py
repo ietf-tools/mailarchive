@@ -28,7 +28,7 @@ from pyquery import PyQuery
 def load_message(filename, listname='public'):
     """Loads a message given path"""
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', filename)
-    with open(path) as f:
+    with open(path, 'rb') as f:
         data = f.read()
     _classes.archive_message(data, listname)
 

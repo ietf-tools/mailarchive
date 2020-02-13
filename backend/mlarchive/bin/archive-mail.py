@@ -39,7 +39,7 @@ def main():
         sys.exit("%s: invalid arguments\nTry `%s --help for more information" %
                  (sys.argv[0],sys.argv[0]))
 
-    data = sys.stdin.read()
+    data = sys.stdin.buffer.read()
     logger.info('envelope: %s' % data.split('\n', 1)[0])
     status = _classes.archive_message(data,listname,private=options.private)
 

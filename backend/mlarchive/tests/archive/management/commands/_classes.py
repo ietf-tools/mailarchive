@@ -50,6 +50,7 @@ Hello,
 
 This is a test email.  database
 '''
+    data = data.encode('ASCII')
     status = archive_message(data, 'test', private=False)
     assert status == 0
     # ensure message in db
@@ -67,10 +68,7 @@ This is a test email.  database
 
 @pytest.mark.django_db(transaction=True)
 def test_archive_message_fail(client):
-    data = '''Hello,
-
-This is a test email.  With no headers
-'''
+    data = b'Hello,\n This is a test email.  With no headers.'
     # remove any existing failed messages
     publist = EmailListFactory.create(name='public')
     shutil.rmtree(publist.failed_dir, ignore_errors=True)
@@ -102,6 +100,7 @@ Hello,
 
 This is a test email.  database
 '''
+    data = data.encode('ASCII')
     email_list = EmailList.objects.get(name='pubone')
     assert email_list.private is False
     status = archive_message(data, 'pubone', private=True)
@@ -117,7 +116,7 @@ This is a test email.  database
 @pytest.mark.django_db(transaction=True)
 def test_archive_message_encoded_word(client):
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'encoded_word.mail')
-    with open(path) as f:
+    with open(path, 'rb') as f:
         data = f.read()
     status = archive_message(data, 'test', private=False)
     assert status == 0
@@ -137,7 +136,7 @@ def test_archive_message_encoded_word_alternate(client):
     double quote or right paren, gets decoded properly
     """
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'encoded_word_2.mail')
-    with open(path) as f:
+    with open(path, 'rb') as f:
         data = f.read()
     status = archive_message(data, 'test', private=False)
     assert status == 0
@@ -154,7 +153,7 @@ def test_archive_message_encoded_word_alternate(client):
 @pytest.mark.django_db(transaction=True)
 def test_archive_message_encoded_word_high_plane(client):
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'encoded_word_3.mail')
-    with open(path) as f:
+    with open(path, 'rb') as f:
         data = f.read()
     status = archive_message(data, 'test', private=False)
     assert status == 0

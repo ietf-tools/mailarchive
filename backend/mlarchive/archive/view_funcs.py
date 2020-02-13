@@ -22,7 +22,7 @@ from django.forms.formsets import formset_factory
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_text, smart_bytes
 from haystack.views import SearchView
 
 from mlarchive.archive.forms import RulesForm
@@ -243,7 +243,7 @@ def build_mbox_tar(sqs, tar, basename):
     mbox_date = sqs[0].object.date.strftime('%Y-%m')
     mbox_list = sqs[0].object.email_list.name
     fd, temp_path = tempfile.mkstemp()
-    mbox_file = os.fdopen(fd, 'w')
+    mbox_file = os.fdopen(fd, 'wb')
     for result in sqs:
         date = result.object.date.strftime('%Y-%m')
         mlist = result.object.email_list.name
@@ -254,16 +254,16 @@ def build_mbox_tar(sqs, tar, basename):
                                                     mbox_date + '.mbox'))
             os.remove(temp_path)
             fd, temp_path = tempfile.mkstemp()
-            mbox_file = os.fdopen(fd, 'w')
+            mbox_file = os.fdopen(fd, 'wb')
             mbox_date = date
             mbox_list = mlist
 
-        with open(result.object.get_file_path()) as input:
+        with open(result.object.get_file_path(), 'rb') as input:
             # add envelope header
-            from_line = smart_text(result.object.get_from_line()) + '\n'
+            from_line = smart_bytes(result.object.get_from_line()) + b'\n'
             mbox_file.write(from_line)
             mbox_file.write(input.read())
-            mbox_file.write('\n')
+            mbox_file.write(b'\n')
 
     mbox_file.close()
     tar.add(temp_path, arcname=os.path.join(basename,

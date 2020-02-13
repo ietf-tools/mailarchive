@@ -123,13 +123,14 @@ class UnknownFormat(Exception):
 def archive_message(data, listname, private=False, save_failed=True):
     """This function is the internals of the interface to Mailman.  It is called by the
     standalone script archive-mail.py.  Inputs are:
-    data: the message as a string (comes from sys.stdin.read())
+    data: the message as bytes (comes from sys.stdin.buffer.read())
     listname: a string, provided as command line argument to archive-mail
     private: boolean, True if the list is private.  Only used if this is a new list
     save_failed: default is True, set to false when calling from compare utility script
     """
     try:
-        msg = email.message_from_string(data)
+        assert isinstance(data, bytes)
+        msg = email.message_from_bytes(data)
         mw = MessageWrapper(msg, listname, private=private)
         mw.save()
     except DuplicateMessage as error:
@@ -351,7 +352,7 @@ def save_failed_msg(data, listname, error):
 
     # log entry
     if isinstance(data, email.message.Message):
-        output = flatten_message(data)
+        output = data.as_bytes()
         identifier = data.get('Message-ID', '')
         if not identifier:
             identifier = get_from(data)
@@ -420,7 +421,7 @@ def write_file(path, data):
     if not os.path.exists(directory):
         os.makedirs(directory)
         os.chmod(directory, 0o2777)
-    with open(path, 'w') as f:
+    with open(path, 'wb') as f:
         f.write(data)
         f.flush()
     os.chmod(path, 0o666)
@@ -621,7 +622,7 @@ class MessageWrapper(object):
         self.listname = listname
         self.private = private
         self.spam_score = 0
-        self.bytes = len(flatten_message(email_message))
+        self.bytes = len(email_message.as_bytes())
 
         # fail right away if no headers
         if not list(self.email_message.items()):         # no headers, something is wrong
@@ -932,7 +933,8 @@ class MessageWrapper(object):
             path = get_incr_path(path)
 
         # convert line endings to crlf
-        output = re.sub("\r(?!\n)|(?<!\r)\n", "\r\n", flatten_message(self.email_message))
+        # output = re.sub("\r(?!\n)|(?<!\r)\n", "\r\n", flatten_message(self.email_message))
+        output = self.email_message.as_bytes()
 
         # write file
         write_file(path, output)

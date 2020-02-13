@@ -216,6 +216,17 @@ def thread_messages():
     content = StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'thread.mail')
     call_command('load', path, listname='acme', summary=True, stdout=content)
+    
+
+@pytest.fixture()
+def latin1_messages():
+    """Load some latin1"""
+    content = StringIO()
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'latin1.mbox')
+    call_command('clear_index', interactive=False, stdout=content)
+    call_command('load', path, listname='acme', summary=True, stdout=content)
+    print(content.read())
+    assert Message.objects.count() > 0
 
 
 @pytest.fixture()

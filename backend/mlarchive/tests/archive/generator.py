@@ -29,6 +29,8 @@ Hello,
 
 This is a test email.  database
 '''
+# make bytes
+data = data.encode('ASCII')
 
 # --------------------------------------------------
 # Test Functions
@@ -99,7 +101,7 @@ def test_handle_text_html_secure(client, messages):
 @pytest.mark.django_db(transaction=True)
 def test_handle_text_enriched(client):
     msg = message_from_file('mail_text_enriched.1')
-    status = archive_message(msg.as_string(), 'test')
+    status = archive_message(msg.as_bytes(), 'test')
     assert status == 0
     generator = Generator(Message.objects.first())
     output = generator.as_text()
@@ -124,7 +126,7 @@ def test_handle_message_delivery_status(client):
 @pytest.mark.django_db(transaction=True)
 def test_handle_message_external_body_type_a(client):
     msg = message_from_file('mail_external_body.1')
-    status = archive_message(msg.as_string(), 'test', private=False)
+    status = archive_message(msg.as_bytes(), 'test', private=False)
     assert status == 0
     generator = Generator(Message.objects.first())
     generator.text_only = False
@@ -139,7 +141,7 @@ def test_handle_message_external_body_type_a(client):
 @pytest.mark.django_db(transaction=True)
 def test_handle_message_external_body_type_a_invalid(client):
     msg = message_from_file('mail_external_body_invalid.1')
-    status = archive_message(msg.as_string(), 'test', private=False)
+    status = archive_message(msg.as_bytes(), 'test', private=False)
     assert status == 0
     generator = Generator(Message.objects.first())
     generator.text_only = False
@@ -151,7 +153,7 @@ def test_handle_message_external_body_type_a_invalid(client):
 @pytest.mark.django_db(transaction=True)
 def test_handle_message_external_body_type_b(client):
     msg = message_from_file('mail_external_body.2')
-    status = archive_message(msg.as_string(), 'test', private=False)
+    status = archive_message(msg.as_bytes(), 'test', private=False)
     assert status == 0
     generator = Generator(Message.objects.first())
     generator.text_only = False

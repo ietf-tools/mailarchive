@@ -29,7 +29,7 @@ import sys
 import time
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
-from tzparse import tzparse
+# from tzparse import tzparse
 from pprint import pprint
 from pytz import timezone
 
@@ -670,6 +670,20 @@ def test():
     for n in range(0,10):
         time.sleep(5)
         print(n)
+
+def test_read():
+    """Try email.message_from_binary_file on messages"""
+    messages = Message.objects.filter(date__year=2019)
+    total = messages.count()
+    for n, message in enumerate(messages):
+        if n % 1000 == 0:
+            print('{} of {}'.format(n, total))
+        path = message.get_file_path()
+        with open(path, 'rb') as fil:
+            msg = email.message_from_binary_file(fil)
+        if msg.defects:
+            print(message.pk, msg.defects)
+
 
 def non_ascii():
     """Scan all lists looking for non-ascii data in headers to test handling"""

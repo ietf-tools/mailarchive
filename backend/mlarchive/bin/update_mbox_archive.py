@@ -1,4 +1,4 @@
-#!../../../env/bin/python
+#!/a/mailarch/current/env/bin/python
 '''
 Update secondary mbox archive with current messages
 

@@ -1,4 +1,4 @@
-#!../../../env/bin/python
+#!/a/mailarch/current/env/bin/python
 '''
 This script checks all active private lists memberships, if membership has changed since
 last time it was run, the list membership db table is updated.  This script can be run

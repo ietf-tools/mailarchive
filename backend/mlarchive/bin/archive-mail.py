@@ -40,7 +40,7 @@ def main():
                  (sys.argv[0],sys.argv[0]))
 
     data = sys.stdin.buffer.read()
-    logger.info('envelope: %s' % data.split('\n', 1)[0])
+    logger.info('envelope: %s' % data.decode('utf8', errors='ignore').split('\n', 1)[0])
     status = _classes.archive_message(data,listname,private=options.private)
 
     logger.info('archive_message exit status: %s' % status)

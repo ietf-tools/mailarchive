@@ -1,3 +1,4 @@
 User-agent: *
 Disallow: /arch/advsearch/
 Disallow: /arch/search/
+Disallow: /arch/export/

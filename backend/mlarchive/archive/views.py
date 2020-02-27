@@ -676,7 +676,7 @@ def export(request, type):
     data['so'] = 'email_list'
     data['sso'] = 'date'
     form = AdvancedSearchForm(data, load_all=False, request=request)
-    sqs = form.search()
+    sqs = form.search(skip_facets=True)
     count = sqs.count()
     response = get_export(sqs, type, request)
     if data.get('token'):

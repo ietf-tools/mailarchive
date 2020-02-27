@@ -265,7 +265,7 @@ class AdvancedSearchForm(FacetedSearchForm):
 
         return self.searchqueryset
 
-    def search(self, email_list=None):
+    def search(self, email_list=None, skip_facets=False):
         """Custom search function.  This completely overrides the parent
         search().  Returns a SearchQuerySet object.
         """
@@ -296,7 +296,10 @@ class AdvancedSearchForm(FacetedSearchForm):
 
         # faceting ------------------------------------------------
         # call this before running sorts or applying filters to queryset
-        facets = self.get_facets(sqs)
+        if skip_facets:
+            facets = []
+        else:
+            facets = self.get_facets(sqs)
 
         # filters -------------------------------------------------
         if self.f_list:

@@ -154,7 +154,7 @@ class LowerCaseModelMultipleChoiceField(forms.ModelMultipleChoiceField):
         return super(LowerCaseModelMultipleChoiceField, self).prepare_value(value)
 
 
-@method_decorator(log_timing, name='get_facets')
+# @method_decorator(log_timing, name='get_facets')
 class AdvancedSearchForm(FacetedSearchForm):
     # start_date = forms.DateField(required=False,
     #        widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))

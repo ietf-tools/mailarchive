@@ -161,7 +161,8 @@ def get_membership(options, args):
     has_changed = False
 
     known_lists = []
-    output = subprocess.check_output([list_lists_cmd]).splitlines()
+    data = subprocess.check_output([list_lists_cmd])
+    output = data.decode('ascii').splitlines()
     for line in output:
         match = LIST_LISTS_PATTERN.match(line)
         if match:
@@ -172,7 +173,7 @@ def get_membership(options, args):
             print("Processing: %s" % mlist.name)
 
         try:
-            output = subprocess.check_output([list_members_cmd, mlist.name])
+            output = subprocess.check_output([list_members_cmd, mlist.name]).decode('latin1')
         except subprocess.CalledProcessError:
             continue
 

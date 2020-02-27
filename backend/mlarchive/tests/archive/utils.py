@@ -121,7 +121,7 @@ def test_get_membership(mock_post, mock_output):
 
     private = EmailListFactory.create(name='private', private=True)
     # handle multiple calls to check_output
-    mock_output.side_effect = ['private - Private Email List', 'joe@example.com']
+    mock_output.side_effect = [b'private - Private Email List', b'joe@example.com']
     response = requests.Response()
     mock_post.return_value = response
     response.status_code = 200

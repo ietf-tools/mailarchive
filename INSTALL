@@ -69,16 +69,16 @@ Installing from Scratch
 
 EXTERNAL DEPENDENCIES
 =====================
-Python 2.7
+Python 3.6
 MySQL 5.6
-Elasticsearch 6.4
+Elasticsearch 6.8
 Memcached 1.4
 RabbitMQ Server 3.5
 
 DEPENDENCIES PROVIDED BY PYTHON VIRTUAL ENV
 ===========================================
 Celery 4.2
-Django 1.11
+Django 2.2
 Haystack 2.6.0 (Included)
 
 

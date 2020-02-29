@@ -14,10 +14,11 @@ import tempfile
 import traceback
 import uuid
 from collections import deque
+from email import policy
 from email.utils import parsedate_tz, getaddresses, make_msgid
+from email.utils import parsedate_to_datetime
 from io import StringIO
 
-from email.utils import parsedate_to_datetime
 from django.conf import settings
 from django.core.cache import cache
 from django.core.management.base import CommandError
@@ -130,7 +131,7 @@ def archive_message(data, listname, private=False, save_failed=True):
     """
     try:
         assert isinstance(data, bytes)
-        msg = email.message_from_bytes(data)
+        msg = email.message_from_bytes(data, policy=policy.SMTP)
         mw = MessageWrapper(msg, listname, private=private)
         mw.save()
     except DuplicateMessage as error:
@@ -932,9 +933,8 @@ class MessageWrapper(object):
             logger.error(log_msg)
             path = get_incr_path(path)
 
-        # convert line endings to crlf
-        # output = re.sub("\r(?!\n)|(?<!\r)\n", "\r\n", flatten_message(self.email_message))
-        output = self.email_message.as_bytes()
+        # use policy.SMTP for \r\n line separators
+        output = self.email_message.as_bytes(policy=policy.SMTP)
 
         # write file
         write_file(path, output)

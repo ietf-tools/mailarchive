@@ -1,4 +1,12 @@
 
+mailarch (2.1.7) ietf; urgency=normal
+
+* Use email.policy.SMTP to save messages with \r\n line separators for IMAP
+
+* Add call-archives-pipe script for postfix usage
+
+-- Ryan Cross <rcross@amsl.com>  29 February 2020 12:00:00 +0800
+
 mailarch (2.1.6) ietf; urgency=normal
 
 * Replace custom decode_header() with Python 3 email.header.decode_header()

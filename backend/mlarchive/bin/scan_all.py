@@ -378,6 +378,41 @@ def html_only():
                 if msg.get_content_type() == 'text/html':
                     print(msg['message-id'])
 
+def incoming():
+    """Check files in data/incoming to see if they exist in archive"""
+    defects = 0
+    missing = 0
+    empty = 0
+    path = '/a/mailarch/data/incoming'
+    files = os.listdir(path)
+    for file in  files:
+        # print(file)
+        full = os.path.join(path, file)
+        if not os.path.isfile(full):
+            continue
+        if os.path.getsize(full) == 0:
+            empty = empty + 1
+            print('{}:0'.format(file))
+            continue
+        with open(full, 'rb') as f:
+            msg = email.message_from_binary_file(f)
+        if msg['defects']:
+            defects = defects + 1
+            print('{}:{}'.format(file, msg['defects']))
+            continue
+        msgid = msg['message-id'].strip('<>')
+        elist = file.split('.')[0]
+        if Message.objects.filter(email_list__name=elist, msgid=msgid).exists():
+            pass 
+        else:
+            missing = missing + 1
+            print('{}:{}:missing'.format(file, msgid))
+    print('Total:{}'.format(len(files)))
+    print('Defects:{}'.format(defects))
+    print('Missing:{}'.format(missing))
+    print('Empty:{}'.format(empty))
+
+
 def legacy():
     """Gather stats on mhonarc mappings"""
     cutoff = datetime.datetime(2019,1,14)

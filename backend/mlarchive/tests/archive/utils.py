@@ -166,13 +166,16 @@ def test_check_inactive(mock_output, mock_input):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_create_mbox_file(tmpdir, settings, thread_messages):
+def test_create_mbox_file(tmpdir, settings, latin1_messages):
     print('tmpdir: {}'.format(tmpdir))
     settings.ARCHIVE_MBOX_DIR = str(tmpdir)
     elist = EmailList.objects.get(name='acme')    
-    create_mbox_file(month=7, year=2016, elist=elist)
-    path = os.path.join(settings.ARCHIVE_MBOX_DIR, 'public', elist.name, '2016-07.mail')
+    first_message = elist.message_set.first()
+    month = first_message.date.month
+    year = first_message.date.year
+    create_mbox_file(month=month, year=year, elist=elist)
+    path = os.path.join(settings.ARCHIVE_MBOX_DIR, 'public', elist.name, '{}-{:02d}.mail'.format(year, month))
     assert os.path.exists(path)
     mbox = mailbox.mbox(path)
-    assert len(mbox) == 4
+    assert len(mbox) == 1
     mbox.close()

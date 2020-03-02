@@ -242,9 +242,8 @@ def create_mbox_file(month, year, elist):
         os.makedirs(os.path.dirname(path))
     mbox = mailbox.mbox(path)
     for message in messages:
-        # TODO: proper open?
-        with open(message.get_file_path()) as f:
-            msg = email.message_from_file(f)
+        with open(message.get_file_path(), 'rb') as f:
+            msg = email.message_from_binary_file(f)
         mbox.add(msg)
     mbox.close()
     

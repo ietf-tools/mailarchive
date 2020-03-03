@@ -147,7 +147,8 @@ def test_archive_message_encoded_word_alternate(client):
     response = client.get(url)
     assert len(response.context['results']) == 1
     message = Message.objects.first()
-    assert message.frm == '" J\xe4rvinen " <jarvinen@example.com>'
+    print(message.frm)
+    assert message.frm == 'J\xe4rvinen <jarvinen@example.com>'
 
 
 @pytest.mark.django_db(transaction=True)

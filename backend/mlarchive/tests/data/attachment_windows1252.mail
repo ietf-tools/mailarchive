@@ -1,0 +1,32 @@
+From unknown Wed Aug 21 16:20:36 2013
+Message-ID: <attachment_windows1252>
+Date: Tue, 22 Jan 2013 14:50:02 +0100
+From: Joe <joe@example.com>
+MIME-Version: 1.0
+To: <list@example.com>
+Content-Type: multipart/mixed; boundary="------------060405000004040402070305"
+Subject: Test with windows-1252 characters 
+
+--------------060405000004040402070305
+Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Transfer-Encoding: 8bit
+
+Hello this is a test with windows-1252 character encoding.
+
+
+This is a  “quoted term” 
+
+
+
+--------------060405000004040402070305
+Content-Type: text/plain; charset="UTF-8"; name="Attached Message Part"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="Attached Message Part"
+
+_______________________________________________
+mmusic mailing list
+mmusic@ietf.org
+https://www.ietf.org/mailman/listinfo/mmusic
+
+
+--------------060405000004040402070305--

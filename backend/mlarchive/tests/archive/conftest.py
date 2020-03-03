@@ -204,6 +204,9 @@ def attachment_messages_no_index(settings):
     content = StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'attachment.mail')
     call_command('load', path, listname='acme', summary=True, stdout=content)
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'attachment_windows1252.mail')
+    call_command('load', path, listname='acme', summary=True, stdout=content)
+    print(content.read())
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'attachment_folded_name.mail')
     call_command('load', path, listname='acme', summary=True, stdout=content)
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'attachment_message_rfc822.mail')
@@ -223,6 +226,16 @@ def latin1_messages():
     """Load some latin1"""
     content = StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'latin1.mbox')
+    call_command('clear_index', interactive=False, stdout=content)
+    call_command('load', path, listname='acme', summary=True, stdout=content)
+    print(content.read())
+    assert Message.objects.count() > 0
+
+@pytest.fixture()
+def windows1252_messages():
+    """Load some windows1252"""
+    content = StringIO()
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'windows1252.mbox')
     call_command('clear_index', interactive=False, stdout=content)
     call_command('load', path, listname='acme', summary=True, stdout=content)
     print(content.read())

@@ -251,7 +251,7 @@ class Message(models.Model):
         NOTE: this will include encoded attachments
         """
         try:
-            with open(self.get_file_path()) as f:
+            with open(self.get_file_path(), 'rb') as f:
                 return f.read()
         except IOError:
             msg = 'Error reading message file: %s' % self.get_file_path()
@@ -445,7 +445,7 @@ class Attachment(models.Model):
 
     def get_sub_message(self):
         """Returns a email.message, that is the attachment"""
-        msg = email.message_from_string(self.message.get_body_raw())
+        msg = email.message_from_bytes(self.message.get_body_raw())
         parts = list(msg.walk())
         return parts[self.sequence]
 

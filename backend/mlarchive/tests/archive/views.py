@@ -519,6 +519,20 @@ def test_attachment(client, attachment_messages_no_index):
     assert response['Content-Disposition'] == 'attachment; filename=skip32.c'
     assert 'unsigned' in smart_text(response.content)
 
+
+@pytest.mark.django_db(transaction=True)
+def test_attachment_windows1252(client, attachment_messages_no_index):
+    print(Message.objects.values_list('msgid'))
+    message = Message.objects.get(msgid='attachment_windows1252')
+    attachment = message.attachment_set.first()
+    url = reverse('archive_attachment', kwargs={'list_name': attachment.message.email_list.name,
+                                                'id': attachment.message.hashcode,
+                                                'sequence': attachment.sequence})
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response['Content-Type'] == 'text/plain'
+
+
 @pytest.mark.django_db(transaction=True)
 def test_attachment_bad_sequence(client, attachment_messages_no_index):
     elist = EmailListFactory.create()

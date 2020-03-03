@@ -1,4 +1,12 @@
 
+mailarch (2.1.8) ietf; urgency=normal
+
+* Change attachment handling to use email.message_from_bytes()
+
+* Change create_mbox_file() to open message file in binary mode 
+
+-- Ryan Cross <rcross@amsl.com>  03 March 2020 10:00:00 +0800
+
 mailarch (2.1.7) ietf; urgency=normal
 
 * Use email.policy.SMTP to save messages with \r\n line separators for IMAP

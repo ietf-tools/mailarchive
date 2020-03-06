@@ -2,23 +2,27 @@
 Email Archive Installation Instructions
 =======================================
 
+1. General Instructions for Deployment of a New Release
+2. Installing from scratch
+2.1 
 
-General Instructions for Deployment of a New Release
-====================================================
+
+1. General Instructions for Deployment of a New Release
+=======================================================
 
 
- 1. In order to fetch a new release of the django mail archive code, simply
+ 1.1 In order to fetch a new release of the django mail archive code, simply
     check out the appropriate tag from svn::
 
       svn co https://tools.ietf.org/svn/tools/mailarch/tags/$releasenumber
 
- 2. Don't forget to copy $releasenumber/mlarchive/settings/secrets.json from the
+ 1.2 Don't forget to copy $releasenumber/mlarchive/settings/secrets.json from the
     old release to the new one; otherwise things won't work!
     ::
 
       cp $oldreleasenumber/mlarchive/settings/secrets.json $releasenumber/mlarchive/settings/
 
- 3. Change into the directory of the new release::
+ 1.3 Change into the directory of the new release::
 
       cd $releasenumber
 
@@ -27,45 +31,63 @@ General Instructions for Deployment of a New Release
       python3 -m venv env 
       source env/bin/activate               
 
- 4. Install requirements (make sure your pip is reasonably fresh first).
+ 1.4 Install requirements (make sure your pip is reasonably fresh first).
     The following will install required python modules locally if you
     are using a virtualenv, or globally if you are not::
 
       pip install -I -r requirements.txt
 
- 5. Run migrations::
+ 1.5 Run migrations::
 
       cd backend
       export PYTHONPATH=$PWD 
       django-admin.py migrate --settings=mlarchive.settings.production
 
- 6. Move static files to the appropriate direcrory::
+ 1.6 Move static files to the appropriate direcrory::
 
       django-admin.py collectstatic --settings=mlarchive.settings.production
 
- 7. Then re-point the 'current' symlink::
+ 1.7 Then re-point the 'current' symlink::
 
       cd ..
       rm ./current; ln -s $releasenumber current
 
- 8. Restart apache::
+ 1.8 Restart apache::
 
       systemctl restart apache2.service
 
- 9. It's now also a good idea to go to the mailarchive front page:
+ 1.9 It's now also a good idea to go to the mailarchive front page:
 
       http://mailarchive.ietf.org/
 
     to check that it's alive and kicking, and displaying the new release
     number at the bottom of the page
 
- 10. If things **aren't** cool, revert the symlink step, re-pointing the
-    symlink to the release that was running before the new release, and restart
-    apache again to roll back to that.
+ If things **aren't** cool, revert the symlink step, re-pointing the
+ symlink to the release that was running before the new release, and restart
+ apache again to roll back to that.
 
 
-Installing from Scratch
-=======================
+2. Installing from Scratch
+==========================
+
+2.1 Minimal Setup (dev)
+    
+    2.1.1 Install Elasticsearch
+    Mail Archive uses Elasticsearch to index messages. The development environment
+    must have an instance of Elasticsearch running. 
+
+    Install Elasticsearch 
+    https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html#install-elasticsearch
+
+    - or -
+    
+    Install Elasticsearch with Docker
+    https://www.elastic.co/guide/en/elasticsearch/reference/6.8/docker.html
+
+
+2.2 Production Setup
+
 
 EXTERNAL DEPENDENCIES
 =====================
@@ -74,12 +96,6 @@ MySQL 5.6
 Elasticsearch 6.8
 Memcached 1.4
 RabbitMQ Server 3.5
-
-DEPENDENCIES PROVIDED BY PYTHON VIRTUAL ENV
-===========================================
-Celery 4.2
-Django 2.2
-Haystack 2.6.0 (Included)
 
 
 Prerequisites

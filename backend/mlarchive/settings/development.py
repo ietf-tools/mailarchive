@@ -29,3 +29,5 @@ SERVER_MODE = 'development'
 
 # LOGGING
 LOGGING['loggers']['mlarchive']['level'] = 'DEBUG'
+
+ALLOWED_HOSTS = ['.ietf.org', '.amsl.com', '127.0.0.1']

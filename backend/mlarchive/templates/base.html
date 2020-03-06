@@ -23,7 +23,7 @@
 <!-- Container -->
 <div id="container">
 
-    <header class="navbar navbar-expand navbar-dark fixed-top px-3 py-0{% if server_mode != 'production' %} navbar-dev{% endif %}" style="background-color:#337ab7;">
+    <header class="navbar navbar-expand-md navbar-dark fixed-top px-3 py-0{% if server_mode != 'production' %} navbar-dev{% endif %}" style="background-color:#337ab7;">
         <div class="container-fluid">
             <a class="navbar-brand p-0" href="/">
                 <img alt="IETF Logo" src="{% static 'mlarchive/images/ietflogo-small-transparent.png' %}">
@@ -45,9 +45,10 @@
                     <li class="nav-item">
                         <a class="nav-link" href="https://www.ietf.org/search/">Search ietf.org</a>
                     </li>
-                    <li class="nav-item pipe">
+                    <li class="nav-item">
                         <a class="nav-link" href="https://datatracker.ietf.org">Search Datatracker</a>
                     </li>
+		    <li class="nav-item navbar-text pipe"></li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url "archive_help" %}">Help</a>
                     </li>
@@ -71,7 +72,6 @@
                     {% endif %}
                     {% if user.is_authenticated %}
                     <li class="nav-item navbar-text pipe">{{ user}}</li>
-                    <!-- <span class="navbar-text pipe d-none d-md-inline-block">{{ user }}</span> -->
                     <li class="nav-item"> 
                         <a class="nav-link" href="{% url "archive_logout" %}">Sign out</a>
                     </li>

@@ -150,10 +150,12 @@ nav.navbar {
     padding-right: 1em;
 }
 
-.pipe:after {
-    content: "|";
-    padding-right: 10px;
-    padding-left: 20px;
+@media (min-width: 768px) {
+    .pipe:after {
+        content: "|";
+        padding-right: 10px;
+        padding-left: 20px;
+    }
 }
 
 header.navbar {

@@ -14,6 +14,8 @@ scan_all.py [func name] [optional arguments]
 examples:
 ./scan_all.py find_mime text/x-perl-script
 
+./scan_all.py --fix incoming
+
 """
 # Standalone broilerplate -------------------------------------------------------------
 from django_setup import do_setup
@@ -25,6 +27,7 @@ import datetime
 import email
 import os
 import re
+import shutil
 import sys
 import time
 from dateutil.parser import parse
@@ -378,12 +381,15 @@ def html_only():
                 if msg.get_content_type() == 'text/html':
                     print(msg['message-id'])
 
-def incoming():
+def incoming(fix=False):
     """Check files in data/incoming to see if they exist in archive"""
+    if fix:
+        print('Fix Mode')
     defects = 0
     missing = 0
     empty = 0
     path = '/a/mailarch/data/incoming'
+    arch = '/a/mailarch/data/90days/'
     files = os.listdir(path)
     for file in  files:
         # print(file)
@@ -403,6 +409,15 @@ def incoming():
         msgid = msg['message-id'].strip('<>')
         elist = file.split('.')[0]
         if Message.objects.filter(email_list__name=elist, msgid=msgid).exists():
+            if fix:
+                # print('in fix')
+                dest = os.path.join(arch, file)
+                if os.path.exists(dest):
+                    raise IOError('Destination exists ({})'.format(dest))
+                else:
+                    # move file 
+                    # print('moving {}'.format(file))
+                    shutil.move(full, dest)
             pass 
         else:
             missing = missing + 1

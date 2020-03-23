@@ -30,6 +30,7 @@ import re
 import shutil
 import sys
 import time
+from pickle import load
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 # from tzparse import tzparse
@@ -662,6 +663,23 @@ def received_date(start):
         for key in nrmap:
             f.write(key + '\n')
 
+def shunt():
+    """Scan files in mailman shunt directory to see if in archive"""
+    path = '/var/lib/mailman/qfiles/shunt'
+    files = os.listdir(path)
+    for file in files:
+        print(file)
+        full = os.path.join(path,file)
+        with open(full, 'rb') as fp:
+            msg = load(fp, encoding='iso-8859-1')
+            data = load(fp)
+            if data.get('_parsemsg'):
+                print('_parsemsg')
+                print(type(msg))
+            else:
+                print(type(msg.as_string()))
+                # sys.stdout.write(msg.as_string())
+            
 def subjects(listname):
     """Return subject line of all messages for listname"""
     for msg in process([listname]):

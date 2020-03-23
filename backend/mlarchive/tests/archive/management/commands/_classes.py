@@ -168,6 +168,27 @@ def test_archive_message_encoded_word_high_plane(client):
     assert message.frm == '\U0001f513Joe <joe@example.com>'
 
 
+@pytest.mark.django_db(transaction=True)
+def test_archive_message_long_header_line(client):
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'long_header.mail')
+    with open(path, 'rb') as f:
+        data = f.read()
+    status = archive_message(data, 'test', private=False)
+    assert status == 0
+    # ensure message in db
+    assert Message.objects.all().count() == 1
+    # ensure message on disk is not folded
+    msg = Message.objects.first()
+    print(msg.get_file_path())
+    with open(msg.get_file_path()) as f:
+        data = f.read()
+    for line in data.splitlines():
+        if line.startswith('Archived-At'):
+            assert '=?' not in line 
+
+
+
+
 def test_clean_spaces():
     s = 'this     is   a    string   with extra    spaces'
     assert clean_spaces(s) == 'this is a string with extra spaces'

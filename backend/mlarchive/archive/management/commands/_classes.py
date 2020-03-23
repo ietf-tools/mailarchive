@@ -131,7 +131,8 @@ def archive_message(data, listname, private=False, save_failed=True):
     """
     try:
         assert isinstance(data, bytes)
-        msg = email.message_from_bytes(data, policy=policy.SMTP)
+        no_refold = policy.SMTP.clone(refold_source='none')
+        msg = email.message_from_bytes(data, policy=no_refold)
         mw = MessageWrapper(msg, listname, private=private)
         mw.save()
     except DuplicateMessage as error:
@@ -934,7 +935,8 @@ class MessageWrapper(object):
             path = get_incr_path(path)
 
         # use policy.SMTP for \r\n line separators
-        output = self.email_message.as_bytes(policy=policy.SMTP)
+        no_refold = policy.SMTP.clone(refold_source='none')
+        output = self.email_message.as_bytes(policy=no_refold)
 
         # write file
         write_file(path, output)

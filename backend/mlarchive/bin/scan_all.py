@@ -445,8 +445,25 @@ def legacy():
             mark = ''
         print("{:25} {:10} {:10} {:.2f} {:4}".format(elist.name, mcount, lcount, delta, mark))
 
-    
-def lookups():
+
+def long_header():
+    """Find messages that had Archived-At header folded using encoded word"""
+    start = datetime.datetime(2020,2,20)
+    messages = Message.objects.filter(date__gt=start)
+    groups = set()
+    count = 0
+    print('Checking {} messages'.format(messages.count()))
+    for m in messages:
+        with open(m.get_file_path(), 'rb') as fp:
+            msg = email.message_from_binary_file(fp)
+        if 'archived-at' in msg and msg['archived-at'].startswith('=?'):
+            groups.add(m.email_list.name)
+            count += 1
+    print('{} instances'.format(count))
+    print(groups)
+
+
+def lookups():  
     """Test the message find routines"""
     from mlarchive.archive.view_funcs import find_message_date, find_message_date_reverse, find_message_gbt
 

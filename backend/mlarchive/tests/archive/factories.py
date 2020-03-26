@@ -6,7 +6,7 @@ import factory
 import string
 import random
 
-from mlarchive.archive.management.commands._classes import get_base_subject
+from mlarchive.archive.mail import get_base_subject
 
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):

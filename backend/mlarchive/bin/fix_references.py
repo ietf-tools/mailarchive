@@ -17,7 +17,7 @@ import shutil
 
 from django.conf import settings
 from mlarchive.archive.models import Message
-from mlarchive.archive.management.commands import _classes
+from mlarchive.archive.mail import flatten_message
 
 BACKUP_DIR = os.path.join(settings.DATA_ROOT,'backup')
 
@@ -99,7 +99,7 @@ def main():
                 shutil.move(file,backup_dir)
                 
                 # write new file
-                output = _classes.flatten_message(msg)
+                output = flatten_message(msg)
                 with open(file,'w') as out:
                     out.write(output)
                 os.chmod(file,0o660)

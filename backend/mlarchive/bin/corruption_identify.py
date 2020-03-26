@@ -19,7 +19,7 @@ import shutil
 from collections import deque
 from pprint import pprint
 from scan_utils import all_mboxs, is_mmdf
-from mlarchive.archive.management.commands import _classes
+from mlarchive.archive.mail import get_mb, MessageWrapper
 from mlarchive.archive.models import Message
 
 VALID_FROM_PATTERN = re.compile(r'^From\s[^ ]* (Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+')
@@ -164,7 +164,7 @@ def handle_type3(path, index, args):
         begin_byte = fp.tell()
 
     # use TOC to find message in mailbox
-    mb = _classes.get_mb(path)
+    mb = get_mb(path)
     mb._generate_toc()
     for k, v in list(mb._toc.items()):
         if v[0] == begin_byte:
@@ -177,7 +177,7 @@ def handle_type3(path, index, args):
     # match to messages in archive
     if args.verbose:
         print("toc index: {}".format(toc_index))
-    mw = _classes.MessageWrapper(mb[toc_index], listname)
+    mw = MessageWrapper(mb[toc_index], listname)
     try:
         message = Message.objects.get(email_list__name=listname,
             msgid=mw.archive_message.msgid)

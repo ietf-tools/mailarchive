@@ -18,7 +18,7 @@ from celery_haystack.utils import get_update_task
 from django.conf import settings
 
 from mlarchive.archive.inspectors import *
-from mlarchive.archive.management.commands._classes import MessageWrapper
+from mlarchive.archive.mail import MessageWrapper
 from mlarchive.archive.models import *
 
 import logging

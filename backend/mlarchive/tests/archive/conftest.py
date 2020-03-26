@@ -19,7 +19,7 @@ import subprocess
 from factories import EmailListFactory, ThreadFactory, MessageFactory
 from django.conf import settings
 from django.core.management import call_command
-from mlarchive.archive.management.commands._classes import get_base_subject
+from mlarchive.archive.mail import get_base_subject
 from mlarchive.archive.models import Message, Thread
 
 # `pytest` automatically calls this function once when tests are run.

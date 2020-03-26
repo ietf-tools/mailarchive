@@ -18,7 +18,7 @@ import shutil
 
 from django.conf import settings
 from mlarchive.archive.models import Message
-from mlarchive.archive.management.commands import _classes
+from mlarchive.archive.mail import MessageWrapper
 
 
 BASE_DIR = '/a/mailarch/data/90days'
@@ -38,7 +38,7 @@ groups = ['bgp-autoconf', 'tools-development', 'iot-directorate', 'recentattende
 
 def get_hash(listname, msg):
     '''Returns the archive hash of message file'''
-    mw = _classes.MessageWrapper(msg, listname)
+    mw = MessageWrapper(msg, listname)
     return mw.get_hash()
 
 

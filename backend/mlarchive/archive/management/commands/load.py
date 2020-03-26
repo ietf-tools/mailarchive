@@ -7,7 +7,7 @@ import time
 from django.core.management.base import BaseCommand, CommandError
 
 from mlarchive.archive.models import EmailList, Legacy
-from mlarchive.archive.management.commands import _classes
+from mlarchive.archive.mail import get_mb, CustomMbox, Loader, UnknownFormat
 
 import logging
 logger = logging.getLogger(__name__)
@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 def guess_list(path):
     """Try to guess the list we are importing based on header values
     """
-    mb = _classes.get_mb(path)
+    mb = get_mb(path)
 
     # not enough info in MMDF-style mailbox to guess list
-    if not isinstance(mb, _classes.CustomMbox):
+    if not isinstance(mb, CustomMbox):
         return None
 
     if len(mb) == 0:
@@ -112,11 +112,11 @@ class Command(BaseCommand):
         start_time = time.time()
         for filename in files:
             try:
-                loader = _classes.Loader(filename, **options)
+                loader = Loader(filename, **options)
                 loader.process()
                 for key, val in list(loader.stats.items()):          # compile stats
                     stats[key] = stats.get(key, 0) + val
-            except _classes.UnknownFormat as error:
+            except UnknownFormat as error:
                 # save failed message
                 if not (options['dryrun'] or options['test']):
                     target = EmailList.get_failed_dir(options['listname'])

@@ -17,7 +17,7 @@ import datetime
 import re
 
 from mlarchive.archive.models import Message, Thread
-from mlarchive.archive.management.commands._classes import subject_is_reply
+from mlarchive.archive.mail import subject_is_reply
 
 MSGID_PATTERN = re.compile(r'<([^>]+)>')
 date = datetime.datetime(2016,11,1)

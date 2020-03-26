@@ -20,7 +20,7 @@ import os
 from dateutil.parser import *
 from mlarchive.bin.scan_utils import all_mboxs
 from mlarchive.archive.models import Message
-from mlarchive.archive.management.commands import _classes
+from mlarchive.archive.mail import archive_message, MessageWrapper
 
 TOTAL = 0 
 MISSING = 0
@@ -40,7 +40,7 @@ def check_message(message, listname, load):
     except Message.DoesNotExist:
         MISSING += 1
         if load:
-            status = _classes.archive_message(message.as_string(),
+            status = archive_message(message.as_string(),
                                               listname,
                                               save_failed=False)
             if status == 0:
@@ -84,7 +84,7 @@ def main():
                 mbox = mailbox.mbox(file)
                 for message in mbox:
                     listname = os.path.basename(os.path.dirname(file))
-                    mw = _classes.MessageWrapper(message, listname)
+                    mw = MessageWrapper(message, listname)
                     msg_date = mw.get_date()
                     if start_date <= msg_date <= end_date:
                         check_message(message, listname, args.load)

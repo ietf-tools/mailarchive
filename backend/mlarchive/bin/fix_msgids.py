@@ -9,7 +9,7 @@ do_setup()
 # -------------------------------------------------------------------------------------
 
 from django.conf import settings
-from mlarchive.archive.management.commands import _classes
+from mlarchive.archive.mail import flatten_message
 from mlarchive.archive.models import Message
 
 import argparse
@@ -77,7 +77,7 @@ def main():
         
             # write new file
             # convert line endings to crlf
-            output = re.sub("\r(?!\n)|(?<!\r)\n", "\r\n", _classes.flatten_message(msg))
+            output = re.sub("\r(?!\n)|(?<!\r)\n", "\r\n", flatten_message(msg))
             with open(file,'w') as out:
                 out.write(output)
             os.chmod(file,0o660)

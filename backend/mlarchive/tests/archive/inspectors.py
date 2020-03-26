@@ -3,7 +3,7 @@ import os
 import pytest
 
 from mlarchive.archive.inspectors import ListIdSpamInspector, SpamMessage, SpamLevelSpamInspector
-from mlarchive.archive.management.commands._classes import MessageWrapper
+from mlarchive.archive.mail import MessageWrapper
 
 
 @pytest.mark.django_db(transaction=True)

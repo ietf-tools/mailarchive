@@ -1,4 +1,3 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 import datetime
 import email
@@ -11,23 +10,17 @@ import pytz
 import shutil
 import six
 import sys
+from io import StringIO
 
 from django.conf import settings
 from django.core.management import call_command
 from django.urls import reverse
 from mlarchive.archive.models import Message, EmailList
-from mlarchive.archive.management.commands._classes import (archive_message, clean_spaces, MessageWrapper,
+from mlarchive.archive.mail import (archive_message, clean_spaces, MessageWrapper,
     get_base_subject, get_envelope_date, tzoffset, get_from, get_header_date, get_mb,
     is_aware, get_received_date, parsedate_to_datetime, subject_is_reply, lookup_extension)
 from factories import EmailListFactory, MessageFactory, ThreadFactory
 from mlarchive.utils.test_utils import message_from_file
-
-
-# for Python 2/3 compatability
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 
 def teardown_module(module):

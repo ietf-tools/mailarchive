@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import email
 import os
 import pytest
@@ -8,7 +6,7 @@ import six
 from django.conf import settings
 from django.test.client import RequestFactory
 from mlarchive.archive.generator import Generator
-from mlarchive.archive.management.commands._classes import archive_message
+from mlarchive.archive.mail import archive_message
 from mlarchive.archive.models import Message
 from mlarchive.utils.test_utils import message_from_file
 

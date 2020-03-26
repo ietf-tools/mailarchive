@@ -9,7 +9,7 @@ import os
 import re
 import sys
 
-from mlarchive.archive.management.commands import _classes
+from mlarchive.archive.mail import get_mb, UnknownFormat
 
 FILE_PATTERN = re.compile(r'^\d{4}-\d{2}(|.mail)$')
 
@@ -40,8 +40,8 @@ def all_messages(listnames=None):
     """
     for path in all_mboxs(listnames):
         try:
-            mb = _classes.get_mb(path)
-        except _classes.UnknownFormat:
+            mb = get_mb(path)
+        except UnknownFormat:
             print("Unknown format: {}".format(path), file=sys.stderr)
             continue
 
@@ -73,7 +73,7 @@ def get_mboxs(listname):
     all = sorted(glob.glob('/a/www/ietf-mail-archive/text/%s/*' % listname))
     files = list(filter(is_mbox, all))
     for fil in files:
-        mb = _classes.get_mb(fil)
+        mb = get_mb(fil)
         yield mb
 
 
@@ -84,8 +84,8 @@ def get_messages(path):
     files = [ os.path.join(path,n) for n in os.listdir(path) ]
     for file in filter(is_mbox, files):
         try:
-            mb = _classes.get_mb(file)
-        except _classes.UnknownFormat:
+            mb = get_mb(file)
+        except UnknownFormat:
             print("Unknown format: {}".format(path), file=sys.stderr)
             continue
 
@@ -102,7 +102,7 @@ def process(names):
         all = sorted(glob.glob('/a/www/ietf-mail-archive/text/%s/*' % name))
         files = list(filter(is_mbox, all))
         for fil in files:
-            mb = _classes.get_mb(fil)
+            mb = get_mb(fil)
             for msg in mb:
                 yield msg
             mb.close()

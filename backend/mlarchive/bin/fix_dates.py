@@ -10,7 +10,7 @@ do_setup()
 # -------------------------------------------------------------------------------------
 
 from django.conf import settings
-from mlarchive.archive.management.commands import _classes
+from mlarchive.archive.mail import MessageWrapper, DateError, flatten_message
 
 import argparse
 import email
@@ -41,11 +41,11 @@ def ensure_dir(path):
         
 def convert_date(msg):
     '''Convert unsupported date string to standard email date string'''
-    mw = _classes.MessageWrapper(msg,'mylist')
+    mw = MessageWrapper(msg,'mylist')
     
     try:
         date = mw.date      # returns a naive UTC date
-    except _classes.DateError:
+    except DateError:
         # handles _very_ specific failure case
         date = parse(msg['sent'])
     return date.strftime('%a, %d %b %Y %H:%M:%S +0000')
@@ -118,7 +118,7 @@ def main():
                 shutil.move(file,backup_dir)
                 
                 # write new file
-                output = _classes.flatten_message(msg)
+                output = flatten_message(msg)
                 with open(file,'w') as out:
                     out.write(output)
                 os.chmod(file,0o660)

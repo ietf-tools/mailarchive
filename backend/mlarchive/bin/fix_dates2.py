@@ -19,7 +19,7 @@ import time
 
 from django.conf import settings
 from mlarchive.archive.models import EmailList, Message
-from mlarchive.archive.management.commands import _classes
+from mlarchive.archive.mail import flatten_message
 
 progname = sys.argv[0]
 
@@ -88,7 +88,7 @@ def main():
                 shutil.move(path,backup_dir)
             
             # write new file
-            output = _classes.flatten_message(msg)
+            output = flatten_message(msg)
             with open(path,'w') as out:
                 out.write(output)
             os.chmod(path,0o660)

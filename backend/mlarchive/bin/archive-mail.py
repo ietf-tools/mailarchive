@@ -13,7 +13,7 @@ do_setup()
 import sys
 from optparse import OptionParser
 
-import mlarchive.archive.management.commands._classes as _classes
+from mlarchive.archive.mail import archive_message
 
 import logging
 logger = logging.getLogger('mlarchive.bin.archive-mail')
@@ -41,7 +41,7 @@ def main():
 
     data = sys.stdin.buffer.read()
     logger.info('envelope: %s' % data.decode('utf8', errors='ignore').split('\n', 1)[0])
-    status = _classes.archive_message(data,listname,private=options.private)
+    status = archive_message(data,listname,private=options.private)
 
     logger.info('archive_message exit status: %s' % status)
     sys.exit(status)

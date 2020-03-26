@@ -13,7 +13,7 @@ from django.utils.http import urlencode
 from django.utils.encoding import smart_text
 from factories import EmailListFactory, MessageFactory, UserFactory, AttachmentFactory
 from mlarchive.archive.models import Message, Attachment
-from mlarchive.archive.management.commands import _classes
+from mlarchive.archive.mail import archive_message
 from mlarchive.archive.views import (TimePeriod, add_nav_urls, is_small_year,
     add_one_month, get_this_next_periods, get_date_endpoints, get_thread_endpoints,
     DateStaticIndexView)
@@ -30,7 +30,7 @@ def load_message(filename, listname='public'):
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', filename)
     with open(path, 'rb') as f:
         data = f.read()
-    _classes.archive_message(data, listname)
+    archive_message(data, listname)
 
 
 def assert_href(content, selector, value):

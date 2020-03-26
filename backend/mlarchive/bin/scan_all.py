@@ -43,9 +43,10 @@ from haystack.query import SearchQuerySet
 
 from mlarchive.archive.models import *
 from mlarchive.bin.scan_utils import *
-from mlarchive.archive.management.commands import _classes
 from mlarchive.utils.encoding import decode_rfc2047_header, is_attachment
-from mlarchive.archive.management.commands._classes import MessageWrapper, lookup_extension
+from mlarchive.archive.mail import (MessageWrapper, lookup_extension, get_mb,
+    parsedate_to_datetime, is_aware, UnknownFormat, NoHeaders, CustomMMDF,
+    SEPARATOR_PATTERNS)
 from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES
 
 
@@ -168,7 +169,7 @@ def bogus_date():
             continue
 
         date = msg.get('date')
-        dt = _classes.parsedate_to_datetime(date)
+        dt = parsedate_to_datetime(date)
         dt = dt.replace(tzinfo=None)                # force naive
         if dt < min_date or dt > max_date:
             bogus_date = bogus_date + 1
@@ -287,17 +288,17 @@ def date(start):
             listname = name
             print(listname)
         try:
-            mb = _classes.get_mb(path)
-        except _classes.UnknownFormat:
+            mb = get_mb(path)
+        except UnknownFormat:
             print("Unknown format: %s" % path)
             continue
 
         for i,msg in enumerate(mb):
             total += 1
             try:
-                mw = _classes.MessageWrapper(msg,listname)
+                mw = MessageWrapper(msg,listname)
                 date = mw.get_date()
-            except _classes.NoHeaders as error:
+            except NoHeaders as error:
                 print("Error: %s,%d (%s)" % (path, i, error.args))
 
     print("Total: %s" % total)
@@ -319,7 +320,7 @@ def header_date():
     with open('received.log') as f:
         paths = f.read().splitlines()
     for path in paths:
-        mb = _classes.get_mb(path)
+        mb = get_mb(path)
         for i,msg in enumerate(mb):
             count += 1
             date = msg.get('date')
@@ -332,7 +333,7 @@ def header_date():
                 #sys.exit(1)
                 continue
 
-            result = _classes.parsedate_to_datetime(date)
+            result = parsedate_to_datetime(date)
             if not result:
                 print("Parse Error: %s" % date)
                 #sys.exit(1)
@@ -376,7 +377,7 @@ def html_only():
             print("Scanning %s" % name)
         if name in ('django-project','iab','ietf'):
             continue
-        mb = _classes.get_mb(path)
+        mb = get_mb(path)
         for msg in mb:
             if msg.is_multipart() == False:
                 if msg.get_content_type() == 'text/html':
@@ -489,14 +490,14 @@ def mailbox_types():
     """Scan all mailbox files and print example of each unique envelope form other
     than typical mbox or mmdf
     """
-    matches = dict.fromkeys(_classes.SEPARATOR_PATTERNS)
+    matches = dict.fromkeys(SEPARATOR_PATTERNS)
     for path in all_mboxs():
         with open(path) as f:
             line = f.readline()
             while not line or line == '\n':
                 line = f.readline()
             if not (line.startswith('From ') or line.startswith('\x01\x01\x01\x01')):
-                for pattern in _classes.SEPARATOR_PATTERNS:
+                for pattern in SEPARATOR_PATTERNS:
                     if pattern.match(line):
                         if not matches[pattern]:
                             matches[pattern] = path
@@ -540,10 +541,10 @@ def mmdfs():
     count = 0
     for path in all_mboxs():
         try:
-            mb = _classes.get_mb(path)
-        except _classes.UnknownFormat:
+            mb = get_mb(path)
+        except UnknownFormat:
             pass
-        if isinstance(mb,_classes.CustomMMDF):
+        if isinstance(mb,CustomMMDF):
             with open(path) as f:
                 if f.read(10) == '\x01\x01\x01\x01\n\x01\x01\x01\x01\n':
                     print("%s" % path)
@@ -649,8 +650,8 @@ def received_date(start):
             listname = name
             print(listname)
         try:
-            mb = _classes.get_mb(path)
-        except _classes.UnknownFormat:
+            mb = get_mb(path)
+        except UnknownFormat:
             print("Unknown format: %s" % path)
             continue
 
@@ -665,7 +666,7 @@ def received_date(start):
             parts = recs[0].split(';')
             try:
                 # take the final bit (almost always 2, but sometimes ";" appears earlier
-                date =  _classes.parsedate_to_datetime(parts[-1])
+                date =  parsedate_to_datetime(parts[-1])
             except IndexError as error:
                 print("Failed: %s:%s (%s)" % (path,i,error))
                 sys.exit(1)
@@ -673,7 +674,7 @@ def received_date(start):
                 print("Total: %s\nnorecs: %s" % (total,norecs))
                 print("Failed: %s:%s:%s" % (path,i,recs))
                 sys.exit(1)
-            elif _classes.is_aware(date):
+            elif is_aware(date):
                 aware += 1
     print("Total: %s\nnorecs: %s\naware: %s" % (total,norecs,aware))
     with open('received.log','w') as f:

@@ -12,10 +12,19 @@ services:
     restart: always
     environment:
       MYSQL_DATABASE: db
-      MYSQL_USER: dbuser
-      MYSQL_PASSWORD: dbpass
-      MYSQL_RANDOM_ROOT_PASSWORD: "true"
+      # MYSQL_USER: dbuser
+      # MYSQL_PASSWORD: dbpass
+      # MYSQL_RANDOM_ROOT_PASSWORD: "true"
+      MYSQL_ROOT_PASSWORD: example
     ports:
       - '3306:3306'
     expose:
       - '3306'
+
+  rabbit:
+    image: rabbitmq:3.7
+    restart: always
+    ports:
+      - "5672:5672"
+    expose:
+      - "5672"

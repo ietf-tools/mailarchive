@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  es:
+    image: "elasticsearch:6.8.8"
+    ports:
+     - "9200:9200"
+
+  db:
+    image: mysql:5.6
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_DATABASE: db
+      MYSQL_USER: dbuser
+      MYSQL_PASSWORD: dbpass
+      MYSQL_RANDOM_ROOT_PASSWORD: "true"
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'

@@ -12,10 +12,7 @@ services:
     restart: always
     environment:
       MYSQL_DATABASE: db
-      # MYSQL_USER: dbuser
-      # MYSQL_PASSWORD: dbpass
-      # MYSQL_RANDOM_ROOT_PASSWORD: "true"
-      MYSQL_ROOT_PASSWORD: example
+      MYSQL_ROOT_PASSWORD: franticmarble
     ports:
       - '3306:3306'
     expose:

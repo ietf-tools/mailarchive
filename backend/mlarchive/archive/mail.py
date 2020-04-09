@@ -120,6 +120,8 @@ class UnknownFormat(Exception):
 # Helper Functions
 # --------------------------------------------------
 
+# def message_wrapper_from_bytes(s, args):
+
 
 def archive_message(data, listname, private=False, save_failed=True):
     """This function is the internals of the interface to Mailman.  It is called by the
@@ -131,9 +133,7 @@ def archive_message(data, listname, private=False, save_failed=True):
     """
     try:
         assert isinstance(data, bytes)
-        no_refold = policy.SMTP.clone(refold_source='none')
-        msg = email.message_from_bytes(data, policy=no_refold)
-        mw = MessageWrapper(msg, listname, private=private)
+        mw = MessageWrapper(data, listname, private=private)
         mw.save()
     except DuplicateMessage as error:
         # if DuplicateMessage it's already been saved to _dupes
@@ -419,10 +419,15 @@ def write_file(path, data):
     - sets mode of file
     - calls external backup script if defined
     """
+    assert isinstance(data, bytes)
     directory = os.path.dirname(path)
     if not os.path.exists(directory):
         os.makedirs(directory)
         os.chmod(directory, 0o2777)
+
+    # convert line endings to crlf
+    output = re.sub(b"\r(?!\n)|(?<!\r)\n", b"\r\n", data)
+
     with open(path, 'wb') as f:
         f.write(data)
         f.flush()
@@ -606,7 +611,7 @@ class Loader(object):
 
 
 class MessageWrapper(object):
-    """This class takes a email.message.Message object (email_message) and listname as
+    """This class takes a bytes object (raw email message) and listname as
     a string and constructs the mlarchive.archive.models.Message (archive_message) object.
     Use the save() method to save the message in the archive.
 
@@ -615,16 +620,19 @@ class MessageWrapper(object):
     must explicitly call process() or access the archive_message object for the object
     to contain valid data.
     """
-    def __init__(self, email_message, listname, private=False, backup=True):
+    def __init__(self, b, listname, private=False, backup=True):
         self._archive_message = None
         self._date = None
         self.created_id = False
-        self.email_message = email_message
+        # self.email_message = email_message
+        no_refold = policy.SMTP.clone(refold_source='none')
+        self.email_message = email.message_from_bytes(b, policy=no_refold)
         self.hashcode = None
         self.listname = listname
         self.private = private
         self.spam_score = 0
-        self.bytes = len(email_message.as_bytes())
+        # self.bytes = len(email_message.as_bytes())
+        self.bytes = b
 
         # fail right away if no headers
         if not list(self.email_message.items()):         # no headers, something is wrong
@@ -934,9 +942,5 @@ class MessageWrapper(object):
             logger.error(log_msg)
             path = get_incr_path(path)
 
-        # use policy.SMTP for \r\n line separators
-        no_refold = policy.SMTP.clone(refold_source='none')
-        output = self.email_message.as_bytes(policy=no_refold)
-
         # write file
-        write_file(path, output)
+        write_file(path, self.bytes)

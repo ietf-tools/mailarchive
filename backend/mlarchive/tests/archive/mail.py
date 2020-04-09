@@ -1,6 +1,7 @@
 
 import datetime
 import email
+import email.message
 import glob
 import io
 import mailbox
@@ -18,7 +19,8 @@ from django.urls import reverse
 from mlarchive.archive.models import Message, EmailList
 from mlarchive.archive.mail import (archive_message, clean_spaces, MessageWrapper,
     get_base_subject, get_envelope_date, tzoffset, get_from, get_header_date, get_mb,
-    is_aware, get_received_date, parsedate_to_datetime, subject_is_reply, lookup_extension)
+    is_aware, get_received_date, parsedate_to_datetime, subject_is_reply, lookup_extension,
+    message_wrapper_from_bytes)
 from factories import EmailListFactory, MessageFactory, ThreadFactory
 from mlarchive.utils.test_utils import message_from_file
 
@@ -28,6 +30,25 @@ def teardown_module(module):
         os.remove(settings.LOG_FILE)
     content = StringIO()
     call_command('clear_index', interactive=False, stdout=content)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_message_wrapper_from_bytes(client):
+    data = b'''From: Joe <joe@example.com>
+To: Joe <joe@example.com>
+Date: Thu, 7 Nov 2013 17:54:55 +0000
+Message-ID: <0000000002@example.com>
+Content-Type: text/plain; charset="us-ascii"
+Subject: This is a test
+
+Hello,
+
+This is a test email.  database
+'''
+    listname = 'acme'
+    mw = test_message_wrapper_from_bytes(data, listname)
+    assert isinstance(mw, MessageWrapper)
+    assert isinstance(mw.msg, email.message.Message)
 
 
 @pytest.mark.django_db(transaction=True)

@@ -18,7 +18,7 @@ for pk in pks:
     message = Message.objects.get(pk=pk)
     with open(message.get_file_path()) as f:
         msg = email.message_from_file(f)
-    mw = MessageWrapper(msg,message.email_list.name)
+    mw = MessageWrapper.from_message(msg,message.email_list.name)
     mw._archive_message = message
     message.attachment_set.all().delete()
     mw.process_attachments()

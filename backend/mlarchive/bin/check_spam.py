@@ -56,7 +56,7 @@ def main():
         path = message.get_file_path()
         with open(path) as f:
             msg = email.message_from_file(f)
-        mw = MessageWrapper(msg,args.list)
+        mw = MessageWrapper.from_message(msg,args.list)
         inspector = inspector_class(mw,{'check_only':not args.remove})
         try:
             inspector.inspect()

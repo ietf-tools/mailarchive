@@ -41,7 +41,7 @@ def ensure_dir(path):
         
 def convert_date(msg):
     '''Convert unsupported date string to standard email date string'''
-    mw = MessageWrapper(msg,'mylist')
+    mw = MessageWrapper.from_message(msg,'mylist')
     
     try:
         date = mw.date      # returns a naive UTC date

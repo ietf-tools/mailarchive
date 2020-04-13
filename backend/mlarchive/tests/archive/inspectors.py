@@ -15,14 +15,14 @@ def test_ListIdSpamInspector(client, settings):
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail_listid.1')
     with open(path) as f:
         message = email.message_from_file(f)
-    mw = MessageWrapper(message, 'mpls')
+    mw = MessageWrapper.from_message(message, 'mpls')
     inspector = ListIdSpamInspector(mw)
     inspector.inspect()
     # spam message
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail_listid.2')
     with open(path) as f:
         message = email.message_from_file(f)
-    mw = MessageWrapper(message, 'mpls')
+    mw = MessageWrapper.from_message(message, 'mpls')
     inspector = ListIdSpamInspector(mw)
     with pytest.raises(SpamMessage) as excinfo:
         inspector.inspect()
@@ -38,14 +38,14 @@ def test_SpamLevelSpamInspector(client, settings):
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail_spamlevel.1')
     with open(path) as f:
         message = email.message_from_file(f)
-    mw = MessageWrapper(message, 'acme')
+    mw = MessageWrapper.from_message(message, 'acme')
     inspector = SpamLevelSpamInspector(mw)
     inspector.inspect()
     # spam message
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail_spamlevel.2')
     with open(path) as f:
         message = email.message_from_file(f)
-    mw = MessageWrapper(message, 'acme')
+    mw = MessageWrapper.from_message(message, 'acme')
     inspector = SpamLevelSpamInspector(mw)
     with pytest.raises(SpamMessage) as excinfo:
         inspector.inspect()

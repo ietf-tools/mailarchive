@@ -84,7 +84,7 @@ def main():
                 mbox = mailbox.mbox(file)
                 for message in mbox:
                     listname = os.path.basename(os.path.dirname(file))
-                    mw = MessageWrapper(message, listname)
+                    mw = MessageWrapper.from_message(message, listname)
                     msg_date = mw.get_date()
                     if start_date <= msg_date <= end_date:
                         check_message(message, listname, args.load)

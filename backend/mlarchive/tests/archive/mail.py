@@ -19,22 +19,13 @@ from django.urls import reverse
 from mlarchive.archive.models import Message, EmailList
 from mlarchive.archive.mail import (archive_message, clean_spaces, MessageWrapper,
     get_base_subject, get_envelope_date, tzoffset, get_from, get_header_date, get_mb,
-    is_aware, get_received_date, parsedate_to_datetime, subject_is_reply, lookup_extension,
-    message_wrapper_from_bytes)
+    is_aware, get_received_date, parsedate_to_datetime, subject_is_reply,
+    lookup_extension)
 from factories import EmailListFactory, MessageFactory, ThreadFactory
 from mlarchive.utils.test_utils import message_from_file
 
 
-def teardown_module(module):
-    if os.path.exists(settings.LOG_FILE):
-        os.remove(settings.LOG_FILE)
-    content = StringIO()
-    call_command('clear_index', interactive=False, stdout=content)
-
-
-@pytest.mark.django_db(transaction=True)
-def test_message_wrapper_from_bytes(client):
-    data = b'''From: Joe <joe@example.com>
+SIMPLE_MESSAGE_BYTES = b'''From: Joe <joe@example.com>
 To: Joe <joe@example.com>
 Date: Thu, 7 Nov 2013 17:54:55 +0000
 Message-ID: <0000000002@example.com>
@@ -45,10 +36,13 @@ Hello,
 
 This is a test email.  database
 '''
-    listname = 'acme'
-    mw = test_message_wrapper_from_bytes(data, listname)
-    assert isinstance(mw, MessageWrapper)
-    assert isinstance(mw.msg, email.message.Message)
+
+
+def teardown_module(module):
+    if os.path.exists(settings.LOG_FILE):
+        os.remove(settings.LOG_FILE)
+    content = StringIO()
+    call_command('clear_index', interactive=False, stdout=content)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -201,8 +195,6 @@ def test_archive_message_long_header_line(client):
             assert '=?' not in line 
 
 
-
-
 def test_clean_spaces():
     s = 'this     is   a    string   with extra    spaces'
     assert clean_spaces(s) == 'this is a string with extra spaces'
@@ -219,7 +211,7 @@ def test_get_base_subject():
             ('Re: [ANCP] RE: draft-ieft-ancp-framework-00.txt', 'draft-ieft-ancp-framework-00.txt')]
 
     message = email.message_from_string('From: rcross@amsl.com')
-    mw = MessageWrapper(message, 'test')
+    mw = MessageWrapper.from_message(message, 'test')
     for item in data:
         normal = mw.normalize(item[0])
         base = get_base_subject(normal)
@@ -337,6 +329,17 @@ def test_subject_is_reply():
 # MessageWrapper
 # --------------------------------------------------
 
+def test_MessageWrapper_from_bytes():
+    data = SIMPLE_MESSAGE_BYTES
+    mw = MessageWrapper.from_bytes(data, 'acme')
+    assert isinstance(mw, MessageWrapper)
+
+
+def test_MessageWrapper_from_message():
+    msg = email.message_from_bytes(SIMPLE_MESSAGE_BYTES)
+    mw = MessageWrapper.from_message(msg, 'acme')
+    assert isinstance(mw, MessageWrapper)
+
 
 def test_MessageWrapper_get_addresses():
     data = [('ancp@ietf.org',                               # simple
@@ -359,7 +362,7 @@ Date: Mon, 24 Feb 2014 08:04:41 -0800
 This is the message.
 '''
     msg = email.message_from_string(data)
-    mw = MessageWrapper(msg, 'ancp')
+    mw = MessageWrapper.from_message(msg, 'ancp')
     assert mw.get_to() == 'larry@acme.com'
 
 
@@ -393,7 +396,7 @@ Date: Mon, 24 Feb 2016 08:04:41 -0800
 This is the message.
 '''
     msg = email.message_from_string(data)
-    mw = MessageWrapper(msg, 'list1')
+    mw = MessageWrapper.from_message(msg, 'list1')
     assert mw.archive_message.thread == thread1
 
 
@@ -418,7 +421,7 @@ Date: Mon, 24 Feb 2016 08:04:41 -0800
 This is the message.
 '''
     msg = email.message_from_string(data)
-    mw = MessageWrapper(msg, 'public')
+    mw = MessageWrapper.from_message(msg, 'public')
     assert mw.archive_message.thread == thread
 
 
@@ -435,7 +438,7 @@ Date: Mon, 24 Feb 2014 08:04:41 -0800
 This is the message.
 '''.format(msgid=message.msgid)
     msg = email.message_from_string(data)
-    mw = MessageWrapper(msg, 'public')
+    mw = MessageWrapper.from_message(msg, 'public')
     mw.process()
     assert mw.get_thread_from_header(mw.references) == message.thread
 
@@ -450,14 +453,14 @@ Date: Mon, 24 Feb 2014 08:04:41 -0800
 This is the message.
 '''
     msg = email.message_from_string(data)
-    mw = MessageWrapper(msg, 'ancp')
+    mw = MessageWrapper.from_message(msg, 'ancp')
     assert mw.get_cc() == 'ancp@ietf.org'
 
 
 @pytest.mark.django_db(transaction=True)
 def test_MessageWrapper_process_attachments():
     msg = message_from_file('mail_multipart.1')
-    mw = MessageWrapper(msg, 'public')
+    mw = MessageWrapper.from_message(msg, 'public')
     mw.process()
     mw.archive_message.save()
     mw.process_attachments()
@@ -467,7 +470,7 @@ def test_MessageWrapper_process_attachments():
 @pytest.mark.django_db(transaction=True)
 def test_MessageWrapper_process_attachments_non_ascii_filename():
     msg = message_from_file('mail_multipart_bad.2')
-    mw = MessageWrapper(msg, 'public')
+    mw = MessageWrapper.from_message(msg, 'public')
     mw.process()
     mw.archive_message.save()
     mw.process_attachments()
@@ -483,7 +486,7 @@ def test_MessageWrapper_process_attachments_non_ascii_filename():
 @pytest.mark.django_db(transaction=True)
 def test_MessageWrapper_process_attachments_rfc2231_filename():
     msg = message_from_file('mail_multipart.2')
-    mw = MessageWrapper(msg, 'public')
+    mw = MessageWrapper.from_message(msg, 'public')
     mw.process()
     mw.archive_message.save()
     mw.process_attachments()

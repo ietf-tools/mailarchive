@@ -38,7 +38,7 @@ groups = ['bgp-autoconf', 'tools-development', 'iot-directorate', 'recentattende
 
 def get_hash(listname, msg):
     '''Returns the archive hash of message file'''
-    mw = MessageWrapper(msg, listname)
+    mw = MessageWrapper.from_message(msg, listname)
     return mw.get_hash()
 
 

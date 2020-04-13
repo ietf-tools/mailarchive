@@ -35,6 +35,8 @@ from mlarchive.utils.encoding import decode_safely, decode_rfc2047_header, get_f
 import logging
 logger = logging.getLogger(__name__)
 
+NO_REFOLD_POLICY = policy.SMTP.clone(refold_source='none')
+
 '''
 Notes on character encoding.
 
@@ -120,8 +122,6 @@ class UnknownFormat(Exception):
 # Helper Functions
 # --------------------------------------------------
 
-# def message_wrapper_from_bytes(s, args):
-
 
 def archive_message(data, listname, private=False, save_failed=True):
     """This function is the internals of the interface to Mailman.  It is called by the
@@ -133,7 +133,7 @@ def archive_message(data, listname, private=False, save_failed=True):
     """
     try:
         assert isinstance(data, bytes)
-        mw = MessageWrapper(data, listname, private=private)
+        mw = MessageWrapper.from_bytes(data, listname, private=private)
         mw.save()
     except DuplicateMessage as error:
         # if DuplicateMessage it's already been saved to _dupes
@@ -146,6 +146,7 @@ def archive_message(data, listname, private=False, save_failed=True):
     except Exception as error:
         traceback.print_exc(file=sys.stdout)
         logger.error('Archive message failed [{0}]'.format(error.args))
+        msg = email.message_from_bytes(data)
         if not save_failed:
             return 1
         if msg:
@@ -570,7 +571,7 @@ class Loader(object):
         """
         self.stats['count'] += 1
         try:
-            mw = MessageWrapper(msg, self.listname, private=self.private)
+            mw = MessageWrapper.from_message(msg, self.listname, private=self.private)
         except Exception as e:
             print(self.filename)
             raise
@@ -588,7 +589,7 @@ class Loader(object):
 
         # process message
         mw.archive_message
-        self.stats['bytes_loaded'] += mw.bytes
+        self.stats['bytes_loaded'] += len(mw.bytes)
 
         if not self.options.get('dryrun'):
             mw.save(test=self.options.get('test'))
@@ -611,8 +612,9 @@ class Loader(object):
 
 
 class MessageWrapper(object):
-    """This class takes a bytes object (raw email message) and listname as
-    a string and constructs the mlarchive.archive.models.Message (archive_message) object.
+    """This class takes a bytes object (raw email message) or message object
+    and listname as a string and constructs the 
+    mlarchive.archive.models.Message (archive_message) object.
     Use the save() method to save the message in the archive.
 
     Use lazy initialization.  On init only get message-id.  If this message is being
@@ -620,25 +622,42 @@ class MessageWrapper(object):
     must explicitly call process() or access the archive_message object for the object
     to contain valid data.
     """
-    def __init__(self, b, listname, private=False, backup=True):
+    def __init__(self, bytes=None, message=None, listname=None, private=False, backup=True):
+        """Create a MessageWrapper out of raw bytes or a email.Message
+
+        Exactly one of 'bytes', 'message' must be given.
+        """
+        
+        if not listname or not bytes and not message:
+            raise TypeError('listname and one of bytes or message must be given')
+
         self._archive_message = None
         self._date = None
         self.created_id = False
-        # self.email_message = email_message
-        no_refold = policy.SMTP.clone(refold_source='none')
-        self.email_message = email.message_from_bytes(b, policy=no_refold)
+        if bytes is not None:
+            self.bytes = bytes
+            self.email_message = email.message_from_bytes(bytes, policy=NO_REFOLD_POLICY)
+        else:
+            self.bytes = message.as_bytes(policy=NO_REFOLD_POLICY)
+            self.email_message = message
         self.hashcode = None
         self.listname = listname
         self.private = private
         self.spam_score = 0
-        # self.bytes = len(email_message.as_bytes())
-        self.bytes = b
-
+        
         # fail right away if no headers
         if not list(self.email_message.items()):         # no headers, something is wrong
             raise NoHeaders
 
         self.msgid = self.get_msgid()
+
+    @classmethod
+    def from_bytes(cls, bytes, listname, private=False):
+        return cls(bytes=bytes, listname=listname, private=private)
+
+    @classmethod
+    def from_message(cls, message, listname, private=False):
+        return cls(message=message, listname=listname, private=private)
 
     def _get_archive_message(self):
         """Returns the archive.models.Message instance"""

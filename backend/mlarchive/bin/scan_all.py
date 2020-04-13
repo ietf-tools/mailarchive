@@ -296,7 +296,7 @@ def date(start):
         for i,msg in enumerate(mb):
             total += 1
             try:
-                mw = MessageWrapper(msg,listname)
+                mw = MessageWrapper.from_message(msg,listname)
                 date = mw.get_date()
             except NoHeaders as error:
                 print("Error: %s,%d (%s)" % (path, i, error.args))
@@ -887,7 +887,7 @@ def fix_encoded_words(fix=False):
         message = Message.objects.get(pk=pk)
         for db_header, header in (('frm', 'from'), ('subject', 'subject')):
             msg = email.message_from_string(message.get_body_raw())
-            mw = MessageWrapper(msg, message.email_list.name)
+            mw = MessageWrapper.from_message(msg, message.email_list.name)
             if msg[header] and '=?' in msg[header]:
                 text = mw.normalize(msg[header])
                 if text != getattr(message, db_header):

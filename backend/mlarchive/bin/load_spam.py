@@ -89,7 +89,7 @@ def main():
             try:
                 fp.seek(0)
                 msg = email.message_from_file(fp)
-                mw = MessageWrapper(msg,listname)
+                mw = MessageWrapper.from_message(msg,listname)
                 # mark for later review
                 mw.archive_message.spam_score = settings.MARK_LOAD_SPAM
                 if not args.check:

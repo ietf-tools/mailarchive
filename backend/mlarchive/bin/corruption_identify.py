@@ -177,7 +177,7 @@ def handle_type3(path, index, args):
     # match to messages in archive
     if args.verbose:
         print("toc index: {}".format(toc_index))
-    mw = MessageWrapper(mb[toc_index], listname)
+    mw = MessageWrapper.from_message(mb[toc_index], listname)
     try:
         message = Message.objects.get(email_list__name=listname,
             msgid=mw.archive_message.msgid)

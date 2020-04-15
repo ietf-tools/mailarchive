@@ -24,8 +24,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 env = environ.Env(
     # set casting, default value
     DEBUG=(bool, False),
+    ALLOWED_HOSTS=(list, []),
+    ADMINS=(list, []),
+    INTERNAL_IPS=(list, []),
+    DATATRACKER_PERSON_ENDPOINT_API_KEY=(str, ''),
     USING_CDN=(bool, False),
-    
+    CLOUDFLARE_AUTH_EMAIL=(str, ''),
+    CLOUDFLARE_AUTH_KEY=(str, ''),
+    CLOUDFLARE_ZONE_ID=(str, ''),   
 )
 # reading .env file
 environ.Env.read_env()
@@ -39,6 +45,7 @@ DEBUG = env('DEBUG')
 SERVER_MODE = env('SERVER_MODE')
 SECRET_KEY = env('SECRET_KEY')
 ADMINS = getaddresses([env('ADMINS')])
+ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 
 DATABASES = {
     'default': {
@@ -186,7 +193,7 @@ ELASTICSEARCH_INDEX_MAPPINGS = {
 
 # ARCHIVE SETTINGS
 ARCHIVE_HOST_URL = 'https://mailarchive.ietf.org'
-DATA_ROOT = env(DATA_ROOT)
+DATA_ROOT = env('DATA_ROOT')
 ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
 ARCHIVE_MBOX_DIR = os.path.join(DATA_ROOT, 'archive_mbox')
 CONSOLE_STATS_FILE = os.path.join(DATA_ROOT, 'log', 'console.json')
@@ -195,7 +202,7 @@ EXPORT_LIMIT = 5000             # maximum number of messages we will export
 ANONYMOUS_EXPORT_LIMIT = 100    # maximum number of messages a non-logged in user can export
 FILTER_CUTOFF = 5000            # maximum results for which we'll provide filter options
 
-LOG_DIR = env(LOG_DIR)
+LOG_DIR = env('LOG_DIR')
 LOG_FILE = os.path.join(LOG_DIR, 'mlarchive.log')
 MAILMAN_DIR = '/usr/lib/mailman'
 
@@ -307,7 +314,7 @@ LOGGING = {
         # Top level logger
         'mlarchive': {
             'handlers': ['mlarchive'],
-            'level': env(LOG_LEVEL),
+            'level': env('LOG_LEVEL'),
             'propagate': False,
         },
         # Custom logger, e.g. bin scripts, change handler to log to different file

@@ -30,7 +30,23 @@ Prerequisites
 
     cd trunk
     cp .env.sample .env
-    make changes as needed
+    
+    - make changes as needed
+    DEBUG=True
+    SECRET_KEY=
+    DATA_ROOT= (mkdir owner wwwrun:www)
+    LOG_DIR= (mkdir owner wwwrun:www)
+    DATABASES_NAME=db
+    DATABASES_USER=root
+    DATABASES_PASSWORD=[password]
+    DOCKER_MYSQL_ROOT_PASSWORD=[same password] 
+    ALLOWED_HOSTS= (add dev server)
+
+    ** DO NOT USE THIS SETUP IN PRODUCTION
+
+1.2.1
+    
+    link .env file to backend/mlarchive/settings/.env
 
 1.3 Setup Python virtual environment
 
@@ -51,13 +67,14 @@ Prerequisites
 
 1.6 Run Initial Migration
 
-    django-admin.py migrate --settings=mlarchive.settings.docker
+    cd ..
+    ./manage.py migrate
 
 1.7 Load messages
   
     1.7.1 Mbox file
 
-        django-admin.py load [filename] [listname] --settings=mlarchive.settings.docker
+        ./manage.py load [filename] -l [listname]
 
     1.7.2 Individual message
 
@@ -65,26 +82,26 @@ Prerequisites
 
 1.8 Runserver
 
-    django-admin.py runserver --settings=mlarchive.settings.docker
+    ./manage.py runserver [HOST:PORT]
 
 
 
-1. General Instructions for Deployment of a New Release
+2. General Instructions for Deployment of a New Release
 =======================================================
 
 
- 1.1 In order to fetch a new release of the django mail archive code, simply
+ 2.1 In order to fetch a new release of the django mail archive code, simply
     check out the appropriate tag from svn::
 
       svn co https://tools.ietf.org/svn/tools/mailarch/tags/$releasenumber
 
- 1.2 Don't forget to copy $releasenumber/mlarchive/settings/secrets.json from the
+ 2.2 Don't forget to copy $releasenumber/mlarchive/settings/.env from the
     old release to the new one; otherwise things won't work!
     ::
 
-      cp $oldreleasenumber/mlarchive/settings/secrets.json $releasenumber/mlarchive/settings/
+      cp $oldreleasenumber/mlarchive/settings/.env $releasenumber/mlarchive/settings/
 
- 1.3 Change into the directory of the new release::
+ 2.3 Change into the directory of the new release::
 
       cd $releasenumber
 
@@ -93,32 +110,32 @@ Prerequisites
       python3 -m venv env 
       source env/bin/activate               
 
- 1.4 Install requirements (make sure your pip is reasonably fresh first).
+ 2.4 Install requirements (make sure your pip is reasonably fresh first).
     The following will install required python modules locally if you
     are using a virtualenv, or globally if you are not::
 
       pip install -I -r requirements.txt
 
- 1.5 Run migrations::
+ 2.5 Run migrations::
 
       cd backend
       export PYTHONPATH=$PWD 
-      django-admin.py migrate --settings=mlarchive.settings.production
+      manage.py migrate
 
- 1.6 Move static files to the appropriate direcrory::
+ 2.6 Move static files to the appropriate direcrory::
 
-      django-admin.py collectstatic --settings=mlarchive.settings.production
+      manage.py collectstatic
 
- 1.7 Then re-point the 'current' symlink::
+ 2.7 Then re-point the 'current' symlink::
 
       cd ..
       rm ./current; ln -s $releasenumber current
 
- 1.8 Restart apache::
+ 2.8 Restart apache::
 
       systemctl restart apache2.service
 
- 1.9 It's now also a good idea to go to the mailarchive front page:
+ 2.9 It's now also a good idea to go to the mailarchive front page:
 
       http://mailarchive.ietf.org/
 
@@ -130,10 +147,10 @@ Prerequisites
  apache again to roll back to that.
 
 
-2. Installing from Scratch
+3. Installing from Scratch
 ==========================
 
-2.2 Production Setup
+Production Setup
 
 
 EXTERNAL DEPENDENCIES
@@ -181,20 +198,8 @@ svn checkout https://svn.tools.ietf.org/svn/tools/mailarch/tags/N.N.N
 ln -s N.N.N current
 
 
-3. Create (or copy) INSTALL_DIR/current/backend/mlarchive/settings/secrets.json
-which contains production settings.  It should contain the following 
-settings: 
-
-Example:
-{
-    "FILENAME": "secrets.json",
-    "SECRET_KEY": [DJANGO SECRET KEY],
-    "DATABASES_NAME": "archive",
-    "DATABASES_TEST_NAME": "archive_test",
-    "DATABASES_USER": [USER],
-    "DATABASES_PASSWORD": [PASSORD],
-    "HTAUTH_PASSWD_FILENAME": [PATH TO FILE]
-}
+3. Create (or copy) INSTALL_DIR/current/backend/mlarchive/settings/.env
+   See INSTALL_DIR/.env.sample
 
 
 4. Sample Apache Configuration
@@ -202,7 +207,7 @@ Example:
         RemoveHandler cgi-script .py
         Alias /static/ /a/mailarch/current/backend/static/
 
-        WSGIScriptAlias / /a/mailarch/current/backend/mlarchive/productions.wsgi
+        WSGIScriptAlias / /a/mailarch/current/backend/mlarchive/wsgi.py
         WSGIApplicationGroup %{GLOBAL}
         WSGIProcessGroup mailarchive.ietf.org
 

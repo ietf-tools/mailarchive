@@ -3,9 +3,9 @@ Email Archive Installation Instructions
 =======================================
 
 1. Simple Development Setup
-1. General Instructions for Deployment of a New Release
-2. Installing from scratch
-2.1 
+2. General Instructions for Deployment of a New Release
+3. Installing from scratch
+
 
 
 1. Simple development setup
@@ -26,10 +26,11 @@ Prerequisites
 
     svn co https://tools.ietf.org/svn/tools/mailarch/trunk
 
-1.2 Setup sample configuration
+1.2 Setup .env configuration file
 
     cd trunk
-    cp backend/mlarchive/settings/secrets.sample backend/mlarchive/settings/secrets.json
+    cp .env.sample .env
+    make changes as needed
 
 1.3 Setup Python virtual environment
 

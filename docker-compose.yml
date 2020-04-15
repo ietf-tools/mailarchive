@@ -12,7 +12,7 @@ services:
     restart: always
     environment:
       MYSQL_DATABASE: db
-      MYSQL_ROOT_PASSWORD: franticmarble
+      MYSQL_ROOT_PASSWORD: ${DOCKER_MYSQL_ROOT_PASSWORD}
     ports:
       - '3306:3306'
     expose:

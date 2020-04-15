@@ -10,6 +10,7 @@ cryptography
 Django>=2.0,<3.0
 django-appconf		# 0.6 was installed
 django-bootstrap4
+django-environ
 django-debug-toolbar>=1.7
 django-widget-tweaks>=1.3
 django-haystack==2.8.1

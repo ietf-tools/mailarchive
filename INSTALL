@@ -39,7 +39,7 @@ Prerequisites
 
 1.4 Setup Containers
 
-    docker-compose up
+    docker-compose up -d
 
 1.5 Run Tests 
 
@@ -47,6 +47,24 @@ Prerequisites
     export PYTHONPATH=$PWD
     cd mlarchive
     pytest tests -v
+
+1.6 Run Initial Migration
+
+    django-admin.py migrate --settings=mlarchive.settings.docker
+
+1.7 Load messages
+  
+    1.7.1 Mbox file
+
+        django-admin.py load [filename] [listname] --settings=mlarchive.settings.docker
+
+    1.7.2 Individual message
+
+        mlarchive/bin/archive-mail.py [listname] < [message file]
+
+1.8 Runserver
+
+    django-admin.py runserver --settings=mlarchive.settings.docker
 
 
 

@@ -1,4 +1,16 @@
 
+mailarch (2.1.11) ietf; urgency=normal
+
+* Refactor settings files to use django-environ
+
+* Modify MessageWrapper to accept raw bytes, and save those without running through email.message.
+
+* Reset migrations
+
+* Update docker config 
+
+-- Ryan Cross <rcross@amsl.com>  17 April 2020 10:30:00 +0800
+
 mailarch (2.1.10) ietf; urgency=normal
 
 * Use customized email policy to prevent folding of header lines

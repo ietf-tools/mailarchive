@@ -44,10 +44,6 @@ Prerequisites
 
     ** DO NOT USE THIS SETUP IN PRODUCTION
 
-1.2.1
-    
-    link .env file to backend/mlarchive/settings/.env
-
 1.3 Setup Python virtual environment
 
     python3 -m venv env
@@ -56,7 +52,6 @@ Prerequisites
 
 1.4 Setup Containers
 
-    set -o allexport; source .env; set +o allexport
     docker-compose up -d
 
 1.5 Run Tests 

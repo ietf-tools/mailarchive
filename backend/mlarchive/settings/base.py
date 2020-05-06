@@ -8,50 +8,58 @@ https://docs.djangoproject.com/en/2.2/topics/settings/
 
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.2/ref/settings/
+
+Using django-environ
+https://github.com/joke2k/django-environ
 """
 
 import os
-import json
+import environ
+from email.utils import getaddresses
 
-from django.core.exceptions import ImproperlyConfigured
 from mlarchive import __version__
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# THE ONE TRUE WAY
-# JSON-based secrets module
-with open(os.path.join(BASE_DIR, "settings", "secrets.json")) as f:
-    secrets = json.loads(f.read())
+env = environ.Env(
+    # set casting, default value
+    DEBUG=(bool, False),
+    DEBUG_TOOLBAR_ON=(bool, False),
+    ALLOWED_HOSTS=(list, []),
+    ADMINS=(list, []),
+    INTERNAL_IPS=(list, []),
+    DATATRACKER_PERSON_ENDPOINT_API_KEY=(str, ''),
+    USING_CDN=(bool, False),
+    CLOUDFLARE_AUTH_EMAIL=(str, ''),
+    CLOUDFLARE_AUTH_KEY=(str, ''),
+    CLOUDFLARE_ZONE_ID=(str, ''),
+)
 
+# reading .env file
+environ.Env.read_env()
 
-def get_secret(setting, secrets=secrets):
-    """Get the secret variable or return explicit exception."""
-    try:
-        return secrets[setting]
-    except KeyError:
-        error_msg = "Set the {0} environment variable".format(setting)
-        raise ImproperlyConfigured(error_msg)
 
 # -------------------------------------
 # DJANGO SETTINGS
 # -------------------------------------
 
-
-SECRET_KEY = get_secret("SECRET_KEY")
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DEBUG = env('DEBUG')
+SERVER_MODE = env('SERVER_MODE')
+SECRET_KEY = env('SECRET_KEY')
+ADMINS = getaddresses([env('ADMINS')])
+ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': get_secret("DATABASES_NAME"),
-        'USER': get_secret("DATABASES_USER"),
-        'PASSWORD': get_secret("DATABASES_PASSWORD"),
+        'NAME': env("DATABASES_NAME"),
+        'USER': env("DATABASES_USER"),
+        'PASSWORD': env("DATABASES_PASSWORD"),
         'HOST': '127.0.0.1',
         'OPTIONS': {'charset': 'utf8mb4'},
         'TEST': {'CHARSET': 'utf8mb4'}
     }
 }
-
-DEBUG = True
 
 SITE_ID = 1
 
@@ -68,6 +76,7 @@ USE_I18N = False
 
 USE_L10N = True
 
+INTERNAL_IPS = env('INTERNAL_IPS')
 
 INSTALLED_APPS = [
     'django.contrib.auth',
@@ -146,7 +155,7 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 # HAYSTACK SETTINGS
 HAYSTACK_DEFAULT_OPERATOR = 'AND'
-HAYSTACK_SIGNAL_PROCESSOR = 'celery_haystack.signals.CelerySignalProcessor'
+HAYSTACK_SIGNAL_PROCESSOR = env('HAYSTACK_SIGNAL_PROCESSOR')
 HAYSTACK_SEARCH_RESULTS_PER_PAGE = 40
 
 HAYSTACK_CONNECTIONS = {
@@ -186,17 +195,19 @@ ELASTICSEARCH_INDEX_MAPPINGS = {
 
 # ARCHIVE SETTINGS
 ARCHIVE_HOST_URL = 'https://mailarchive.ietf.org'
-DATA_ROOT = '/a/mailarch/data'
+DATA_ROOT = env('DATA_ROOT')
 ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
 ARCHIVE_MBOX_DIR = os.path.join(DATA_ROOT, 'archive_mbox')
-CONSOLE_STATS_FILE = os.path.join(DATA_ROOT, 'log/console.json')
+CONSOLE_STATS_FILE = os.path.join(DATA_ROOT, 'log', 'console.json')
+
 EXPORT_LIMIT = 5000             # maximum number of messages we will export
 ANONYMOUS_EXPORT_LIMIT = 100    # maximum number of messages a non-logged in user can export
 FILTER_CUTOFF = 5000            # maximum results for which we'll provide filter options
-LOG_DIR = '/var/log/mail-archive'
+
+LOG_DIR = env('LOG_DIR')
 LOG_FILE = os.path.join(LOG_DIR, 'mlarchive.log')
 MAILMAN_DIR = '/usr/lib/mailman'
-SERVER_MODE = 'production'
+
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # number of messages to load when scrolling search results
 SEARCH_SCROLL_BUFFER_SIZE = HAYSTACK_SEARCH_RESULTS_PER_PAGE
@@ -232,7 +243,7 @@ INSPECTORS = {
 # AUTH
 LOGIN_REDIRECT_URL = '/arch/'
 AUTHENTICATION_BACKENDS = ('mlarchive.archive.backends.authbackend.HtauthBackend',)
-HTAUTH_PASSWD_FILENAME = get_secret("HTAUTH_PASSWD_FILENAME")
+HTAUTH_PASSWD_FILENAME = env("HTAUTH_PASSWD_FILENAME")
 
 # Cache settings
 CACHES = {
@@ -263,11 +274,21 @@ EXPORT_DIR = os.path.join(DATA_ROOT, 'export')
 
 # DATATRACKER API
 DATATRACKER_PERSON_ENDPOINT = 'https://datatracker.ietf.org/api/v2/person/person'
-DATATRACKER_PERSON_ENDPOINT_API_KEY = get_secret('DATATRACKER_PERSON_ENDPOINT_API_KEY')
+DATATRACKER_PERSON_ENDPOINT_API_KEY = env('DATATRACKER_PERSON_ENDPOINT_API_KEY')
 
 # CLOUDFLARE  INTEGRATION
-USING_CDN = False
+USING_CDN = env('USING_CDN')
+CLOUDFLARE_AUTH_EMAIL = env("CLOUDFLARE_AUTH_EMAIL")
+CLOUDFLARE_AUTH_KEY = env("CLOUDFLARE_AUTH_KEY")
+CLOUDFLARE_ZONE_ID = env("CLOUDFLARE_ZONE_ID")
 CACHE_CONTROL_MAX_AGE = 60 * 60 * 24 * 7     # one week
+
+
+# DJANGO DEBUG TOOLBAR SETTINGS
+if env('DEBUG_TOOLBAR_ON'):
+    INSTALLED_APPS.append('debug_toolbar')
+    MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
+    DEBUG_TOOLBAR_CONFIG = {'INSERT_BEFORE': '<!-- debug_toolbar_here -->'}
 
 
 ###########
@@ -295,7 +316,7 @@ LOGGING = {
         # Top level logger
         'mlarchive': {
             'handlers': ['mlarchive'],
-            'level': 'INFO',
+            'level': env('LOG_LEVEL'),
             'propagate': False,
         },
         # Custom logger, e.g. bin scripts, change handler to log to different file

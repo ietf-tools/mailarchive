@@ -1,6 +1,6 @@
 # settings/test.py
 import os
-from .settings import *
+from .base import *
 
 DATA_ROOT = '/tmp/mailarch/data'
 

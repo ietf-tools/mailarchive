@@ -29,10 +29,15 @@ env = environ.Env(
     INTERNAL_IPS=(list, []),
     DATATRACKER_PERSON_ENDPOINT_API_KEY=(str, ''),
     USING_CDN=(bool, False),
+    ALLOWED_HOSTS=(list, []),
+    ADMINS=(str, ''),
+    INTERNAL_IPS=(list, []),
+    DATATRACKER_PERSON_ENDPOINT_API_KEY=(str, ''),
     CLOUDFLARE_AUTH_EMAIL=(str, ''),
     CLOUDFLARE_AUTH_KEY=(str, ''),
-    CLOUDFLARE_ZONE_ID=(str, ''),   
+    CLOUDFLARE_ZONE_ID=(str, ''),
 )
+    
 # reading .env file
 environ.Env.read_env()
 

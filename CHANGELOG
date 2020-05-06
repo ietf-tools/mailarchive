@@ -1,4 +1,10 @@
 
+mailarch (2.1.12) ietf; urgency=normal
+
+* More changes to settings layout
+
+-- Ryan Cross <rcross@amsl.com>  06 May 2020 12:30:00 +0800
+
 mailarch (2.1.11) ietf; urgency=normal
 
 * Refactor settings files to use django-environ

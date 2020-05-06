@@ -19,25 +19,21 @@ from email.utils import getaddresses
 
 from mlarchive import __version__
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 env = environ.Env(
     # set casting, default value
     DEBUG=(bool, False),
+    DEBUG_TOOLBAR_ON=(bool, False),
     ALLOWED_HOSTS=(list, []),
     ADMINS=(list, []),
     INTERNAL_IPS=(list, []),
     DATATRACKER_PERSON_ENDPOINT_API_KEY=(str, ''),
     USING_CDN=(bool, False),
-    ALLOWED_HOSTS=(list, []),
-    ADMINS=(str, ''),
-    INTERNAL_IPS=(list, []),
-    DATATRACKER_PERSON_ENDPOINT_API_KEY=(str, ''),
     CLOUDFLARE_AUTH_EMAIL=(str, ''),
     CLOUDFLARE_AUTH_KEY=(str, ''),
     CLOUDFLARE_ZONE_ID=(str, ''),
 )
-    
+
 # reading .env file
 environ.Env.read_env()
 
@@ -46,6 +42,7 @@ environ.Env.read_env()
 # DJANGO SETTINGS
 # -------------------------------------
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEBUG = env('DEBUG')
 SERVER_MODE = env('SERVER_MODE')
 SECRET_KEY = env('SECRET_KEY')

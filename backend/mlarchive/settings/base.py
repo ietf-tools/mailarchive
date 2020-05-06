@@ -36,6 +36,7 @@ def get_secret(setting, secrets=secrets):
 # DJANGO SETTINGS
 # -------------------------------------
 
+
 SECRET_KEY = get_secret("SECRET_KEY")
 
 DATABASES = {

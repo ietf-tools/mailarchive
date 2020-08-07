@@ -1,11 +1,15 @@
+import re
 from passlib.apache import HtpasswdFile
 from django.conf import settings
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+VALID_USERNAME = re.compile(r'[a-zA-Z0-9_@+.-]{1,150}$')
 
 class HtauthBackend(object):
     def authenticate(self, request=None, username=None, password=None):
+        if not VALID_USERNAME.match(username):
+            return None
         passwd_file = getattr(settings, "HTAUTH_PASSWD_FILENAME", None)
         if passwd_file is None:
             return None

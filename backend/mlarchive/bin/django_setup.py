@@ -4,7 +4,8 @@ Broilerplate for standalone Django scripts
 import os
 import sys
 
-DEFAULT_DJANGO_SETTINGS_MODULE = 'mlarchive.settings.production'
+#DEFAULT_DJANGO_SETTINGS_MODULE = 'mlarchive.settings.production'
+DEFAULT_DJANGO_SETTINGS_MODULE = 'mlarchive.settings.settings'
 
 
 def do_setup(django_settings=None):

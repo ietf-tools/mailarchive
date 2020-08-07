@@ -751,6 +751,15 @@ def run_messagewrapper_process():
         '''follow date() pattern, need to know list, etc, during iteration'''
         pass
 
+def senders():
+    """Return the total number of unique senders for all active lists"""
+    senders = set()
+    for elist in EmailList.objects.filter(active=True).order_by('name'):
+        print(elist)
+        for msg in elist.message_set.all():
+            senders.add(msg.frm)
+    print('Total unique senders in active lists: {}'.format(len(senders)))
+
 def test():
     """Just print count every five seconds to test progress"""
     for n in range(0,10):

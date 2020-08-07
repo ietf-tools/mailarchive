@@ -49,7 +49,8 @@ DEBUG = env('DEBUG')
 SERVER_MODE = env('SERVER_MODE')
 SECRET_KEY = env('SECRET_KEY')
 ADMINS = getaddresses(env('ADMINS'))
-ALLOWED_HOSTS = env('ALLOWED_HOSTS')
+#ALLOWED_HOSTS = env('ALLOWED_HOSTS')
+ALLOWED_HOSTS = ['.ietf.org','.amsl.com']
 
 DATABASES = {
     'default': {

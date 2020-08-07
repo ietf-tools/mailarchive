@@ -686,6 +686,8 @@ def export(request, type):
 
 def legacy_message(request, list_name, id):
     """Redirect to the appropriate message given list name and legacy number"""
+    if not id.isdigit():
+        raise Http404("Message not found")
     try:
         message = Message.objects.get(email_list__name=list_name, legacy_number=int(id))
     except Message.DoesNotExist:

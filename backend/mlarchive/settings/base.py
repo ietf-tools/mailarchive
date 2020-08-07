@@ -58,7 +58,7 @@ DATABASES = {
         'NAME': env("DATABASES_NAME"),
         'USER': env("DATABASES_USER"),
         'PASSWORD': env("DATABASES_PASSWORD"),
-        'HOST': '127.0.0.1',
+        # 'HOST': '127.0.0.1',
         'OPTIONS': {'charset': 'utf8mb4'},
         'TEST': {'CHARSET': 'utf8mb4'}
     }

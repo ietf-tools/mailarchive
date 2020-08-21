@@ -430,7 +430,7 @@ def write_file(path, data):
     output = re.sub(b"\r(?!\n)|(?<!\r)\n", b"\r\n", data)
 
     with open(path, 'wb') as f:
-        f.write(data)
+        f.write(output)
         f.flush()
     os.chmod(path, 0o666)
     # call_remote_backup(path)

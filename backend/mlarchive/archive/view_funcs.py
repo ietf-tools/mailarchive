@@ -259,9 +259,11 @@ def build_mbox_tar(sqs, tar, basename):
             mbox_list = mlist
 
         with open(result.object.get_file_path(), 'rb') as input:
-            # add envelope header
-            from_line = smart_bytes(result.object.get_from_line()) + b'\n'
-            mbox_file.write(from_line)
+            # add envelope header if missing
+            if not input.read(5) == b'From ':
+                from_line = smart_bytes(result.object.get_from_line()) + b'\n'
+                mbox_file.write(from_line)
+            input.seek(0)
             mbox_file.write(input.read())
             mbox_file.write(b'\n')
 

@@ -325,6 +325,9 @@ i.toggle-pane {
 .filter-popup:focus {
   outline: 0; }
 
+.filter-popup ul {
+  padding-left: 40px !important; }
+
 .filter-popup ul li {
   line-height: 17px;
   padding: 3px 10px 3px 10px; }

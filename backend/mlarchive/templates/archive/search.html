@@ -22,7 +22,7 @@
                     {% if not browse_list %}
                         <h5 class="mt-4">FILTER BY LIST</h5>
                         <div id="list-filter" class="filter" tabindex="-1">
-                            <form id="list-filter">
+                            <form id="list-filter-form">
                             <ul class="filter-options" tabindex="-1">
                             {% if facets.fields.email_list %}
                                 {% for list in facets.fields.email_list %}
@@ -43,7 +43,7 @@
 
                     <h5 class="mt-4">FILTER BY FROM</h5>
                     <div id="from-filter" class="filter" tabindex="-1">
-                        <form id="from-filter">
+                        <form id="from-filter-form">
                         <ul class="filter-options" tabindex="-1">
                          {% if facets.fields.frm_name %}
                             {% for name in facets.fields.frm_name %}

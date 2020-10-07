@@ -4,6 +4,8 @@ import pytest
 
 from requests.compat import urljoin
 from importlib import import_module
+from urllib.parse import urlparse, unquote
+
 from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, HASH_SESSION_KEY
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.urls import reverse
@@ -11,6 +13,8 @@ from pyquery import PyQuery
 from selenium.webdriver import ChromeOptions
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support.ui import Select
+
 from mlarchive.archive.models import Message
 
 
@@ -230,6 +234,43 @@ class MySeleniumTests(StaticLiveServerTestCase):
 
         # End up back at advanced search
         self.assertEqual('Mail Archive Advanced Search', self.selenium.title)
+
+    def test_advanced_search_contains(self):
+        url = urljoin(self.live_server_url, reverse('archive_advsearch'))
+        self.selenium.get(url)
+        query_input = self.selenium.find_element_by_id('id_query-0-value')
+        query_input.send_keys('data')
+        self.selenium.find_element_by_id('advanced-search-form').submit()
+        # Wait until the response is received
+        WebDriverWait(self.selenium, timeout).until(
+            lambda driver: driver.find_element_by_tag_name('body'))
+
+        # Get results page
+        self.assertIn('Mail Archive', self.selenium.title)
+        self.selenium.get_screenshot_as_file('tests/tmp/advanced_search.png')
+        o = urlparse(self.selenium.current_url)
+        assert unquote(o.query) == 'qdr=a&start_date=&end_date=&q=text:(data)&as=1'
+
+    def test_advanced_search_exact(self):
+        url = urljoin(self.live_server_url, reverse('archive_advsearch'))
+        self.selenium.get(url)
+
+        select = Select(self.selenium.find_element_by_id('id_query-0-qualifier'))
+        select.select_by_visible_text('exact')
+
+        query_input = self.selenium.find_element_by_id('id_query-0-value')
+        query_input.send_keys('data')
+
+        self.selenium.find_element_by_id('advanced-search-form').submit()
+        # Wait until the response is received
+        WebDriverWait(self.selenium, timeout).until(
+            lambda driver: driver.find_element_by_tag_name('body'))
+
+        # Get results page
+        self.assertIn('Mail Archive', self.selenium.title)
+        self.selenium.get_screenshot_as_file('tests/tmp/advanced_search.png')
+        o = urlparse(self.selenium.current_url)
+        assert unquote(o.query) == 'qdr=a&start_date=&end_date=&q=text:"data"&as=1'
 
     @pytest.mark.usefixtures("thread_messages")
     def test_message_detail_date_link(self):

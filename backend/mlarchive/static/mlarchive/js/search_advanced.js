@@ -57,8 +57,7 @@ var advancedSearch = {
         
     buildQuery : function(ev) {
         var query_string='';
-        // var op_value=$('#id_operator').val();
-
+        
         // regular query fields'
         var operands=new Array();
         $('.chunk').each(function() {
@@ -74,7 +73,6 @@ var advancedSearch = {
                 operands.push(jQuery.substitute(advancedSearch.getPattern($(this)),obj))
             }
         });
-        // query_string += operands.join(' '+op_value+' ');
         query_string += operands.join(' ');
 
         $('#id_q').val(query_string);
@@ -84,12 +82,12 @@ var advancedSearch = {
         var default_pattern='({keyword})';
         var default_exact_pattern='"{keyword}"';
         var pattern;
-        if(el.children('select.qualifier').val()=='exact'){
+        if(el.find('select.qualifier').val()=='exact'){
             pattern=default_exact_pattern;
         } else {
             pattern=default_pattern;
         }
-        if(el.children('select.parameter').val()!=''){
+        if(el.find('select.parameter').val()!=''){
             pattern='{param}:'+pattern;
         }
         if(el.hasClass('not_chunk')){

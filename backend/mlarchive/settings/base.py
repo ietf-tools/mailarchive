@@ -50,7 +50,7 @@ SERVER_MODE = env('SERVER_MODE')
 SECRET_KEY = env('SECRET_KEY')
 ADMINS = getaddresses(env('ADMINS'))
 #ALLOWED_HOSTS = env('ALLOWED_HOSTS')
-ALLOWED_HOSTS = ['.ietf.org','.amsl.com']
+ALLOWED_HOSTS = ['.ietf.org', '.amsl.com']
 
 DATABASES = {
     'default': {
@@ -106,6 +106,8 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django_referrer_policy.middleware.ReferrerPolicyMiddleware',
+    'csp.middleware.CSPMiddleware',
 ]
 
 
@@ -195,6 +197,14 @@ ELASTICSEARCH_INDEX_MAPPINGS = {
     # "to": {"type": "text"},                   # get rid of this
     "torder": {"type": "long"}
 }
+
+# SECURITY SETTINGS
+# Content security policy configuration (django-csp)
+CSP_REPORT_ONLY = True
+CSP_DEFAULT_SRC = ("'self'")
+
+# Setting for django_referrer_policy.middleware.ReferrerPolicyMiddleware
+REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # ARCHIVE SETTINGS
 ARCHIVE_HOST_URL = 'https://mailarchive.ietf.org'

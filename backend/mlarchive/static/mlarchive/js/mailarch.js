@@ -768,7 +768,7 @@ var mailarch = {
         window.clearInterval( mailarch.downloadTimer );
         $.removeCookie('downloadToken')
         mailarch.timer_attempts = 300;
-        $('#exampleModalLong').modal('toggle');
+        $('#export-modal').modal('toggle');
         $('.export-text').show();
         mailarch.$exportSpinner.hide();
     },

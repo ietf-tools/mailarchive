@@ -222,6 +222,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         facets = {'fields': {}, 'dates': {}, 'queries': {}}
 
         if 0 < count < settings.FILTER_CUTOFF:
+            logger.debug('Calculating facets (queryset_size={})'.format(count))
             clone = sqs._clone()
             sqs = clone.facet('email_list').facet('frm_name')
 

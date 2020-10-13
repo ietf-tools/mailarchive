@@ -114,7 +114,7 @@
                         </form>
 
                         <ul class="navbar-nav">
-                            <li class="nav-item"><a class="nav-link" href="#" data-toggle="modal" data-target="#exampleModalLong">Export</a></li>
+                            <li class="nav-item"><a class="nav-link" href="#" data-toggle="modal" data-target="#export-modal">Export</a></li>
                         </ul> <!-- nav navbar-nav -->
 
                     </div> <!-- myNavbar -->
@@ -180,11 +180,11 @@
     </div> <!-- msg-container -->
 
     <!-- Modal -->
-    <div class="modal fade" id="exampleModalLong" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+    <div class="modal fade" id="export-modal" tabindex="-1" role="dialog" aria-labelledby="export-modal-title" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLongTitle">Archive Export</h5>
+            <h5 class="modal-title" id="export-modal-title">Archive Export</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
@@ -203,9 +203,9 @@
               {% endif %}
             </div>
             <div class="export-spinner">
-              <i class="fa fa-spinner fa-spin" style="font-size:48px"></i>
+              <i class="fa fa-spinner fa-spin fa-3x"></i>
             </div>
-          </div>
+          </div> <!-- modal-body -->
           <div class="modal-footer">
               <a class="btn btn-secondary export-link{% if not user.is_authenticated or count > export_limit %} disabled{% endif %}" href="{{ export_mbox }}">Mbox</a>
               <a class="btn btn-secondary export-link{% if not user.is_authenticated or count > export_limit %} disabled{% endif %}" href="{{ export_maildir }}">Maildir</a>

@@ -76,14 +76,18 @@
                 <input type="hidden" class="select-across" value="0" name="select_across" />
                 <button type="submit" class="btn btn-secondary" title="Run the selected action" name="index" value="0">Go</button>
             </div>
-            <div class="col-md-3">
-                <div class="btn-group" role="group" aria-label="spam buttons">
-                    <button id="spam-toggle" type="button" class="btn btn-primary" data-toggle="button" aria-pressed="false" autocomplete="off">Spam Mode</button>
-                    <button id="spam-process" type="button" class="btn btn-primary disabled" data-toggle="button" aria-pressed="false" autocomplete="off">Process Spam</button>
-                    <span class="spinner d-none"><i class="fa fa-refresh fa-spin" style="font-size:24px"></i></span>
+            <div class="col-md-4">
+                <div class="d-flex">
+                    <div class="btn-group mr-2" role="group" aria-label="spam buttons">
+                        <button id="spam-toggle" type="button" class="btn btn-primary" data-toggle="button" aria-pressed="false" autocomplete="off">Spam Mode</button>
+                        <button id="spam-process" type="button" class="btn btn-primary disabled" data-toggle="button" aria-pressed="false" autocomplete="off">Process Spam</button>
+                    </div>
+                    <div class="spinner d-none">
+                        <i class="fa fa-sync-alt fa-spin fa-2x"></i>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-1">
                 <div class="form-check form-check-inline d-none">
                     <label class="form-check-label" for="move-subject">Move identical subject</label>
                     <input class="form-check-input" type="checkbox" id="move-subject" value="" checked>

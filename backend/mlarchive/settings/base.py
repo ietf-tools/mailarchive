@@ -200,7 +200,7 @@ ELASTICSEARCH_INDEX_MAPPINGS = {
 
 # SECURITY SETTINGS
 # Content security policy configuration (django-csp)
-CSP_REPORT_ONLY = True
+CSP_REPORT_ONLY = False
 CSP_DEFAULT_SRC = ("'self'")
 
 # Setting for django_referrer_policy.middleware.ReferrerPolicyMiddleware

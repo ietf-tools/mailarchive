@@ -39,6 +39,51 @@ except ImportError:
 
 
 class Elasticsearch6SearchBackend(ElasticsearchSearchBackend):
+    # Settings to add an n-gram & edge n-gram analyzer.
+    DEFAULT_SETTINGS = {
+        'settings': {
+            "analysis": {
+                "analyzer": {
+                    "ngram_analyzer": {
+                        "type": "custom",
+                        "tokenizer": "standard",
+                        "filter": ["haystack_ngram", "lowercase"]
+                    },
+                    "edgengram_analyzer": {
+                        "type": "custom",
+                        "tokenizer": "standard",
+                        "filter": ["haystack_edgengram", "lowercase"]
+                    }
+                },
+                "tokenizer": {
+                    "haystack_ngram_tokenizer": {
+                        "type": "nGram",
+                        "min_gram": 4,
+                        "max_gram": 4,
+                    },
+                    "haystack_edgengram_tokenizer": {
+                        "type": "edgeNGram",
+                        "min_gram": 4,
+                        "max_gram": 4,
+                        "side": "front"
+                    }
+                },
+                "filter": {
+                    "haystack_ngram": {
+                        "type": "nGram",
+                        "min_gram": 4,
+                        "max_gram": 4
+                    },
+                    "haystack_edgengram": {
+                        "type": "edgeNGram",
+                        "min_gram": 4,
+                        "max_gram": 4
+                    }
+                }
+            }
+        }
+    }
+
     def __init__(self, connection_alias, **connection_options):
         super(Elasticsearch6SearchBackend, self).__init__(connection_alias, **connection_options)
         self.content_field_name = None
@@ -102,7 +147,6 @@ class Elasticsearch6SearchBackend(ElasticsearchSearchBackend):
                         'default_operator': DEFAULT_OPERATOR,
                         'query': query_string,
                         'analyze_wildcard': True,
-                        'auto_generate_phrase_queries': True,
                         'fuzziness': FUZZINESS,
                     },
                 },

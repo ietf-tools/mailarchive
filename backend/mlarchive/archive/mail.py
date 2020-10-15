@@ -139,9 +139,9 @@ def archive_message(data, listname, private=False, save_failed=True):
         # if DuplicateMessage it's already been saved to _dupes
         logger.warning('Archive message failed [{0}]'.format(error.args))
         return 0
-    except SpamMessage as error:
+    except InspectorMessage as error:
         # if SpamMessage it's already been saved to _spam
-        logger.warning('Archive message failed [{0}]'.format(error.args))
+        logger.info('Message not archived. [{0}]'.format(error.args))
         return 0
     except Exception as error:
         traceback.print_exc(file=sys.stdout)

@@ -1,12 +1,25 @@
 '''This module contains classes which inherit from Inspector.  They are used
 to inspect incoming messages and perform some auxiliary processing.  ie. spam
-checkers'''
+checkers. To enable an inspector add it to the INSPECTORS dictionary setting.
+The value of the entry is a dictionary of options.
+
+Supported Options:
+"includes": a list of list names to act upon. If not present acts on all lists
+'''
 
 
 from django.conf import settings
 
 
-class SpamMessage(Exception):
+class InspectorMessage(Exception):
+    pass
+
+
+class SpamMessage(InspectorMessage):
+    pass
+
+
+class NoArchiveMessage(InspectorMessage):
     pass
 
 
@@ -100,3 +113,22 @@ class SpamLevelSpamInspector(SpamInspector):
     '''Checks for SpamLevel >= *****'''
     def has_condition(self):
         return self.message_wrapper.email_message.get('X-Spam-Level', '').startswith('*****')
+
+
+class NoArchiveInspector(Inspector):
+    '''Checks for no archive headers'''
+    def has_condition(self):
+        keys = self.message_wrapper.email_message.keys()
+        if 'X-No-Archive' in keys:
+            return True
+        value = self.message_wrapper.email_message.get('X-Archive', '')
+        if value.lower() == 'no':
+            return True
+        return False
+
+    def handle_file(self):
+        '''Don't do anything. Drop file'''
+        pass
+
+    def raise_error(self):
+        raise NoArchiveMessage('X-No-Archive  Message-ID: {}'.format(self.message_wrapper.msgid))

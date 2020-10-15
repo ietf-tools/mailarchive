@@ -201,7 +201,6 @@ class MySeleniumTests(StaticLiveServerTestCase):
 
         # Get results page
         self.assertIn('Mail Archive', self.selenium.title)
-        self.selenium.get_screenshot_as_file('tests/tmp/mailarch_test.png')
 
         # Press back button
         self.selenium.find_element_by_id('modify-search').click()
@@ -209,6 +208,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
             lambda driver: driver.find_element_by_tag_name('body'))
 
         # End up back at basic search
+        self.selenium.get_screenshot_as_file('tests/tmp/back_to_search.png')
         self.assertEqual('Mail Archive', self.selenium.title)
 
     def test_back_to_advanced_search(self):

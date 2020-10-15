@@ -185,7 +185,7 @@ class CustomSearchView(SearchView):
         if 'as' in self.request.GET:
             extra['modify_search_url'] = reverse('archive_advsearch') + query_string
         else:
-            extra['modify_search_url'] = 'javascript:history.back()'
+            extra['modify_search_url'] = reverse('archive')
 
         # add custom facets
         if hasattr(self, 'myfacets'):

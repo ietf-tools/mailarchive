@@ -426,6 +426,21 @@ def find_mime(mime_type):
                     print("MSG:{}".format(msg.pk))
 
 
+def find_utf7(start=None):
+    """Searches the archive for utf7 encoding"""
+    for elist in EmailList.objects.all().order_by('name'):
+        if start and start > elist.name:
+            continue
+        print("Scanning {}".format(elist.name))
+        for msg in Message.objects.filter(email_list=elist).order_by('date'):
+            with open(msg.get_file_path(), 'rb') as f:
+                message = email.message_from_binary_file(f)
+                if (message.is_multipart() is False and
+                        message['Content-Transfer-Encoding'] == '7bit' and
+                        message.get_content_charset() == 'utf-7'):
+                    print("MSG:{}".format(msg.pk))
+
+
 def fix_encoded_words(fix=False):
     """Process messages with encoded-words in header"""
     pks = []

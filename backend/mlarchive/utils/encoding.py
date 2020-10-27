@@ -24,10 +24,10 @@ def decode_safely(data, charset=DEFAULT_CHARSET):
     if isinstance(data, six.text_type):
         return data
     try:
-        #return str(data, charset or DEFAULT_CHARSET)
+        # return str(data, charset or DEFAULT_CHARSET)
         return data.decode(charset or DEFAULT_CHARSET)
     except (UnicodeDecodeError, LookupError):
-        #return str(data, DEFAULT_CHARSET, errors='replace')
+        # return str(data, DEFAULT_CHARSET, errors='replace')
         return data.decode(DEFAULT_CHARSET, errors='replace')
 
 

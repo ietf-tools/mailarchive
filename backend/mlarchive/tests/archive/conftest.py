@@ -219,7 +219,15 @@ def thread_messages():
     content = StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'thread.mail')
     call_command('load', path, listname='acme', summary=True, stdout=content)
-    
+
+
+@pytest.fixture()
+def urlize_messages():
+    """Load some threads"""
+    content = StringIO()
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'urlize.mbox')
+    call_command('load', path, listname='acme', summary=True, stdout=content)
+
 
 @pytest.fixture()
 def latin1_messages():
@@ -230,6 +238,7 @@ def latin1_messages():
     call_command('load', path, listname='acme', summary=True, stdout=content)
     print(content.read())
     assert Message.objects.count() > 0
+
 
 @pytest.fixture()
 def windows1252_messages():
@@ -296,7 +305,7 @@ def thread_messages_db_only():
 
 @pytest.fixture()
 def attachment_messages_db_only():
-  pass
+    pass
 
 
 @pytest.fixture()
@@ -316,7 +325,7 @@ def static_list():
         thread.email_list = public
         thread.set_first()
     yield public
- 
+
 
 @pytest.fixture()
 def query_messages():

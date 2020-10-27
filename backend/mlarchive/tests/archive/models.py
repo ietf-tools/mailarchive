@@ -35,6 +35,14 @@ def test_message_get_admin_url(client):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_message_get_body_html_urlize(client, urlize_messages):
+    msg = Message.objects.get(msgid='0000000001@example.com')
+    body = msg.get_body_html()
+    # test urlization of braces enclosed URL <https://www.ietf.org>
+    assert '&lt;<a href="https://www.ietf.org" rel="nofollow">https://www.ietf.org</a>&gt;' in body
+
+
+@pytest.mark.django_db(transaction=True)
 def test_message_get_date_index_url(client):
     elist = EmailListFactory.create(name='public')
     msg = MessageFactory.create(email_list=elist)

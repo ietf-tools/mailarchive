@@ -111,16 +111,29 @@ def test_ajax_messages_security(client, messages):
     messages = messages.filter(email_list__name='private').order_by('-date')
     message = messages.first()
     assert messages.count() > 1
-    url = '{}?qid=&referenceitem=1&browselist=pubone&referenceid={}&gbt=&direction=next'.format(
+    url = '{}?qid=&referenceitem=0&browselist=pubone&referenceid={}&direction=next'.format(
         reverse('ajax_messages'), message.pk)
     response = client.get(url)
+    print('private: {}'.format(message.pk))
+    print('pubone: {}'.format([m.pk for m in Message.objects.filter(email_list__name='pubone')]))
+    print(response.content)
     assert response.status_code == 204
 
 
 @pytest.mark.django_db(transaction=True)
-def test_ajax_get_messages_browse(client, messages):
+def test_ajax_get_messages_browse_next(client, messages):
     message = messages.filter(email_list__name='pubone').order_by('-date').first()
-    url = '{}?qid=&referenceitem=1&browselist=pubone&referenceid={}&gbt=&direction=next'.format(
+    url = '{}?qid=&referenceitem=0&browselist=pubone&referenceid={}&direction=next'.format(
+        reverse('ajax_messages'), message.pk)
+    response = client.get(url)
+    assert response.status_code == 200
+    assert len(response.context['results']) == 3
+
+
+@pytest.mark.django_db(transaction=True)
+def test_ajax_get_messages_browse_previous(client, messages):
+    message = messages.filter(email_list__name='pubone').order_by('-date').last()
+    url = '{}?qid=&referenceitem=0&browselist=pubone&referenceid={}&direction=previous'.format(
         reverse('ajax_messages'), message.pk)
     response = client.get(url)
     assert response.status_code == 200

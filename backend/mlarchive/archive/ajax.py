@@ -17,7 +17,7 @@ from mlarchive.utils.decorators import check_access, superuser_only, check_ajax_
 @superuser_only
 @jsonapi
 def ajax_admin_action(request):
-    """Ajax function to perform action on a message"""
+    '''Ajax function to perform action on a message'''
     if request.method == 'GET':
         action = request.GET.get('action')
         id = request.GET.get('id')
@@ -41,11 +41,11 @@ def ajax_admin_action(request):
 
 @check_access
 def ajax_get_msg(request, msg):
-    """Ajax method to retrieve message details.  One URL parameter expected, "id" which
+    '''Ajax method to retrieve message details.  One URL parameter expected, "id" which
     is the ID of the message.  Return an HTMLized message body via get_body_html().
     NOTE: the "msg" argument is Message object added by the check_access decorator
     NOTE: msg_thread changes avg response time from ~100ms to ~200ms
-    """
+    '''
     msg_body = msg.get_body_html(request)
     msg_thread = render_to_string('includes/message_thread.html', {'msg': msg})
     return HttpResponse(msg_body + msg_thread)
@@ -53,11 +53,11 @@ def ajax_get_msg(request, msg):
 
 @check_ajax_list_access
 def ajax_messages(request):
-    """Ajax function to retrieve more messages from queryset.
+    '''Ajax function to retrieve more messages from queryset.
     referenceitem: index of the last/first message displayed
     referenceid: message.pk of last/first message displayed
-    """
-    queryid, query = get_cached_query(request)
+    '''
+    qid = request.GET.get('qid')
     browselist = request.GET.get('browselist')
     referenceitem = int(request.GET.get('referenceitem', 0))
     referenceid = request.GET.get('referenceid')
@@ -65,39 +65,41 @@ def ajax_messages(request):
     gbt = request.GET.get('gbt')
     order_fields = get_order_fields(request.GET, use_db=True)
     qdr_kwargs = get_qdr_kwargs(request.GET)
+    results = []
 
-    if queryid and not query:
-        return HttpResponse(status=404)
-
-    if not query:
-        try:
-            reference_message = Message.objects.get(pk=referenceid, email_list__name=browselist)
-        except (Message.DoesNotExist, ValueError):
-            return HttpResponse(status=204)
-
-    if query:
+    if qid:
+        queryid, query = get_cached_query(request)
+        if not query:
+            return HttpResponse(status=404)
         results = get_query_results(query, referenceitem, direction)
-    else:
-        if browselist and not gbt:
+
+    elif browselist:
+        # if browselist and special order fields
+        if qdr_kwargs or request.GET.get('so'):
             query = Message.objects.filter(email_list__name=browselist).order_by(*order_fields)
             if qdr_kwargs:
                 query = query.filter(**qdr_kwargs)
             results = get_query_results(query, referenceitem, direction)
-        elif browselist:
-            results = get_browse_results(reference_message, direction, gbt)
+        # --------------------------------------
         else:
-            # TODO or fail?, signal to reload query
-            return HttpResponse(status=404)     # Request Timeout (query gone from cache)
+            try:
+                reference_message = Message.objects.get(pk=referenceid, email_list__name=browselist)
+            except (Message.DoesNotExist, ValueError):
+                return HttpResponse(status=204)
+            results = get_browse_results(reference_message, direction, gbt)
 
     if not results:
         return HttpResponse(status=204)     # No Content
 
-    return render(request, 'includes/results_divs.html', {'results': results, 'browse_list': browselist})
+    return render(request, 'includes/results_divs.html', {
+        'results': results,
+        'browse_list': browselist})
 
 
 def get_query_results(query, referenceitem, direction):
     '''Returns a set of messages from query using direction: next or previous
-    from the referenceitem, which is the 1 based index of the query'''
+    from the referenceitem, which is the 1 based index of the query
+    '''
     buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
     if direction == 'next':
         return query[referenceitem:referenceitem + buffer]
@@ -115,8 +117,10 @@ def get_browse_results(reference_message, direction, gbt):
 
 
 def get_browse_results_gbt(reference_message, direction):
-    '''Returns a set of messages grouped by thread.  Because default ordering is date descending,
-    direction "next" calls get_previous() and "previous" vice versa.'''
+    '''Returns a set of messages grouped by thread.  Because default ordering
+    is date descending, direction "next" calls get_previous() and "previous"
+    vice versa.
+    '''
     buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
     results = []
     if direction == 'next':
@@ -137,8 +141,15 @@ def get_browse_results_date(reference_message, direction):
     '''Returns a set of messages ordered by date'''
     buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
     if direction == 'next':
-        results = Message.objects.filter(email_list=reference_message.email_list, date__lt=reference_message.date).order_by('-date')[:buffer]
+        results = Message.objects.filter(
+            email_list=reference_message.email_list,
+            date__lt=reference_message.date,
+        ).order_by('-date')[:buffer]
     elif direction == 'previous':
-        results = Message.objects.filter(email_list=reference_message.email_list, date__gt=reference_message.date).order_by('date')[:buffer]
-        results = results.reverse()
+        query = Message.objects.filter(
+            email_list=reference_message.email_list,
+            date__gt=reference_message.date,
+        ).order_by('date')[:buffer]
+        results = list(query)
+        results.reverse()
     return results

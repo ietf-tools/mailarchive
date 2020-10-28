@@ -44,7 +44,7 @@ def get_base_query(querydict):
 
 
 def get_cached_query(request):
-    if 'qid' in request.GET:
+    if request.GET.get('qid'):
         queryid = clean_queryid(request.GET['qid'])
         if queryid:
             return (queryid, cache.get(queryid))

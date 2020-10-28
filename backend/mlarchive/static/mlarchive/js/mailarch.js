@@ -118,7 +118,10 @@ var mailarch = {
     },
 
     ifChanged: function(field, border_class, start, end) {
-        // make end argument optional to match slice arguments
+        // Examine contents of "field" in table rows
+        // if contents change add border_class. Used to create
+        // border around messages from same date, for example
+        // TODO: make end argument optional to match slice arguments
         var range = Array.prototype.slice.call(arguments, 2, 4);
         var rowset = mailarch.$msgList.find(".xtr");
         var rows = rowset.slice.apply(rowset, range);
@@ -393,7 +396,7 @@ var mailarch = {
             mailarch.getNextMessages();
         }
         // TOP OF SCROLL
-        if($(this).scrollTop() == 0 && mailarch.$msgList.data("queryset-offset")){
+        if($(this).scrollTop() == 0 && (typeof mailarch.urlParams.index !== 'undefined')){
             mailarch.getPreviousMessages();
         }
     },
@@ -424,6 +427,13 @@ var mailarch = {
         if (!mailarch.isSmallViewport() && mailarch.showPreview) {
             mailarch.$msgList.focus();
             mailarch.selectInitialMessage();
+        }
+        if (typeof mailarch.urlParams.index !== 'undefined') {
+            // if "index" in URL parameters we are returning from
+            // detail view, scroll the message list down 1 pixel
+            // to enable immediate scroll upwards and retrieval
+            // of previous messages
+            mailarch.$msgList.scrollTop(1);
         }
         mailarch.addBorder(0);
     },

@@ -36,9 +36,10 @@ def test_message_get_admin_url(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_message_get_body_html_urlize(client, urlize_messages):
-    msg = Message.objects.get(msgid='0000000001@example.com')
+    msg = Message.objects.get(msgid='urlize@example.com')
     body = msg.get_body_html()
     # test urlization of braces enclosed URL <https://www.ietf.org>
+    print(body)
     assert '&lt;<a href="https://www.ietf.org" rel="nofollow">https://www.ietf.org</a>&gt;' in body
 
 

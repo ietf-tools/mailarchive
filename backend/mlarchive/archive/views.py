@@ -8,6 +8,7 @@ import urllib.request, urllib.parse, urllib.error
 from operator import itemgetter
 from collections import namedtuple
 
+from csp.decorators import csp_exempt
 from django.conf import settings
 from django.contrib.auth import logout
 from django.core.cache import cache
@@ -489,6 +490,7 @@ def admin(request):
     })
 
 
+@csp_exempt
 @superuser_only
 def admin_console(request):
     weekly_chart_data = get_weekly_data()

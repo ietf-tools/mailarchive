@@ -113,7 +113,7 @@ def test_console_access(client, admin_client):
     url = reverse('archive_admin_console')
     # anonymous user
     response = client.get(url)
-    assert response.status_code == 403
+    assert response.status_code == 302
     # admin user
     response = admin_client.get(url)
     assert response.status_code == 200

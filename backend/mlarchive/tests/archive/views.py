@@ -189,7 +189,7 @@ def test_admin_menu(client, admin_client):
 def test_admin_console(client, admin_client):
     url = reverse('archive_admin_console')
     response = client.get(url)
-    assert response.status_code == 403
+    assert response.status_code == 302
     response = admin_client.get(url)
     assert response.status_code == 200
 

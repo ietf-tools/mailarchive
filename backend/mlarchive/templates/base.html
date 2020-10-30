@@ -52,16 +52,20 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url "archive_help" %}">Help</a>
                     </li>
-                    {% if user.is_superuser %}
+
+                    {% if user.is_superuser or user.is_staff %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbar-admin" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Admin</a>
                         <div class="dropdown-menu" aria-labelledby="navbar-admin">
-                            <a class="dropdown-item" href="{% url "archive_admin" %}">Remove Messages</a>
-                            <a class="dropdown-item" href="{% url "archive_admin_guide" %}">Guide</a>
                             <a class="dropdown-item" href="{% url "archive_admin_console" %}">Console</a>
+                            {% if user.is_superuser %}
+                                <a class="dropdown-item" href="{% url "archive_admin" %}">Remove Messages</a>
+                                <a class="dropdown-item" href="{% url "archive_admin_guide" %}">Guide</a>
+                            {% endif %}
                         </div>
                     </li>
                     {% endif %}
+                    
                     {% if static_mode_enabled %}
                     <li class="nav-item dropdown mr-2">
                         <a id="nav-settings-anchor" class="nav-link dropdown-toggle" href="#" id="navbar-settings" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Settings</a>

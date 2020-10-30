@@ -11,6 +11,7 @@ from collections import namedtuple
 from csp.decorators import csp_exempt
 from django.conf import settings
 from django.contrib.auth import logout
+from django.contrib.admin.views.decorators import staff_member_required
 from django.core.cache import cache
 from django.db.models.query import QuerySet
 from django.utils.decorators import method_decorator
@@ -491,7 +492,7 @@ def admin(request):
 
 
 @csp_exempt
-@superuser_only
+@staff_member_required
 def admin_console(request):
     weekly_chart_data = get_weekly_data()
     top25_chart_data = get_top25_data()

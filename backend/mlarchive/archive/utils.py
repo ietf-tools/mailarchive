@@ -246,4 +246,4 @@ def create_mbox_file(month, year, elist):
             msg = email.message_from_binary_file(f)
         mbox.add(msg)
     mbox.close()
-    
+

@@ -1,5 +1,6 @@
 #import xapian
 
+from celery.utils.log import get_task_logger
 from django.apps import apps
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
@@ -26,8 +27,9 @@ except ImportError:
 if settings.CELERY_HAYSTACK_TRANSACTION_SAFE and not getattr(settings, 'CELERY_ALWAYS_EAGER', False):
     from djcelery_transactions import PostTransactionTask as Task
 else:
-    from celery.task import Task  # noqa
+    from celery import Task  # noqa
 
+logger = get_task_logger(__name__)
 
 class CeleryHaystackSignalHandler(Task):
     using = settings.CELERY_HAYSTACK_DEFAULT_ALIAS
@@ -43,7 +45,6 @@ class CeleryHaystackSignalHandler(Task):
         bits = identifier.split('.')
 
         if len(bits) < 2:
-            logger = self.get_logger(**kwargs)
             logger.error("Unable to parse object "
                          "identifer '%s'. Moving on..." % identifier)
             return (None, None)
@@ -71,7 +72,6 @@ class CeleryHaystackSignalHandler(Task):
         """
         Fetch the instance in a standarized way.
         """
-        logger = self.get_logger(**kwargs)
         instance = None
         try:
             instance = model_class._default_manager.get(pk=int(pk))
@@ -111,8 +111,7 @@ class CeleryHaystackSignalHandler(Task):
         Trigger the actual index handler depending on the
         given action ('update' or 'delete').
         """
-        logger = self.get_logger(**kwargs)
-
+        
         # First get the object path and pk (e.g. ('notes.note', 23))
         object_path, pk = self.split_identifier(identifier, **kwargs)
         if object_path is None or pk is None:
@@ -172,7 +171,6 @@ class CeleryHaystackUpdateIndex(Task):
     command from Celery.
     """
     def run(self, apps=None, **kwargs):
-        logger = self.get_logger(**kwargs)
         defaults = {
             'batchsize': settings.CELERY_HAYSTACK_COMMAND_BATCH_SIZE,
             'age': settings.CELERY_HAYSTACK_COMMAND_AGE,
@@ -198,7 +196,7 @@ class CeleryXapianBatchRemove(Task):
     """
     def run(self, documents=None):
         logger = self.get_logger()
-        
+
         database = xapian.WritableDatabase(settings.HAYSTACK_XAPIAN_PATH,xapian.DB_OPEN)
         for document in documents:
             database.delete_document('Q' + get_identifier(document))
@@ -206,6 +204,7 @@ class CeleryXapianBatchRemove(Task):
         database.close()
         logger.info("Called BatchRemove ({} documents)".format(len(documents)))
 '''
+
 
 @app.task
 def add(x, y):
@@ -218,3 +217,6 @@ def update_mbox(files):
         elist = EmailList.objects.get(pk=file[2])
         create_mbox_file(file[0], file[1], elist)
 
+
+CeleryHaystackSignalHandler = app.register_task(CeleryHaystackSignalHandler())
+CeleryHaystackUpdateIndex = app.register_task(CeleryHaystackUpdateIndex())

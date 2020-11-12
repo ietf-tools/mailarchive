@@ -13,21 +13,21 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
 
 
-class EmailListFactory(factory.DjangoModelFactory):
+class EmailListFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = EmailList
 
     name = 'public'
 
 
-class ThreadFactory(factory.DjangoModelFactory):
+class ThreadFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Thread
 
     date = datetime.datetime.now().replace(second=0, microsecond=0)
 
 
-class MessageFactory(factory.DjangoModelFactory):
+class MessageFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Message
 
@@ -41,7 +41,7 @@ class MessageFactory(factory.DjangoModelFactory):
     # email_list = factory.SubFactory(EmailListFactory)
 
 
-class AttachmentFactory(factory.DjangoModelFactory):
+class AttachmentFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Attachment
 
@@ -51,7 +51,7 @@ class AttachmentFactory(factory.DjangoModelFactory):
     sequence = factory.Sequence(lambda n: n + 1)
 
 
-class UserFactory(factory.DjangoModelFactory):
+class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = User
 

@@ -251,10 +251,8 @@ Celery is provided in the Python virtual environment. What remains is to copy
 systemd files into place and enable/start the service.
 INSTALL_DIR=/a/mailarch
 
-cp INSTALL_DIR/current/backend/celery/celeryd.service /etc/systemd/system
+cp INSTALL_DIR/current/backend/celery/celeryd.service /usr/lib/systemd/system
 cp INSTALL_DIR/current/backend/celery/celeryd /etc/default/
-mkdir /var/log/celery (wwwrun:www)
-mkdir /var/run/celery (wwwrun:www)
 systemctl enable celeryd
 systemctl start celeryd
 

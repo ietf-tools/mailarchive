@@ -1,6 +1,6 @@
 from django.core.exceptions import ImproperlyConfigured
-#from django.utils.importlib import import_module
 from importlib import import_module
+from django.db import connection, transaction
 
 from haystack.utils import get_identifier
 
@@ -23,6 +23,7 @@ def get_update_task(task_path=None):
     return Task
 
 
+'''
 def enqueue_task(action, instance):
     """
     Common utility for enqueing a task for the given action and
@@ -30,3 +31,32 @@ def enqueue_task(action, instance):
     """
     identifier = get_identifier(instance)
     get_update_task().delay(action, identifier)
+'''
+
+def enqueue_task(action, instance, **kwargs):
+    """
+    Common utility for enqueing a task for the given action and
+    model instance.
+    """
+    identifier = get_identifier(instance)
+    options = {}
+    if hasattr(settings, 'CELERY_HAYSTACK_QUEUE'):
+        options['queue'] = settings.CELERY_HAYSTACK_QUEUE
+    if hasattr(settings, 'CELERY_HAYSTACK_COUNTDOWN'):
+        options['countdown'] = settings.CELERY_HAYSTACK_COUNTDOWN
+
+    task = get_update_task()
+    task_func = lambda: task.apply_async((action, identifier), kwargs, **options)
+
+    if hasattr(transaction, 'on_commit'):
+        # Django 1.9 on_commit hook
+        transaction.on_commit(
+            task_func
+        )
+    elif hasattr(connection, 'on_commit'):
+        # Django-transaction-hooks
+        connection.on_commit(
+            task_func
+        )
+    else:
+        task_func()

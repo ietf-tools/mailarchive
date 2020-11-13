@@ -17,5 +17,6 @@
 # Simulated Subversion default ignores end here
 /env
 /.env
+/.gitignore
 .pytest_cache
 .cache

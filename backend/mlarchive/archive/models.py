@@ -362,9 +362,8 @@ class Message(models.Model):
     def next_in_list(self):
         """Return the next message in the list, ordered by date ascending"""
         messages = Message.objects
-        messages = messages.filter(email_list=self.email_list, date__gte=self.date)
-        messages = messages.order_by('date', 'id')
-        messages = messages.exclude(id=self.id)
+        messages = messages.filter(email_list=self.email_list, date__gt=self.date)
+        messages = messages.order_by('date')
         return messages.first()
 
     def next_in_thread(self):

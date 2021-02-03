@@ -35,6 +35,8 @@ env = environ.Env(
     CLOUDFLARE_AUTH_EMAIL=(str, ''),
     CLOUDFLARE_AUTH_KEY=(str, ''),
     CLOUDFLARE_ZONE_ID=(str, ''),
+    OIDC_RP_CLIENT_ID=(str, ''),
+    OIDC_RP_CLIENT_SECRET=(str, ''),
 )
 
 # reading .env file
@@ -92,6 +94,7 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'django.contrib.sites',
     'django.contrib.sitemaps',
+    'mozilla_django_oidc',
     'bootstrap4',
     'celery_haystack',
     'haystack',
@@ -256,7 +259,12 @@ INSPECTORS = {
 
 # AUTH
 LOGIN_REDIRECT_URL = '/arch/'
-AUTHENTICATION_BACKENDS = ('mlarchive.archive.backends.authbackend.HtauthBackend',)
+LOGOUT_REDIRECT_URL = '/arch/'
+AUTHENTICATION_BACKENDS = (
+    'mozilla_django_oidc.auth.OIDCAuthenticationBackend',
+    # 'mlarchive.archive.backends.authbackend.HtauthBackend',
+)
+
 HTAUTH_PASSWD_FILENAME = env("HTAUTH_PASSWD_FILENAME")
 
 # Cache settings
@@ -297,6 +305,18 @@ CLOUDFLARE_AUTH_KEY = env("CLOUDFLARE_AUTH_KEY")
 CLOUDFLARE_ZONE_ID = env("CLOUDFLARE_ZONE_ID")
 CACHE_CONTROL_MAX_AGE = 60 * 60 * 24 * 7     # one week
 
+# OIDC SETTINGS
+OIDC_RP_CLIENT_ID = env('OIDC_RP_CLIENT_ID')
+OIDC_RP_CLIENT_SECRET = env('OIDC_RP_CLIENT_SECRET')
+OIDC_RP_SIGN_ALGO = 'RS256'
+OIDC_RP_SCOPES = 'openid email roles'
+# OIDC_RP_IDP_SIGN_KEY = ''
+# OIDC_CREATE_USER = False
+OIDC_OP_JWKS_ENDPOINT = 'https://auth.ietf.org/api/openid/jwks/'
+OIDC_OP_AUTHORIZATION_ENDPOINT = 'https://auth.ietf.org/api/openid/authorize/'
+OIDC_OP_TOKEN_ENDPOINT = 'https://auth.ietf.org/api/openid/token/'
+OIDC_OP_USER_ENDPOINT = 'https://auth.ietf.org/api/openid/userinfo/'
+OIDC_USERNAME_ALGO = 'mlarchive.authbackend.oidc.generate_username'
 
 # DJANGO DEBUG TOOLBAR SETTINGS
 if env('DEBUG_TOOLBAR_ON'):

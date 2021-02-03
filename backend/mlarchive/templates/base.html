@@ -77,11 +77,14 @@
                     {% if user.is_authenticated %}
                     <li class="nav-item navbar-text pipe">{{ user}}</li>
                     <li class="nav-item"> 
-                        <a class="nav-link" href="{% url "archive_logout" %}">Sign out</a>
+                        <form action="{% url 'oidc_logout' %}" method="post">
+                            {% csrf_token %}
+                            <input class="nav-link btn-link-custom" type="submit" value="Logout">
+                        </form>
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="http://{{ request.get_host }}/accounts/login/?next={{request.get_full_path|urlencode}}" rel="nofollow">Sign in</a>
+                        <a class="nav-link" href="{% url 'oidc_authentication_init' %}" rel="nofollow">Sign in</a>
                     </li>
                     {% endif %}
                 </ul>

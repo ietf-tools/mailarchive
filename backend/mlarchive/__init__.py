@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from .celeryapp import app
 
-__version__ = "2.1.27"
+__version__ = "2.1.28"
 
 __date__    = "$Date$"
 

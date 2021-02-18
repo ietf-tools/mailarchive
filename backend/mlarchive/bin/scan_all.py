@@ -148,22 +148,22 @@ def map_header(header):
 
 def archived_at():
     """Find messages whose Archived-At header does not match url"""
-    from email.parser import Parser
-    parser = Parser()
+    from email.parser import BytesParser
+    parser = BytesParser()
     count = 0
-    start = datetime.datetime(2014,1,1)
-    messages = Message.objects.filter(date__gte=start)
-    print('Processing: {}'.format(messages.count()))
-    for n, message in enumerate(messages):
-        if n % 10000 == 0:
-            print('Processed: {} ({})'.format(n, count))
-        msg = parser.parsestr(message.get_body_raw(), headersonly=True)
+    mismatch = 0
+    for message in Message.objects.filter(date__year__gte=2018).order_by('-date'):
+        if count % 1000 == 0:
+            print('Processed: {}'.format(count))
+        count = count + 1   
+        msg = parser.parsebytes(message.get_body_raw(), headersonly=True)
         if msg['archived-at'] and 'mailarchive' in msg['archived-at']:
             if message.hashcode.strip('=') not in msg['archived-at']:
-                count = count + 1
-                print(message.pk, message.hashcode, msg['archived-at'])
-
-    print('Total checked: {}'.format(count))
+                mismatch = mismatch + 1
+                print('pk:{} hash:{} at:{}'.format(message.pk, message.hashcode, msg['archived-at']))
+        if mismatch > 10:
+            break
+    print('mismatches: {} of ({})'.format(mismatch, count))
 
 
 def attachments():

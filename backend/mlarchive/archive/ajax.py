@@ -5,7 +5,7 @@ import six
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render
-from django.template.loader import render_to_string
+from django.utils.cache import add_never_cache_headers, patch_cache_control
 
 from mlarchive.archive import actions
 from mlarchive.archive.utils import jsonapi
@@ -46,9 +46,13 @@ def ajax_get_msg(request, msg):
     NOTE: the "msg" argument is Message object added by the check_access decorator
     NOTE: msg_thread changes avg response time from ~100ms to ~200ms
     '''
-    msg_body = msg.get_body_html(request)
-    msg_thread = render_to_string('includes/message_thread.html', {'msg': msg})
-    return HttpResponse(msg_body + msg_thread)
+    response = render(request, 'archive/message_ajax.html', {'msg': msg})
+
+    if msg.email_list.private:
+        add_never_cache_headers(response)
+    else:
+        patch_cache_control(response, max_age=86400)
+    return response
 
 
 @check_ajax_list_access

@@ -57,6 +57,36 @@ def test_ajax_get_msg(client, admin_client, admin_user):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_ajax_get_msg_cache_control(client, admin_client, admin_user):
+    publist = EmailListFactory.create(name='public')
+    prilist = EmailListFactory.create(name='private', private=True)
+    prilist.members.add(admin_user)
+    thread = ThreadFactory.create()
+    msg = MessageFactory.create(email_list=publist, thread=thread, hashcode='00001')
+    primsg = MessageFactory.create(email_list=prilist, thread=thread, hashcode='00002')
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
+    for m in (msg, primsg):
+        if not os.path.exists(os.path.dirname(m.get_file_path())):
+            os.makedirs(os.path.dirname(m.get_file_path()))
+        shutil.copyfile(path, m.get_file_path())
+
+    url = '%s?id=%s' % (reverse('ajax_get_msg'), msg.pk)
+    response = client.get(url)
+    print(url)
+    assert response.status_code == 200
+    print(type(response.content))
+    assert response.content.find(b'This is a test') != -1
+    assert response['cache-control'] == 'max-age=86400'
+
+    # test authorized access to restricted Message
+    url = '%s?id=%s' % (reverse('ajax_get_msg'), primsg.pk)
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    print(response['cache-control'])
+    assert response['cache-control'] == 'max-age=0, no-cache, no-store, must-revalidate'
+
+
+@pytest.mark.django_db(transaction=True)
 def test_ajax_get_msg_thread_links(client, thread_messages):
     print(Message.objects.count())
     msg = Message.objects.get(msgid='00002@example.com')

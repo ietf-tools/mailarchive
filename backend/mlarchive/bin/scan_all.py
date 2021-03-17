@@ -152,15 +152,24 @@ def archived_at():
     parser = BytesParser()
     count = 0
     mismatch = 0
-    for message in Message.objects.filter(date__year__gte=2018).order_by('-date'):
+    for message in Message.objects.filter(date__year__gte=2021).order_by('-date'):
         if count % 1000 == 0:
             print('Processed: {}'.format(count))
-        count = count + 1   
+        count = count + 1
         msg = parser.parsebytes(message.get_body_raw(), headersonly=True)
-        if msg['archived-at'] and 'mailarchive' in msg['archived-at']:
-            if message.hashcode.strip('=') not in msg['archived-at']:
+        archives = msg.get_all('archived-at')
+        if not archives:
+            print('No archived-at: {}'.format(message.get_absolute_url()))
+            continue
+        # if any archive-at values are ours, one must match
+        if any('mailarchive' in s for s in archives):
+            hashcode = message.hashcode.strip('=')
+            for s in archives:
+                if hashcode in s:
+                    break
+            else:
                 mismatch = mismatch + 1
-                print('pk:{} hash:{} at:{}'.format(message.pk, message.hashcode, msg['archived-at']))
+                print('date:{} url:{} header:{}'.format(message.date.strftime("%m-%d-%Y %H:%M"), message.get_absolute_url(), msg['archived-at']))
         if mismatch > 10:
             break
     print('mismatches: {} of ({})'.format(mismatch, count))

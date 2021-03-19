@@ -12,6 +12,9 @@ from django.utils.decorators import method_decorator
 from django.utils.http import urlencode
 from haystack.forms import FacetedSearchForm
 
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Search
+
 from mlarchive.archive.query_utils import (get_kwargs, generate_queryid, get_filter_params,
     parse_query, get_base_query, get_order_fields)
 from mlarchive.archive.models import EmailList
@@ -155,7 +158,7 @@ class LowerCaseModelMultipleChoiceField(forms.ModelMultipleChoiceField):
 
 
 # @method_decorator(log_timing, name='get_facets')
-class AdvancedSearchForm(FacetedSearchForm):
+class AdvancedSearchForm(forms.Form):
     # start_date = forms.DateField(required=False,
     #        widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
     start_date = DatepickerDateField(
@@ -188,6 +191,13 @@ class AdvancedSearchForm(FacetedSearchForm):
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request')
+        self.searchqueryset = kwargs.pop('searchqueryset', None)
+        self.load_all = kwargs.pop('load_all', False)
+
+        if self.searchqueryset is None:
+            client = Elasticsearch()
+            self.searchqueryset = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+
         # can't use reserved word "from" as field name, so we need to map to "frm"
         # args is a tuple and args[0] is either None or a QueryDict
         if len(args) and isinstance(args[0], dict) and 'from' in args[0]:
@@ -262,7 +272,8 @@ class AdvancedSearchForm(FacetedSearchForm):
         if self.q:
             logger.info('Query String: %s' % self.q)
             logger.debug('Query Params: %s' % self.data)
-            self.searchqueryset.query.raw_search(self.q)
+            # self.searchqueryset.query.raw_search(self.q)
+            self.searchqueryset = self.searchqueryset.query('query_string', query=self.q, default_field='text')
 
         return self.searchqueryset
 
@@ -289,35 +300,36 @@ class AdvancedSearchForm(FacetedSearchForm):
         sqs = self.process_query()
 
         # handle URL parameters -----------------------------------
-        if self.kwargs:
-            sqs = sqs.filter(**self.kwargs)
+        # if self.kwargs:
+        #     sqs = sqs.filter(**self.kwargs)
 
         # private lists -------------------------------------------
-        sqs = sqs.exclude(email_list__in=get_noauth(self.request.user))
+        # sqs = sqs.exclude(email_list__in=get_noauth(self.request.user))
 
         # faceting ------------------------------------------------
         # call this before running sorts or applying filters to queryset
+        skip_facets = True
         if skip_facets:
             facets = []
         else:
             facets = self.get_facets(sqs)
 
         # filters -------------------------------------------------
-        if self.f_list:
-            sqs = sqs.filter(email_list__in=self.f_list)
-        if self.f_from:
-            sqs = sqs.filter(frm_name__in=self.f_from)
+        # if self.f_list:
+        #     sqs = sqs.filter(email_list__in=self.f_list)
+        # if self.f_from:
+        #     sqs = sqs.filter(frm_name__in=self.f_from)
 
         # Populate all all SearchResult.object with efficient db query
         # when called via urls.py / search_view_factory default load_all=True
-        if self.load_all:
-            sqs = sqs.load_all()
+        # if self.load_all:
+        #     sqs = sqs.load_all()
 
         # grouping and sorting  -----------------------------------
         # perform this step last because other operations, if they clone the
         # SearchQuerySet, cause the query to be re-run which loses custom sort order
-        fields = get_order_fields(self.request.GET)
-        sqs = sqs.order_by(*fields)
+        # fields = get_order_fields(self.request.GET)
+        # sqs = sqs.order_by(*fields)
 
         # save query in cache with random id for security
         queryid = generate_queryid()
@@ -325,7 +337,7 @@ class AdvancedSearchForm(FacetedSearchForm):
         sqs.queryid = queryid
         cache.set(queryid, sqs, 7200)           # 2 hours
 
-        logger.debug('Backend Query: %s' % sqs.query.build_query())
+        # logger.debug('Backend Query: %s' % sqs.query.build_query())
 
         # insert facets just before returning query, so they don't get overridden
         sqs.myfacets = facets

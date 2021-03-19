@@ -50,6 +50,7 @@ The following two fixtures cause the test run to use a temporary
 directory, /tmp/pytest-of-[user]/pytest-NNN, for data files
 '''
 
+
 @pytest.fixture(scope='session')
 def tmp_dir(tmpdir_factory):
     """Create temporary directory for this test run"""
@@ -69,7 +70,7 @@ def data_dir(tmp_dir, settings):
 # Regular Fixtures
 # -----------------------------------
 
-    
+
 def load_db():
     pubone = EmailListFactory.create(name='pubone')
     pubtwo = EmailListFactory.create(name='pubtwo')
@@ -362,7 +363,4 @@ def celery_service():
 
 @pytest.fixture(scope='session')
 def celery_config():
-    return {
-        'broker_url': 'amqp://',
-        #'result_backend': 'redis://'
-    }
+    return {'broker_url': 'amqp://'}

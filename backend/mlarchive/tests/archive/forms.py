@@ -11,6 +11,7 @@ from mlarchive.archive.forms import AdvancedSearchForm, get_base_query, get_cach
 from pyquery import PyQuery
 
 from mlarchive.archive.models import Message
+from mlarchive.archive.forms import AdvancedSearchForm
 
 
 def test_get_base_query():
@@ -177,3 +178,21 @@ def test_asf_search_from(client, messages):
     assert response.status_code == 200
     results = response.context['results']
     assert len(results) == 1
+
+
+# --------------------------------------------------
+# Low level form.search() tests
+# --------------------------------------------------
+
+def test_ensure_index(settings):
+    assert settings.ELASTICSEARCH_INDEX_NAME == 'test-mail-archive'
+
+
+@pytest.mark.django_db(transaction=True)
+def test_form_simple(rf, client, messages):
+    request = rf.get('/arch/search/?q=things')
+    request.user = AnonymousUser()
+    data = {'q': 'things'}
+    form = AdvancedSearchForm(data=data, request=request)
+    results = form.search()
+    assert results.count() == 1

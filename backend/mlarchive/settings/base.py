@@ -175,6 +175,7 @@ HAYSTACK_CONNECTIONS = {
 }
 
 # ELASTICSEARCH SETTINGS
+ELASTICSEARCH_INDEX_NAME = 'mail-archive'
 ELASTICSEARCH_INDEX_MAPPINGS = {
     "django_ct": {'type': 'keyword'},           # "archive.message"
     "django_id": {'type': 'long'},              # primary key of message

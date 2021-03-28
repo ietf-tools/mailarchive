@@ -112,6 +112,14 @@ def load_db():
                           date=datetime.datetime(2014, 1, 1),
                           msgid='a04',
                           spam_score=1)
+    MessageFactory.create(email_list=pubone,
+                          thread=athread,
+                          thread_order=2,
+                          frm='larry@amsl.com',
+                          subject='Party Invitation',
+                          base_subject=get_base_subject('Party Invitation things'),
+                          date=datetime.datetime(2014, 1, 1),
+                          msgid='a05')
     MessageFactory.create(email_list=pubtwo)
     MessageFactory.create(email_list=pubtwo)
     date = datetime.datetime.now().replace(second=0, microsecond=0)

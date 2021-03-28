@@ -46,13 +46,15 @@ class ElasticMessageIndex(CelerySearchIndex, indexes.Indexable):
     frm = indexes.CharField(model_attr='frm')
     frm_name = indexes.CharField(model_attr='frm_name', faceted=True, indexed=False)
     msgid = indexes.CharField(model_attr='msgid', indexed=False)
+    # TODO index only subject base, but keep it searchable
     subject = indexes.CharField(model_attr='subject')
     subject_base = indexes.CharField(model_attr='base_subject')
     tdate = indexes.DateTimeField(model_attr='thread_date')
     tid = indexes.IntegerField(model_attr='thread_id')
-    torder = indexes.IntegerField(model_attr='thread_order')
-    # to = indexes.CharField(model_attr='to_and_cc')
+    tdepth = indexes.IntegerField(model_attr='thread_depth', indexed=False)
+    torder = indexes.IntegerField(model_attr='thread_order', indexed=False)
     spam_score = indexes.IntegerField(model_attr='spam_score')
+    url = indexes.CharField(model_attr='get_absolute_url', indexed=False)
 
     def get_model(self):
         return Message

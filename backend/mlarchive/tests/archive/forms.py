@@ -189,10 +189,25 @@ def test_ensure_index(settings):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_form_simple(rf, client, messages):
+def test_form_one_term(rf, client, messages):
     request = rf.get('/arch/search/?q=things')
     request.user = AnonymousUser()
     data = {'q': 'things'}
     form = AdvancedSearchForm(data=data, request=request)
     results = form.search()
     assert results.count() == 1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_form_two_term(rf, client, messages):
+    request = rf.get('/arch/search/?q=things')
+    request.user = AnonymousUser()
+    data = {'q': 'party invitation'}
+    form = AdvancedSearchForm(data=data, request=request)
+    results = form.search()
+    assert results.count() == 1
+    assert results[0].msgid == 'a05'
+
+# two terms (implied AND), AND, OR, NOT
+# params (filter) list,from,qdr
+

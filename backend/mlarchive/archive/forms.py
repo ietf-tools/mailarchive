@@ -161,6 +161,8 @@ class LowerCaseModelMultipleChoiceField(forms.ModelMultipleChoiceField):
 class AdvancedSearchForm(forms.Form):
     # start_date = forms.DateField(required=False,
     #        widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
+    q = forms.CharField(required=False, label=('Search'),
+                        widget=forms.TextInput(attrs={'type': 'search'}))
     start_date = DatepickerDateField(
         date_format="yyyy-mm-dd",
         picker_settings={"autoclose": "1"},
@@ -273,6 +275,7 @@ class AdvancedSearchForm(forms.Form):
             logger.info('Query String: %s' % self.q)
             logger.debug('Query Params: %s' % self.data)
             # self.searchqueryset.query.raw_search(self.q)
+            # TODO: rename seld.searchqueryset
             self.searchqueryset = self.searchqueryset.query('query_string', query=self.q, default_field='text')
 
         return self.searchqueryset
@@ -335,7 +338,8 @@ class AdvancedSearchForm(forms.Form):
         queryid = generate_queryid()
         sqs.query_string = self.request.META['QUERY_STRING']
         sqs.queryid = queryid
-        cache.set(queryid, sqs, 7200)           # 2 hours
+        # TODO: can't cache query 
+        # cache.set(queryid, sqs, 7200)           # 2 hours
 
         # logger.debug('Backend Query: %s' % sqs.query.build_query())
 

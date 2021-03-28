@@ -166,11 +166,15 @@ class CustomSearchView(SearchView):
         extra['query_string'] = query_string
         extra['results_per_page'] = settings.HAYSTACK_SEARCH_RESULTS_PER_PAGE
         extra['queryset_offset'] = str(self.page.start_index() - 1)
-        # Review
-        if isinstance(self.results, list):
-            extra['count'] = len(self.results)
-        else:
-            extra['count'] = self.results.count()
+
+        # TODO: replace with simple len()
+        count = 0
+        try:
+            count = len(self.results)
+        except TypeError:
+            if hasattr(self.results, 'count'):
+                count = self.results.count()
+        extra['count'] = count
 
         # export links
         token = get_random_token(length=16)
@@ -200,6 +204,17 @@ class CustomSearchView(SearchView):
         self.set_page_links(extra)
 
         return extra
+
+    def get_results(self):
+        """
+        Fetches the results via the form.
+
+        Returns an empty list if there's no query to search with.
+        """
+        # return self.form.search()
+        query = self.form.search()
+        response = query.execute()
+        return response.hits
 
     def set_thread_links(self, extra):
         extra['group_by_thread'] = True if 'gbt' in self.request.GET else False

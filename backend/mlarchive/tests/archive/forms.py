@@ -178,36 +178,3 @@ def test_asf_search_from(client, messages):
     assert response.status_code == 200
     results = response.context['results']
     assert len(results) == 1
-
-
-# --------------------------------------------------
-# Low level form.search() tests
-# --------------------------------------------------
-
-def test_ensure_index(settings):
-    assert settings.ELASTICSEARCH_INDEX_NAME == 'test-mail-archive'
-
-
-@pytest.mark.django_db(transaction=True)
-def test_form_one_term(rf, client, messages):
-    request = rf.get('/arch/search/?q=things')
-    request.user = AnonymousUser()
-    data = {'q': 'things'}
-    form = AdvancedSearchForm(data=data, request=request)
-    results = form.search()
-    assert results.count() == 1
-
-
-@pytest.mark.django_db(transaction=True)
-def test_form_two_term(rf, client, messages):
-    request = rf.get('/arch/search/?q=things')
-    request.user = AnonymousUser()
-    data = {'q': 'party invitation'}
-    form = AdvancedSearchForm(data=data, request=request)
-    results = form.search()
-    assert results.count() == 1
-    assert results[0].msgid == 'a05'
-
-# two terms (implied AND), AND, OR, NOT
-# params (filter) list,from,qdr
-

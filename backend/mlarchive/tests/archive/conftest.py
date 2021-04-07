@@ -250,6 +250,38 @@ def latin1_messages():
 
 
 @pytest.fixture()
+def search_api_messages():
+    """Load messages for search_api tests"""
+    content = StringIO()
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'search_api.mbox')
+    call_command('clear_index', interactive=False, stdout=content)
+    call_command('load', path, listname='acme', summary=True, stdout=content)
+    print(content.read())
+    assert Message.objects.count() > 0
+
+
+@pytest.fixture()
+def search_api_messages_ford():
+    """Load second list for search_api"""
+    content = StringIO()
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'search_api_ford.mbox')
+    call_command('load', path, listname='ford', summary=True, stdout=content)
+    print(content.read())
+    assert Message.objects.count() > 0
+
+
+@pytest.fixture()
+def private_messages():
+    """Load some latin1"""
+    private = EmailListFactory.create(name='private', private=True)
+    content = StringIO()
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'private.mbox')
+    call_command('load', path, listname='private', summary=True, stdout=content)
+    print(content.read())
+    assert Message.objects.count() > 0
+
+
+@pytest.fixture()
 def windows1252_messages():
     """Load some windows1252"""
     content = StringIO()

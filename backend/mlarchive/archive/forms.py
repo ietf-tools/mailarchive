@@ -276,7 +276,11 @@ class AdvancedSearchForm(forms.Form):
             logger.debug('Query Params: %s' % self.data)
             # self.searchqueryset.query.raw_search(self.q)
             # TODO: rename seld.searchqueryset
-            self.searchqueryset = self.searchqueryset.query('query_string', query=self.q, default_field='text')
+            self.searchqueryset = self.searchqueryset.query(
+                'query_string',
+                query=self.q,
+                default_field='text',
+                default_operator='AND')
 
         return self.searchqueryset
 
@@ -308,6 +312,7 @@ class AdvancedSearchForm(forms.Form):
 
         # private lists -------------------------------------------
         # sqs = sqs.exclude(email_list__in=get_noauth(self.request.user))
+        sqs = sqs.exclude('terms', email_list=get_noauth(self.request.user))
 
         # faceting ------------------------------------------------
         # call this before running sorts or applying filters to queryset
@@ -318,10 +323,10 @@ class AdvancedSearchForm(forms.Form):
             facets = self.get_facets(sqs)
 
         # filters -------------------------------------------------
-        # if self.f_list:
-        #     sqs = sqs.filter(email_list__in=self.f_list)
-        # if self.f_from:
-        #     sqs = sqs.filter(frm_name__in=self.f_from)
+        if self.f_list:
+            sqs = sqs.filter('terms', email_list=self.f_list)
+        if self.f_from:
+            sqs = sqs.filter('terms', frm_name=self.f_from)
 
         # Populate all all SearchResult.object with efficient db query
         # when called via urls.py / search_view_factory default load_all=True
@@ -331,8 +336,8 @@ class AdvancedSearchForm(forms.Form):
         # grouping and sorting  -----------------------------------
         # perform this step last because other operations, if they clone the
         # SearchQuerySet, cause the query to be re-run which loses custom sort order
-        # fields = get_order_fields(self.request.GET)
-        # sqs = sqs.order_by(*fields)
+        fields = get_order_fields(self.request.GET)
+        sqs = sqs.sort(*fields)
 
         # save query in cache with random id for security
         queryid = generate_queryid()

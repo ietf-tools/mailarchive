@@ -1,0 +1,55 @@
+From beeble@example.com  Thu Nov 7 17:54:55 2013
+From: Zaphod Beeblebrox<user@example.com>
+To: User <user@example.com>
+Date: Thu, 7 Nov 2013 17:54:55 +0000
+Message-ID: <api001>
+Content-Type: text/plain; charset="us-ascii"
+Subject: This is a test
+
+Hello,
+
+This is a test email. 
+bananas
+
+
+From hford@example.com  Thu Nov 7 17:54:55 2013
+From: Holden Ford <hford@example.com>
+To: User <user@example.com>
+Date: Thu, 7 Nov 2013 17:54:55 +0000
+Message-ID: <api002>
+Content-Type: text/plain; charset="us-ascii"
+Subject: This is a test
+
+Hello,
+
+This is a test email. 
+apples
+
+
+From baggins@example.com  Thu Nov 7 17:54:55 2013
+From: Bilbo Baggins <baggins@example.com>
+To: User <user@example.com>
+Date: Thu, 7 Nov 2013 17:54:55 +0000
+Message-ID: <api003>
+Content-Type: text/plain; charset="us-ascii"
+Subject: This is a test
+
+Hello,
+
+This is a test email. 
+apples
+bananas
+
+
+From hford@example.com  Thu Nov 7 17:54:55 2013
+From: Holden Ford <hford@example.com>
+To: User <user@example.com>
+Date: Thu, 7 Nov 2013 17:54:55 +0000
+Message-ID: <api004>
+Content-Type: text/plain; charset="us-ascii"
+Subject: This is a test
+
+Hello,
+
+This is a test email. 
+oranges

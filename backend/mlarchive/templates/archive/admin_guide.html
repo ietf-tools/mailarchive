@@ -32,10 +32,9 @@
     <p>The mail archive supports imports from mbox files (or directories of files).  Use the following procedure to load messages into the live archive.<br>
     <pre>cd /a/mailarch/current
 source env/bin/activate
-export PYTHONPATH=$PWD
-django-admin.py load [path-to-file/dir] -l [listname] --settings=mlarchive.settings.noindex</pre>
-    This will load messages into the database without flooding the index update queue.
-    It may take some minutes to run, depending on how many messages are being imported.  It will print some statistics on completion.  Next follow the instructions for rebuilding the index below.
+cd backend
+./manage.py load [path-to-file/dir] -l [listname]</pre>
+    It may take some minutes to run, depending on how many messages are being imported.  It will print some statistics on completion.
     </p>
 
     <span id="delete_message"></span>
@@ -55,10 +54,10 @@ django-admin.py load [path-to-file/dir] -l [listname] --settings=mlarchive.setti
     Then use the Haystack update_index command
     <pre>cd /a/mailarch/current
 source env/bin/activate
-export PYTHONPATH=$PWD
-django-admin.py update_index --start='2014-01-14T00:00:00' --end='2014-01-16T23:59:59' --settings=mlarchive.settings.production
+cd backend
+./manage.py update_index --start='2014-01-14T00:00:00' --end='2014-01-16T23:59:59'
 -- or --
-django-admin.py update_index --age=1 --settings=mlarchive.settings.production</pre>
+./manage.py update_index --age=1</pre>
     Then restart Celery
     <pre>sudo systemctl start celeryd.service</pre>
     </p>

@@ -17,9 +17,11 @@ class XapianMessageIndex(CelerySearchIndex, indexes.Indexable):
     subject = indexes.CharField(model_attr='subject')
     tdate = indexes.DateTimeField(model_attr='thread_date')
     tid = indexes.IntegerField(model_attr='thread_id')
-    torder = indexes.IntegerField(model_attr='thread_order')
+    tdepth = indexes.IntegerField(model_attr='thread_depth', indexed=False)
+    torder = indexes.IntegerField(model_attr='thread_order', indexed=False)
     to = indexes.CharField(model_attr='to_and_cc')
     spam_score = indexes.IntegerField(model_attr='spam_score')
+    url = indexes.CharField(model_attr='get_absolute_url', indexed=False)
 
     def get_model(self):
         return Message

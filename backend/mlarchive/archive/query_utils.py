@@ -1,11 +1,10 @@
-
-
 import random
 import re
 from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.core.cache import cache
+from elasticsearch_dsl import Q
 
 from mlarchive.archive.utils import get_lists
 from mlarchive.utils.test_utils import get_search_backend
@@ -61,6 +60,31 @@ def clean_queryid(query_id):
 def get_filter_params(query):
     """Return list of filter parameters that appear in the query"""
     return [k for k, v in list(query.items()) if k in FILTER_PARAMS and v]
+
+
+def filters_from_params(params):
+    """Returns a list of filters (filter context) built from parameters"""
+    filters = []
+    if params.get('msgid'):
+        filters.append(Q('term', msgid=params['msgid']))
+    if params.get('start_date'):
+        filters.append(Q('range', date={'gte': params['start_date']}))
+    if params.get('end_date'):
+        filters.append(Q('range', date={'lte': params['end_date']}))
+    if params.get('email_list'):
+        filters.append(Q('terms', email_list=params['email_list']))
+    if params.get('qdr') and params.get('qdr') in ['d', 'w', 'm', 'y']:
+        filters.append(Q('range', date={'gte': get_qdr_time_iso(params['qdr'])}))
+    return filters
+
+
+def queries_from_params(params):
+    queries = []
+    if params.get('frm'):
+        queries.append(Q('match', frm=params['frm']))
+    if params.get('subject'):
+        queries.append(Q('match', subject=params['subject']))
+    return queries
 
 
 def get_kwargs(data):
@@ -123,6 +147,11 @@ def get_qdr_time(val):
         return now - timedelta(days=30)
     elif val == 'y':
         return now - timedelta(days=365)
+
+
+def get_qdr_time_iso(val):
+    """QDR time in ISO 8601 format"""
+    return get_qdr_time(val).isoformat()
 
 
 def get_order_fields(params, use_db=False):

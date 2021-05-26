@@ -13,10 +13,11 @@ from django.utils.http import urlencode
 from haystack.forms import FacetedSearchForm
 
 from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search
+from elasticsearch_dsl import Search, A, Q
 
 from mlarchive.archive.query_utils import (get_kwargs, generate_queryid, get_filter_params,
-    parse_query, get_base_query, get_order_fields)
+    parse_query, get_base_query, get_order_fields, queries_from_params,
+    filters_from_params)
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
 from mlarchive.utils.decorators import log_timing
@@ -284,6 +285,13 @@ class AdvancedSearchForm(forms.Form):
 
         return self.searchqueryset
 
+    def set_aggs(self, s):
+        """Set aggs on search"""
+        list_terms = A('terms', field='email_list')
+        from_terms = A('terms', field='frm_name')
+        s.aggs.bucket('list_terms', list_terms)
+        s.aggs.bucket('from_terms', from_terms)
+
     def search(self, email_list=None, skip_facets=False):
         """Custom search function.  This completely overrides the parent
         search().  Returns a SearchQuerySet object.
@@ -299,6 +307,8 @@ class AdvancedSearchForm(forms.Form):
         if email_list:
             data['email_list'] = [email_list.name]
         self.kwargs = get_kwargs(data)
+        self.filters = filters_from_params(self.cleaned_data)
+        self.queries = queries_from_params(self.cleaned_data)
 
         # return empty queryset if no parameters passed
         if not (self.q or self.kwargs):
@@ -309,6 +319,13 @@ class AdvancedSearchForm(forms.Form):
         # handle URL parameters -----------------------------------
         # if self.kwargs:
         #     sqs = sqs.filter(**self.kwargs)
+        if self.filters:
+            for f in self.filters:
+                sqs = sqs.filter(f)
+
+        if self.queries:
+            for q in self.queries:
+                sqs = sqs.query(q)
 
         # private lists -------------------------------------------
         # sqs = sqs.exclude(email_list__in=get_noauth(self.request.user))
@@ -316,11 +333,13 @@ class AdvancedSearchForm(forms.Form):
 
         # faceting ------------------------------------------------
         # call this before running sorts or applying filters to queryset
-        skip_facets = True
-        if skip_facets:
-            facets = []
-        else:
-            facets = self.get_facets(sqs)
+        # skip_facets = True
+        # if skip_facets:
+        #     facets = []
+        # else:
+        #     facets = self.get_facets(sqs)
+        if not skip_facets:
+            self.set_aggs(sqs)
 
         # filters -------------------------------------------------
         if self.f_list:
@@ -346,10 +365,10 @@ class AdvancedSearchForm(forms.Form):
         # TODO: can't cache query 
         # cache.set(queryid, sqs, 7200)           # 2 hours
 
-        # logger.debug('Backend Query: %s' % sqs.query.build_query())
+        logger.debug('Backend Query: %s' % sqs.to_dict())
 
         # insert facets just before returning query, so they don't get overridden
-        sqs.myfacets = facets
+        # sqs.myfacets = facets
 
         return sqs
 

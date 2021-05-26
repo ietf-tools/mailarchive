@@ -271,6 +271,42 @@ def search_api_messages_ford():
 
 
 @pytest.fixture()
+def search_api_messages_qdr():
+    """Load messages with dynamic dates for qdr tests"""
+    content = StringIO()
+    call_command('clear_index', interactive=False, stdout=content)
+    public = EmailListFactory.create(name='public')
+    now = datetime.datetime.now()
+    today = now - datetime.timedelta(hours=1)
+    yesterday = now - datetime.timedelta(hours=30)
+    two_weeks_ago = now - datetime.timedelta(days=14)
+    six_months_ago = now - datetime.timedelta(days=180)
+    last_year = now - datetime.timedelta(days=365)
+    thread = ThreadFactory.create(date=last_year)
+    MessageFactory.create(email_list=public,
+                          thread=thread,
+                          thread_order=10,
+                          msgid='api301',
+                          date=today)
+    MessageFactory.create(email_list=public,
+                          thread=thread,
+                          thread_order=9,
+                          msgid='api302',
+                          date=yesterday)
+    MessageFactory.create(email_list=public,
+                          thread=thread,
+                          thread_order=8,
+                          msgid='api303',
+                          date=two_weeks_ago)
+    MessageFactory.create(email_list=public,
+                          thread=thread,
+                          thread_order=7,
+                          msgid='api304',
+                          date=six_months_ago)
+    call_command('rebuild_index', interactive=False, stdout=content)
+
+
+@pytest.fixture()
 def private_messages():
     """Load some latin1"""
     private = EmailListFactory.create(name='private', private=True)

@@ -205,7 +205,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
             lambda driver: driver.find_element_by_tag_name('body'))
 
         # Get results page
-        self.assertIn('Mail Archive', self.selenium.title)
+        self.assertIn('IETF Mail List Archives', self.selenium.title)
 
         # Press back button
         self.selenium.find_element_by_id('modify-search').click()
@@ -214,7 +214,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
 
         # End up back at basic search
         self.selenium.get_screenshot_as_file('tests/tmp/back_to_search.png')
-        self.assertEqual('Mail Archive', self.selenium.title)
+        self.assertEqual('IETF Mail List Archives', self.selenium.title)
 
     def test_back_to_advanced_search(self):
         # User performs search
@@ -229,7 +229,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
             lambda driver: driver.find_element_by_tag_name('body'))
 
         # Get results page
-        self.assertIn('Mail Archive', self.selenium.title)
+        self.assertIn('IETF Mail List Archives', self.selenium.title)
         self.selenium.get_screenshot_as_file('tests/tmp/mailarch_test.png')
 
         # Press back button
@@ -251,7 +251,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
             lambda driver: driver.find_element_by_tag_name('body'))
 
         # Get results page
-        self.assertIn('Mail Archive', self.selenium.title)
+        self.assertIn('IETF Mail List Archives', self.selenium.title)
         self.selenium.get_screenshot_as_file('tests/tmp/advanced_search.png')
         o = urlparse(self.selenium.current_url)
         assert unquote(o.query) == 'qdr=a&start_date=&end_date=&q=text:(data)&as=1'
@@ -272,7 +272,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
             lambda driver: driver.find_element_by_tag_name('body'))
 
         # Get results page
-        self.assertIn('Mail Archive', self.selenium.title)
+        self.assertIn('IETF Mail List Archives', self.selenium.title)
         self.selenium.get_screenshot_as_file('tests/tmp/advanced_search.png')
         o = urlparse(self.selenium.current_url)
         assert unquote(o.query) == 'qdr=a&start_date=&end_date=&q=text:"data"&as=1'

@@ -1,5 +1,3 @@
-
-
 import datetime
 import json
 import os
@@ -29,8 +27,9 @@ from haystack.forms import SearchForm
 
 from mlarchive.utils.decorators import check_access, superuser_only, pad_id, check_list_access
 from mlarchive.archive import actions
-from mlarchive.archive.query_utils import (get_kwargs, get_qdr_kwargs, get_cached_query, get_browse_equivalent,
-    parse_query_string, get_order_fields, generate_queryid, is_static_on)
+from mlarchive.archive.query_utils import (get_kwargs, get_qdr_kwargs,
+    get_cached_query, get_browse_equivalent, parse_query_string, get_order_fields,
+    generate_queryid, is_static_on, run_query)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     get_query_neighbors, get_query_string, get_lists_for_user, get_random_token)
 
@@ -144,11 +143,8 @@ class CustomSearchView(SearchView):
         self.request = request
         self.form = self.build_form()
         self.query = self.get_query()
+        # self.search, self.response get set in get_results()
         self.results = self.get_results()
-        if hasattr(self.results, 'myfacets'):
-            self.myfacets = self.results.myfacets
-        if hasattr(self.results, 'queryid'):
-            self.queryid = self.results.queryid
 
         return self.create_response()
 
@@ -167,6 +163,7 @@ class CustomSearchView(SearchView):
         extra['results_per_page'] = settings.HAYSTACK_SEARCH_RESULTS_PER_PAGE
         extra['queryset_offset'] = str(self.page.start_index() - 1)
 
+        '''
         # TODO: replace with simple len()
         count = 0
         try:
@@ -175,6 +172,8 @@ class CustomSearchView(SearchView):
             if hasattr(self.results, 'count'):
                 count = self.results.count()
         extra['count'] = count
+        '''
+        extra['count'] = self.search.count()
 
         # export links
         token = get_random_token(length=16)
@@ -207,14 +206,21 @@ class CustomSearchView(SearchView):
 
     def get_results(self):
         """
-        Fetches the results via the form.
+        Gets the search object from the form. Executes search.
 
         Returns an empty list if there's no query to search with.
         """
         # return self.form.search()
-        query = self.form.search()
-        response = query.execute()
-        return response.hits
+        self.search = self.form.search()
+        
+        # save custom attributes
+        if hasattr(self.search, 'myfacets'):
+            self.myfacets = self.search.myfacets
+        if hasattr(self.search, 'queryid'):
+            self.queryid = self.search.queryid
+
+        self.response = run_query(self.search)
+        return self.response.hits
 
     def set_thread_links(self, extra):
         extra['group_by_thread'] = True if 'gbt' in self.request.GET else False

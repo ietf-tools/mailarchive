@@ -1,5 +1,3 @@
-
-
 import hashlib
 import six
 import time
@@ -160,6 +158,7 @@ class LowerCaseModelMultipleChoiceField(forms.ModelMultipleChoiceField):
 
 # @method_decorator(log_timing, name='get_facets')
 class AdvancedSearchForm(forms.Form):
+    """The form which builds the elasticsearch-dsl Search object"""
     # start_date = forms.DateField(required=False,
     #        widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
     q = forms.CharField(required=False, label=('Search'),
@@ -184,7 +183,7 @@ class AdvancedSearchForm(forms.Form):
     # operator = forms.ChoiceField(choices=(('AND','ALL'),('OR','ANY')))
     so = forms.CharField(max_length=25, required=False, widget=forms.HiddenInput)
     sso = forms.CharField(max_length=25, required=False, widget=forms.HiddenInput)
-    spam_score = forms.CharField(max_length=3, required=False)
+    spam_score = forms.IntegerField(required=False)
     # group and filter fields
     gbt = forms.BooleanField(required=False)                     # group by thread
     qdr = forms.ChoiceField(choices=TIME_CHOICES, required=False, label='Time')  # qualified date range
@@ -197,9 +196,11 @@ class AdvancedSearchForm(forms.Form):
         self.searchqueryset = kwargs.pop('searchqueryset', None)
         self.load_all = kwargs.pop('load_all', False)
 
+        # initialize the search object
         if self.searchqueryset is None:
             client = Elasticsearch()
             self.searchqueryset = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+            self.searchqueryset = self.searchqueryset.extra(size=settings.SEARCH_RESULTS_PER_PAGE)
 
         # can't use reserved word "from" as field name, so we need to map to "frm"
         # args is a tuple and args[0] is either None or a QueryDict
@@ -270,6 +271,17 @@ class AdvancedSearchForm(forms.Form):
         # save in cache
         cache.set(cache_key, facets)
         return facets
+
+    def no_query_found(self):
+        """
+        Determines the behavior when no query was found.
+
+        By default, no results are returned via a bogus query.
+
+        Do not show all results unless private messages are excluded.
+        """
+        self.searchqueryset = self.searchqueryset.query('term', dummy='')
+        return self.searchqueryset
 
     def process_query(self):
         if self.q:
@@ -347,7 +359,7 @@ class AdvancedSearchForm(forms.Form):
         if self.f_from:
             sqs = sqs.filter('terms', frm_name=self.f_from)
 
-        # Populate all all SearchResult.object with efficient db query
+        # Populate all SearchResult.object with efficient db query
         # when called via urls.py / search_view_factory default load_all=True
         # if self.load_all:
         #     sqs = sqs.load_all()
@@ -356,16 +368,21 @@ class AdvancedSearchForm(forms.Form):
         # perform this step last because other operations, if they clone the
         # SearchQuerySet, cause the query to be re-run which loses custom sort order
         fields = get_order_fields(self.request.GET)
+        logger.debug('sort fields: {}'.format(fields))
         sqs = sqs.sort(*fields)
 
         # save query in cache with random id for security
         queryid = generate_queryid()
+        # TODO ELASTIC: do we need these variables somewhere?
+        # yes? tacking these on to search object for use in view
         sqs.query_string = self.request.META['QUERY_STRING']
         sqs.queryid = queryid
-        # TODO: can't cache query 
-        # cache.set(queryid, sqs, 7200)           # 2 hours
+        logger.debug('Saved queryid to query: {}'.format(sqs.queryid))
+        # Cache search as dictionary, use s.from_dict() on retrieval
+        cache.set(queryid, sqs.to_dict(), 7200)           # 2 hours
 
-        logger.debug('Backend Query: %s' % sqs.to_dict())
+        logger.debug('Backend Query: {}'.format(sqs.to_dict()))
+        logger.debug('search.count: {}'.format(sqs.count()))
 
         # insert facets just before returning query, so they don't get overridden
         # sqs.myfacets = facets

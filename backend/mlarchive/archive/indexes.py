@@ -22,10 +22,10 @@ class ElasticMessageIndex(CelerySearchIndex, indexes.Indexable):
     # TODO index only subject base, but keep it searchable
     subject = indexes.CharField(model_attr='subject')
     subject_base = indexes.CharField(model_attr='base_subject')
-    tdate = indexes.DateTimeField(model_attr='thread_date')
-    tid = indexes.IntegerField(model_attr='thread_id')
-    tdepth = indexes.IntegerField(model_attr='thread_depth', indexed=False)
-    torder = indexes.IntegerField(model_attr='thread_order', indexed=False)
+    thread_date = indexes.DateTimeField(model_attr='thread_date', indexed=False)
+    thread_id = indexes.IntegerField(model_attr='thread_id')
+    thread_depth = indexes.IntegerField(model_attr='thread_depth', indexed=False)
+    thread_order = indexes.IntegerField(model_attr='thread_order', indexed=False)
     spam_score = indexes.IntegerField(model_attr='spam_score')
     url = indexes.CharField(model_attr='get_absolute_url', indexed=False)
 

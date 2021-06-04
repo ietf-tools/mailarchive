@@ -4,10 +4,15 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.core.cache import cache
-from elasticsearch_dsl import Q
+from elasticsearch import Elasticsearch
+from elasticsearch.exceptions import RequestError
+from elasticsearch_dsl import Q, Search
 
 from mlarchive.archive.utils import get_lists
 from mlarchive.utils.test_utils import get_search_backend
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 VALID_QUERYID_RE = re.compile(r'^[a-f0-9]{32}$')
@@ -19,7 +24,7 @@ VALID_SORT_OPTIONS = ('frm', '-frm', 'date', '-date', 'email_list', '-email_list
 
 DEFAULT_SORT = getattr(settings, 'ARCHIVE_DEFAULT_SORT', '-date')
 DB_THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
-IDX_THREAD_SORT_FIELDS = ('-tdate', 'tid', 'torder')
+IDX_THREAD_SORT_FIELDS = ('-thread_date', 'thread_id', 'thread_order')
 
 # --------------------------------------------------
 # Functions handle URL parameters
@@ -43,11 +48,23 @@ def get_base_query(querydict):
 
 
 def get_cached_query(request):
-    if request.GET.get('qid'):
-        queryid = clean_queryid(request.GET['qid'])
-        if queryid:
-            return (queryid, cache.get(queryid))
-    return (None, None)
+    queryid = request.GET.get('qid')
+    if queryid:
+        queryid = clean_queryid(queryid)
+    if not queryid:
+        return (None, None)
+
+    logger.debug('Looking up queryid: {}'.format(queryid))
+    search_dict = cache.get(queryid)
+    if search_dict:
+        logger.debug('Found search in cache: {}'.format(search_dict))
+        client = Elasticsearch()
+        search = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+        search = search.update_from_dict(search_dict)
+        logger.debug('Built search object from cache: {}'.format(search))
+        return (queryid, search)
+    else:
+        return (None, None)
 
 
 def clean_queryid(query_id):
@@ -75,6 +92,8 @@ def filters_from_params(params):
         filters.append(Q('terms', email_list=params['email_list']))
     if params.get('qdr') and params.get('qdr') in ['d', 'w', 'm', 'y']:
         filters.append(Q('range', date={'gte': get_qdr_time_iso(params['qdr'])}))
+    if params.get('spam_score'):
+        filters.append(Q('term', spam_score=params['spam_score']))
     return filters
 
 
@@ -93,7 +112,7 @@ def get_kwargs(data):
     forms which may not include exactly the same fields, so we use the get() method.
     """
     kwargs = {}
-    spam_score = data.get('spam_score')
+    # spam_score = data.get('spam_score')
     for key in ('msgid',):
         if data.get(key):
             kwargs[key] = data[key]
@@ -113,13 +132,16 @@ def get_kwargs(data):
         kwargs['subject'] = data['subject']
     if data.get('spam'):
         kwargs['spam_score__gt'] = 0
-    if spam_score and spam_score.isdigit():
-        bits = [x for x in range(255) if x & int(spam_score)]
-        kwargs['spam_score__in'] = bits
+    # if spam_score and spam_score.isdigit():
+    #     bits = [x for x in range(255) if x & int(spam_score)]
+    #     kwargs['spam_score__in'] = bits
+    if data.get('spam_score'):
+        kwargs['spam_score'] = data['spam_score']
     if data.get('to'):
         kwargs['to'] = data['to']
     kwargs.update(get_qdr_kwargs(data))
 
+    logger.debug('get_kwargs: {}'.format(kwargs))
     return kwargs
 
 
@@ -236,3 +258,26 @@ def get_browse_equivalent(request):
 
 def is_static_on(request):
     return True if request.COOKIES.get('isStaticOn') == 'true' else False
+
+
+def run_query(query):
+    '''Runs the query and returns response'''
+    # if 'size' not in query._extra:
+    #     query = query.extra(size=settings.SEARCH_RESULTS_PER_PAGE)
+    try:
+        response = query.execute()
+    except RequestError:
+        '''Could get this when query_string can't parse the query string,
+        when there is a bogus search query for example. Swap out query
+        with one that returns empty results'''
+        query = query.update_from_dict({'query': {'term': {'dummy': ''}}})
+        response = query.execute()
+    return response
+
+# TODO: remove?
+def get_empty_response():
+    '''Return an empty elasticsearch response'''
+    client = Elasticsearch()
+    s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    s = s.query('term', dummy='')
+    return s.execute()

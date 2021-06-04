@@ -118,7 +118,7 @@ def load_db():
                           frm='larry@amsl.com',
                           subject='Party Invitation',
                           base_subject=get_base_subject('Party Invitation things'),
-                          date=datetime.datetime(2014, 1, 1),
+                          date=datetime.datetime(2014, 2, 1),
                           msgid='a05')
     MessageFactory.create(email_list=pubtwo)
     MessageFactory.create(email_list=pubtwo)

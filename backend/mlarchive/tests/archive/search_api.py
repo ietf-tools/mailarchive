@@ -90,7 +90,7 @@ def test_form_one_term_not(rf, client, search_api_messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_form_one_term_negate(rf, client, search_api_messages):
-    '''One term, NOT'''
+    '''One term, NOT with minus sign'''
     request = rf.get('/arch/search/?q=-bananas')
     request.user = AnonymousUser()
     data = {'q': '-bananas'}
@@ -104,7 +104,7 @@ def test_form_one_term_negate(rf, client, search_api_messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_form_parens(rf, client, search_api_messages):
-    '''One term, NOT'''
+    '''Parenthesis'''
     request = rf.get('/arch/search/?q=(bananas+AND+apples)+OR+oranges')
     request.user = AnonymousUser()
     data = {'q': '(bananas+AND+apples)+OR+oranges'}
@@ -380,7 +380,7 @@ def test_form_aggs_from_filter(rf, client, search_api_messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_form_aggs_both_filters(rf, client, search_api_messages):
-    pass
+    assert False
 
 
 # ------------------------------

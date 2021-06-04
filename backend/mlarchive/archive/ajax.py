@@ -83,7 +83,7 @@ def ajax_messages(request):
             query = Message.objects.filter(email_list__name=browselist).order_by(*order_fields)
             if qdr_kwargs:
                 query = query.filter(**qdr_kwargs)
-            results = get_query_results(query, referenceitem, direction)
+            results = get_query_results_orm(query, referenceitem, direction)
         # --------------------------------------
         else:
             try:
@@ -106,7 +106,22 @@ def get_query_results(query, referenceitem, direction):
     '''
     buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
     if direction == 'next':
+        query = query[referenceitem:referenceitem + buffer]
+        return query.execute()
+    elif direction == 'previous':
+        start = referenceitem - buffer if referenceitem > buffer else 0
+        query = query[start:referenceitem]
+        return query.execute()
+
+
+def get_query_results_orm(query, referenceitem, direction):
+    '''Returns a set of messages from query using direction: next or previous
+    from the referenceitem, which is the 1 based index of the query
+    '''
+    buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
+    if direction == 'next':
         return query[referenceitem:referenceitem + buffer]
+        
     elif direction == 'previous':
         start = referenceitem - buffer if referenceitem > buffer else 0
         return query[start:referenceitem]

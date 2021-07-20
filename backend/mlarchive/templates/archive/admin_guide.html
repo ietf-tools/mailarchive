@@ -157,8 +157,8 @@ $ celery report</pre>
     web-server:
     <pre>cd /a/mailarch/current
 source env/bin/activate
-export PYTHONPATH=/a/mailarch/current
-export DJANGO_SETTINGS_MODULE=mlarchive.settings.production
+export PYTHONPATH=/a/mailarch/current/backend
+export DJANGO_SETTINGS_MODULE=mlarchive.settings.settings
 celery -A mlarchive flower</pre>
     <a href="http://{{ request.META.HTTP_HOST }}:5555/">Celery Management</a><br>
 

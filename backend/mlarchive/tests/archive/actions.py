@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import os
 import pytest
 
+from mock import patch
 from factories import EmailListFactory, ThreadFactory, MessageFactory
 from mlarchive.archive.actions import remove_selected, not_spam, get_mbox_updates
 from mlarchive.archive.models import Message, EmailList
@@ -20,15 +21,17 @@ def test_get_mbox_updates(messages):
     result = get_mbox_updates(apple.message_set.all())
     assert result == [(1,2017,apple.pk)]
 
-
+@patch('celery_haystack.tasks.update_mbox.delay')
 @pytest.mark.django_db(transaction=True)
-def test_remove_selected(admin_user):
+def test_remove_selected(mock_update, admin_user):
+    mock_update.return_value = 1
     elist = EmailListFactory.create(name='public')
     thread = ThreadFactory.create()
     msg = MessageFactory.create(email_list=elist, thread=thread)
 
     # create message file
     path = msg.get_file_path()
+    # print(path)
     if not os.path.exists(os.path.dirname(path)):
         os.makedirs(os.path.dirname(path))
     with open(path, 'w') as f:
@@ -36,6 +39,7 @@ def test_remove_selected(admin_user):
 
     # ensure message file doesn't already exist in removed directory
     target = os.path.join(msg.get_removed_dir(), msg.hashcode)
+    # print('target: {}'.format(target))
     if os.path.exists(target):
         os.remove(target)
 

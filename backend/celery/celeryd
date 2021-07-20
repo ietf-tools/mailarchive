@@ -24,5 +24,5 @@ CELERYD_PID_FILE="/var/run/celery/%n.pid"
 CELERYD_LOG_LEVEL="INFO"
 
 # Custom for Django App
-DJANGO_SETTINGS_MODULE="mlarchive.settings.production"
+DJANGO_SETTINGS_MODULE="mlarchive.settings.settings"
 PYTHONPATH=/a/mailarch/current/backend

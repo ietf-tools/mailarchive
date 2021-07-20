@@ -261,7 +261,7 @@ def is_static_on(request):
 
 
 def run_query(query):
-    '''Runs the query and returns response'''
+    '''Wrapper to execute the query, handling exceptions'''
     # if 'size' not in query._extra:
     #     query = query.extra(size=settings.SEARCH_RESULTS_PER_PAGE)
     try:
@@ -273,6 +273,20 @@ def run_query(query):
         query = query.update_from_dict({'query': {'term': {'dummy': ''}}})
         response = query.execute()
     return response
+
+
+def get_count(query):
+    '''Wrapper to run count(), handling query exceptions'''
+    try:
+        count = query.count()
+    except RequestError:
+        '''Could get this when query_string can't parse the query string,
+        when there is a bogus search query for example. Swap out query
+        with one that returns empty results'''
+        query = query.update_from_dict({'query': {'term': {'dummy': ''}}})
+        count = query.count()
+    return count
+
 
 # TODO: remove?
 def get_empty_response():

@@ -29,7 +29,7 @@ from mlarchive.utils.decorators import check_access, superuser_only, pad_id, che
 from mlarchive.archive import actions
 from mlarchive.archive.query_utils import (get_kwargs, get_qdr_kwargs,
     get_cached_query, get_browse_equivalent, parse_query_string, get_order_fields,
-    generate_queryid, is_static_on, run_query)
+    generate_queryid, is_static_on, run_query, get_count)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     get_query_neighbors, get_query_string, get_lists_for_user, get_random_token)
 
@@ -173,7 +173,7 @@ class CustomSearchView(SearchView):
                 count = self.results.count()
         extra['count'] = count
         '''
-        extra['count'] = self.search.count()
+        extra['count'] = get_count(self.search)
 
         # export links
         token = get_random_token(length=16)
@@ -337,7 +337,7 @@ class CustomBrowseView(CustomSearchView):
         extra['queryset_offset'] = '0'
         if self.query or self.kwargs:
             if isinstance(self.results, QuerySet):
-                extra['count'] = self.results.count()
+                extra['count'] = get_count(self.results)
             else:
                 extra['count'] = len(self.results)
         else:
@@ -404,7 +404,7 @@ class BaseStaticIndexView(View):
             url = reverse(self.view_name, kwargs={'list_name': self.kwargs['list_name'], 'date': self.year})
             return render(self.request, 'archive/refresh.html', {'url': url})
 
-        if not self.month and self.queryset.count() > 0 and (self.year == current_year or not is_small_year(self.kwargs['email_list'], self.year)):
+        if not self.month and get_count(self.queryset) > 0 and (self.year == current_year or not is_small_year(self.kwargs['email_list'], self.year)):
             date = self.queryset.last().date
             url = reverse(self.view_name, kwargs={'list_name': self.kwargs['list_name'], 'date': '{}-{:02d}'.format(date.year, date.month)})
             return render(self.request, 'archive/refresh.html', {'url': url})
@@ -701,7 +701,7 @@ def export(request, type):
     data['sso'] = 'date'
     form = AdvancedSearchForm(data, load_all=False, request=request)
     sqs = form.search(skip_facets=True)
-    count = sqs.count()
+    # count = sqs.count()
     response = get_export(sqs, type, request)
     if data.get('token'):
         response.set_cookie('downloadToken', data.get('token'))

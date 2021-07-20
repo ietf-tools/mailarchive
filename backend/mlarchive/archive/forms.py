@@ -15,7 +15,7 @@ from elasticsearch_dsl import Search, A, Q
 
 from mlarchive.archive.query_utils import (get_kwargs, generate_queryid, get_filter_params,
     parse_query, get_base_query, get_order_fields, queries_from_params,
-    filters_from_params)
+    filters_from_params, get_count)
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
 from mlarchive.utils.decorators import log_timing
@@ -232,7 +232,7 @@ class AdvancedSearchForm(forms.Form):
         # are corrupted in Xapian backend.
 
         temp = sqs._clone()
-        count = temp.count()
+        count = get_count(temp)
         facets = {'fields': {}, 'dates': {}, 'queries': {}}
 
         if 0 < count < settings.FILTER_CUTOFF:
@@ -382,7 +382,7 @@ class AdvancedSearchForm(forms.Form):
         cache.set(queryid, sqs.to_dict(), 7200)           # 2 hours
 
         logger.debug('Backend Query: {}'.format(sqs.to_dict()))
-        logger.debug('search.count: {}'.format(sqs.count()))
+        logger.debug('search.count: {}'.format(get_count(sqs)))
 
         # insert facets just before returning query, so they don't get overridden
         # sqs.myfacets = facets

@@ -4,14 +4,18 @@ import pytest
 
 from haystack.query import SearchQuerySet
 from django.core.cache import cache
+from django.conf import settings
 from django.http import QueryDict
 from django.test import RequestFactory
 from django.urls import reverse
 from factories import EmailListFactory
 
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Search
+
 from mlarchive.archive.query_utils import (clean_queryid, generate_queryid, get_cached_query,
     get_filter_params, get_browse_equivalent, parse_query, map_sort_option, get_order_fields,
-    DB_THREAD_SORT_FIELDS, IDX_THREAD_SORT_FIELDS, DEFAULT_SORT)
+    DB_THREAD_SORT_FIELDS, IDX_THREAD_SORT_FIELDS, DEFAULT_SORT, get_count)
 from mlarchive.utils.test_utils import get_request
 
 
@@ -94,3 +98,16 @@ def test_get_order_fields():
     assert get_order_fields({'q': 'term', 'gbt': '1', 'so': 'date'}) == IDX_THREAD_SORT_FIELDS      # gbt takes precedence
     assert get_order_fields({'q': 'term', 'so': 'date', 'sso': 'subject'}) == ['date', 'base_subject']
     assert get_order_fields({'q': 'term', 'so': 'frm'}) == ['frm_name']                         # frm gets mapped
+
+
+@pytest.mark.django_db(transaction=True)
+def test_get_count(messages):
+    client = Elasticsearch()
+    base = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    # good query
+    s = base.query('query_string', query='message', default_field='text')
+    assert get_count(s) > 0
+    # bad query
+    s = base.query('query_string', query='-', default_field='text')
+    assert get_count(s) == 0
+

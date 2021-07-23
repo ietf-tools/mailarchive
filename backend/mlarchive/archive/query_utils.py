@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.core.cache import cache
+from django.core.paginator import Paginator
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
 from elasticsearch_dsl import Q, Search
@@ -295,3 +296,22 @@ def get_empty_response():
     s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
     s = s.query('term', dummy='')
     return s.execute()
+
+
+class CustomPaginator(Paginator):
+    '''A Django Paginator customized to handle Elasticsearch Search
+    object as object_list input'''
+
+    def page(self, number):
+        """Return a Page object for the given 1-based page number."""
+        number = self.validate_number(number)
+        bottom = (number - 1) * self.per_page
+        top = bottom + self.per_page
+        if top + self.orphans >= self.count:
+            top = self.count
+
+        # add slice info to query and execute to get actual object_list
+        query = self.object_list[bottom:top]
+        response = query.execute()
+
+        return self._get_page(response, number, self)

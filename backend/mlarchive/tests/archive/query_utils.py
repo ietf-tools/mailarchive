@@ -15,7 +15,8 @@ from elasticsearch_dsl import Search
 
 from mlarchive.archive.query_utils import (clean_queryid, generate_queryid, get_cached_query,
     get_filter_params, get_browse_equivalent, parse_query, map_sort_option, get_order_fields,
-    DB_THREAD_SORT_FIELDS, IDX_THREAD_SORT_FIELDS, DEFAULT_SORT, get_count)
+    DB_THREAD_SORT_FIELDS, IDX_THREAD_SORT_FIELDS, DEFAULT_SORT, get_count,
+    CustomPaginator)
 from mlarchive.utils.test_utils import get_request
 
 
@@ -111,3 +112,22 @@ def test_get_count(messages):
     s = base.query('query_string', query='-', default_field='text')
     assert get_count(s) == 0
 
+
+@pytest.mark.django_db(transaction=True)
+def test_CustomPaginator(messages):
+    # make query with large result set
+    client = Elasticsearch()
+    base = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    s = base.query('match', email_list='pubthree')
+    assert s.count() == 21
+    # 
+    paginator = CustomPaginator(s, 10)
+    assert paginator.count == 21
+    assert paginator.num_pages == 3
+    page = paginator.page(1)
+    assert page.number == 1
+    assert page.has_previous() is False
+    assert page.has_next() is True
+    assert page.start_index() == 1
+    assert hasattr(page, '__iter__')
+    assert len(page) == 10

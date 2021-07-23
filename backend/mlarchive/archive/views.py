@@ -11,6 +11,8 @@ from django.conf import settings
 from django.contrib.auth import logout
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.cache import cache
+from django.core.paginator import InvalidPage
+from django.core.paginator import Paginator as DjangoPaginator
 from django.db.models.query import QuerySet
 from django.utils.decorators import method_decorator
 from django.forms.formsets import formset_factory
@@ -29,7 +31,7 @@ from mlarchive.utils.decorators import check_access, superuser_only, pad_id, che
 from mlarchive.archive import actions
 from mlarchive.archive.query_utils import (get_kwargs, get_qdr_kwargs,
     get_cached_query, get_browse_equivalent, parse_query_string, get_order_fields,
-    generate_queryid, is_static_on, run_query, get_count)
+    generate_queryid, is_static_on, run_query, get_count, CustomPaginator)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     get_query_neighbors, get_query_string, get_lists_for_user, get_random_token)
 
@@ -154,7 +156,8 @@ class CustomSearchView(SearchView):
 
     def extra_context(self):
         """Add variables to template context"""
-        extra = super(CustomSearchView, self).extra_context()
+        # extra = super(CustomSearchView, self).extra_context()
+        extra = {}
         query_string = get_query_string(self.request)
 
         # settings
@@ -162,17 +165,6 @@ class CustomSearchView(SearchView):
         extra['query_string'] = query_string
         extra['results_per_page'] = settings.HAYSTACK_SEARCH_RESULTS_PER_PAGE
         extra['queryset_offset'] = str(self.page.start_index() - 1)
-
-        '''
-        # TODO: replace with simple len()
-        count = 0
-        try:
-            count = len(self.results)
-        except TypeError:
-            if hasattr(self.results, 'count'):
-                count = self.results.count()
-        extra['count'] = count
-        '''
         extra['count'] = get_count(self.search)
 
         # export links
@@ -265,6 +257,30 @@ class CustomSearchView(SearchView):
 
         return context
 
+    def build_page(self):
+        """
+        Paginates the results appropriately.
+        """
+        try:
+            page_no = int(self.request.GET.get('page', 1))
+        except (TypeError, ValueError):
+            raise Http404("Not a valid number for page.")
+
+        if page_no < 1:
+            raise Http404("Pages should be 1 or greater.")
+
+        # start_offset = (page_no - 1) * self.results_per_page
+        # self.results[start_offset:start_offset + self.results_per_page]
+
+        paginator = CustomPaginator(self.search, self.results_per_page)
+
+        try:
+            page = paginator.page(page_no)
+        except InvalidPage:
+            raise Http404("No such page!")
+
+        return (paginator, page)
+
     def get_query(self):
         if self.form.is_valid():
             q = self.form.cleaned_data['q']
@@ -292,6 +308,9 @@ class CustomBrowseView(CustomSearchView):
         self.form = self.build_form()
         self.query = self.get_query()
         self.results = self.get_results()
+        # TODO find a better way
+        self.search = self.results
+        # ----------------------
         if hasattr(self.results, 'myfacets'):
             self.myfacets = self.results.myfacets
         if hasattr(self.results, 'queryid'):
@@ -328,11 +347,34 @@ class CustomBrowseView(CustomSearchView):
                     email_list=self.email_list,
                     date__lte=index_message.date).order_by('-date').select_related()[:self.results_per_page]
 
+        self.search = results
         return results
+
+    def build_page(self):
+        """
+        Paginates the results appropriately.
+        """
+        try:
+            page_no = int(self.request.GET.get('page', 1))
+        except (TypeError, ValueError):
+            raise Http404("Not a valid number for page.")
+
+        if page_no < 1:
+            raise Http404("Pages should be 1 or greater.")
+
+        paginator = DjangoPaginator(self.results, self.results_per_page)
+
+        try:
+            page = paginator.page(page_no)
+        except InvalidPage:
+            raise Http404("No such page!")
+
+        return (paginator, page)
 
     def extra_context(self):
         """Add variables to template context"""
-        extra = super(CustomBrowseView, self).extra_context()
+        # extra = super(CustomBrowseView, self).extra_context()
+        extra = {}
         extra['browse_list'] = self.list_name
         extra['queryset_offset'] = '0'
         if self.query or self.kwargs:
@@ -660,10 +702,10 @@ def detail(request, list_name, id, msg):
     NOTE: the "msg" argument is a Message object added by the check_access decorator
     """
     is_static_on = True if request.COOKIES.get('isStaticOn') == 'true' else False
-    queryid, sqs = get_cached_query(request)
+    queryid, search = get_cached_query(request)
 
-    if sqs and not is_static_on:
-        previous_in_search, next_in_search = get_query_neighbors(query=sqs, message=msg)
+    if search and not is_static_on:
+        previous_in_search, next_in_search = get_query_neighbors(search=search, message=msg)
         search_url = reverse('archive_search') + '?' + sqs.query_string
     else:
         previous_in_search = None
@@ -700,9 +742,8 @@ def export(request, type):
     data['so'] = 'email_list'
     data['sso'] = 'date'
     form = AdvancedSearchForm(data, load_all=False, request=request)
-    sqs = form.search(skip_facets=True)
-    # count = sqs.count()
-    response = get_export(sqs, type, request)
+    search = form.search(skip_facets=True)
+    response = get_export(search, type, request)
     if data.get('token'):
         response.set_cookie('downloadToken', data.get('token'))
     return response
@@ -746,35 +787,3 @@ def main(request):
 
 class MessageDetailView(DetailView):
     model = Message
-
-
-@pad_id
-@check_access
-def detailx(request, list_name, id, msg):
-    """Displays the requested message.
-    NOTE: the "msg" argument is a Message object added by the check_access decorator
-    """
-    is_static_on = True if request.COOKIES.get('isStaticOn') == 'true' else False
-    queryid, sqs = get_cached_query(request)
-
-    if sqs and not is_static_on:
-        previous_in_search, next_in_search = get_query_neighbors(query=sqs, message=msg)
-        search_url = reverse('archive_search') + '?' + sqs.query_string
-    else:
-        previous_in_search = None
-        next_in_search = None
-        queryid = None
-        search_url = None
-
-    return render(request, 'archive/detail.html', {
-        'msg': msg,
-        # cache items for use in template
-        'next_in_list': '',
-        'next_in_thread': '',
-        'next_in_search': '',
-        'previous_in_list': '',
-        'previous_in_thread': '',
-        'previous_in_search': '',
-        'queryid': queryid,
-        'search_url': search_url,
-    })

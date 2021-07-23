@@ -9,17 +9,22 @@ import pytest
 import tarfile
 from factories import EmailListFactory, UserFactory
 
-from haystack.query import SearchQuerySet
-from haystack.models import SearchResult
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Search
+# from haystack.query import SearchQuerySet
+# from haystack.models import SearchResult
+from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponse
 from django.urls import reverse
 from django.utils.encoding import smart_text
 
 from mlarchive.archive.view_funcs import (chunks, initialize_formsets, get_columns,
-    get_export, get_query_neighbors, custom_search_view_factory)
-from mlarchive.archive.models import EmailList
+    get_export, get_query_neighbors, custom_search_view_factory, apply_objects)
+from mlarchive.archive.models import EmailList, Message
 from mlarchive.utils.test_utils import get_request
+
+from mlarchive.archive.view_funcs import get_message_index
 
 
 # for Python 2/3 compatability
@@ -27,6 +32,19 @@ try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
+
+
+def get_search():
+    client = Elasticsearch()
+    s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    return s
+
+
+def get_empty_search():
+    client = Elasticsearch()
+    s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    s = s.query('match', subject='')
+    return s
 
 
 def test_chunks():
@@ -78,11 +96,12 @@ def test_get_columns():
     assert len(columns['private']) == 1
 
 
-def test_get_export_empty(client):
+@pytest.mark.django_db(transaction=True)
+def test_get_export_empty(client, messages):
     url = '%s?%s' % (reverse('archive_export', kwargs={'type': 'mbox'}), 'q=database')
     redirect_url = '%s?%s' % (reverse('archive_search'), 'q=database')
     request = get_request(url=url)
-    response = get_export(SearchQuerySet().none(), 'mbox', request)
+    response = get_export(get_empty_search(), 'mbox', request)
     assert response.status_code == 302
 
 
@@ -92,7 +111,7 @@ def test_get_export_limit_mbox(client, messages, settings):
     url = '%s?%s' % (reverse('archive_export', kwargs={'type': 'mbox'}), 'q=database')
     redirect_url = '%s?%s' % (reverse('archive_search'), 'q=database')
     request = get_request(url=url)
-    response = get_export(SearchQuerySet(), 'mbox', request)
+    response = get_export(get_search(), 'mbox', request)
     assert response.status_code == 302
 
 
@@ -102,7 +121,7 @@ def test_get_export_limit_url(client, messages, settings):
     url = '%s?%s' % (reverse('archive_export', kwargs={'type': 'url'}), 'q=database')
     redirect_url = '%s?%s' % (reverse('archive_search'), 'q=database')
     request = get_request(url=url)
-    response = get_export(SearchQuerySet(), 'url', request)
+    response = get_export(get_search(), 'url', request)
     assert response.status_code == 302
 
 
@@ -121,10 +140,11 @@ def test_get_export_mbox(client, thread_messages, tmpdir):
     url = '%s?%s' % (reverse('archive_export', kwargs={'type': 'mbox'}), 'q=anvil')
     request = get_request(url=url)
     EmailList.objects.get(name='acme')
-    sqs = SearchQuerySet().filter(email_list__in=['acme'])
+    search = get_search()
+    search = search.query('term', email_list='acme')
 
     # validate response is valid tarball with mbox file, with 4 messages
-    response = get_export(sqs, 'mbox', request)
+    response = get_export(search, 'mbox', request)
     assert response.status_code == 200
     assert response.has_header('content-disposition')
     tar = tarfile.open(mode="r:gz", fileobj=io.BytesIO(response.content))
@@ -141,15 +161,11 @@ def test_get_export_mbox_latin1(client, latin1_messages, tmpdir):
     url = '%s?%s' % (reverse('archive_export', kwargs={'type': 'mbox'}), 'q=anvil')
     request = get_request(url=url)
     EmailList.objects.get(name='acme')
-    sqs = SearchQuerySet().filter(email_list__in=['acme'])
-    print(sqs.count())
-    print(sqs[0])
-    
-    # create a dummy SearchQuerySet
-    # sqs = [SearchResult('archive','message',1,1)]
+    search = get_search()
+    search = search.query('term', email_list='acme')
 
     # validate response is valid tarball with mbox file, with 4 messages
-    response = get_export(sqs, 'mbox', request)
+    response = get_export(search, 'mbox', request)
     assert response.status_code == 200
     assert response.has_header('content-disposition')
     tar = tarfile.open(mode="r:gz", fileobj=io.BytesIO(response.content))
@@ -167,10 +183,11 @@ def test_get_export_maildir(client, thread_messages, tmpdir):
     url = '%s?%s' % (reverse('archive_export', kwargs={'type': 'maildir'}), 'q=anvil')
     request = get_request(url=url)
     EmailList.objects.get(name='acme')
-    sqs = SearchQuerySet().filter(email_list__in=['acme'])
+    search = get_search()
+    search = search.query('term', email_list='acme')
 
     # validate response is valid tarball with maildir directory and 4 messages
-    response = get_export(sqs, 'maildir', request)
+    response = get_export(search, 'maildir', request)
     assert response.status_code == 200
     assert response.has_header('content-disposition')
     tar = tarfile.open(mode="r:gz", fileobj=io.BytesIO(response.content))
@@ -189,27 +206,42 @@ def test_get_export_maildir(client, thread_messages, tmpdir):
 def test_get_export_url(messages):
     url = '%s?%s' % (reverse('archive_export', kwargs={'type': 'url'}), 'q=message')
     request = get_request(url=url)
-    sqs = SearchQuerySet().filter(email_list__in=['pubone'])
-    for r in sqs:
-        print(r.msgid, r.object)
-    response = get_export(sqs, 'url', request)
+    search = get_search()
+    search = search.query('term', email_list='pubone')
+    response = get_export(search, 'url', request)
     assert response.status_code == 200
-    assert sqs[0].object.get_absolute_url() in smart_text(response.content)
+    search_response = search.execute()
+    apply_objects(search_response.hits)
+    assert search_response[0].object.get_absolute_url() in smart_text(response.content)
 
 
 @pytest.mark.django_db(transaction=True)
 def test_get_query_neighbors(messages):
     # typical
-    sqs = SearchQuerySet().filter(subject='New Topic').order_by('date')
-    before, after = get_query_neighbors(sqs, sqs[3].object)
-    assert before == sqs[2].object
-    assert after == sqs[4].object
+    search = get_search()
+    search = search.query('match', subject='New Topic')
+    search = search.sort('date')
+    response = search.execute()
+    apply_objects(response.hits)
+    for r in response:
+        print(r.date, r.subject)
+    # sqs = SearchQuerySet().filter(subject='New Topic').order_by('date')
+    before, after = get_query_neighbors(search, response[3].object)
+    assert before == response[2].object
+    assert after == response[4].object
     # first message
-    before, after = get_query_neighbors(sqs, sqs[0].object)
+    print(search.to_dict())
+    i = get_message_index(search, response[0].object)
+    print('index: {}'.format(i))
+    before, after = get_query_neighbors(search, response[0].object)
     assert before is None
-    assert after == sqs[1].object
+    assert after == response[1].object
     # one message in result set
-    sqs = SearchQuerySet().filter(msgid=sqs[0].msgid)
-    before, after = get_query_neighbors(sqs, sqs[0].object)
+    search = get_search()
+    search = search.query('match', msgid=response[0].msgid)
+    response = search.execute()
+    apply_objects(response.hits)
+    # sqs = SearchQuerySet().filter(msgid=response[0].msgid)
+    before, after = get_query_neighbors(search, response[0].object)
     assert before is None
     assert after is None

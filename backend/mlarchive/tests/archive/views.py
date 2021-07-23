@@ -264,7 +264,7 @@ def test_browse_list_sort_subject(client, messages):
     assert response.status_code == 200
     assert len(response.context['results']) == 5
     # assert proper order
-    assert [r.msgid for r in response.context['results']] == ['a01', 'a02', 'a04', 'a03']
+    assert [r.msgid for r in response.context['results']] == ['a01', 'a02', 'a04', 'a03', 'a05']
 
 
 @pytest.mark.django_db(transaction=True)

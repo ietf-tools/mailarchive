@@ -402,4 +402,12 @@ def test_form_fields_subject(rf, client, search_api_messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_form_fields_frm(rf, client, search_api_messages):
-    assert False
+    data = {'q': 'from:Holden'}
+    request = rf.get('/arch/search/?' + urlencode(data))
+    request.user = AnonymousUser()
+    form = AdvancedSearchForm(data=data, request=request)
+    query = form.search()
+    results = query.execute()
+    assert len(results) == 2
+    ids = [h.msgid for h in results]
+    assert sorted(ids) == ['api002', 'api004']

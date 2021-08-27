@@ -11,8 +11,6 @@ from factories import EmailListFactory, UserFactory
 
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
-# from haystack.query import SearchQuerySet
-# from haystack.models import SearchResult
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponse
@@ -225,7 +223,6 @@ def test_get_query_neighbors(messages):
     apply_objects(response.hits)
     for r in response:
         print(r.date, r.subject)
-    # sqs = SearchQuerySet().filter(subject='New Topic').order_by('date')
     before, after = get_query_neighbors(search, response[3].object)
     assert before == response[2].object
     assert after == response[4].object
@@ -241,7 +238,6 @@ def test_get_query_neighbors(messages):
     search = search.query('match', msgid=response[0].msgid)
     response = search.execute()
     apply_objects(response.hits)
-    # sqs = SearchQuerySet().filter(msgid=response[0].msgid)
     before, after = get_query_neighbors(search, response[0].object)
     assert before is None
     assert after is None

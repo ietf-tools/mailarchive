@@ -256,6 +256,7 @@ def test_form_params_qdr(rf, client, search_api_messages_qdr):
 # Private lists
 # ------------------------------
 
+
 @pytest.mark.django_db(transaction=True)
 def test_form_private_no_access(rf, client, search_api_messages, private_messages):
     '''Public request, no access'''
@@ -351,11 +352,32 @@ def test_form_sort_from(rf, client, search_api_messages):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_form_aggs(rf, client, search_api_messages):
-    '''One term'''
+def test_form_aggs(rf, client, search_api_messages, search_api_messages_ford):
+    '''Aggregates. No filter'''
     request = rf.get('/arch/search/?q=test')
     request.user = AnonymousUser()
     data = {'q': 'test'}
+    form = AdvancedSearchForm(data=data, request=request)
+    query = form.search()
+    results = query.execute()
+    assert len(results) == 8
+    assert hasattr(results, 'aggregations')
+    assert results.aggregations.list_terms.buckets == [
+        {'key': 'acme', 'doc_count': 4},
+        {'key': 'ford', 'doc_count': 4}]
+    assert results.aggregations.from_terms.buckets == [
+        {'key': 'Holden Ford', 'doc_count': 3},
+        {'key': 'User', 'doc_count': 3},
+        {'key': 'Bilbo Baggins', 'doc_count': 1},
+        {'key': 'Zaphod Beeblebrox', 'doc_count': 1}]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_form_aggs_list_filter(rf, client, search_api_messages, search_api_messages_ford):
+    '''Aggregates. List filter'''
+    request = rf.get('/arch/search/?q=test&f_list=acme')
+    request.user = AnonymousUser()
+    data = {'q': 'test', 'f_list': 'acme'}
     form = AdvancedSearchForm(data=data, request=request)
     query = form.search()
     results = query.execute()
@@ -369,18 +391,37 @@ def test_form_aggs(rf, client, search_api_messages):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_form_aggs_list_filter(rf, client, search_api_messages):
-    pass
+def test_form_aggs_from_filter(rf, client, search_api_messages, search_api_messages_ford):
+    '''Aggregates. From filter'''
+    request = rf.get('/arch/search/?q=test&f_from=Holden+Ford')
+    request.user = AnonymousUser()
+    data = {'q': 'test', 'f_from': 'Holden Ford'}
+    form = AdvancedSearchForm(data=data, request=request)
+    query = form.search()
+    results = query.execute()
+    assert len(results) == 3
+    assert hasattr(results, 'aggregations')
+    assert results.aggregations.list_terms.buckets == [
+        {'key': 'acme', 'doc_count': 2},
+        {'key': 'ford', 'doc_count': 1}]
+    assert results.aggregations.from_terms.buckets == [
+        {'key': 'Holden Ford', 'doc_count': 3}]
 
 
 @pytest.mark.django_db(transaction=True)
-def test_form_aggs_from_filter(rf, client, search_api_messages):
-    pass
-
-
-@pytest.mark.django_db(transaction=True)
-def test_form_aggs_both_filters(rf, client, search_api_messages):
-    assert False
+def test_form_aggs_both_filters(rf, client, search_api_messages, search_api_messages_ford):
+    '''Aggregates. List and From filters'''
+    request = rf.get('/arch/search/?q=test&f_list=acme&f_from=Holden+Ford')
+    request.user = AnonymousUser()
+    data = {'q': 'test', 'f_from': 'Holden Ford', 'f_list': 'acme'}
+    form = AdvancedSearchForm(data=data, request=request)
+    query = form.search()
+    results = query.execute()
+    assert len(results) == 2
+    assert hasattr(results, 'aggregations')
+    assert results.aggregations.list_terms.buckets == [{'key': 'acme', 'doc_count': 2}]
+    assert results.aggregations.from_terms.buckets == [
+        {'key': 'Holden Ford', 'doc_count': 2}]
 
 
 # ------------------------------

@@ -12,6 +12,11 @@ HAYSTACK_CONNECTIONS['default']['INDEX_NAME'] = 'test-mail-archive'
 
 # ELASTICSEARCH SETTINGS
 ELASTICSEARCH_INDEX_NAME = 'test-mail-archive'
+ELASTICSEARCH_SILENTLY_FAIL = True
+ELASTICSEARCH_CONNECTION = {
+    'URL': 'http://127.0.0.1:9200/',
+    'INDEX_NAME': 'test-mail-archive',
+}
 
 # use standard default of 20 as it's easier to test
 HAYSTACK_SEARCH_RESULTS_PER_PAGE = 20

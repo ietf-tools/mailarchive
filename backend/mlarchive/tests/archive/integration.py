@@ -7,7 +7,6 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils.encoding import smart_text
 from factories import EmailListFactory, UserFactory
-from haystack.query import SearchQuerySet
 from mlarchive.archive.models import Message
 from mlarchive.utils.test_utils import get_search_backend
 
@@ -118,16 +117,6 @@ def test_console_access(client, admin_client):
     response = admin_client.get(url)
     assert response.status_code == 200
 
-
-# --------------------------------------------------
-# Haystack Queries
-# --------------------------------------------------
-
-# @pytest.mark.skip(reason="hangs")
-@pytest.mark.django_db(transaction=True)
-def test_haystack_content(query_messages):
-    sqs = SearchQuerySet().filter(content='data')
-    assert sqs.count() == 1
 
 # --------------------------------------------------
 # Keyword Queries

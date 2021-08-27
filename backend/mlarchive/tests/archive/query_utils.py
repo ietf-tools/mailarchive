@@ -2,7 +2,6 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import pytest
 
-from haystack.query import SearchQuerySet
 from django.core.cache import cache
 from django.conf import settings
 from django.http import QueryDict
@@ -30,9 +29,10 @@ def test_clean_queryid():
 
 
 def test_get_cached_query():
-    sqs = SearchQuerySet()
+    client = Elasticsearch()
+    search = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
     queryid = generate_queryid()
-    cache.set(queryid, sqs)
+    cache.set(queryid, search.to_dict())
     request_factory = RequestFactory()
     # using dummy url, only the qid parameter matters here
     request = request_factory.get('/arch', {'qid': queryid})

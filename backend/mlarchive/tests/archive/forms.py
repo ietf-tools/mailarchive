@@ -6,7 +6,6 @@ from django.http import QueryDict
 from django.test.client import RequestFactory
 from django.urls import reverse
 from factories import UserFactory
-from haystack.query import SearchQuerySet
 from mlarchive.archive.forms import AdvancedSearchForm, get_base_query, get_cache_key
 from pyquery import PyQuery
 
@@ -51,26 +50,7 @@ def test_get_cache_key():
     key4 = get_cache_key(request)
     assert key4
 
-
-"""
-@pytest.mark.django_db(transaction=True)
-def test_group_by_thread(messages):
-    sqs = SearchQuerySet().filter(email_list__in=['pubone'])
-    sqs = group_by_thread(sqs, None, None, reverse=True)
-    print '{}'.format([(x.msgid, x.tdate, x.date) for x in sqs])
-    assert [x.msgid for x in sqs] == ['a02', 'a03', 'a01', 'a04']       # assert grouped by thread order
-
-
-@pytest.mark.django_db(transaction=True)
-def test_sort_by_subject(messages):
-   sqs = SearchQuerySet().filter(email_list=1)
-   sqs = sort_by_subject(sqs,None,reverse=True)
-   assert [ x.pk for x in sqs ] == [3,4,2,1]
-   sqs = sort_by_subject(sqs,None,reverse=False)
-   assert [ x.pk for x in sqs ] == [1,2,4,3]
-"""
-
-
+'''
 @pytest.mark.xfail
 @pytest.mark.django_db(transaction=True)
 def test_asf_get_facets(client, messages):
@@ -112,7 +92,7 @@ def test_asf_get_facets(client, messages):
     assert selected_counts['pubone'] == frm_name_total
 
     # test that facets are sorted
-
+'''
 
 @pytest.mark.django_db(transaction=True)
 def test_asf_search_no_query(client, messages):

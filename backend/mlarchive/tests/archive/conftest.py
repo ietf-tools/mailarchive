@@ -329,7 +329,33 @@ def windows1252_messages():
 
 
 @pytest.fixture()
+def db_only():
+    now = datetime.datetime.now()
+    yesterday = now - datetime.timedelta(hours=24)
+    content = StringIO()
+    call_command('clear_index', interactive=False, stdout=content)
+    public = EmailListFactory.create(name='public')
+    athread = ThreadFactory.create(date=datetime.datetime(2017, 1, 1))
+    MessageFactory.create(email_list=public,
+                          thread=athread,
+                          thread_order=0,
+                          msgid='x001',
+                          date=datetime.datetime(2017, 1, 1))
+    MessageFactory.create(email_list=public,
+                          thread=athread,
+                          thread_order=0,
+                          msgid='x002',
+                          date=datetime.datetime(2018, 1, 1))
+    MessageFactory.create(email_list=public,
+                          thread=athread,
+                          thread_order=0,
+                          msgid='x003',
+                          date=yesterday)
+
+
+@pytest.fixture()
 def thread_messages_db_only():
+    '''db_only doesn't work. do to signal?'''
     public = EmailListFactory.create(name='public')
     athread = ThreadFactory.create(date=datetime.datetime(2017, 1, 1))
     bthread = ThreadFactory.create(date=datetime.datetime(2017, 2, 1))

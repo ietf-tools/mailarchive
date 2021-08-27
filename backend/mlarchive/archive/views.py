@@ -185,8 +185,8 @@ class CustomSearchView(SearchView):
             extra['modify_search_url'] = reverse('archive')
 
         # add custom facets
-        if hasattr(self, 'myfacets'):
-            extra['facets'] = self.myfacets
+        if hasattr(self.results, 'aggregations'):
+            extra['aggregations'] = self.results.aggregations
 
         if hasattr(self, 'queryid'):
             extra['queryid'] = self.queryid
@@ -206,13 +206,13 @@ class CustomSearchView(SearchView):
         self.search = self.form.search()
         
         # save custom attributes
-        if hasattr(self.search, 'myfacets'):
-            self.myfacets = self.search.myfacets
+        # if hasattr(self.search, 'myfacets'):
+        #     self.myfacets = self.search.myfacets
         if hasattr(self.search, 'queryid'):
             self.queryid = self.search.queryid
 
         self.response = run_query(self.search)
-        return self.response.hits
+        return self.response
 
     def set_thread_links(self, extra):
         extra['group_by_thread'] = True if 'gbt' in self.request.GET else False
@@ -320,9 +320,18 @@ class CustomBrowseView(CustomSearchView):
 
     def get_results(self):
         """Gets a small set of results from the database rather than the search index"""
+        # Elasticsearch query
         if self.query:
-            return self.form.search(email_list=self.email_list)
+            self.search = self.form.search(email_list=self.email_list)
+            # save custom attributes
+            if hasattr(self.search, 'myfacets'):
+                self.myfacets = self.search.myfacets
+            if hasattr(self.search, 'queryid'):
+                self.queryid = self.search.queryid
+            self.response = run_query(self.search)
+            return self.response.hits
 
+        # DB Query
         fields = get_order_fields(self.request.GET, use_db=True)
         results = self.email_list.message_set.order_by(*fields)
         self.kwargs = get_qdr_kwargs(self.request.GET)

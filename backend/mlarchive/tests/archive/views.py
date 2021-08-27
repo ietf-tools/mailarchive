@@ -243,7 +243,9 @@ def test_browse_query(client, messages):
     url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?q=invitation'
     response = client.get(url)
     assert response.status_code == 200
-    assert len(response.context['results']) == 2
+    for r in response.context['results']:
+        print(r.date, r.subject)
+    assert len(response.context['results']) == 3
 
 
 @pytest.mark.django_db(transaction=True)

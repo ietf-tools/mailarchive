@@ -12,14 +12,17 @@ import os
 import re
 import requests
 import subprocess
-from collections import OrderedDict
 
+from elasticsearch import Elasticsearch, TransportError
+from elasticsearch.helpers import bulk
+from elasticsearch_dsl import Index
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.core.exceptions import ImproperlyConfigured
 from django.db.models import signals
 from django.http import HttpResponse
-from django.utils.encoding import smart_bytes
+from django.utils.encoding import smart_bytes, force_text
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.signals import _export_lists, _list_save_handler
 from mlarchive.utils.test_utils import get_search_backend
@@ -247,3 +250,132 @@ def create_mbox_file(month, year, elist):
         mbox.add(msg)
     mbox.close()
 
+
+def full_prepare(message):
+    '''Takes database Message object and returns dictionary for index update.
+    For dates use isoformat().'''
+    prepared_data = {
+        'id': 'archive.message.' + force_text(message.pk),
+        'django_ct': 'archive.message',
+        'django_id': force_text(message.pk),
+    }
+    prepared_data['text'] = '\n'.join([message.subject, message.get_body()])
+    prepared_data['date'] = message.date.isoformat()
+    prepared_data['email_list'] = message.email_list.name
+    prepared_data['email_list_exact'] = message.email_list.name
+    prepared_data['frm'] = message.frm
+    prepared_data['frm_name'] = message.frm_name
+    prepared_data['frm_name_exact'] = message.frm_name
+    prepared_data['msgid'] = message.msgid
+    prepared_data['subject'] = message.subject
+    prepared_data['subject_base'] = message.base_subject
+    prepared_data['thread_date'] = message.thread_date
+    prepared_data['thread_id'] = message.thread_id
+    prepared_data['thread_depth'] = message.thread_depth
+    prepared_data['thread_order'] = message.thread_order
+    prepared_data['spam_score'] = message.spam_score
+    prepared_data['url'] = message.get_absolute_url()
+
+    return prepared_data
+
+
+class ESBackend():
+    """Elasticsearch Backend"""
+    def __init__(self):
+        connection_options = settings.ELASTICSEARCH_CONNECTION
+        if 'URL' not in connection_options:
+            raise ImproperlyConfigured("You must specify a 'URL' in your settings for connection Elasticsearch.")
+
+        if 'INDEX_NAME' not in connection_options:
+            raise ImproperlyConfigured("You must specify a 'INDEX_NAME' in your settings for connection Elasticsearch.")
+
+        self.client = Elasticsearch(
+            connection_options['URL'],
+            **connection_options.get('KWARGS', {}))
+        self.index_name = connection_options['INDEX_NAME']
+        self.log = logging.getLogger('haystack')
+        self.mapping = settings.ELASTICSEARCH_INDEX_MAPPINGS_NEW
+
+    def clear(self, commit=True):
+        '''Clears index of all data'''
+        self.client.indices.delete(index=self.index_name, ignore=404)
+        # client.indices.create(index=index_name, body=DEFAULT_SETTINGS, ignore=400)
+        # ignore 400 cause by IndexAlreadyExistsException when creating an index
+        self.client.indices.create(index=self.index_name, ignore=400)
+        self.client.indices.put_mapping(
+            index=self.index_name,
+            doc_type='modelresult',
+            body=self.mapping)
+
+    def update(self, iterable, commit=True):
+        '''Update index records using iterable'''
+        logger.debug('ESBackend.update() called. iterable={}, commit={}'.format(
+            type(iterable), commit))
+
+        prepped_docs = []
+        for obj in iterable:
+            try:
+                prepped_data = full_prepare(obj)
+                # final_data = {}
+
+                # Convert the data to make sure it's happy.
+                # - handled already (dates=isoformat, no binary)
+                # for key, value in prepped_data.items():
+                #     final_data[key] = self._from_python(value)
+
+                # what is this for?
+                # final_data['_id'] = final_data['id']
+                prepped_data['_id'] = prepped_data['id']
+
+                prepped_docs.append(prepped_data)
+            # except SkipDocument:
+            #     log.debug(u"Indexing for object `%s` skipped", obj)
+            except TransportError as e:
+                if not settings.ELASTICSEARCH_SILENTLY_FAIL:
+                    raise
+
+                # We'll log the object identifier but won't include the actual object
+                # to avoid the possibility of that generating encoding errors while
+                # processing the log message:
+                extra = {"data": {"index": self.index_name,
+                                  "object": force_text(obj.pk)}}
+                logger.error(
+                    u"%s while preparing object for update" % e.__class__.__name__,
+                    exec_info=True,
+                    extra=extra)
+
+        results = bulk(self.client, prepped_docs,
+                       index=self.index_name,
+                       doc_type='modelresult')
+        logger.debug('ESBackend.update() bulk results={}'.format(results))
+
+        if commit:
+            self.client.indices.refresh(index=self.index_name)
+
+    def remove(self, doc_id, commit=True):
+        """Remove record from index"""
+        # doc_id = get_identifier(obj_or_string)
+
+        """
+        if not self.setup_complete:
+            try:
+                self.setup()
+            except TransportError as e:
+                if not self.silently_fail:
+                    raise
+
+                self.log.error("Failed to remove document '%s' from Elasticsearch: %s", doc_id, e,
+                               exc_info=True)
+                return
+        """
+
+        try:
+            self.conn.delete(index=self.index_name, doc_type='modelresult', id=doc_id, ignore=404)
+
+            if commit:
+                self.conn.indices.refresh(index=self.index_name)
+        except TransportError as e:
+            if not self.silently_fail:
+                raise
+
+            self.log.error("Failed to remove document '%s' from Elasticsearch: %s", doc_id, e, exc_info=True)

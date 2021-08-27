@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+from io import StringIO
+import datetime
 import mailbox
 import pytest
 import requests
@@ -9,12 +11,21 @@ import os
 import subprocess   # noqa
 
 
+from elasticsearch import Elasticsearch
+from elasticsearch.exceptions import NotFoundError
+from elasticsearch_dsl import Search
+
 from django.conf import settings
 from django.core.cache import cache
+from django.core.management import call_command
 from django.contrib.auth.models import AnonymousUser
 from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     lookup_user, process_members, get_membership, check_inactive, EmailList,
-    create_mbox_file)
+    create_mbox_file, ESBackend)
+from mlarchive.archive.models import Message
+from factories import EmailListFactory, ThreadFactory, MessageFactory
+
+from mlarchive.archive.management.commands.update_index_new import Command
 
 
 @pytest.mark.django_db(transaction=True)
@@ -179,3 +190,132 @@ def test_create_mbox_file(tmpdir, settings, latin1_messages):
     mbox = mailbox.mbox(path)
     assert len(mbox) == 1
     mbox.close()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_clear_index(search_api_messages):
+    client = Elasticsearch()
+    s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    assert s.count() > 0
+    out = StringIO()
+    call_command('clear_index_new', interactive=False, stdout=out)
+    s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    assert s.count() == 0
+
+
+@pytest.mark.django_db(transaction=True)
+def test_rebuild_index(db_only):
+    client = Elasticsearch()
+    s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    assert s.count() == 3
+    info = client.cat.indices(settings.ELASTICSEARCH_INDEX_NAME)
+    uuid = info.split()[3]
+    # delete a record
+    Message.objects.get(msgid='x001').delete()
+    Message.objects.get(msgid='x002').delete()
+    # add a record
+    msg = Message.objects.get(msgid='x003')
+    MessageFactory.create(email_list=msg.email_list,
+                          thread=msg.thread,
+                          thread_order=0,
+                          msgid='x004',
+                          date=datetime.datetime(2020, 1, 1))
+    out = StringIO()
+    call_command('rebuild_index_new', interactive=False, stdout=out)
+    assert 'Indexing 2 Messages' in out.getvalue()
+    s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    assert s.count() == 2
+    info = client.cat.indices(settings.ELASTICSEARCH_INDEX_NAME)
+    new_uuid = info.split()[3]
+    assert new_uuid != uuid
+    s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    s = s.source(fields={'includes': ['django_id', 'id']})
+    s = s.scan()
+    index_pks = [h['django_id'] for h in s]
+    assert sorted(index_pks) == ['3', '4']
+
+
+@pytest.mark.django_db(transaction=True)
+def test_update_index(db_only):
+    out = StringIO()
+    call_command('clear_index_new', interactive=False, stdout=out)
+    client = Elasticsearch()
+    s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    assert s.count() == 0
+    out = StringIO()
+    call_command('update_index_new', stdout=out)
+    assert 'Indexing 3 Messages' in out.getvalue()
+    s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    assert s.count() == 3
+
+    doc = client.get(index=settings.ELASTICSEARCH_INDEX_NAME,
+                     doc_type='modelresult',
+                     id='archive.message.1')
+    assert doc['_source']['django_id'] == '1'
+    assert doc['_source']['text'] == 'This is a test message\nError reading message file'
+    assert doc['_source']['email_list'] == 'public'
+    assert doc['_source']['date'] == '2017-01-01T00:00:00'
+    assert doc['_source']['frm'] == 'John Smith <john@example.com>'
+    assert doc['_source']['msgid'] == 'x001'
+    assert doc['_source']['subject'] == 'This is a test message'
+
+
+@pytest.mark.django_db(transaction=True)
+def test_update_index_date_range(db_only):
+    out = StringIO()
+    call_command('clear_index_new', interactive=False, stdout=out)
+    client = Elasticsearch()
+    s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    assert s.count() == 0
+    out = StringIO()
+    call_command('update_index_new', 
+                 start='2000-01-01T00:00:00',
+                 end='2017-12-31T00:00:00',
+                 stdout=out)
+    assert 'Indexing 1 Messages' in out.getvalue()
+    s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    assert s.count() == 1
+    doc = client.get(index=settings.ELASTICSEARCH_INDEX_NAME,
+                     doc_type='modelresult',
+                     id='archive.message.1')
+    assert doc['_source']['msgid'] == 'x001'
+
+
+@pytest.mark.django_db(transaction=True)
+def test_update_index_age(db_only):
+    out = StringIO()
+    call_command('clear_index_new', interactive=False, stdout=out)
+    client = Elasticsearch()
+    s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    assert s.count() == 0
+    out = StringIO()
+    call_command('update_index_new', 
+                 age='48',
+                 stdout=out)
+    assert 'Indexing 1 Messages' in out.getvalue()
+    s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    assert s.count() == 1
+    doc = client.get(index=settings.ELASTICSEARCH_INDEX_NAME,
+                     doc_type='modelresult',
+                     id='archive.message.3')
+    assert doc['_source']['msgid'] == 'x003'
+
+
+@pytest.mark.django_db(transaction=True)
+def test_update_index_remove(db_only):
+    client = Elasticsearch()
+    s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    assert s.count() == 3
+    out = StringIO()
+    Message.objects.get(msgid='x003').delete()
+    call_command('update_index_new', 
+                 remove=True,
+                 stdout=out)
+    assert 'Indexing 2 Messages' in out.getvalue()
+    s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    assert s.count() == 2
+    with pytest.raises(NotFoundError) as excinfo:
+        client.get(index=settings.ELASTICSEARCH_INDEX_NAME,
+                   doc_type='modelresult',
+                   id='archive.message.3')
+        assert 'NotFoundError' in str(excinfo.value)

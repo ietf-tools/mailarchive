@@ -8,7 +8,6 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django.utils.http import urlencode
-from haystack.forms import FacetedSearchForm
 
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, A, Q
@@ -212,6 +211,7 @@ class AdvancedSearchForm(forms.Form):
         super(self.__class__, self).__init__(*args, **kwargs)
         self.fields["email_list"].widget.attrs["placeholder"] = "List names"
 
+    '''
     def get_facets(self, sqs):
         """Get facets for the SearchQuerySet
 
@@ -271,7 +271,8 @@ class AdvancedSearchForm(forms.Form):
         # save in cache
         cache.set(cache_key, facets)
         return facets
-
+    '''
+    
     def no_query_found(self):
         """
         Determines the behavior when no query was found.

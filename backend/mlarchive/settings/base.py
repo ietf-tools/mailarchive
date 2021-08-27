@@ -178,6 +178,13 @@ HAYSTACK_CONNECTIONS = {
 
 # ELASTICSEARCH SETTINGS
 ELASTICSEARCH_INDEX_NAME = 'mail-archive'
+ELASTICSEARCH_SILENTLY_FAIL = True
+ELASTICSEARCH_CONNECTION = {
+    'URL': 'http://127.0.0.1:9200/',
+    'INDEX_NAME': 'mail-archive',
+}
+
+
 ELASTICSEARCH_INDEX_MAPPINGS = {
     "django_ct": {'type': 'keyword'},           # "archive.message"
     "django_id": {'type': 'long'},              # primary key of message
@@ -202,6 +209,36 @@ ELASTICSEARCH_INDEX_MAPPINGS = {
     "tid": {"type": "long"},
     # "to": {"type": "text"},                   # get rid of this
     "torder": {"type": "long"}
+}
+
+
+ELASTICSEARCH_INDEX_MAPPINGS_NEW = {
+    'properties': {
+        'base_subject': {'type': 'alias', 'path': 'subject_base'},
+        'date': {'type': 'date'},
+        'django_ct': {'type': 'keyword'},
+        'django_id': {'type': 'long'},
+        'email_list': {'type': 'keyword'},
+        'email_list_exact': {'type': 'keyword'},
+        'frm': {'type': 'text'},
+        'frm_name': {'type': 'keyword'},
+        'frm_name_exact': {'type': 'keyword'},
+        'from': {'type': 'alias', 'path': 'frm'},
+        'id': {'type': 'text', 'fields': {'keyword': {'type': 'keyword', 'ignore_above': 256}}},
+        'msgid': {'type': 'keyword'},
+        'spam_score': {'type': 'integer'},
+        'subject': {'type': 'text'},
+        'subject_base': {'type': 'keyword'},
+        'tdate': {'type': 'date'},
+        'text': {'type': 'text'},
+        'thread_date': {'type': 'date'},
+        'thread_depth': {'type': 'long'},
+        'thread_id': {'type': 'long'},
+        'thread_order': {'type': 'long'},
+        'tid': {'type': 'long'},
+        'torder': {'type': 'long'},
+        'url': {'type': 'text', 'fields': {'keyword': {'type': 'keyword', 'ignore_above': 256}}}
+    }
 }
 
 # SECURITY SETTINGS

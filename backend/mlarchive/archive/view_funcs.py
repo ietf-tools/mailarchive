@@ -23,7 +23,6 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.encoding import smart_text, smart_bytes
-from haystack.views import SearchView
 
 from mlarchive.archive.forms import RulesForm
 from mlarchive.archive.models import EmailList, Message
@@ -79,16 +78,6 @@ def apply_objects(hits):
 # --------------------------------------------------
 # View Functions
 # --------------------------------------------------
-
-
-def custom_search_view_factory(view_class=SearchView, *args, **kwargs):
-    """Modified version of haystack.views.search_view_factory() to support passed
-    URL parameters
-    See: https://github.com/django-haystack/django-haystack/issues/1063
-    """
-    def search_view(request, *vargs, **vkwargs):
-        return view_class(*args, **kwargs)(request, *vargs, **vkwargs)
-    return search_view
 
 
 def initialize_formsets(query):

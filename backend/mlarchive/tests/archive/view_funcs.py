@@ -17,9 +17,8 @@ from django.http import HttpResponse
 from django.urls import reverse
 from django.utils.encoding import smart_text
 
-from mlarchive.archive.views import CustomSearchView
 from mlarchive.archive.view_funcs import (chunks, initialize_formsets, get_columns,
-    get_export, get_query_neighbors, custom_search_view_factory, apply_objects)
+    get_export, get_query_neighbors, apply_objects)
 from mlarchive.archive.models import EmailList, Message
 from mlarchive.utils.test_utils import get_request
 
@@ -50,14 +49,6 @@ def test_chunks():
     result = list(chunks([1, 2, 3, 4, 5, 6, 7, 8, 9], 3))
     assert len(result) == 3
     assert result[0] == [1, 2, 3]
-
-
-def test_custom_search_view_factory():
-    request = get_request()
-    view = custom_search_view_factory()
-    response = view(request)
-    assert isinstance(response, HttpResponse)
-    assert response.status_code == 200
 
 
 def test_initialize_formsets():

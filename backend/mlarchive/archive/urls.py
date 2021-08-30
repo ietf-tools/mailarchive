@@ -4,10 +4,8 @@ from django.urls import path
 from django.views.generic import TemplateView
 # from haystack.views import search_view_factory
 
-from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive import ajax
 from mlarchive.archive import views
-from mlarchive.archive.view_funcs import custom_search_view_factory
 
 
 urlpatterns = [
@@ -22,10 +20,7 @@ urlpatterns = [
     path('advsearch/', views.advsearch, name='archive_advsearch'),
     path('browse/', views.browse, name='archive_browse'),
     path('browse/static/', views.browse_static, name='archive_browse_static'),
-    path('browse/<list_name>/', custom_search_view_factory(
-        form_class=AdvancedSearchForm,
-        view_class=views.CustomBrowseView,
-        template='archive/search.html'), name='archive_browse_list'),
+    path('browse/<list_name>/', views.CustomBrowseView.as_view(), name='archive_browse_list'),
     path('browse/static/<list_name>/', views.browse_static_redirect, name='archive_browse_static'),
     path('browse/static/<list_name>/thread/', views.browse_static_thread_redirect, name='archive_browse_static_thread_redirect'),
     path('browse/static/<list_name>/<date>/', views.DateStaticIndexView.as_view(), name='archive_browse_static_date'),
@@ -38,10 +33,6 @@ urlpatterns = [
     # url(r'^msg/(?P<list_name>[a-z0-9_\-\+]+)/(?P<id>[a-zA-Z0-9_\-]+)(=)?/(?P<sequence>\d+)(/)?$', views.attachment, name='a
     path('msg/<list_name>/<id>/', views.detail, name='archive_detail'),
     path('msg/<list_name>/<id>/<int:sequence>/', views.attachment, name='archive_attachment'),
-    path('search/', custom_search_view_factory(
-        form_class=AdvancedSearchForm,
-        view_class=views.CustomSearchView,
-        template='archive/search.html'), name='archive_search'),
-
+    path('search/', views.CustomSearchView.as_view(), name='archive_search'),
     # test pages ----------------
 ]

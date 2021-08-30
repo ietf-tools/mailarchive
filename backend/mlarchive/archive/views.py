@@ -119,16 +119,20 @@ def is_small_year(email_list, year):
 # Classes
 # --------------------------------------------------
 
-class CustomSearchView(object):
+class CustomSearchView(View):
     """A customized SearchView"""
     template = 'archive/search.html'
     extra_context = {}
+    load_all = True
+    form_class = AdvancedSearchForm
+    searchqueryset = None
     query = ''
     results = None      # EmptySearchQuerySet()
     request = None
     form = None
     results_per_page = settings.ELASTICSEARCH_RESULTS_PER_PAGE
 
+    """
     def __name__(self):
         return "CustomSearchView"
 
@@ -145,8 +149,9 @@ class CustomSearchView(object):
 
         if template:
             self.template = template
+    """
 
-    def __call__(self, request):
+    def get(self, request):
         """Generates the actual response to the search.
 
         Relies on internal, overridable methods to construct the response.
@@ -336,19 +341,26 @@ class CustomSearchView(object):
         return render(self.request, self.template, context)
 
 
-@method_decorator(check_list_access, name='__call__')
+@method_decorator(check_list_access, name='dispatch')
 class CustomBrowseView(CustomSearchView):
     """A customized SearchView for browsing a list"""
+    """
     def __name__(self):
         return "CustomBrowseView"
+    """
 
-    def __call__(self, request, list_name, email_list):
+    def get(self, request, *args, **kwargs):
+        if 'list_name' in kwargs:
+            self.list_name = kwargs['list_name']
+        if 'email_list' in kwargs:
+            self.email_list = kwargs['email_list']
+            
         if is_static_on(request):
-            return redirect('archive_browse_static', list_name=list_name)
+            return redirect('archive_browse_static', list_name=self.list_name)
 
-        self.base_url = reverse('archive_browse_list', kwargs={'list_name': list_name})
-        self.list_name = list_name
-        self.email_list = email_list
+        self.base_url = reverse('archive_browse_list', kwargs={'list_name': self.list_name})
+        # self.list_name = list_name
+        # self.email_list = email_list
         self.kwargs = {}
 
         self.request = request

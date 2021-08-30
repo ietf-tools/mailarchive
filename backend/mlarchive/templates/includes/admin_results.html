@@ -14,10 +14,10 @@
                   <tr>
                     <td><input type="checkbox" class="action-select" value="{{ item.object.pk }}" name="_selected_action"></td>
                     <td>{{ forloop.counter }}</td>
-                    <td>{{ item.object.subject }}</td>
-                    <td>{{ item.object.frm }}</td>
-                    <td class="text-nowrap">{{ item.object.date|date:"Y-m-d" }}</td>
-                    <td class="d-none">{{ item.object.pk }}</td>
+                    <td>{{ item.subject }}</td>
+                    <td>{{ item.frm }}</td>
+                    <td class="text-nowrap">{{ item.date }}</td>
+                    <td class="d-none">{{ item.django_id }}</td>
                   </tr>
                 {% endfor %}
             {% else %}

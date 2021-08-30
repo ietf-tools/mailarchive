@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 from django.urls import path 
 from django.views.generic import TemplateView
-from haystack.views import search_view_factory
+# from haystack.views import search_view_factory
 
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive import ajax
@@ -38,7 +38,7 @@ urlpatterns = [
     # url(r'^msg/(?P<list_name>[a-z0-9_\-\+]+)/(?P<id>[a-zA-Z0-9_\-]+)(=)?/(?P<sequence>\d+)(/)?$', views.attachment, name='a
     path('msg/<list_name>/<id>/', views.detail, name='archive_detail'),
     path('msg/<list_name>/<id>/<int:sequence>/', views.attachment, name='archive_attachment'),
-    path('search/', search_view_factory(
+    path('search/', custom_search_view_factory(
         form_class=AdvancedSearchForm,
         view_class=views.CustomSearchView,
         template='archive/search.html'), name='archive_search'),

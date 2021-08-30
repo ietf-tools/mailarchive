@@ -183,7 +183,7 @@ ELASTICSEARCH_CONNECTION = {
     'URL': 'http://127.0.0.1:9200/',
     'INDEX_NAME': 'mail-archive',
 }
-
+ELASTICSEARCH_RESULTS_PER_PAGE = 40
 
 ELASTICSEARCH_INDEX_MAPPINGS = {
     "django_ct": {'type': 'keyword'},           # "archive.message"

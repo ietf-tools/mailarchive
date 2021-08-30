@@ -23,21 +23,25 @@ from django.urls import reverse, NoReverseMatch
 from django.utils.safestring import mark_safe
 from django.utils.cache import add_never_cache_headers, patch_cache_control
 from django.views.generic import View
-from haystack.views import SearchView
-from haystack.query import SearchQuerySet
-from haystack.forms import SearchForm
+
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Search
 
 from mlarchive.utils.decorators import check_access, superuser_only, pad_id, check_list_access
 from mlarchive.archive import actions
 from mlarchive.archive.query_utils import (get_kwargs, get_qdr_kwargs,
     get_cached_query, get_browse_equivalent, parse_query_string, get_order_fields,
-    generate_queryid, is_static_on, run_query, get_count, CustomPaginator)
+    generate_queryid, is_static_on, run_query, get_count, CustomPaginator,
+    filters_from_params, queries_from_params)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     get_query_neighbors, get_query_string, get_lists_for_user, get_random_token)
 
 from mlarchive.archive.models import EmailList, Message, Thread, Attachment
-from mlarchive.archive.forms import AdminForm, AdminActionForm, AdvancedSearchForm, BrowseForm, RulesForm
+from mlarchive.archive.forms import (AdminForm, AdminActionForm, 
+    AdvancedSearchForm, BrowseForm, RulesForm, SearchForm)
 
+import logging
+logger = logging.getLogger(__name__)
 
 THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
 DATE_PATTERN = re.compile(r'(?P<year>\d{4})(?:-(?P<month>\d{2}))?')
@@ -115,11 +119,32 @@ def is_small_year(email_list, year):
 # Classes
 # --------------------------------------------------
 
-class CustomSearchView(SearchView):
+class CustomSearchView(object):
     """A customized SearchView"""
+    template = 'archive/search.html'
+    extra_context = {}
+    query = ''
+    results = None      # EmptySearchQuerySet()
+    request = None
+    form = None
+    results_per_page = settings.ELASTICSEARCH_RESULTS_PER_PAGE
 
     def __name__(self):
         return "CustomSearchView"
+
+    def __init__(self, template=None, load_all=True, form_class=None, searchqueryset=None, results_per_page=None):
+        self.load_all = load_all
+        self.form_class = form_class
+        self.searchqueryset = searchqueryset
+
+        if form_class is None:
+            self.form_class = AdvancedSearchForm
+
+        if results_per_page is not None:
+            self.results_per_page = results_per_page
+
+        if template:
+            self.template = template
 
     def __call__(self, request):
         """Generates the actual response to the search.
@@ -152,7 +177,21 @@ class CustomSearchView(SearchView):
 
     def build_form(self, form_kwargs=None):
         """Add request object to the form init so we can use it for authorization"""
-        return super(CustomSearchView, self).build_form(form_kwargs={'request': self.request})
+        data = None
+        kwargs = {
+            'load_all': self.load_all,
+            'request': self.request,
+        }
+        if form_kwargs:
+            kwargs.update(form_kwargs)
+
+        if len(self.request.GET):
+            data = self.request.GET
+
+        if self.searchqueryset is not None:
+            kwargs['searchqueryset'] = self.searchqueryset
+
+        return self.form_class(data, **kwargs)
 
     def extra_context(self):
         """Add variables to template context"""
@@ -163,7 +202,7 @@ class CustomSearchView(SearchView):
         # settings
         extra['filter_cutoff'] = settings.FILTER_CUTOFF
         extra['query_string'] = query_string
-        extra['results_per_page'] = settings.HAYSTACK_SEARCH_RESULTS_PER_PAGE
+        extra['results_per_page'] = settings.ELASTICSEARCH_RESULTS_PER_PAGE
         extra['queryset_offset'] = str(self.page.start_index() - 1)
         extra['count'] = get_count(self.search)
 
@@ -287,6 +326,14 @@ class CustomSearchView(SearchView):
             return parse_query_string(q)
 
         return ''
+
+    def create_response(self):
+        """
+        Generates the actual HttpResponse to send back to the user.
+        """
+        context = self.get_context()
+
+        return render(self.request, self.template, context)
 
 
 @method_decorator(check_list_access, name='__call__')
@@ -529,22 +576,34 @@ def admin(request):
     form = AdminForm()
     action_form = AdminActionForm()
 
-    def is_not_whitelisted(search_result):
-        if search_result.frm not in whitelist:
-            return True
-        else:
-            return False
+    # def is_not_whitelisted(search_result):
+    #     if search_result.frm not in whitelist:
+    #         return True
+    #     else:
+    #         return False
 
     # admin search query
     if request.method == 'GET' and request.GET:
         form = AdminForm(request.GET)
-        if form.is_valid():
-            kwargs = get_kwargs(form.cleaned_data)
-            if kwargs:
-                results = SearchQuerySet().filter(**kwargs).order_by('date').load_all()
-                if form.cleaned_data.get('exclude_whitelisted_senders'):
-                    whitelist = Message.objects.filter(spam_score=-1).values_list('frm', flat=True).distinct()
-                    results = list(filter(is_not_whitelisted, results))
+        # refactor to build_search()
+
+        if not request.GET:
+            results = []
+
+        elif form.is_valid():
+            client = Elasticsearch()
+            sqs = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+
+            for f in filters_from_params(form.cleaned_data):
+                sqs = sqs.filter(f)
+            for q in queries_from_params(form.cleaned_data):
+                sqs = sqs.query(q)
+            sqs = sqs.sort('date')
+            logger.debug('admin query: {}'.format(sqs.to_dict()))
+            results = list(sqs.scan())  # convert to list for tests
+            # if form.cleaned_data.get('exclude_whitelisted_senders'):
+            #     whitelist = Message.objects.filter(spam_score=-1).values_list('frm', flat=True).distinct()
+            #     results = list(filter(is_not_whitelisted, results))
 
     # perfom action on checked messages
     elif request.method == 'POST':

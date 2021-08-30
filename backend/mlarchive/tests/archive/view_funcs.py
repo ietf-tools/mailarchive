@@ -17,6 +17,7 @@ from django.http import HttpResponse
 from django.urls import reverse
 from django.utils.encoding import smart_text
 
+from mlarchive.archive.views import CustomSearchView
 from mlarchive.archive.view_funcs import (chunks, initialize_formsets, get_columns,
     get_export, get_query_neighbors, custom_search_view_factory, apply_objects)
 from mlarchive.archive.models import EmailList, Message

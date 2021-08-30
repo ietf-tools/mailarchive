@@ -407,6 +407,11 @@ class AdvancedSearchForm(forms.Form):
 # ---------------------------------------------------------
 
 
+class SearchForm(forms.Form):
+    q = forms.CharField(required=False, label='Search',
+                        widget=forms.TextInput(attrs={'type': 'search'}))
+
+
 class BrowseForm(forms.Form):
     list = forms.ModelChoiceField(queryset=EmailList.objects, label='List')
 

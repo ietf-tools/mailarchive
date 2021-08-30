@@ -80,6 +80,7 @@ def apply_objects(hits):
 # View Functions
 # --------------------------------------------------
 
+
 def custom_search_view_factory(view_class=SearchView, *args, **kwargs):
     """Modified version of haystack.views.search_view_factory() to support passed
     URL parameters

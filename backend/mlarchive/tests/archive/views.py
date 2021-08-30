@@ -119,7 +119,7 @@ def test_admin_search_msgid(admin_client, messages):
     response = admin_client.get(url)
     assert response.status_code == 200
     results = response.context['results']
-    assert msg in [r.object for r in results]
+    assert str(msg.pk) in [r.django_id for r in results]
 
 
 @pytest.mark.django_db(transaction=True)
@@ -129,7 +129,7 @@ def test_admin_search_subject(admin_client, messages):
     response = admin_client.get(url)
     assert response.status_code == 200
     results = response.context['results']
-    assert msg in [r.object for r in results]
+    assert str(msg.pk) in [r.django_id for r in results]
 
 
 @pytest.mark.django_db(transaction=True)
@@ -139,7 +139,7 @@ def test_admin_search_date(admin_client, messages):
     response = admin_client.get(url)
     assert response.status_code == 200
     results = response.context['results']
-    assert msg in [r.object for r in results]
+    assert str(msg.pk) in [r.django_id for r in results]
 
 
 @pytest.mark.django_db(transaction=True)
@@ -149,7 +149,7 @@ def test_admin_search_list(admin_client, messages):
     response = admin_client.get(url)
     assert response.status_code == 200
     results = response.context['results']
-    assert msg in [r.object for r in results]
+    assert str(msg.pk) in [r.django_id for r in results]
 
 
 @pytest.mark.django_db(transaction=True)

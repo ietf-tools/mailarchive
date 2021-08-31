@@ -71,7 +71,7 @@ def chunks(l, n):
 
 def apply_objects(hits):
     '''Add object attribute (Message) to list of hits,
-    to simulate haystack results'''
+    to simulate Haystack results'''
     for hit in hits:
         hit.object = Message.objects.get(pk=hit.django_id)
 

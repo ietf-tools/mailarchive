@@ -66,6 +66,7 @@ This is a test email.  database
     # ensure message in index
     url = '%s?q=database' % reverse('archive_search')
     response = client.get(url)
+    print(response.context['results'])
     assert len(response.context['results']) == 1
     # ensure message on disk
     # TODO

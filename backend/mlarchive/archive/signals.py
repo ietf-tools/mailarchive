@@ -13,8 +13,10 @@ from django.conf import settings
 from django.core.cache import cache
 from django.dispatch import receiver
 from django.db.models.signals import pre_delete, post_delete, post_save
+from django.db import models
 
 from mlarchive.archive.models import Message, EmailList
+from mlarchive.archive.backends.elasticsearch import ESBackend
 
 logger = logging.getLogger(__name__)
 
@@ -173,3 +175,75 @@ def _get_lists_as_xml():
         lines.append("  </shared_root>")
     lines.append("</ms_config>")
     return "\n".join(lines)
+
+
+# --------------------------------------------------
+# Classes
+# --------------------------------------------------
+
+class BaseSignalProcessor(object):
+    """
+    A convenient way to attach to Django's signals & cause things to
+    index.
+
+    By default, does nothing with signals but provides underlying functionality.
+    """
+    def __init__(self, connections):
+        self.connections = connections
+        self.setup()
+
+    def setup(self):
+        """
+        A hook for setting up anything necessary for
+        ``handle_save/handle_delete`` to be executed.
+
+        Default behavior is to do nothing (``pass``).
+        """
+        # Do nothing.
+        pass
+
+    def teardown(self):
+        """
+        A hook for tearing down anything necessary for
+        ``handle_save/handle_delete`` to no longer be executed.
+
+        Default behavior is to do nothing (``pass``).
+        """
+        # Do nothing.
+        pass
+
+    def handle_save(self, sender, instance, **kwargs):
+        """
+        Given an individual model instance, update the index
+        """
+        backend = ESBackend()
+        try:
+            backend.update([instance])
+        except Exception:
+            # TODO: Maybe log it or let the exception bubble?
+            pass
+
+    def handle_delete(self, sender, instance, **kwargs):
+        """
+        Given an individual model instance, delete from index.
+        """
+        backend = ESBackend()
+        try:
+            backend.remove(instance)
+        except Exception:
+            # TODO: Maybe log it or let the exception bubble?
+            pass
+
+
+class RealtimeSignalProcessor(BaseSignalProcessor):
+    """
+    Allows for observing when saves/deletes fire & automatically updates the
+    search engine appropriately.
+    """
+    def setup(self):
+        models.signals.post_save.connect(self.handle_save, sender=Message)
+        models.signals.post_delete.connect(self.handle_delete, sender=Message)
+
+    def teardown(self):
+        models.signals.post_save.disconnect(self.handle_save, sender=Message)
+        models.signals.post_delete.disconnect(self.handle_delete, sender=Message)

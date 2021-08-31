@@ -96,8 +96,8 @@ INSTALLED_APPS = [
     'django.contrib.sitemaps',
     'mozilla_django_oidc',
     'bootstrap4',
-    'celery_haystack',
-    'haystack',
+    # 'celery_haystack',
+    # 'haystack',
     'mlarchive.archive.apps.ArchiveConfig',
     'widget_tweaks',
 ]
@@ -184,6 +184,7 @@ ELASTICSEARCH_CONNECTION = {
     'INDEX_NAME': 'mail-archive',
 }
 ELASTICSEARCH_RESULTS_PER_PAGE = 40
+ELASTICSEARCH_SIGNAL_PROCESSOR = 'mlarchive.archive.signals.RealtimeSignalProcessor'
 
 ELASTICSEARCH_INDEX_MAPPINGS = {
     "django_ct": {'type': 'keyword'},           # "archive.message"

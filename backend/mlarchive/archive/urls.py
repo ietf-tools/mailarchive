@@ -2,7 +2,6 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 from django.urls import path 
 from django.views.generic import TemplateView
-# from haystack.views import search_view_factory
 
 from mlarchive.archive import ajax
 from mlarchive.archive import views

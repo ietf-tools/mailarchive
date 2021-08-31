@@ -13,7 +13,7 @@ from django.utils.timezone import now
 from elasticsearch_dsl import Search
 
 from mlarchive.archive.models import Message
-from mlarchive.archive.utils import ESBackend
+from mlarchive.archive.backends.elasticsearch import ESBackend
 
 LOG = multiprocessing.log_to_stderr(level=logging.WARNING)
 logger = logging.getLogger(__name__)

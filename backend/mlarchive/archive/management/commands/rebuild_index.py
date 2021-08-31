@@ -29,5 +29,5 @@ class Command(BaseCommand):
             del clear_options[key]
         for key in ('interactive', ):
             del update_options[key]
-        call_command('clear_index_new', **clear_options)
-        call_command('update_index_new', **update_options)
+        call_command('clear_index', **clear_options)
+        call_command('update_index', **update_options)

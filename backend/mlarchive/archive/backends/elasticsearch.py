@@ -128,11 +128,11 @@ class ESBackend():
         
         self.setup_complete = False
 
-        # self.client.indices.create(index=self.index_name, ignore=400)
-        # self.client.indices.put_mapping(
-        #     index=self.index_name,
-        #     doc_type='modelresult',
-        #     body=self.mapping)
+        self.client.indices.create(index=self.index_name, ignore=400)
+        self.client.indices.put_mapping(
+            index=self.index_name,
+            doc_type='modelresult',
+            body=self.mapping)
 
     def update(self, iterable, commit=True):
         '''Update index records using iterable'''

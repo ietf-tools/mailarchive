@@ -96,8 +96,6 @@ INSTALLED_APPS = [
     'django.contrib.sitemaps',
     'mozilla_django_oidc',
     'bootstrap4',
-    # 'celery_haystack',
-    # 'haystack',
     'mlarchive.archive.apps.ArchiveConfig',
     'widget_tweaks',
 ]
@@ -163,19 +161,6 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 SEARCH_RESULTS_PER_PAGE = 40
 
-# HAYSTACK SETTINGS
-HAYSTACK_DEFAULT_OPERATOR = 'AND'
-HAYSTACK_SIGNAL_PROCESSOR = env('HAYSTACK_SIGNAL_PROCESSOR')
-HAYSTACK_SEARCH_RESULTS_PER_PAGE = 40
-
-HAYSTACK_CONNECTIONS = {
-    'default': {
-        'ENGINE': 'mlarchive.archive.backends.custom.ConfigurableElasticSearchEngine',
-        'URL': 'http://127.0.0.1:9200/',
-        'INDEX_NAME': 'mail-archive',
-    },
-}
-
 # ELASTICSEARCH SETTINGS
 ELASTICSEARCH_INDEX_NAME = 'mail-archive'
 ELASTICSEARCH_SILENTLY_FAIL = True
@@ -184,7 +169,7 @@ ELASTICSEARCH_CONNECTION = {
     'INDEX_NAME': 'mail-archive',
 }
 ELASTICSEARCH_RESULTS_PER_PAGE = 40
-ELASTICSEARCH_SIGNAL_PROCESSOR = 'mlarchive.archive.signals.RealtimeSignalProcessor'
+ELASTICSEARCH_SIGNAL_PROCESSOR = env('ELASTICSEARCH_SIGNAL_PROCESSOR')
 
 ELASTICSEARCH_INDEX_MAPPINGS = {
     "django_ct": {'type': 'keyword'},           # "archive.message"
@@ -398,11 +383,6 @@ LOGGING = {
         'mlarchive.custom': {
             'handlers': ['mlarchive'],
             'level': 'DEBUG',
-            'propagate': False,
-        },
-        'haystack': {
-            'handlers': ['mlarchive'],
-            'level': 'INFO',
             'propagate': False,
         }
     }

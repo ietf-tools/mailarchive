@@ -18,15 +18,13 @@ DATABASES = {
 
 AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
 
-# HAYSTACK SETTINGS
-HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
-HAYSTACK_CONNECTIONS['default']['INDEX_NAME'] = 'test-mail-archive'
+ELASTICSEARCH_SIGNAL_PROCESSOR = 'mlarchive.archive.signals.RealtimeSignalProcessor'
 
 # ELASTICSEARCH SETTINGS
 ELASTICSEARCH_INDEX_NAME = 'test-mail-archive'
 
 # use standard default of 20 as it's easier to test
-HAYSTACK_SEARCH_RESULTS_PER_PAGE = 20
+ELASTICSEARCH_RESULTS_PER_PAGE = 20
 SEARCH_RESULTS_PER_PAGE = 20
 SEARCH_SCROLL_BUFFER_SIZE = SEARCH_RESULTS_PER_PAGE
 

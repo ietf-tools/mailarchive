@@ -209,7 +209,7 @@ def messages(index_resource):
 
 @pytest.fixture()
 def attachment_messages_no_index(settings):
-    settings.HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.BaseSignalProcessor'
+    settings.ELASTICSEARCH_SIGNAL_PROCESSOR = 'mlarchive.archive.signals.BaseSignalProcessor'
     content = StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'attachment.mail')
     call_command('load', path, listname='acme', summary=True, stdout=content)

@@ -13,10 +13,12 @@ from django.conf import settings
 from django.core.cache import cache
 from django.dispatch import receiver
 from django.db.models.signals import pre_delete, post_delete, post_save
-from django.db import models
+from django.db import models, connection, transaction
 
 from mlarchive.archive.models import Message, EmailList
-from mlarchive.archive.backends.elasticsearch import ESBackend
+from mlarchive.archive.backends.elasticsearch import ESBackend, get_identifier
+from mlarchive.archive.tasks import CelerySignalHandler
+from mlarchive.archive.utils import _export_lists
 
 logger = logging.getLogger(__name__)
 
@@ -128,53 +130,9 @@ def purge_files_from_cache(message, created=True):
             logger.error(e)
 
 
-def _export_lists():
-    """Write XML dump of list / memberships and call external program"""
-
-    # Dump XML
-    data = _get_lists_as_xml()
-    path = os.path.join(settings.EXPORT_DIR, 'email_lists.xml')
-    try:
-        if not os.path.exists(settings.EXPORT_DIR):
-            os.mkdir(settings.EXPORT_DIR)
-        with open(path, 'w') as file:
-            file.write(data)
-            os.chmod(path, 0o666)
-    except Exception as error:
-        logger.error('Error creating export file: {}'.format(error))
-        return
-
-    # Call external script
-    if hasattr(settings, 'NOTIFY_LIST_CHANGE_COMMAND'):
-        command = settings.NOTIFY_LIST_CHANGE_COMMAND
-        try:
-            subprocess.check_call([command, path])
-        except (OSError, subprocess.CalledProcessError) as error:
-            logger.error('Error calling external command: {} ({})'.format(command, error))
-
-
 def _flush_noauth_cache(email_list):
     keys = ['{:04d}-noauth'.format(user.id) for user in email_list.members.all()]
     cache.delete_many(keys)
-
-
-def _get_lists_as_xml():
-    """Returns string: XML of lists / membership for IMAP"""
-    lines = []
-    lines.append("<ms_config>")
-
-    for elist in EmailList.objects.all().order_by('name'):
-        lines.append("  <shared_root name='{name}' path='/var/isode/ms/shared/{name}'>".format(name=elist.name))
-        if elist.private:
-            lines.append("    <user name='anonymous' access='none'/>")
-            for member in elist.members.all():
-                lines.append("    <user name='{name}' access='read,write'/>".format(name=member.username))
-        else:
-            lines.append("    <user name='anonymous' access='read'/>")
-            lines.append("    <group name='anyone' access='read,write'/>")
-        lines.append("  </shared_root>")
-    lines.append("</ms_config>")
-    return "\n".join(lines)
 
 
 # --------------------------------------------------
@@ -190,6 +148,7 @@ class BaseSignalProcessor(object):
     """
     def __init__(self, connections):
         self.connections = connections
+        self.backend = ESBackend()
         self.setup()
 
     def setup(self):
@@ -216,9 +175,8 @@ class BaseSignalProcessor(object):
         """
         Given an individual model instance, update the index
         """
-        backend = ESBackend()
         try:
-            backend.update([instance])
+            self.backend.update([instance])
         except Exception:
             # TODO: Maybe log it or let the exception bubble?
             pass
@@ -227,9 +185,8 @@ class BaseSignalProcessor(object):
         """
         Given an individual model instance, delete from index.
         """
-        backend = ESBackend()
         try:
-            backend.remove(instance)
+            self.backend.remove(instance)
         except Exception:
             # TODO: Maybe log it or let the exception bubble?
             pass
@@ -247,3 +204,49 @@ class RealtimeSignalProcessor(BaseSignalProcessor):
     def teardown(self):
         models.signals.post_save.disconnect(self.handle_save, sender=Message)
         models.signals.post_delete.disconnect(self.handle_delete, sender=Message)
+
+
+class CelerySignalProcessor(BaseSignalProcessor):
+
+    def setup(self):
+        models.signals.post_save.connect(self.enqueue_save, sender=Message)
+        models.signals.post_delete.connect(self.enqueue_delete, sender=Message)
+
+    def teardown(self):
+        models.signals.post_save.disconnect(self.enqueue_save, sender=Message)
+        models.signals.post_delete.disconnect(self.enqueue_delete, sender=Message)
+
+    def enqueue_save(self, sender, instance, **kwargs):
+        return self.enqueue('update', instance, sender, **kwargs)
+
+    def enqueue_delete(self, sender, instance, **kwargs):
+        return self.enqueue('delete', instance, sender, **kwargs)
+
+    def enqueue(self, action, instance, sender, **kwargs):
+        enqueue_task(action, instance)
+        return
+
+
+def enqueue_task(action, instance, **kwargs):
+    """
+    Common utility for enqueing a task for the given action and
+    model instance.
+    """
+    identifier = get_identifier(instance)
+
+    # task = get_update_task()
+    task = CelerySignalHandler()
+    task_func = lambda: task.apply_async((action, identifier), kwargs)
+
+    if hasattr(transaction, 'on_commit'):
+        # Django 1.9 on_commit hook
+        transaction.on_commit(
+            task_func
+        )
+    elif hasattr(connection, 'on_commit'):
+        # Django-transaction-hooks
+        connection.on_commit(
+            task_func
+        )
+    else:
+        task_func()

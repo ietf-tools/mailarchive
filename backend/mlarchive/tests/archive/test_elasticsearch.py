@@ -14,14 +14,16 @@ from mlarchive.archive.models import Message
 
 @pytest.mark.django_db(transaction=True)
 def test_clear_index(search_api_messages):
-    index=settings.ELASTICSEARCH_INDEX_NAME
+    index = settings.ELASTICSEARCH_INDEX_NAME
     client = Elasticsearch()
     s = Search(using=client, index=index)
     assert s.count() > 0
     out = StringIO()
     call_command('clear_index', interactive=False, stdout=out)
     client = Elasticsearch()
-    assert client.indices.exists(index=index) is False
+    # assert client.indices.exists(index=index) is False
+    s = Search(using=client, index=index)
+    assert s.count() == 0
 
 
 @pytest.mark.django_db(transaction=True)
@@ -62,7 +64,9 @@ def test_update_index(db_only):
     out = StringIO()
     call_command('clear_index', interactive=False, stdout=out)
     client = Elasticsearch()
-    assert client.indices.exists(index=index) is False
+    # assert client.indices.exists(index=index) is False
+    s = Search(using=client, index=index)
+    assert s.count() == 0
     out = StringIO()
     call_command('update_index', stdout=out)
     assert 'Indexing 3 Messages' in out.getvalue()
@@ -87,7 +91,9 @@ def test_update_index_date_range(db_only):
     out = StringIO()
     call_command('clear_index', interactive=False, stdout=out)
     client = Elasticsearch()
-    assert client.indices.exists(index=index) is False
+    # assert client.indices.exists(index=index) is False
+    s = Search(using=client, index=index)
+    assert s.count() == 0
     out = StringIO()
     call_command('update_index', 
                  start='2000-01-01T00:00:00',
@@ -108,7 +114,9 @@ def test_update_index_age(db_only):
     out = StringIO()
     call_command('clear_index', interactive=False, stdout=out)
     client = Elasticsearch()
-    assert client.indices.exists(index=index) is False
+    # assert client.indices.exists(index=index) is False
+    s = Search(using=client, index=index)
+    assert s.count() == 0
     out = StringIO()
     call_command('update_index', 
                  age='48',

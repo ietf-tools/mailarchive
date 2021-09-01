@@ -9,6 +9,7 @@ from mlarchive.archive.actions import remove_selected, not_spam, get_mbox_update
 from mlarchive.archive.models import Message, EmailList
 from mlarchive.utils.test_utils import get_request
 
+
 @pytest.mark.django_db(transaction=True)
 def test_temporary_directory(messages):
     assert 'pytest' in messages.first().get_file_path()
@@ -19,9 +20,10 @@ def test_get_mbox_updates(messages):
     apple = EmailList.objects.get(name='apple')
     print(apple.message_set.count())
     result = get_mbox_updates(apple.message_set.all())
-    assert result == [(1,2017,apple.pk)]
+    assert result == [(1, 2017, apple.pk)]
 
-@patch('celery_haystack.tasks.update_mbox.delay')
+
+@patch('mlarchive.archive.tasks.update_mbox.delay')
 @pytest.mark.django_db(transaction=True)
 def test_remove_selected(mock_update, admin_user):
     mock_update.return_value = 1

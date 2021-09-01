@@ -131,10 +131,6 @@ class Command(BaseCommand):
         self.commit = options.get('commit', True)
         self.max_retries = options.get('max_retries', DEFAULT_MAX_RETRIES)
 
-        # self.backends = options.get('using')
-        # if not self.backends:
-        #     self.backends = haystack_connections.connections_info.keys()
-
         age = options.get('age', DEFAULT_AGE)
         start_date = options.get('start_date')
         end_date = options.get('end_date')
@@ -170,12 +166,7 @@ class Command(BaseCommand):
             raise
 
     def update_backend(self):
-        # backend = haystack_connections[using].get_backend()
-        # unified_index = haystack_connections[using].get_unified_index()
         backend = ESBackend()
-
-        # qs = index.build_queryset(using=using, start_date=self.start_date,
-        #                           end_date=self.end_date)
         
         # handle date range
         kwargs = {}

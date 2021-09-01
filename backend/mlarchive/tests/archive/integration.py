@@ -3,12 +3,10 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import pytest
 
-from django.conf import settings
 from django.urls import reverse
 from django.utils.encoding import smart_text
 from factories import EmailListFactory, UserFactory
 from mlarchive.archive.models import Message
-from mlarchive.utils.test_utils import get_search_backend
 
 from pyquery import PyQuery
 
@@ -317,8 +315,6 @@ def test_queries_boolean_two_term_or(client, messages):
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
-    from mlarchive.utils.test_utils import get_search_backend
-    print(get_search_backend())
     print(len(results.object_list), results.object_list[0].msgid)
     assert len(results) == 4
     ordered_ids = sorted([r.msgid for r in results])
@@ -450,10 +446,8 @@ def test_queries_pagination_bogus(client, messages):
 @pytest.mark.django_db(transaction=True)
 def test_queries_range(client, messages):
     '''Test valid range operator'''
-    if get_search_backend() == 'elasticsearch':
-        url = reverse('archive_search') + '?q=date%3A%5B2000-01-01 TO 2013-12-31%5D'
-    else:
-        url = reverse('archive_search') + '?q=date%3A20000101..20131231'
+    url = reverse('archive_search') + '?q=date%3A%5B2000-01-01 TO 2013-12-31%5D'
+    # url = reverse('archive_search') + '?q=date%3A20000101..20131231'
     response = client.get(url)
     assert response.status_code == 200
     assert len(response.context['results']) == 3
@@ -484,7 +478,6 @@ def test_queries_draft_name(client, messages):
 # --------------------------------------------------
 
 
-@pytest.mark.skipif(get_search_backend() == 'xapian', reason="Requires Elasticsearch")
 @pytest.mark.django_db(transaction=True)
 def test_queries_boolean_negated_term(client, messages):
     url = reverse('archive_search') + '?q=-rfc6759'
@@ -495,7 +488,6 @@ def test_queries_boolean_negated_term(client, messages):
     assert 'a01' not in [x.msgid for x in results]
 
 
-@pytest.mark.skipif(get_search_backend() == 'xapian', reason="Requires Elasticsearch")
 @pytest.mark.django_db(transaction=True)
 def test_queries_boolean_wildcard(client, messages):
     url = reverse('archive_search') + '?q=*6759'

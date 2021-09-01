@@ -10,7 +10,6 @@ from elasticsearch.exceptions import RequestError
 from elasticsearch_dsl import Q, Search
 
 from mlarchive.archive.utils import get_lists
-from mlarchive.utils.test_utils import get_search_backend
 
 import logging
 logger = logging.getLogger(__name__)
@@ -122,11 +121,7 @@ def get_kwargs(data):
     if data.get('end_date'):
         kwargs['date__lte'] = data['end_date']
     if data.get('email_list'):
-        # with Haystack/Xapian must replace dash with space in email list names
-        if get_search_backend() == 'xapian':
-            kwargs['email_list__in'] = [x.replace('-', ' ') for x in data['email_list']]
-        else:
-            kwargs['email_list__in'] = data['email_list']
+        kwargs['email_list__in'] = data['email_list']
     if data.get('frm'):
         kwargs['frm__contains'] = data['frm']   # use __contains for faceted(keyword) field
     if data.get('subject'):

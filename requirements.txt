@@ -13,8 +13,8 @@ django-bootstrap4
 django-csp==3.6
 django-debug-toolbar>=1.7
 django-environ
-django-haystack==2.8.1
-django-haystack-elasticsearch
+# django-haystack==2.8.1
+# django-haystack-elasticsearch
 django-referrer-policy>=1.0
 django-widget-tweaks>=1.3
 elasticsearch>=6.0.0,<7.0.0

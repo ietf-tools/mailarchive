@@ -193,7 +193,6 @@ class AdvancedSearchForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request')
         self.searchqueryset = kwargs.pop('searchqueryset', None)
-        self.load_all = kwargs.pop('load_all', False)
 
         # initialize the search object
         if self.searchqueryset is None:
@@ -359,11 +358,6 @@ class AdvancedSearchForm(forms.Form):
             sqs = sqs.filter('terms', email_list=self.f_list)
         if self.f_from:
             sqs = sqs.filter('terms', frm_name=self.f_from)
-
-        # Populate all SearchResult.object with efficient db query
-        # when called via urls.py / search_view_factory default load_all=True
-        # if self.load_all:
-        #     sqs = sqs.load_all()
 
         # grouping and sorting  -----------------------------------
         # perform this step last because other operations, if they clone the

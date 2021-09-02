@@ -122,7 +122,6 @@ class CustomSearchView(View):
     """A customized SearchView"""
     template = 'archive/search.html'
     extra_context = {}
-    load_all = True
     form_class = AdvancedSearchForm
     searchqueryset = None
     query = ''
@@ -131,35 +130,7 @@ class CustomSearchView(View):
     form = None
     results_per_page = settings.ELASTICSEARCH_RESULTS_PER_PAGE
 
-    """
-    def __name__(self):
-        return "CustomSearchView"
-
-    def __init__(self, template=None, load_all=True, form_class=None, searchqueryset=None, results_per_page=None):
-        self.load_all = load_all
-        self.form_class = form_class
-        self.searchqueryset = searchqueryset
-
-        if form_class is None:
-            self.form_class = AdvancedSearchForm
-
-        if results_per_page is not None:
-            self.results_per_page = results_per_page
-
-        if template:
-            self.template = template
-    """
-
     def get(self, request):
-        """Generates the actual response to the search.
-
-        Relies on internal, overridable methods to construct the response.
-
-        CUSTOM: as soon as queryset is returned from get_results() check for custom
-        attribute myfacets and save to SearchView so we can add to context in
-        extra_context().  This is required because create_response() corrupts regular
-        facet_counts().
-        """
         browse_list = get_browse_equivalent(request)
         if browse_list:
             try:
@@ -174,7 +145,6 @@ class CustomSearchView(View):
         self.request = request
         self.form = self.build_form()
         self.query = self.get_query()
-        # self.search, self.response get set in get_results()
         self.results = self.get_results()
 
         return self.create_response()
@@ -182,10 +152,7 @@ class CustomSearchView(View):
     def build_form(self, form_kwargs=None):
         """Add request object to the form init so we can use it for authorization"""
         data = None
-        kwargs = {
-            'load_all': self.load_all,
-            'request': self.request,
-        }
+        kwargs = {'request': self.request}
         if form_kwargs:
             kwargs.update(form_kwargs)
 
@@ -820,7 +787,7 @@ def export(request, type):
     data = request.GET.copy()
     data['so'] = 'email_list'
     data['sso'] = 'date'
-    form = AdvancedSearchForm(data, load_all=False, request=request)
+    form = AdvancedSearchForm(data, request=request)
     search = form.search(skip_facets=True)
     response = get_export(search, type, request)
     if data.get('token'):

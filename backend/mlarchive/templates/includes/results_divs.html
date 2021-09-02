@@ -5,7 +5,7 @@
             <span>{{ result.subject }}</span><a class="msg-detail" href="{{ result.url }}">{{ result.subject }}</a>
         </div>
         <div class="xtd from-col">{{ result.frm_name|truncatechars:35 }}</div>
-        <div class="xtd date-col">{{ result.date }}</div>
+        <div class="xtd date-col">{{ result.date|custom_date }}</div>
         <div class="xtd list-col{% if browse_list %} d-none{% endif %}">{{ result.email_list }}</div>
         <div class="xtd score-col d-none">{{ result.meta.score }}</div>
         <div class="xtd url-col d-none">{{ result.url }}</div>

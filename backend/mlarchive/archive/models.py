@@ -211,6 +211,16 @@ class Message(models.Model):
         else:
             return email.split('@')[0]
 
+    @property
+    def url(self):
+        '''Map for index.result.url'''
+        return self.get_absolute_url()
+
+    @property
+    def django_id(self):
+        '''Map for index.result.django_id'''
+        return str(self.id)
+
     def get_absolute_url(self):
         # strip padding, "=", to shorten URL
         return reverse('archive_detail', kwargs={

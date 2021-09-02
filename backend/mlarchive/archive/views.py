@@ -2,7 +2,6 @@ import datetime
 import json
 import os
 import re
-import urllib.request, urllib.parse, urllib.error
 from operator import itemgetter
 from collections import namedtuple
 
@@ -10,7 +9,6 @@ from csp.decorators import csp_exempt
 from django.conf import settings
 from django.contrib.auth import logout
 from django.contrib.admin.views.decorators import staff_member_required
-from django.core.cache import cache
 from django.core.paginator import InvalidPage
 from django.core.paginator import Paginator as DjangoPaginator
 from django.db.models.query import QuerySet
@@ -27,11 +25,12 @@ from django.views.generic import View
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 
-from mlarchive.utils.decorators import check_access, superuser_only, pad_id, check_list_access
+from mlarchive.utils.decorators import (check_access, superuser_only, pad_id, 
+    check_list_access)
 from mlarchive.archive import actions
-from mlarchive.archive.query_utils import (get_kwargs, get_qdr_kwargs,
+from mlarchive.archive.query_utils import (get_qdr_kwargs,
     get_cached_query, get_browse_equivalent, parse_query_string, get_order_fields,
-    generate_queryid, is_static_on, run_query, get_count, CustomPaginator,
+    is_static_on, run_query, get_count, CustomPaginator,
     filters_from_params, queries_from_params)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     get_query_neighbors, get_query_string, get_lists_for_user, get_random_token)

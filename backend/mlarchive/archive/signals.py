@@ -4,20 +4,21 @@ import logging
 import os
 import requests
 import shutil
-import subprocess
 import sys
 import CloudFlare
 import traceback
 
+from importlib import import_module
+
 from django.conf import settings
 from django.core.cache import cache
+from django.core.exceptions import ImproperlyConfigured
 from django.dispatch import receiver
 from django.db.models.signals import pre_delete, post_delete, post_save
 from django.db import models, connection, transaction
 
 from mlarchive.archive.models import Message, EmailList
 from mlarchive.archive.backends.elasticsearch import ESBackend, get_identifier
-from mlarchive.archive.tasks import CelerySignalHandler
 from mlarchive.archive.utils import _export_lists
 
 logger = logging.getLogger(__name__)
@@ -234,9 +235,8 @@ def enqueue_task(action, instance, **kwargs):
     """
     identifier = get_identifier(instance)
 
-    # task = get_update_task()
-    task = CelerySignalHandler()
-    task_func = lambda: task.apply_async((action, identifier), kwargs)
+    task = get_update_task()
+    task_func = lambda: task.apply_async((action, identifier), kwargs) # noqa
 
     if hasattr(transaction, 'on_commit'):
         # Django 1.9 on_commit hook
@@ -250,3 +250,19 @@ def enqueue_task(action, instance, **kwargs):
         )
     else:
         task_func()
+
+
+def get_update_task(task_path=None):
+    import_path = task_path or settings.CELERY_DEFAULT_TASK
+    module, attr = import_path.rsplit('.', 1)
+    try:
+        mod = import_module(module)
+    except ImportError as e:
+        raise ImproperlyConfigured('Error importing module %s: "%s"' %
+                                   (module, e))
+    try:
+        Task = getattr(mod, attr)
+    except AttributeError:
+        raise ImproperlyConfigured('Module "%s" does not define a "%s" '
+                                   'class.' % (module, attr))
+    return Task

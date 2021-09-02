@@ -135,7 +135,7 @@ class ESBackend():
             body=self.mapping)
 
     def update(self, iterable, commit=True):
-        '''Update index records using iterable'''
+        '''Update index records using iterable of instances'''
         logger.debug('ESBackend.update() called. iterable={}, commit={}, setup_complete={}'.format(
             type(iterable), commit, self.setup_complete))
         

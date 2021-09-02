@@ -106,7 +106,7 @@ class CelerySignalHandler(Task):
             # Call the appropriate handler of the current index and
             # handle exception if neccessary
             try:
-                backend.update(instance)
+                backend.update([instance])
             except Exception as exc:
                 logger.exception(exc)
                 self.retry(exc=exc)

@@ -166,7 +166,6 @@ class CustomSearchView(View):
 
     def extra_context(self):
         """Add variables to template context"""
-        # extra = super(CustomSearchView, self).extra_context()
         extra = {}
         query_string = get_query_string(self.request)
 
@@ -212,12 +211,9 @@ class CustomSearchView(View):
 
         Returns an empty list if there's no query to search with.
         """
-        # return self.form.search()
         self.search = self.form.search()
         
         # save custom attributes
-        # if hasattr(self.search, 'myfacets'):
-        #     self.myfacets = self.search.myfacets
         if hasattr(self.search, 'queryid'):
             self.queryid = self.search.queryid
 
@@ -253,7 +249,6 @@ class CustomSearchView(View):
                 extra['previous_page_url'] = self.base_url + '?' + new_query.urlencode()
 
     def get_context(self):
-        # page, selected_offset = self.build_page()
         self.paginator, self.page = self.build_page()
 
         context = {
@@ -278,9 +273,6 @@ class CustomSearchView(View):
 
         if page_no < 1:
             raise Http404("Pages should be 1 or greater.")
-
-        # start_offset = (page_no - 1) * self.results_per_page
-        # self.results[start_offset:start_offset + self.results_per_page]
 
         paginator = CustomPaginator(self.search, self.results_per_page)
 
@@ -310,10 +302,6 @@ class CustomSearchView(View):
 @method_decorator(check_list_access, name='dispatch')
 class CustomBrowseView(CustomSearchView):
     """A customized SearchView for browsing a list"""
-    """
-    def __name__(self):
-        return "CustomBrowseView"
-    """
 
     def get(self, request, *args, **kwargs):
         if 'list_name' in kwargs:
@@ -325,10 +313,7 @@ class CustomBrowseView(CustomSearchView):
             return redirect('archive_browse_static', list_name=self.list_name)
 
         self.base_url = reverse('archive_browse_list', kwargs={'list_name': self.list_name})
-        # self.list_name = list_name
-        # self.email_list = email_list
         self.kwargs = {}
-
         self.request = request
         self.form = self.build_form()
         self.query = self.get_query()
@@ -407,7 +392,6 @@ class CustomBrowseView(CustomSearchView):
 
     def extra_context(self):
         """Add variables to template context"""
-        # extra = super(CustomBrowseView, self).extra_context()
         extra = {}
         extra['browse_list'] = self.list_name
         extra['queryset_offset'] = '0'

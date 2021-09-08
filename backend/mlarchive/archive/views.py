@@ -144,7 +144,11 @@ class CustomSearchView(View):
         self.request = request
         self.form = self.build_form()
         self.query = self.get_query()
-        self.results = self.get_results()
+        
+        # get search object
+        self.search = self.form.search()
+        if hasattr(self.search, 'queryid'):
+            self.queryid = self.search.queryid
 
         return self.create_response()
 
@@ -162,6 +166,7 @@ class CustomSearchView(View):
 
     def extra_context(self):
         """Add variables to template context"""
+        self.results = self.page.object_list    # create a synonym 
         extra = {}
         query_string = get_query_string(self.request)
 
@@ -201,13 +206,14 @@ class CustomSearchView(View):
 
         return extra
 
+    '''
     def get_results(self):
         """
         Gets the search object from the form. Executes search.
 
         Returns an empty list if there's no query to search with.
         """
-        self.search = self.form.search()
+        # self.search = self.form.search()
         
         # save custom attributes
         if hasattr(self.search, 'queryid'):
@@ -215,6 +221,7 @@ class CustomSearchView(View):
 
         self.response = run_query(self.search)
         return self.response
+    '''
 
     def set_thread_links(self, extra):
         extra['group_by_thread'] = True if 'gbt' in self.request.GET else False
@@ -313,29 +320,19 @@ class CustomBrowseView(CustomSearchView):
         self.request = request
         self.form = self.build_form()
         self.query = self.get_query()
-        self.results = self.get_results()
-        # TODO find a better way
-        self.search = self.results
-        # ----------------------
-        if hasattr(self.results, 'myfacets'):
-            self.myfacets = self.results.myfacets
-        if hasattr(self.results, 'queryid'):
-            self.queryid = self.results.queryid
+        self.search = self.get_search()
 
         return self.create_response()
 
-    def get_results(self):
-        """Gets a small set of results from the database rather than the search index"""
+    def get_search(self):
+        """If there is a search query build an Elasticsearch search object and 
+        return that. Otherwise build an ORM Message query and return that"""
         # Elasticsearch query
         if self.query:
-            self.search = self.form.search(email_list=self.email_list)
-            # save custom attributes
-            if hasattr(self.search, 'myfacets'):
-                self.myfacets = self.search.myfacets
-            if hasattr(self.search, 'queryid'):
-                self.queryid = self.search.queryid
-            self.response = run_query(self.search)
-            return self.response.hits
+            search = self.form.search(email_list=self.email_list)
+            if hasattr(search, 'queryid'):
+                self.queryid = search.queryid
+            return search
 
         # DB Query
         fields = get_order_fields(self.request.GET, use_db=True)
@@ -362,42 +359,14 @@ class CustomBrowseView(CustomSearchView):
                     email_list=self.email_list,
                     date__lte=index_message.date).order_by('-date').select_related()[:self.results_per_page]
 
-        self.search = results
         return results
-
-    def build_page(self):
-        """
-        Paginates the results appropriately.
-        """
-        try:
-            page_no = int(self.request.GET.get('page', 1))
-        except (TypeError, ValueError):
-            raise Http404("Not a valid number for page.")
-
-        if page_no < 1:
-            raise Http404("Pages should be 1 or greater.")
-
-        paginator = DjangoPaginator(self.results, self.results_per_page)
-
-        try:
-            page = paginator.page(page_no)
-        except InvalidPage:
-            raise Http404("No such page!")
-
-        return (paginator, page)
 
     def extra_context(self):
         """Add variables to template context"""
         extra = {}
         extra['browse_list'] = self.list_name
         extra['queryset_offset'] = '0'
-        if self.query or self.kwargs:
-            if isinstance(self.results, QuerySet):
-                extra['count'] = get_count(self.results)
-            else:
-                extra['count'] = len(self.results)
-        else:
-            extra['count'] = Message.objects.filter(email_list__name=self.list_name).count()
+        extra['count'] = get_count(self.search)
 
         # export links
         token = get_random_token(length=16)

@@ -273,6 +273,8 @@ def run_query(query):
 
 def get_count(query):
     '''Wrapper to run count(), handling query exceptions'''
+    if isinstance(query, list):
+        return len(query)
     try:
         count = query.count()
     except RequestError:
@@ -295,7 +297,8 @@ def get_empty_response():
 
 class CustomPaginator(Paginator):
     '''A Django Paginator customized to handle Elasticsearch Search
-    object as object_list input'''
+    object as object_list input. page.object_list is the search
+    response object'''
 
     def page(self, number):
         """Return a Page object for the given 1-based page number."""
@@ -307,6 +310,9 @@ class CustomPaginator(Paginator):
 
         # add slice info to query and execute to get actual object_list
         query = self.object_list[bottom:top]
-        response = query.execute()
+        if hasattr(query, 'execute'):
+            response = query.execute()
+        else:
+            response = query
 
         return self._get_page(response, number, self)

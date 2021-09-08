@@ -123,7 +123,6 @@ class CustomSearchView(View):
     template = 'archive/search.html'
     extra_context = {}
     form_class = AdvancedSearchForm
-    searchqueryset = None
     query = ''
     results = None      # EmptySearchQuerySet()
     request = None
@@ -158,9 +157,6 @@ class CustomSearchView(View):
 
         if len(self.request.GET):
             data = self.request.GET
-
-        if self.searchqueryset is not None:
-            kwargs['searchqueryset'] = self.searchqueryset
 
         return self.form_class(data, **kwargs)
 

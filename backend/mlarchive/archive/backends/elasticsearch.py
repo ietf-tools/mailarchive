@@ -102,7 +102,7 @@ class ESBackend():
             **connection_options.get('KWARGS', {}))
         self.index_name = connection_options['INDEX_NAME']
         self.log = logging.getLogger(__name__)
-        self.mapping = settings.ELASTICSEARCH_INDEX_MAPPINGS_NEW
+        self.mapping = settings.ELASTICSEARCH_INDEX_MAPPINGS
         self.setup_complete = False
         self.silently_fail = connection_options.get('SILENTLY_FAIL', True)
 

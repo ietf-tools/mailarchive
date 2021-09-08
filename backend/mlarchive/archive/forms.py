@@ -156,8 +156,6 @@ class LowerCaseModelMultipleChoiceField(forms.ModelMultipleChoiceField):
 # @method_decorator(log_timing, name='get_facets')
 class AdvancedSearchForm(forms.Form):
     """The form which builds the elasticsearch-dsl Search object"""
-    # start_date = forms.DateField(required=False,
-    #        widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
     q = forms.CharField(required=False, label=('Search'),
                         widget=forms.TextInput(attrs={'type': 'search'}))
     start_date = DatepickerDateField(
@@ -165,14 +163,11 @@ class AdvancedSearchForm(forms.Form):
         picker_settings={"autoclose": "1"},
         label='Start date',
         required=False)
-    # end_date = forms.DateField(required=False,
-    #        widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
     end_date = DatepickerDateField(
         date_format="yyyy-mm-dd",
         picker_settings={"autoclose": "1"},
         label='End date',
         required=False)
-    # email_list = forms.CharField(max_length=255,required=False,widget=forms.HiddenInput)
     email_list = LowerCaseModelMultipleChoiceField(queryset=EmailList.objects, to_field_name='name', required=False)
     subject = forms.CharField(max_length=255, required=False)
     frm = forms.CharField(max_length=255, required=False)
@@ -190,13 +185,11 @@ class AdvancedSearchForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request')
-        self.searchqueryset = kwargs.pop('searchqueryset', None)
 
         # initialize the search object
-        if self.searchqueryset is None:
-            client = Elasticsearch()
-            self.searchqueryset = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
-            self.searchqueryset = self.searchqueryset.extra(size=settings.SEARCH_RESULTS_PER_PAGE)
+        client = Elasticsearch()
+        self.search_obj = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+        self.search_obj = self.search_obj.extra(size=settings.SEARCH_RESULTS_PER_PAGE)
 
         # can't use reserved word "from" as field name, so we need to map to "frm"
         # args is a tuple and args[0] is either None or a QueryDict
@@ -207,93 +200,28 @@ class AdvancedSearchForm(forms.Form):
 
         super(self.__class__, self).__init__(*args, **kwargs)
         self.fields["email_list"].widget.attrs["placeholder"] = "List names"
-
-    '''
-    def get_facets(self, sqs):
-        """Get facets for the SearchQuerySet
-
-        Because we have two optional filters: f_list, f_from, we need to take into
-        consideration if a filter has been applied.  The filters need to interact.
-        Therefore each filter set is limited by the other filter's results.
-
-        NOTE: this function expects to receive the query that has not yet applied
-        filters.
-        """
-        cache_key = get_cache_key(self.request)
-        facets = cache.get(cache_key)
-        if facets:
-            return facets
-
-        # calculating facet_counts on large results sets is too costly so skip it
-        # If you call results.count() before results.facet_counts() the facet_counts
-        # are corrupted in Xapian backend.
-
-        temp = sqs._clone()
-        count = get_count(temp)
-        facets = {'fields': {}, 'dates': {}, 'queries': {}}
-
-        if 0 < count < settings.FILTER_CUTOFF:
-            logger.debug('Calculating facets (queryset_size={})'.format(count))
-            clone = sqs._clone()
-            sqs = clone.facet('email_list').facet('frm_name')
-
-            # if query contains no filters compute simple facet counts
-            filters = get_filter_params(self.request.GET)
-            if not filters:
-                facets = sqs.facet_counts()
-
-            elif filters == ['f_list']:
-                base = sqs.facet_counts()
-                filtered = sqs.filter(email_list__in=self.f_list).facet_counts()
-                base['fields']['frm_name'] = filtered['fields']['frm_name']
-                facets = base
-
-            elif filters == ['f_from']:
-                base = sqs.facet_counts()
-                filtered = sqs.filter(frm_name__in=self.f_from).facet_counts()
-                base['fields']['email_list'] = filtered['fields']['email_list']
-                facets = base
-
-            # if both f_list and f_from run each filter independently
-            else:
-                copy = sqs._clone()
-                frm_count = sqs.filter(frm_name__in=self.f_from).facet_counts()
-                list_count = copy.filter(email_list__in=self.f_list).facet_counts()
-                facets['fields']['email_list'] = frm_count['fields']['email_list']
-                facets['fields']['frm_name'] = list_count['fields']['frm_name']
-
-            for field in facets['fields']:
-                facets['fields'][field].sort()  # sort by name
-
-        # save in cache
-        cache.set(cache_key, facets)
-        return facets
-    '''
     
     def no_query_found(self):
         """
         Determines the behavior when no query was found.
 
         By default, no results are returned via a bogus query.
-
         Do not show all results unless private messages are excluded.
         """
-        self.searchqueryset = self.searchqueryset.query('term', dummy='')
-        return self.searchqueryset
+        self.search_obj = self.search_obj.query('term', dummy='')
+        return self.search_obj
 
     def process_query(self):
         if self.q:
             logger.info('Query String: %s' % self.q)
             logger.debug('Query Params: %s' % self.data)
-            # self.searchqueryset.query.raw_search(self.q)
-            # TODO: rename seld.searchqueryset
-            self.searchqueryset = self.searchqueryset.query(
+            self.search_obj = self.search_obj.query(
                 'query_string',
                 query=self.q,
                 default_field='text',
                 default_operator='AND')
 
-        return self.searchqueryset
+        return self.search_obj
 
     def set_aggs(self, s):
         """Set aggs on search"""
@@ -303,8 +231,7 @@ class AdvancedSearchForm(forms.Form):
         s.aggs.bucket('from_terms', from_terms)
 
     def search(self, email_list=None, skip_facets=False):
-        """Custom search function.  This completely overrides the parent
-        search().  Returns a SearchQuerySet object.
+        """Build the elasticsearch Search object from the form.
         """
         # for now if search form doesn't validate return empty results
         if not self.is_valid():
@@ -327,8 +254,6 @@ class AdvancedSearchForm(forms.Form):
         sqs = self.process_query()
 
         # handle URL parameters -----------------------------------
-        # if self.kwargs:
-        #     sqs = sqs.filter(**self.kwargs)
         if self.filters:
             for f in self.filters:
                 sqs = sqs.filter(f)
@@ -343,11 +268,6 @@ class AdvancedSearchForm(forms.Form):
 
         # faceting ------------------------------------------------
         # call this before running sorts or applying filters to queryset
-        # skip_facets = True
-        # if skip_facets:
-        #     facets = []
-        # else:
-        #     facets = self.get_facets(sqs)
         if not skip_facets:
             self.set_aggs(sqs)
 
@@ -376,9 +296,6 @@ class AdvancedSearchForm(forms.Form):
 
         logger.debug('Backend Query: {}'.format(sqs.to_dict()))
         logger.debug('search.count: {}'.format(get_count(sqs)))
-
-        # insert facets just before returning query, so they don't get overridden
-        # sqs.myfacets = facets
 
         return sqs
 

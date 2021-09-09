@@ -100,6 +100,7 @@ def test_asf_search_no_query(client, messages):
     url = reverse('archive_search') + '?q='
     response = client.get(url)
     assert response.status_code == 200
+    print(response.content)
     q = PyQuery(response.content)
     text = q('#msg-list-controls').text()
     assert text.find('0 Messages') != -1

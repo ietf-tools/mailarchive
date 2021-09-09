@@ -316,9 +316,9 @@ def test_queries_boolean_two_term_or(client, messages):
     assert response.status_code == 200
     results = response.context['results']
     print(len(results.object_list), results.object_list[0].msgid)
-    assert len(results) == 4
+    assert len(results) == 5
     ordered_ids = sorted([r.msgid for r in results])
-    assert ordered_ids == ['a01', 'a02', 'a04', 'a05']
+    assert ordered_ids == ['a01', 'a02', 'a04', 'a05', 'b01']
 
 
 @pytest.mark.django_db(transaction=True)
@@ -346,8 +346,9 @@ def test_odd_queries(client, messages):
     assert response.status_code == 200
     # search with only hyphen
     url = url + '?q=-'
-    response = client.get(url)
+    response = client.get(url, follow=True)
     assert response.status_code == 200
+    assert 'Invalid search' in smart_text(response.content)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -363,8 +364,9 @@ def test_queries_bad_qid(client, messages):
 def test_queries_two_periods(client, messages):
     '''Test that range operator (two periods) doesn't cause error'''
     url = reverse('archive_search') + '?q=spec...)'
-    response = client.get(url)
+    response = client.get(url, follow=True)
     assert response.status_code == 200
+    assert 'Invalid search' in smart_text(response.content)
 
 
 @pytest.mark.django_db(transaction=True)

@@ -120,7 +120,7 @@ def load_db():
                           base_subject=get_base_subject('Party Invitation things'),
                           date=datetime.datetime(2014, 2, 1),
                           msgid='a05')
-    MessageFactory.create(email_list=pubtwo)
+    MessageFactory.create(email_list=pubtwo, subject='Trip invitation', msgid='b01')
     MessageFactory.create(email_list=pubtwo)
     date = datetime.datetime.now().replace(second=0, microsecond=0)
     for n in range(21):

@@ -7,6 +7,7 @@ from collections import namedtuple
 
 from csp.decorators import csp_exempt
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import InvalidPage
@@ -23,11 +24,13 @@ from django.utils.cache import add_never_cache_headers, patch_cache_control
 from django.views.generic import View
 
 from elasticsearch import Elasticsearch
+from elasticsearch.exceptions import RequestError
 from elasticsearch_dsl import Search
 
 from mlarchive.utils.decorators import (check_access, superuser_only, pad_id, 
     check_list_access)
 from mlarchive.archive import actions
+from mlarchive.archive.backends.elasticsearch import search_from_form
 from mlarchive.archive.query_utils import (get_qdr_kwargs,
     get_cached_query, get_browse_equivalent, parse_query_string, get_order_fields,
     is_static_on, run_query, get_count, CustomPaginator,
@@ -146,7 +149,7 @@ class CustomSearchView(View):
         self.query = self.get_query()
         
         # get search object
-        self.search = self.form.search()
+        self.search = search_from_form(self.form)
         if hasattr(self.search, 'queryid'):
             self.queryid = self.search.queryid
 
@@ -296,8 +299,18 @@ class CustomSearchView(View):
     def create_response(self):
         """
         Generates the actual HttpResponse to send back to the user.
+
+        There are various places where the Elasticsearch object is 
+        evaluated and my raise an exception RequestError (within the
+        paginator when calling count() for example) Catch this exception
+        and redirect to main page.)
         """
-        context = self.get_context()
+        try:
+            context = self.get_context()
+        except RequestError as error:
+            logger.info(error)
+            messages.error(self.request, 'Invalid search expression')
+            return redirect('archive')
 
         return render(self.request, self.template, context)
 
@@ -329,7 +342,7 @@ class CustomBrowseView(CustomSearchView):
         return that. Otherwise build an ORM Message query and return that"""
         # Elasticsearch query
         if self.query:
-            search = self.form.search(email_list=self.email_list)
+            search = search_from_form(self.form, email_list=self.email_list)
             if hasattr(search, 'queryid'):
                 self.queryid = search.queryid
             return search
@@ -737,7 +750,7 @@ def export(request, type):
     data['so'] = 'email_list'
     data['sso'] = 'date'
     form = AdvancedSearchForm(data, request=request)
-    search = form.search(skip_facets=True)
+    search = search_from_form(form, skip_facets=True)
     response = get_export(search, type, request)
     if data.get('token'):
         response.set_cookie('downloadToken', data.get('token'))

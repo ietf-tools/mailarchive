@@ -4,6 +4,7 @@ from urllib.parse import urlencode
 from django.contrib.auth.models import AnonymousUser
 
 from mlarchive.archive.forms import AdvancedSearchForm
+from mlarchive.archive.backends.elasticsearch import search_from_form
 
 # --------------------------------------------------
 # Low level form.search() tests
@@ -24,9 +25,9 @@ def test_form_one_term(rf, client, search_api_messages):
     request.user = AnonymousUser()
     data = {'q': 'bananas'}
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
-    print(query.to_dict())
+    search = search_from_form(form)
+    results = search.execute()
+    print(search.to_dict())
     assert len(results) == 2
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api001', 'api003']
@@ -39,8 +40,8 @@ def test_form_two_term(rf, client, search_api_messages):
     request.user = AnonymousUser()
     data = {'q': 'apples+bananas'}
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 1
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api003']
@@ -53,8 +54,8 @@ def test_form_two_term_and(rf, client, search_api_messages):
     request.user = AnonymousUser()
     data = {'q': 'apples+AND+bananas'}
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 1
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api003']
@@ -67,8 +68,8 @@ def test_form_two_term_or(rf, client, search_api_messages):
     request.user = AnonymousUser()
     data = {'q': 'apples+OR+bananas'}
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 3
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api001', 'api002', 'api003']
@@ -81,8 +82,8 @@ def test_form_one_term_not(rf, client, search_api_messages):
     request.user = AnonymousUser()
     data = {'q': 'NOT+bananas'}
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 2
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api002', 'api004']
@@ -95,8 +96,8 @@ def test_form_one_term_negate(rf, client, search_api_messages):
     request.user = AnonymousUser()
     data = {'q': '-bananas'}
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 2
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api002', 'api004']
@@ -109,8 +110,8 @@ def test_form_parens(rf, client, search_api_messages):
     request.user = AnonymousUser()
     data = {'q': '(bananas+AND+apples)+OR+oranges'}
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 2
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api003', 'api004']
@@ -127,8 +128,8 @@ def test_form_params_start_date(rf, client, search_api_messages):
     request = rf.get('/arch/search/?' + urlencode(data))
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 2
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api003', 'api004']
@@ -140,8 +141,8 @@ def test_form_params_end_date(rf, client, search_api_messages):
     request = rf.get('/arch/search/?' + urlencode(data))
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 2
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api001', 'api002']
@@ -153,8 +154,8 @@ def test_form_params_msgid(rf, client, search_api_messages):
     request = rf.get('/arch/search/?' + urlencode(data))
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 1
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api001']
@@ -167,8 +168,8 @@ def test_form_params_email_list(rf, client, search_api_messages, search_api_mess
     request = rf.get('/arch/search/?' + urlencode(data))
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 4
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api001', 'api002', 'api003', 'api004']
@@ -177,8 +178,8 @@ def test_form_params_email_list(rf, client, search_api_messages, search_api_mess
     request = rf.get('/arch/search/?' + urlencode(data))
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 4
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api201', 'api202', 'api203', 'api204']
@@ -190,8 +191,8 @@ def test_form_params_from(rf, client, search_api_messages):
     request = rf.get('/arch/search/?' + urlencode(data))
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 1
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api003']
@@ -203,8 +204,8 @@ def test_form_params_subject(rf, client, search_api_messages):
     request = rf.get('/arch/search/?' + urlencode(data))
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 2
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api002', 'api003']
@@ -216,8 +217,8 @@ def test_form_params_qdr(rf, client, search_api_messages_qdr):
     request = rf.get('/arch/search/?' + urlencode(data))
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 1
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api301']
@@ -226,8 +227,8 @@ def test_form_params_qdr(rf, client, search_api_messages_qdr):
     request = rf.get('/arch/search/?' + urlencode(data))
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 2
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api301', 'api302']
@@ -236,8 +237,8 @@ def test_form_params_qdr(rf, client, search_api_messages_qdr):
     request = rf.get('/arch/search/?' + urlencode(data))
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 3
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api301', 'api302', 'api303']
@@ -246,8 +247,8 @@ def test_form_params_qdr(rf, client, search_api_messages_qdr):
     request = rf.get('/arch/search/?' + urlencode(data))
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 4
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api301', 'api302', 'api303', 'api304']
@@ -264,8 +265,8 @@ def test_form_private_no_access(rf, client, search_api_messages, private_message
     request.user = AnonymousUser()
     data = {'q': 'bananas'}
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 2
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api001', 'api003']
@@ -295,14 +296,14 @@ def test_form_filter_list(rf, client, search_api_messages, search_api_messages_f
     request.user = AnonymousUser()
     data = {'q': 'test'}
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 8
     # list filter
     data = {'q': 'test', 'f_list': 'ford'}
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 4
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api201', 'api202', 'api203', 'api204']
@@ -316,14 +317,15 @@ def test_form_filter_from(rf, client, search_api_messages):
     request.user = AnonymousUser()
     data = {'q': 'test'}
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 4
     # from filter
     data = {'q': 'test', 'f_from': 'Holden Ford'}
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    print(search.to_dict())
+    results = search.execute()
     assert len(results) == 2
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api002', 'api004']
@@ -340,8 +342,8 @@ def test_form_sort_from(rf, client, search_api_messages):
     request.user = AnonymousUser()
     data = {'q': 'test', 'so': 'frm'}
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 4
     ids = [h.msgid for h in results]
     assert ids == ['api003', 'api002', 'api004', 'api001']
@@ -358,8 +360,8 @@ def test_form_aggs(rf, client, search_api_messages, search_api_messages_ford):
     request.user = AnonymousUser()
     data = {'q': 'test'}
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 8
     assert hasattr(results, 'aggregations')
     assert results.aggregations.list_terms.buckets == [
@@ -379,8 +381,8 @@ def test_form_aggs_list_filter(rf, client, search_api_messages, search_api_messa
     request.user = AnonymousUser()
     data = {'q': 'test', 'f_list': 'acme'}
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 4
     assert hasattr(results, 'aggregations')
     assert results.aggregations.list_terms.buckets == [{'key': 'acme', 'doc_count': 4}]
@@ -397,8 +399,8 @@ def test_form_aggs_from_filter(rf, client, search_api_messages, search_api_messa
     request.user = AnonymousUser()
     data = {'q': 'test', 'f_from': 'Holden Ford'}
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 3
     assert hasattr(results, 'aggregations')
     assert results.aggregations.list_terms.buckets == [
@@ -415,8 +417,8 @@ def test_form_aggs_both_filters(rf, client, search_api_messages, search_api_mess
     request.user = AnonymousUser()
     data = {'q': 'test', 'f_from': 'Holden Ford', 'f_list': 'acme'}
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 2
     assert hasattr(results, 'aggregations')
     assert results.aggregations.list_terms.buckets == [{'key': 'acme', 'doc_count': 2}]
@@ -434,8 +436,8 @@ def test_form_fields_subject(rf, client, search_api_messages):
     request = rf.get('/arch/search/?' + urlencode(data))
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 2
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api002', 'api003']
@@ -447,8 +449,8 @@ def test_form_fields_frm(rf, client, search_api_messages):
     request = rf.get('/arch/search/?' + urlencode(data))
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
-    query = form.search()
-    results = query.execute()
+    search = search_from_form(form)
+    results = search.execute()
     assert len(results) == 2
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api002', 'api004']

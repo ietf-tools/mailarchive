@@ -3,19 +3,12 @@ import six
 from collections import OrderedDict
 
 from django import forms
-from django.conf import settings
-from django.core.cache import cache
 from django.utils.http import urlencode
 
-from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search, A
-
-from mlarchive.archive.query_utils import (get_kwargs, generate_queryid,
-    parse_query, get_base_query, get_order_fields, queries_from_params,
-    filters_from_params, get_count)
+from mlarchive.archive.query_utils import get_base_query
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
-from mlarchive.utils.decorators import log_timing
+
 
 import logging
 logger = logging.getLogger(__name__)
@@ -186,11 +179,6 @@ class AdvancedSearchForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request')
 
-        # initialize the search object
-        client = Elasticsearch()
-        self.search_obj = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
-        self.search_obj = self.search_obj.extra(size=settings.SEARCH_RESULTS_PER_PAGE)
-
         # can't use reserved word "from" as field name, so we need to map to "frm"
         # args is a tuple and args[0] is either None or a QueryDict
         if len(args) and isinstance(args[0], dict) and 'from' in args[0]:
@@ -200,104 +188,6 @@ class AdvancedSearchForm(forms.Form):
 
         super(self.__class__, self).__init__(*args, **kwargs)
         self.fields["email_list"].widget.attrs["placeholder"] = "List names"
-    
-    def no_query_found(self):
-        """
-        Determines the behavior when no query was found.
-
-        By default, no results are returned via a bogus query.
-        Do not show all results unless private messages are excluded.
-        """
-        self.search_obj = self.search_obj.query('term', dummy='')
-        return self.search_obj
-
-    def process_query(self):
-        if self.q:
-            logger.info('Query String: %s' % self.q)
-            logger.debug('Query Params: %s' % self.data)
-            self.search_obj = self.search_obj.query(
-                'query_string',
-                query=self.q,
-                default_field='text',
-                default_operator='AND')
-
-        return self.search_obj
-
-    def set_aggs(self, s):
-        """Set aggs on search"""
-        list_terms = A('terms', field='email_list')
-        from_terms = A('terms', field='frm_name')
-        s.aggs.bucket('list_terms', list_terms)
-        s.aggs.bucket('from_terms', from_terms)
-
-    def search(self, email_list=None, skip_facets=False):
-        """Build the elasticsearch Search object from the form.
-        """
-        # for now if search form doesn't validate return empty results
-        if not self.is_valid():
-            return self.no_query_found()
-
-        self.f_list = self.cleaned_data['f_list']
-        self.f_from = self.cleaned_data['f_from']
-        self.q = parse_query(self.request)
-        data = self.cleaned_data
-        if email_list:
-            data['email_list'] = [email_list.name]
-        self.kwargs = get_kwargs(data)
-        self.filters = filters_from_params(self.cleaned_data)
-        self.queries = queries_from_params(self.cleaned_data)
-
-        # return empty queryset if no parameters passed
-        if not (self.q or self.kwargs):
-            return self.no_query_found()
-
-        sqs = self.process_query()
-
-        # handle URL parameters -----------------------------------
-        if self.filters:
-            for f in self.filters:
-                sqs = sqs.filter(f)
-
-        if self.queries:
-            for q in self.queries:
-                sqs = sqs.query(q)
-
-        # private lists -------------------------------------------
-        # sqs = sqs.exclude(email_list__in=get_noauth(self.request.user))
-        sqs = sqs.exclude('terms', email_list=get_noauth(self.request.user))
-
-        # faceting ------------------------------------------------
-        # call this before running sorts or applying filters to queryset
-        if not skip_facets:
-            self.set_aggs(sqs)
-
-        # filters -------------------------------------------------
-        if self.f_list:
-            sqs = sqs.filter('terms', email_list=self.f_list)
-        if self.f_from:
-            sqs = sqs.filter('terms', frm_name=self.f_from)
-
-        # grouping and sorting  -----------------------------------
-        # perform this step last because other operations, if they clone the
-        # SearchQuerySet, cause the query to be re-run which loses custom sort order
-        fields = get_order_fields(self.request.GET)
-        logger.debug('sort fields: {}'.format(fields))
-        sqs = sqs.sort(*fields)
-
-        # save query in cache with random id for security
-        queryid = generate_queryid()
-        # TODO ELASTIC: do we need these variables somewhere?
-        # yes? tacking these on to search object for use in view
-        sqs.query_string = self.request.META['QUERY_STRING']
-        sqs.queryid = queryid
-        logger.debug('Saved queryid to query: {}'.format(sqs.queryid))
-        # Cache search as dictionary, use s.from_dict() on retrieval
-        cache.set(queryid, sqs.to_dict(), 7200)           # 2 hours
-
-        logger.debug('Backend Query: {}'.format(sqs.to_dict()))
-        logger.debug('search.count: {}'.format(get_count(sqs)))
-
-        return sqs
 
     def clean_email_list(self):
         return [n.name for n in self.cleaned_data.get('email_list', [])]

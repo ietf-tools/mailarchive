@@ -82,6 +82,10 @@ def get_filter_params(query):
 def filters_from_params(params):
     """Returns a list of filters (filter context) built from parameters"""
     filters = []
+    if params.get('f_list'):
+        filters.append(Q('terms', email_list=params['f_list']))
+    if params.get('f_from'):
+        filters.append(Q('terms', frm_name=params['f_from']))
     if params.get('msgid'):
         filters.append(Q('term', msgid=params['msgid']))
     if params.get('start_date'):
@@ -103,6 +107,7 @@ def queries_from_params(params):
         queries.append(Q('match', frm=params['frm']))
     if params.get('subject'):
         queries.append(Q('match', subject=params['subject']))
+    logger.debug('queries_from_params: {}, params: {}'.format(queries, params))
     return queries
 
 
@@ -302,6 +307,8 @@ class CustomPaginator(Paginator):
 
     def page(self, number):
         """Return a Page object for the given 1-based page number."""
+        # Note: this will call search.count() which will unveil
+        # any parsing errors
         number = self.validate_number(number)
         bottom = (number - 1) * self.per_page
         top = bottom + self.per_page
@@ -311,7 +318,7 @@ class CustomPaginator(Paginator):
         # add slice info to query and execute to get actual object_list
         query = self.object_list[bottom:top]
         if hasattr(query, 'execute'):
-            response = query.execute()
+            response = run_query(query)
         else:
             response = query
 

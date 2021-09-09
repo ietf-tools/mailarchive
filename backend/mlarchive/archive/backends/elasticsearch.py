@@ -4,10 +4,16 @@ import six
 
 from elasticsearch import Elasticsearch, TransportError
 from elasticsearch.helpers import bulk
+from elasticsearch_dsl import Search, A, Q
 
 from django.conf import settings
+from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.encoding import force_text
+
+from mlarchive.archive.query_utils import (queries_from_params,
+    filters_from_params, get_order_fields, generate_queryid, parse_query)
+from mlarchive.archive.utils import get_noauth
 
 logger = logging.getLogger(__name__)
 IDENTIFIER_REGEX = re.compile('^[\w\d_]+\.[\w\d_]+\.[\w\d-]+$')
@@ -43,7 +49,14 @@ def full_prepare(message):
 
 class ESBackend():
     """Elasticsearch Backend"""
-       
+    
+    # Characters reserved by Elasticsearch for special use.
+    # The '\\' must come first, so as not to overwrite the other slash replacements.
+    RESERVED_CHARACTERS = (
+        '\\', '+', '-', '&&', '||', '!', '(', ')', '{', '}',
+        '[', ']', '^', '"', '~', '*', '?', ':', '/',
+    )
+
     # Settings to add an n-gram & edge n-gram analyzer.
     DEFAULT_SETTINGS = {
         'settings': {
@@ -215,6 +228,100 @@ class ESBackend():
             self.log.error("Failed to remove document '%s' from Elasticsearch: %s", doc_id, e, exc_info=True)
 
 
+class ElasticsearchQuery():
+    '''Class for creating Elasticsearch Search objects from input forms'''
+
+    def __init__(self, form, email_list=None, skip_facets=False):
+        self.form = form
+        self.request = form.request
+        self.client = Elasticsearch()
+        self.search = Search(using=self.client, index=settings.ELASTICSEARCH_INDEX_NAME)
+        self.skip_facets = skip_facets
+        self.email_list = email_list
+        self.queries = []
+        self.filters = []
+
+    def add_aggregates(self):
+        """Set aggs on search"""
+        list_terms = A('terms', field='email_list')
+        from_terms = A('terms', field='frm_name')
+        self.search.aggs.bucket('list_terms', list_terms)
+        self.search.aggs.bucket('from_terms', from_terms)
+
+    def build_search(self):
+        '''Build the Search object from form inputs'''
+
+        # if form doesn't validate return empty result set
+        if not self.form.is_valid():
+            return self.empty_query()
+
+        self.process_queries()
+        self.process_filters()
+        self.exclude_private_lists()
+        if not self.skip_facets:
+            self.add_aggregates()
+        self.handle_sort()
+        self.post_process()
+
+        return self.search
+
+    def empty_query(self):
+        search = self.search.query('term', dummy='')
+        return search
+
+    def exclude_private_lists(self):
+        self.search = self.search.exclude(
+            'terms',
+            email_list=get_noauth(self.request.user))
+
+    def handle_sort(self):
+        fields = get_order_fields(self.request.GET)
+        logger.debug('sort fields: {}'.format(fields))
+        self.search = self.search.sort(*fields)
+
+    def post_process(self):
+        # if no search parameters at all, return empty set
+        # logger.debug('elastic search: {}'.format(self.search.to_dict()))
+        if not any([self.queries, self.filters]):
+            self.search = self.empty_query()
+            return
+
+        # save query in cache with random id for security
+        queryid = generate_queryid()
+        self.search.query_string = self.request.META['QUERY_STRING']
+        self.search.queryid = queryid
+        logger.debug('Saved queryid to query: {}'.format(queryid))
+        # Cache search as dictionary, use s.from_dict() on retrieval
+        cache.set(queryid, self.search.to_dict(), 7200)           # 2 hours
+        logger.debug('Backend Query: {}'.format(self.search.to_dict()))
+        # logger.debug('search.count: {}'.format(self.search.count()))
+
+    def process_queries(self):
+        # handle special "q" query
+        self.q = parse_query(self.request)
+        if self.q:
+            logger.info('Query String: %s' % self.q)
+            logger.debug('Query Params: %s' % self.request.GET)
+            self.queries.append(Q(
+                'query_string',
+                query=self.q,
+                default_field='text',
+                default_operator=settings.ELASTICSEARCH_DEFAULT_OPERATOR))
+
+        # handle queries from URL parameters
+        self.queries.extend(queries_from_params(self.form.cleaned_data))
+        for q in self.queries:
+            self.search = self.search.query(q)
+
+    def process_filters(self):
+        # TODO: revisit this implementation, used with browse
+        if self.email_list:
+            self.filters.append(Q('term', email_list=self.email_list.name))
+        self.filters.extend(filters_from_params(self.form.cleaned_data))
+        for f in self.filters:
+            self.search = self.search.filter(f)
+
+
 def get_identifier(obj_or_string):
     """
     Get an unique identifier for the object or a string representing the
@@ -241,3 +348,8 @@ def get_model_ct_tuple(model):
 
 def get_model_ct(model):
     return "%s.%s" % get_model_ct_tuple(model)
+
+
+def search_from_form(form, *args, **kwargs):
+    """Create an Elasticsearch Search object from form inputs"""
+    return ElasticsearchQuery(form, *args, **kwargs).build_search()

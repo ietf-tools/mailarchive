@@ -11,8 +11,6 @@ from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import InvalidPage
-from django.core.paginator import Paginator as DjangoPaginator
-from django.db.models.query import QuerySet
 from django.utils.decorators import method_decorator
 from django.forms.formsets import formset_factory
 from django.views.generic.detail import DetailView
@@ -23,9 +21,7 @@ from django.utils.safestring import mark_safe
 from django.utils.cache import add_never_cache_headers, patch_cache_control
 from django.views.generic import View
 
-from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
-from elasticsearch_dsl import Search
 
 from mlarchive.utils.decorators import (check_access, superuser_only, pad_id, 
     check_list_access)
@@ -33,8 +29,7 @@ from mlarchive.archive import actions
 from mlarchive.archive.backends.elasticsearch import search_from_form
 from mlarchive.archive.query_utils import (get_qdr_kwargs,
     get_cached_query, get_browse_equivalent, parse_query_string, get_order_fields,
-    is_static_on, run_query, get_count, CustomPaginator,
-    filters_from_params, queries_from_params)
+    is_static_on, get_count, CustomPaginator)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     get_query_neighbors, get_query_string, get_lists_for_user, get_random_token)
 
@@ -525,16 +520,17 @@ def admin(request):
     # admin search query
     if request.method == 'GET' and request.GET:
         form = AdminForm(request.GET, request=request)
-        # refactor to build_search()
-
         if not request.GET:
             results = []
 
         elif form.is_valid():
             search = search_from_form(form)
+            search = search.sort('date')    # default sort by date
             logger.debug('admin query: {}'.format(search.to_dict()))
-            results = list(search.scan())  # convert to list for tests
-            
+            # TODO change in v7
+            # results = list(search.scan(preserve_order=True))   # convert to list for tests
+            results = list(search.scan())   # convert to list for tests
+            results = sorted(results, key=lambda h: h.date)
             # if form.cleaned_data.get('exclude_whitelisted_senders'):
             #     whitelist = Message.objects.filter(spam_score=-1).values_list('frm', flat=True).distinct()
             #     results = list(filter(is_not_whitelisted, results))

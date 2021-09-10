@@ -1,3 +1,4 @@
+{% load archive_extras %}
         <table class="table result-table">
             <thead>
                 <tr>
@@ -16,7 +17,7 @@
                     <td>{{ forloop.counter }}</td>
                     <td>{{ item.subject }}</td>
                     <td>{{ item.frm }}</td>
-                    <td class="text-nowrap">{{ item.date }}</td>
+                    <td class="text-nowrap">{{ item.date|custom_date }}</td>
                     <td class="d-none">{{ item.django_id }}</td>
                   </tr>
                 {% endfor %}

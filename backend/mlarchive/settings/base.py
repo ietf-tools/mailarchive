@@ -197,14 +197,11 @@ ELASTICSEARCH_INDEX_MAPPINGS = {
         'spam_score': {'type': 'integer'},
         'subject': {'type': 'text'},
         'subject_base': {'type': 'keyword'},
-        'tdate': {'type': 'date'},
         'text': {'type': 'text'},
         'thread_date': {'type': 'date'},
         'thread_depth': {'type': 'long'},
         'thread_id': {'type': 'long'},
         'thread_order': {'type': 'long'},
-        'tid': {'type': 'long'},
-        'torder': {'type': 'long'},
         'url': {'type': 'text', 'fields': {'keyword': {'type': 'keyword', 'ignore_above': 256}}}
     }
 }

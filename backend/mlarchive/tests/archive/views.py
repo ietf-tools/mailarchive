@@ -4,6 +4,7 @@ import datetime
 import os
 import pytest
 import six
+from email.utils import parseaddr
 
 from django.conf import settings
 from django.contrib.auth import SESSION_KEY
@@ -159,22 +160,19 @@ def test_admin_no_action(admin_client, messages):
     assert response.status_code == 200
 
 
-"""
 @pytest.mark.django_db(transaction=True)
-def test_admin_search_from(client,messages):
+def test_admin_search_from(client, messages):
     msg = Message.objects.first()
-    user = UserFactory.create(is_superuser=True)
-    assert client.login(username='admin',password='admin')
+    UserFactory.create(is_superuser=True)
+    assert client.login(username='admin', password='admin')
     realname, email_address = parseaddr(msg.frm)
     # test search email address portion
     url = reverse('archive_admin') + '?frm=' + email_address
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
-    assert msg in [ r.object for r in results ]
-    # test search realname
-"""
-
+    assert str(msg.pk) in [r.django_id for r in results]
+    
 
 @pytest.mark.django_db(transaction=True)
 def test_admin_menu(client, admin_client):

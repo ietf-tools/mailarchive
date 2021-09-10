@@ -222,7 +222,11 @@ class ESBackend():
 
 
 class ElasticsearchQuery():
-    '''Class for creating Elasticsearch Search objects from input forms'''
+    '''Class for creating Elasticsearch Search objects from input forms.
+
+    The input form must have a Request object attached in order to 
+    determine access to private lists
+    '''
 
     def __init__(self, form, email_list=None, skip_facets=False):
         self.form = form

@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+from io import StringIO
 import mailbox
 import pytest
 import requests
@@ -7,14 +8,19 @@ from factories import EmailListFactory, UserFactory
 from mock import patch
 import os
 import subprocess   # noqa
+import xml.etree.ElementTree as ET
 
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Search
 
 from django.conf import settings
 from django.core.cache import cache
+from django.core.management import call_command
 from django.contrib.auth.models import AnonymousUser
 from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     lookup_user, process_members, get_membership, check_inactive, EmailList,
-    create_mbox_file)
+    create_mbox_file, _get_lists_as_xml)
+from factories import EmailListFactory
 
 
 @pytest.mark.django_db(transaction=True)
@@ -179,3 +185,24 @@ def test_create_mbox_file(tmpdir, settings, latin1_messages):
     mbox = mailbox.mbox(path)
     assert len(mbox) == 1
     mbox.close()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_get_lists_as_xml(client):
+    private = EmailListFactory.create(name='private', private=True)
+    EmailListFactory.create(name='public', private=False)
+    user = UserFactory.create(username='test')
+    private.members.add(user)
+    xml = _get_lists_as_xml()
+    root = ET.fromstring(xml)
+
+    print(xml)
+
+    public_anonymous = root.find("shared_root/[@name='public']").find("user/[@name='anonymous']")
+    assert public_anonymous.attrib['access'] == 'read'
+
+    private_anonymous = root.find("shared_root/[@name='private']").find("user/[@name='anonymous']")
+    assert private_anonymous.attrib['access'] == 'none'
+
+    private_test = root.find("shared_root/[@name='private']").find("user/[@name='test']")
+    assert private_test.attrib['access'] == 'read,write'

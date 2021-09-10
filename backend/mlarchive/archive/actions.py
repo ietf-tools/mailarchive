@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from django.contrib import messages
 from django.shortcuts import redirect
 
-from celery_haystack.tasks import update_mbox
+from mlarchive.archive.tasks import update_mbox
 
 import logging
 logger = logging.getLogger(__name__)
@@ -33,9 +33,7 @@ def get_mbox_updates(queryset):
 def remove_selected(request, queryset):
     """Remove selected messages from the database and index.
 
-    Haystack RealtimeSignalProcessor will remove the entries from the index.
-    http://django-haystack.readthedocs.org/en/latest/signal_processors.html \
-        #realtime-realtimesignalprocessor
+    CelerySignalProcessor will remove the entries from the index.
 
     Our _message_remove receiver will handle moving the message file to the "removed"
     directory

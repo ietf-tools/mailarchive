@@ -1,14 +1,18 @@
-
-
 import random
 import re
 from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.core.cache import cache
+from django.core.paginator import Paginator
+from elasticsearch import Elasticsearch
+from elasticsearch.exceptions import RequestError
+from elasticsearch_dsl import Q, Search
 
 from mlarchive.archive.utils import get_lists
-from mlarchive.utils.test_utils import get_search_backend
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 VALID_QUERYID_RE = re.compile(r'^[a-f0-9]{32}$')
@@ -20,7 +24,7 @@ VALID_SORT_OPTIONS = ('frm', '-frm', 'date', '-date', 'email_list', '-email_list
 
 DEFAULT_SORT = getattr(settings, 'ARCHIVE_DEFAULT_SORT', '-date')
 DB_THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
-IDX_THREAD_SORT_FIELDS = ('-tdate', 'tid', 'torder')
+IDX_THREAD_SORT_FIELDS = ('-thread_date', 'thread_id', 'thread_order')
 
 # --------------------------------------------------
 # Functions handle URL parameters
@@ -44,11 +48,23 @@ def get_base_query(querydict):
 
 
 def get_cached_query(request):
-    if request.GET.get('qid'):
-        queryid = clean_queryid(request.GET['qid'])
-        if queryid:
-            return (queryid, cache.get(queryid))
-    return (None, None)
+    queryid = request.GET.get('qid')
+    if queryid:
+        queryid = clean_queryid(queryid)
+    if not queryid:
+        return (None, None)
+
+    logger.debug('Looking up queryid: {}'.format(queryid))
+    search_dict = cache.get(queryid)
+    if search_dict:
+        logger.debug('Found search in cache: {}'.format(search_dict))
+        client = Elasticsearch()
+        search = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+        search = search.update_from_dict(search_dict)
+        logger.debug('Built search object from cache: {}'.format(search))
+        return (queryid, search)
+    else:
+        return (None, None)
 
 
 def clean_queryid(query_id):
@@ -63,13 +79,45 @@ def get_filter_params(query):
     return [k for k, v in list(query.items()) if k in FILTER_PARAMS and v]
 
 
+def filters_from_params(params):
+    """Returns a list of filters (filter context) built from parameters"""
+    filters = []
+    if params.get('f_list'):
+        filters.append(Q('terms', email_list=params['f_list']))
+    if params.get('f_from'):
+        filters.append(Q('terms', frm_name=params['f_from']))
+    if params.get('msgid'):
+        filters.append(Q('term', msgid=params['msgid']))
+    if params.get('start_date'):
+        filters.append(Q('range', date={'gte': params['start_date']}))
+    if params.get('end_date'):
+        filters.append(Q('range', date={'lte': params['end_date']}))
+    if params.get('email_list'):
+        filters.append(Q('terms', email_list=params['email_list']))
+    if params.get('qdr') and params.get('qdr') in ['d', 'w', 'm', 'y']:
+        filters.append(Q('range', date={'gte': get_qdr_time_iso(params['qdr'])}))
+    if params.get('spam_score'):
+        filters.append(Q('term', spam_score=params['spam_score']))
+    return filters
+
+
+def queries_from_params(params):
+    queries = []
+    if params.get('frm'):
+        queries.append(Q('match', frm=params['frm']))
+    if params.get('subject'):
+        queries.append(Q('match', subject=params['subject']))
+    logger.debug('queries_from_params: {}, params: {}'.format(queries, params))
+    return queries
+
+
 def get_kwargs(data):
     """Returns a dictionary to be used as kwargs for the SearchQuerySet, data is
     a dictionary from form.cleaned_data.  This function can be used with multiple
     forms which may not include exactly the same fields, so we use the get() method.
     """
     kwargs = {}
-    spam_score = data.get('spam_score')
+    # spam_score = data.get('spam_score')
     for key in ('msgid',):
         if data.get(key):
             kwargs[key] = data[key]
@@ -78,24 +126,23 @@ def get_kwargs(data):
     if data.get('end_date'):
         kwargs['date__lte'] = data['end_date']
     if data.get('email_list'):
-        # with Haystack/Xapian must replace dash with space in email list names
-        if get_search_backend() == 'xapian':
-            kwargs['email_list__in'] = [x.replace('-', ' ') for x in data['email_list']]
-        else:
-            kwargs['email_list__in'] = data['email_list']
+        kwargs['email_list__in'] = data['email_list']
     if data.get('frm'):
         kwargs['frm__contains'] = data['frm']   # use __contains for faceted(keyword) field
     if data.get('subject'):
         kwargs['subject'] = data['subject']
     if data.get('spam'):
         kwargs['spam_score__gt'] = 0
-    if spam_score and spam_score.isdigit():
-        bits = [x for x in range(255) if x & int(spam_score)]
-        kwargs['spam_score__in'] = bits
+    # if spam_score and spam_score.isdigit():
+    #     bits = [x for x in range(255) if x & int(spam_score)]
+    #     kwargs['spam_score__in'] = bits
+    if data.get('spam_score'):
+        kwargs['spam_score'] = data['spam_score']
     if data.get('to'):
         kwargs['to'] = data['to']
     kwargs.update(get_qdr_kwargs(data))
 
+    logger.debug('get_kwargs: {}'.format(kwargs))
     return kwargs
 
 
@@ -123,6 +170,11 @@ def get_qdr_time(val):
         return now - timedelta(days=30)
     elif val == 'y':
         return now - timedelta(days=365)
+
+
+def get_qdr_time_iso(val):
+    """QDR time in ISO 8601 format"""
+    return get_qdr_time(val).isoformat()
 
 
 def get_order_fields(params, use_db=False):
@@ -207,3 +259,67 @@ def get_browse_equivalent(request):
 
 def is_static_on(request):
     return True if request.COOKIES.get('isStaticOn') == 'true' else False
+
+
+def run_query(query):
+    '''Wrapper to execute the query, handling exceptions'''
+    # if 'size' not in query._extra:
+    #     query = query.extra(size=settings.SEARCH_RESULTS_PER_PAGE)
+    try:
+        response = query.execute()
+    except RequestError:
+        '''Could get this when query_string can't parse the query string,
+        when there is a bogus search query for example. Swap out query
+        with one that returns empty results'''
+        query = query.update_from_dict({'query': {'term': {'dummy': ''}}})
+        response = query.execute()
+    return response
+
+
+def get_count(query):
+    '''Wrapper to run count(), handling query exceptions'''
+    if isinstance(query, list):
+        return len(query)
+    try:
+        count = query.count()
+    except RequestError:
+        '''Could get this when query_string can't parse the query string,
+        when there is a bogus search query for example. Swap out query
+        with one that returns empty results'''
+        query = query.update_from_dict({'query': {'term': {'dummy': ''}}})
+        count = query.count()
+    return count
+
+
+# TODO: remove?
+def get_empty_response():
+    '''Return an empty elasticsearch response'''
+    client = Elasticsearch()
+    s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    s = s.query('term', dummy='')
+    return s.execute()
+
+
+class CustomPaginator(Paginator):
+    '''A Django Paginator customized to handle Elasticsearch Search
+    object as object_list input. page.object_list is the search
+    response object'''
+
+    def page(self, number):
+        """Return a Page object for the given 1-based page number."""
+        # Note: this will call search.count() which will unveil
+        # any parsing errors
+        number = self.validate_number(number)
+        bottom = (number - 1) * self.per_page
+        top = bottom + self.per_page
+        if top + self.orphans >= self.count:
+            top = self.count
+
+        # add slice info to query and execute to get actual object_list
+        query = self.object_list[bottom:top]
+        if hasattr(query, 'execute'):
+            response = run_query(query)
+        else:
+            response = query
+
+        return self._get_page(response, number, self)

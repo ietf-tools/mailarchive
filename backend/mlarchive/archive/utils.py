@@ -12,25 +12,69 @@ import os
 import re
 import requests
 import subprocess
-from collections import OrderedDict
+
 
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
-from django.db.models import signals
 from django.http import HttpResponse
 from django.utils.encoding import smart_bytes
 from mlarchive.archive.models import EmailList
-from mlarchive.archive.signals import _export_lists, _list_save_handler
-from mlarchive.utils.test_utils import get_search_backend
+# from mlarchive.archive.signals import _export_lists, _list_save_handler
+
 
 logger = logging.getLogger(__name__)
 THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
 LIST_LISTS_PATTERN = re.compile(r'\s*([\w\-]*) - (.*)$')
 
+
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
+
+
+def _export_lists():
+    """Write XML dump of list / memberships and call external program"""
+
+    # Dump XML
+    data = _get_lists_as_xml()
+    path = os.path.join(settings.EXPORT_DIR, 'email_lists.xml')
+    try:
+        if not os.path.exists(settings.EXPORT_DIR):
+            os.mkdir(settings.EXPORT_DIR)
+        with open(path, 'w') as file:
+            file.write(data)
+            os.chmod(path, 0o666)
+    except Exception as error:
+        logger.error('Error creating export file: {}'.format(error))
+        return
+
+    # Call external script
+    if hasattr(settings, 'NOTIFY_LIST_CHANGE_COMMAND'):
+        command = settings.NOTIFY_LIST_CHANGE_COMMAND
+        try:
+            subprocess.check_call([command, path])
+        except (OSError, subprocess.CalledProcessError) as error:
+            logger.error('Error calling external command: {} ({})'.format(command, error))
+
+
+def _get_lists_as_xml():
+    """Returns string: XML of lists / membership for IMAP"""
+    lines = []
+    lines.append("<ms_config>")
+
+    for elist in EmailList.objects.all().order_by('name'):
+        lines.append("  <shared_root name='{name}' path='/var/isode/ms/shared/{name}'>".format(name=elist.name))
+        if elist.private:
+            lines.append("    <user name='anonymous' access='none'/>")
+            for member in elist.members.all():
+                lines.append("    <user name='{name}' access='read,write'/>".format(name=member.username))
+        else:
+            lines.append("    <user name='anonymous' access='read'/>")
+            lines.append("    <group name='anyone' access='read,write'/>")
+        lines.append("  </shared_root>")
+    lines.append("</ms_config>")
+    return "\n".join(lines)
 
 
 def get_noauth(user):
@@ -54,8 +98,6 @@ def get_noauth(user):
         lists = [x.name for x in EmailList.objects.filter(private=True).exclude(members=user)]
     else:
         lists = [x.name for x in EmailList.objects.filter(private=True)]
-    if get_search_backend() == 'xapian':
-        lists = [x.replace('-', ' ') for x in lists]
     # noauth_cache.set(key, lists, 60 * 60 * 48)
     return lists
 
@@ -157,7 +199,7 @@ def get_membership(options, args):
 
     # disconnect the EmailList post_save signal, we don't want to call it multiple
     # times if many lists memberships have changed
-    signals.post_save.disconnect(_list_save_handler, sender=EmailList)
+    # signals.post_save.disconnect(_list_save_handler, sender=EmailList)
     has_changed = False
 
     known_lists = []
@@ -246,4 +288,3 @@ def create_mbox_file(month, year, elist):
             msg = email.message_from_binary_file(f)
         mbox.add(msg)
     mbox.close()
-

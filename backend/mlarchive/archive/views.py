@@ -1,19 +1,16 @@
-
-
 import datetime
 import json
 import os
 import re
-import urllib.request, urllib.parse, urllib.error
 from operator import itemgetter
 from collections import namedtuple
 
 from csp.decorators import csp_exempt
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.admin.views.decorators import staff_member_required
-from django.core.cache import cache
-from django.db.models.query import QuerySet
+from django.core.paginator import InvalidPage
 from django.utils.decorators import method_decorator
 from django.forms.formsets import formset_factory
 from django.views.generic.detail import DetailView
@@ -23,20 +20,25 @@ from django.urls import reverse, NoReverseMatch
 from django.utils.safestring import mark_safe
 from django.utils.cache import add_never_cache_headers, patch_cache_control
 from django.views.generic import View
-from haystack.views import SearchView
-from haystack.query import SearchQuerySet
-from haystack.forms import SearchForm
 
-from mlarchive.utils.decorators import check_access, superuser_only, pad_id, check_list_access
+from elasticsearch.exceptions import RequestError
+
+from mlarchive.utils.decorators import (check_access, superuser_only, pad_id, 
+    check_list_access)
 from mlarchive.archive import actions
-from mlarchive.archive.query_utils import (get_kwargs, get_qdr_kwargs, get_cached_query, get_browse_equivalent,
-    parse_query_string, get_order_fields, generate_queryid, is_static_on)
+from mlarchive.archive.backends.elasticsearch import search_from_form
+from mlarchive.archive.query_utils import (get_qdr_kwargs,
+    get_cached_query, get_browse_equivalent, parse_query_string, get_order_fields,
+    is_static_on, get_count, CustomPaginator)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     get_query_neighbors, get_query_string, get_lists_for_user, get_random_token)
 
 from mlarchive.archive.models import EmailList, Message, Thread, Attachment
-from mlarchive.archive.forms import AdminForm, AdminActionForm, AdvancedSearchForm, BrowseForm, RulesForm
+from mlarchive.archive.forms import (AdminForm, AdminActionForm, 
+    AdvancedSearchForm, BrowseForm, RulesForm, SearchForm)
 
+import logging
+logger = logging.getLogger(__name__)
 
 THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
 DATE_PATTERN = re.compile(r'(?P<year>\d{4})(?:-(?P<month>\d{2}))?')
@@ -114,22 +116,18 @@ def is_small_year(email_list, year):
 # Classes
 # --------------------------------------------------
 
-class CustomSearchView(SearchView):
+class CustomSearchView(View):
     """A customized SearchView"""
+    template = 'archive/search.html'
+    extra_context = {}
+    form_class = AdvancedSearchForm
+    query = ''
+    results = None      # EmptySearchQuerySet()
+    request = None
+    form = None
+    results_per_page = settings.ELASTICSEARCH_RESULTS_PER_PAGE
 
-    def __name__(self):
-        return "CustomSearchView"
-
-    def __call__(self, request):
-        """Generates the actual response to the search.
-
-        Relies on internal, overridable methods to construct the response.
-
-        CUSTOM: as soon as queryset is returned from get_results() check for custom
-        attribute myfacets and save to SearchView so we can add to context in
-        extra_context().  This is required because create_response() corrupts regular
-        facet_counts().
-        """
+    def get(self, request):
         browse_list = get_browse_equivalent(request)
         if browse_list:
             try:
@@ -144,33 +142,38 @@ class CustomSearchView(SearchView):
         self.request = request
         self.form = self.build_form()
         self.query = self.get_query()
-        self.results = self.get_results()
-        if hasattr(self.results, 'myfacets'):
-            self.myfacets = self.results.myfacets
-        if hasattr(self.results, 'queryid'):
-            self.queryid = self.results.queryid
+        
+        # get search object
+        self.search = search_from_form(self.form)
+        if hasattr(self.search, 'queryid'):
+            self.queryid = self.search.queryid
 
         return self.create_response()
 
     def build_form(self, form_kwargs=None):
         """Add request object to the form init so we can use it for authorization"""
-        return super(CustomSearchView, self).build_form(form_kwargs={'request': self.request})
+        data = None
+        kwargs = {'request': self.request}
+        if form_kwargs:
+            kwargs.update(form_kwargs)
+
+        if len(self.request.GET):
+            data = self.request.GET
+
+        return self.form_class(data, **kwargs)
 
     def extra_context(self):
         """Add variables to template context"""
-        extra = super(CustomSearchView, self).extra_context()
+        self.results = self.page.object_list    # create a synonym 
+        extra = {}
         query_string = get_query_string(self.request)
 
         # settings
         extra['filter_cutoff'] = settings.FILTER_CUTOFF
         extra['query_string'] = query_string
-        extra['results_per_page'] = settings.HAYSTACK_SEARCH_RESULTS_PER_PAGE
+        extra['results_per_page'] = settings.ELASTICSEARCH_RESULTS_PER_PAGE
         extra['queryset_offset'] = str(self.page.start_index() - 1)
-        # Review
-        if isinstance(self.results, list):
-            extra['count'] = len(self.results)
-        else:
-            extra['count'] = self.results.count()
+        extra['count'] = get_count(self.search)
 
         # export links
         token = get_random_token(length=16)
@@ -190,8 +193,8 @@ class CustomSearchView(SearchView):
             extra['modify_search_url'] = reverse('archive')
 
         # add custom facets
-        if hasattr(self, 'myfacets'):
-            extra['facets'] = self.myfacets
+        if hasattr(self.results, 'aggregations'):
+            extra['aggregations'] = self.results.aggregations
 
         if hasattr(self, 'queryid'):
             extra['queryid'] = self.queryid
@@ -200,6 +203,23 @@ class CustomSearchView(SearchView):
         self.set_page_links(extra)
 
         return extra
+
+    '''
+    def get_results(self):
+        """
+        Gets the search object from the form. Executes search.
+
+        Returns an empty list if there's no query to search with.
+        """
+        # self.search = self.form.search()
+        
+        # save custom attributes
+        if hasattr(self.search, 'queryid'):
+            self.queryid = self.search.queryid
+
+        self.response = run_query(self.search)
+        return self.response
+    '''
 
     def set_thread_links(self, extra):
         extra['group_by_thread'] = True if 'gbt' in self.request.GET else False
@@ -230,7 +250,6 @@ class CustomSearchView(SearchView):
                 extra['previous_page_url'] = self.base_url + '?' + new_query.urlencode()
 
     def get_context(self):
-        # page, selected_offset = self.build_page()
         self.paginator, self.page = self.build_page()
 
         context = {
@@ -244,6 +263,27 @@ class CustomSearchView(SearchView):
 
         return context
 
+    def build_page(self):
+        """
+        Paginates the results appropriately.
+        """
+        try:
+            page_no = int(self.request.GET.get('page', 1))
+        except (TypeError, ValueError):
+            raise Http404("Not a valid number for page.")
+
+        if page_no < 1:
+            raise Http404("Pages should be 1 or greater.")
+
+        paginator = CustomPaginator(self.search, self.results_per_page)
+
+        try:
+            page = paginator.page(page_no)
+        except InvalidPage:
+            raise Http404("No such page!")
+
+        return (paginator, page)
+
     def get_query(self):
         if self.form.is_valid():
             q = self.form.cleaned_data['q']
@@ -251,38 +291,58 @@ class CustomSearchView(SearchView):
 
         return ''
 
+    def create_response(self):
+        """
+        Generates the actual HttpResponse to send back to the user.
 
-@method_decorator(check_list_access, name='__call__')
+        There are various places where the Elasticsearch object is 
+        evaluated and my raise an exception RequestError (within the
+        paginator when calling count() for example) Catch this exception
+        and redirect to main page.)
+        """
+        try:
+            context = self.get_context()
+        except RequestError as error:
+            logger.info(error)
+            messages.error(self.request, 'Invalid search expression')
+            return redirect('archive')
+
+        return render(self.request, self.template, context)
+
+
+@method_decorator(check_list_access, name='dispatch')
 class CustomBrowseView(CustomSearchView):
     """A customized SearchView for browsing a list"""
-    def __name__(self):
-        return "CustomBrowseView"
 
-    def __call__(self, request, list_name, email_list):
+    def get(self, request, *args, **kwargs):
+        if 'list_name' in kwargs:
+            self.list_name = kwargs['list_name']
+        if 'email_list' in kwargs:
+            self.email_list = kwargs['email_list']
+            
         if is_static_on(request):
-            return redirect('archive_browse_static', list_name=list_name)
+            return redirect('archive_browse_static', list_name=self.list_name)
 
-        self.base_url = reverse('archive_browse_list', kwargs={'list_name': list_name})
-        self.list_name = list_name
-        self.email_list = email_list
+        self.base_url = reverse('archive_browse_list', kwargs={'list_name': self.list_name})
         self.kwargs = {}
-
         self.request = request
         self.form = self.build_form()
         self.query = self.get_query()
-        self.results = self.get_results()
-        if hasattr(self.results, 'myfacets'):
-            self.myfacets = self.results.myfacets
-        if hasattr(self.results, 'queryid'):
-            self.queryid = self.results.queryid
+        self.search = self.get_search()
 
         return self.create_response()
 
-    def get_results(self):
-        """Gets a small set of results from the database rather than the search index"""
+    def get_search(self):
+        """If there is a search query build an Elasticsearch search object and 
+        return that. Otherwise build an ORM Message query and return that"""
+        # Elasticsearch query
         if self.query:
-            return self.form.search(email_list=self.email_list)
+            search = search_from_form(self.form, email_list=self.email_list)
+            if hasattr(search, 'queryid'):
+                self.queryid = search.queryid
+            return search
 
+        # DB Query
         fields = get_order_fields(self.request.GET, use_db=True)
         results = self.email_list.message_set.order_by(*fields)
         self.kwargs = get_qdr_kwargs(self.request.GET)
@@ -311,16 +371,10 @@ class CustomBrowseView(CustomSearchView):
 
     def extra_context(self):
         """Add variables to template context"""
-        extra = super(CustomBrowseView, self).extra_context()
+        extra = {}
         extra['browse_list'] = self.list_name
         extra['queryset_offset'] = '0'
-        if self.query or self.kwargs:
-            if isinstance(self.results, QuerySet):
-                extra['count'] = self.results.count()
-            else:
-                extra['count'] = len(self.results)
-        else:
-            extra['count'] = Message.objects.filter(email_list__name=self.list_name).count()
+        extra['count'] = get_count(self.search)
 
         # export links
         token = get_random_token(length=16)
@@ -383,7 +437,7 @@ class BaseStaticIndexView(View):
             url = reverse(self.view_name, kwargs={'list_name': self.kwargs['list_name'], 'date': self.year})
             return render(self.request, 'archive/refresh.html', {'url': url})
 
-        if not self.month and self.queryset.count() > 0 and (self.year == current_year or not is_small_year(self.kwargs['email_list'], self.year)):
+        if not self.month and get_count(self.queryset) > 0 and (self.year == current_year or not is_small_year(self.kwargs['email_list'], self.year)):
             date = self.queryset.last().date
             url = reverse(self.view_name, kwargs={'list_name': self.kwargs['list_name'], 'date': '{}-{:02d}'.format(date.year, date.month)})
             return render(self.request, 'archive/refresh.html', {'url': url})
@@ -454,25 +508,32 @@ def admin(request):
     results.  Available actions are defined in actions.py
     """
     results = []
-    form = AdminForm()
+    form = AdminForm(request=request)
     action_form = AdminActionForm()
 
-    def is_not_whitelisted(search_result):
-        if search_result.frm not in whitelist:
-            return True
-        else:
-            return False
+    # def is_not_whitelisted(search_result):
+    #     if search_result.frm not in whitelist:
+    #         return True
+    #     else:
+    #         return False
 
     # admin search query
     if request.method == 'GET' and request.GET:
-        form = AdminForm(request.GET)
-        if form.is_valid():
-            kwargs = get_kwargs(form.cleaned_data)
-            if kwargs:
-                results = SearchQuerySet().filter(**kwargs).order_by('date').load_all()
-                if form.cleaned_data.get('exclude_whitelisted_senders'):
-                    whitelist = Message.objects.filter(spam_score=-1).values_list('frm', flat=True).distinct()
-                    results = list(filter(is_not_whitelisted, results))
+        form = AdminForm(request.GET, request=request)
+        if not request.GET:
+            results = []
+
+        elif form.is_valid():
+            search = search_from_form(form)
+            search = search.sort('date')    # default sort by date
+            logger.debug('admin query: {}'.format(search.to_dict()))
+            # TODO change in v7
+            # results = list(search.scan(preserve_order=True))   # convert to list for tests
+            results = list(search.scan())   # convert to list for tests
+            results = sorted(results, key=lambda h: h.date)
+            # if form.cleaned_data.get('exclude_whitelisted_senders'):
+            #     whitelist = Message.objects.filter(spam_score=-1).values_list('frm', flat=True).distinct()
+            #     results = list(filter(is_not_whitelisted, results))
 
     # perfom action on checked messages
     elif request.method == 'POST':
@@ -639,16 +700,14 @@ def detail(request, list_name, id, msg):
     NOTE: the "msg" argument is a Message object added by the check_access decorator
     """
     is_static_on = True if request.COOKIES.get('isStaticOn') == 'true' else False
-    queryid, sqs = get_cached_query(request)
+    queryid, search = get_cached_query(request)
 
-    if sqs and not is_static_on:
-        previous_in_search, next_in_search = get_query_neighbors(query=sqs, message=msg)
-        search_url = reverse('archive_search') + '?' + sqs.query_string
+    if search and not is_static_on:
+        previous_in_search, next_in_search = get_query_neighbors(search=search, message=msg)
     else:
         previous_in_search = None
         next_in_search = None
         queryid = None
-        search_url = None
 
     response = render(request, 'archive/detail.html', {
         'msg': msg,
@@ -660,7 +719,6 @@ def detail(request, list_name, id, msg):
         'previous_in_thread': msg.previous_in_thread(),
         'previous_in_search': previous_in_search,
         'queryid': queryid,
-        'search_url': search_url,
     })
 
     if msg.email_list.private:
@@ -678,10 +736,9 @@ def export(request, type):
     data = request.GET.copy()
     data['so'] = 'email_list'
     data['sso'] = 'date'
-    form = AdvancedSearchForm(data, load_all=False, request=request)
-    sqs = form.search(skip_facets=True)
-    count = sqs.count()
-    response = get_export(sqs, type, request)
+    form = AdvancedSearchForm(data, request=request)
+    search = search_from_form(form, skip_facets=True)
+    response = get_export(search, type, request)
     if data.get('token'):
         response.set_cookie('downloadToken', data.get('token'))
     return response
@@ -725,35 +782,3 @@ def main(request):
 
 class MessageDetailView(DetailView):
     model = Message
-
-
-@pad_id
-@check_access
-def detailx(request, list_name, id, msg):
-    """Displays the requested message.
-    NOTE: the "msg" argument is a Message object added by the check_access decorator
-    """
-    is_static_on = True if request.COOKIES.get('isStaticOn') == 'true' else False
-    queryid, sqs = get_cached_query(request)
-
-    if sqs and not is_static_on:
-        previous_in_search, next_in_search = get_query_neighbors(query=sqs, message=msg)
-        search_url = reverse('archive_search') + '?' + sqs.query_string
-    else:
-        previous_in_search = None
-        next_in_search = None
-        queryid = None
-        search_url = None
-
-    return render(request, 'archive/detail.html', {
-        'msg': msg,
-        # cache items for use in template
-        'next_in_list': '',
-        'next_in_thread': '',
-        'next_in_search': '',
-        'previous_in_list': '',
-        'previous_in_thread': '',
-        'previous_in_search': '',
-        'queryid': queryid,
-        'search_url': search_url,
-    })

@@ -23,10 +23,9 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.encoding import smart_text, smart_bytes
-from haystack.views import SearchView
 
 from mlarchive.archive.forms import RulesForm
-from mlarchive.archive.models import EmailList
+from mlarchive.archive.models import EmailList, Message
 from mlarchive.archive.utils import get_lists_for_user
 
 
@@ -70,18 +69,15 @@ def chunks(l, n):
     return result
 
 
+def apply_objects(hits):
+    '''Add object attribute (Message) to list of hits,
+    to simulate Haystack results'''
+    for hit in hits:
+        hit.object = Message.objects.get(pk=hit.django_id)
+
 # --------------------------------------------------
 # View Functions
 # --------------------------------------------------
-
-def custom_search_view_factory(view_class=SearchView, *args, **kwargs):
-    """Modified version of haystack.views.search_view_factory() to support passed
-    URL parameters
-    See: https://github.com/django-haystack/django-haystack/issues/1063
-    """
-    def search_view(request, *vargs, **vkwargs):
-        return view_class(*args, **kwargs)(request, *vargs, **vkwargs)
-    return search_view
 
 
 def initialize_formsets(query):
@@ -155,11 +151,11 @@ def get_columns(request):
     return columns
 
 
-def get_export(sqs, export_type, request):
+def get_export(search, export_type, request):
     """Process an export request"""
 
     # don't allow export of huge querysets and skip empty querysets
-    count = sqs.count()
+    count = search.count()
     redirect_url = '%s?%s' % (reverse('archive_search'), request.META['QUERY_STRING'])
     if (count > settings.EXPORT_LIMIT) or (count > settings.ANONYMOUS_EXPORT_LIMIT and not request.user.is_authenticated):  # noqa
         messages.error(request, 'Too many messages to export.')
@@ -168,10 +164,12 @@ def get_export(sqs, export_type, request):
         messages.error(request, 'No messages to export.')
         return redirect(redirect_url)
 
+    response = search.execute()
+    apply_objects(response.hits)
     if export_type == 'url':
-        return get_export_url(sqs, export_type, request)
+        return get_export_url(response, export_type, request)
     else:
-        return get_export_tar(sqs, export_type, request)
+        return get_export_tar(response, export_type, request)
 
 
 def get_export_url(sqs, export_type, request):
@@ -275,38 +273,40 @@ def build_mbox_tar(sqs, tar, basename):
     return tar
 
 
-def get_message_index(query, message):
-    """Returns the index of message in SearchQuerySetmessage, -1 if not found"""
-    for n, result in enumerate(query):
+def get_message_index(response, message):
+    """Returns the index of message in search response, -1 if not found"""
+    for n, result in enumerate(response):
         if result.object == message:
             return n
     return -1
 
 
-def get_message_before(query, index):
-    """Returns message of SearchQuerySet before index or None"""
-    try:
-        return query[index - 1].object
-    except (IndexError, AssertionError):
+def get_message_before(response, index):
+    """Returns message of search response before index or None"""
+    if index == 0:
         return None
+    else:
+        return response[index - 1].object
 
 
-def get_message_after(query, index):
-    """Returns next message of SearchQuerySet after index or None"""
+def get_message_after(response, index):
+    """Returns next message of search response after index or None"""
     try:
-        return query[index + 1].object
+        return response[index + 1].object
     except IndexError:
         return None
 
 
-def get_query_neighbors(query, message):
+def get_query_neighbors(search, message):
     """Returns a tuple previous_message and next_message given a message
     from the query results"""
-    index = get_message_index(query, message)
+    response = search.execute()
+    apply_objects(response)
+    index = get_message_index(response, message)
     if index == -1:
         return None, None
     else:
-        return get_message_before(query, index), get_message_after(query, index)
+        return get_message_before(response, index), get_message_after(response, index)
 
 
 def get_query_string(request):

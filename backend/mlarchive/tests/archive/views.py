@@ -4,6 +4,7 @@ import datetime
 import os
 import pytest
 import six
+from email.utils import parseaddr
 
 from django.conf import settings
 from django.contrib.auth import SESSION_KEY
@@ -119,7 +120,7 @@ def test_admin_search_msgid(admin_client, messages):
     response = admin_client.get(url)
     assert response.status_code == 200
     results = response.context['results']
-    assert msg in [r.object for r in results]
+    assert str(msg.pk) in [r.django_id for r in results]
 
 
 @pytest.mark.django_db(transaction=True)
@@ -129,7 +130,7 @@ def test_admin_search_subject(admin_client, messages):
     response = admin_client.get(url)
     assert response.status_code == 200
     results = response.context['results']
-    assert msg in [r.object for r in results]
+    assert str(msg.pk) in [r.django_id for r in results]
 
 
 @pytest.mark.django_db(transaction=True)
@@ -139,7 +140,7 @@ def test_admin_search_date(admin_client, messages):
     response = admin_client.get(url)
     assert response.status_code == 200
     results = response.context['results']
-    assert msg in [r.object for r in results]
+    assert str(msg.pk) in [r.django_id for r in results]
 
 
 @pytest.mark.django_db(transaction=True)
@@ -149,7 +150,7 @@ def test_admin_search_list(admin_client, messages):
     response = admin_client.get(url)
     assert response.status_code == 200
     results = response.context['results']
-    assert msg in [r.object for r in results]
+    assert str(msg.pk) in [r.django_id for r in results]
 
 
 @pytest.mark.django_db(transaction=True)
@@ -159,22 +160,19 @@ def test_admin_no_action(admin_client, messages):
     assert response.status_code == 200
 
 
-"""
 @pytest.mark.django_db(transaction=True)
-def test_admin_search_from(client,messages):
+def test_admin_search_from(client, messages):
     msg = Message.objects.first()
-    user = UserFactory.create(is_superuser=True)
-    assert client.login(username='admin',password='admin')
+    UserFactory.create(is_superuser=True)
+    assert client.login(username='admin', password='admin')
     realname, email_address = parseaddr(msg.frm)
     # test search email address portion
     url = reverse('archive_admin') + '?frm=' + email_address
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
-    assert msg in [ r.object for r in results ]
-    # test search realname
-"""
-
+    assert str(msg.pk) in [r.django_id for r in results]
+    
 
 @pytest.mark.django_db(transaction=True)
 def test_admin_menu(client, admin_client):
@@ -243,7 +241,9 @@ def test_browse_query(client, messages):
     url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?q=invitation'
     response = client.get(url)
     assert response.status_code == 200
-    assert len(response.context['results']) == 2
+    for r in response.context['results']:
+        print(r.date, r.subject)
+    assert len(response.context['results']) == 3
 
 
 @pytest.mark.django_db(transaction=True)
@@ -253,7 +253,6 @@ def test_browse_gbt(client, messages):
     response = client.get(url)
     assert response.status_code == 200
     assert len(response.context['results']) == 6
-
     # assert proper order
     assert [r.pk for r in response.context['results']] == [m.pk for m in messages]
 
@@ -263,10 +262,9 @@ def test_browse_list_sort_subject(client, messages):
     url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?so=subject'
     response = client.get(url)
     assert response.status_code == 200
-    assert len(response.context['results']) == 4
-
+    assert len(response.context['results']) == 5
     # assert proper order
-    assert [r.msgid for r in response.context['results']] == ['a01', 'a02', 'a04', 'a03']
+    assert [r.msgid for r in response.context['results']] == ['a01', 'a02', 'a04', 'a03', 'a05']
 
 
 @pytest.mark.django_db(transaction=True)
@@ -275,7 +273,7 @@ def test_browse_index_gbt(client, messages):
     url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?gbt=1&index={}'.format(message.hashcode.strip('='))
     response = client.get(url)
     assert response.status_code == 200
-    assert len(response.context['results']) == 4
+    assert len(response.context['results']) == 5
 
 
 @pytest.mark.django_db(transaction=True)

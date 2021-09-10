@@ -1,15 +1,15 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import datetime
 from django import template
 from django.conf import settings
-from django.utils.safestring import mark_safe
-from django.utils.http import urlquote_plus, urlencode
+from django.utils.http import urlencode
 
-register = template.Library()
 
 import logging
 logger = logging.getLogger(__name__)
 
+register = template.Library()
 
 # --------------------------------------------------
 # Classes
@@ -122,17 +122,6 @@ def get_params(params, exclude):
     return template.defaultfilters.urlencode(url)
 
 
-@register.filter
-def max_depth(depth):
-    """Returns depth if it is less than MAX_THREAD_DEPTH, otherwise
-    MAX_THREAD_DEPTH
-    """
-    if int(depth) < settings.MAX_THREAD_DEPTH:
-        return depth
-    else:
-        return settings.MAX_THREAD_DEPTH
-
-
 @register.simple_tag
 def selected(request, key, val):
     """Returns "selected" if key=value appears in the request URL parameters
@@ -145,6 +134,32 @@ def selected(request, key, val):
     else:
         if val == '':
             return 'selected'
+
+# --------------------------------------------------
+# Filters
+# --------------------------------------------------
+
+
+@register.filter
+def max_depth(depth):
+    """Returns depth if it is less than MAX_THREAD_DEPTH, otherwise
+    MAX_THREAD_DEPTH
+    """
+    if int(depth) < settings.MAX_THREAD_DEPTH:
+        return depth
+    else:
+        return settings.MAX_THREAD_DEPTH
+
+
+@register.filter
+def custom_date(date):
+    """A custom date filter that handles ISO date as string,
+    or a Django date object
+    """
+    if isinstance(date, str):
+        return date[:10]
+    elif isinstance(date, datetime.datetime):
+        return date.strftime('%Y-%m-%d')
 
 
 # --------------------------------------------------
@@ -199,12 +214,13 @@ class QueryStringNode(template.Node):
             p[k] = v
         return get_query_string(p, self.add, self.remove)
 
+
 def get_query_string(p, new_params=None, remove=None):
     if new_params is None:
         new_params = {}
     if remove is None:
         remove = []
-    #p = self.params.copy()
+    # p = self.params.copy()
     for r in remove:
         for k in list(p):
             if k.startswith(r):
@@ -216,6 +232,7 @@ def get_query_string(p, new_params=None, remove=None):
         else:
             p[k] = v
     return '?%s' % urlencode(sorted(p.items()))
+
 
 # Taken from lib/utils.py
 def string_to_dict(string):

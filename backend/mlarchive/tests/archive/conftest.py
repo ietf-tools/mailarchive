@@ -50,6 +50,7 @@ The following two fixtures cause the test run to use a temporary
 directory, /tmp/pytest-of-[user]/pytest-NNN, for data files
 '''
 
+
 @pytest.fixture(scope='session')
 def tmp_dir(tmpdir_factory):
     """Create temporary directory for this test run"""
@@ -69,7 +70,7 @@ def data_dir(tmp_dir, settings):
 # Regular Fixtures
 # -----------------------------------
 
-    
+
 def load_db():
     pubone = EmailListFactory.create(name='pubone')
     pubtwo = EmailListFactory.create(name='pubtwo')
@@ -111,7 +112,15 @@ def load_db():
                           date=datetime.datetime(2014, 1, 1),
                           msgid='a04',
                           spam_score=1)
-    MessageFactory.create(email_list=pubtwo)
+    MessageFactory.create(email_list=pubone,
+                          thread=athread,
+                          thread_order=2,
+                          frm='larry@amsl.com',
+                          subject='Party Invitation',
+                          base_subject=get_base_subject('Party Invitation things'),
+                          date=datetime.datetime(2014, 2, 1),
+                          msgid='a05')
+    MessageFactory.create(email_list=pubtwo, subject='Trip invitation', msgid='b01')
     MessageFactory.create(email_list=pubtwo)
     date = datetime.datetime.now().replace(second=0, microsecond=0)
     for n in range(21):
@@ -200,7 +209,7 @@ def messages(index_resource):
 
 @pytest.fixture()
 def attachment_messages_no_index(settings):
-    settings.HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.BaseSignalProcessor'
+    settings.ELASTICSEARCH_SIGNAL_PROCESSOR = 'mlarchive.archive.signals.BaseSignalProcessor'
     content = StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'attachment.mail')
     call_command('load', path, listname='acme', summary=True, stdout=content)
@@ -241,6 +250,74 @@ def latin1_messages():
 
 
 @pytest.fixture()
+def search_api_messages():
+    """Load messages for search_api tests"""
+    content = StringIO()
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'search_api.mbox')
+    call_command('clear_index', interactive=False, stdout=content)
+    call_command('load', path, listname='acme', summary=True, stdout=content)
+    print(content.read())
+    assert Message.objects.count() > 0
+
+
+@pytest.fixture()
+def search_api_messages_ford():
+    """Load second list for search_api"""
+    content = StringIO()
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'search_api_ford.mbox')
+    call_command('load', path, listname='ford', summary=True, stdout=content)
+    print(content.read())
+    assert Message.objects.count() > 0
+
+
+@pytest.fixture()
+def search_api_messages_qdr():
+    """Load messages with dynamic dates for qdr tests"""
+    content = StringIO()
+    call_command('clear_index', interactive=False, stdout=content)
+    public = EmailListFactory.create(name='public')
+    now = datetime.datetime.now()
+    today = now - datetime.timedelta(hours=1)
+    yesterday = now - datetime.timedelta(hours=30)
+    two_weeks_ago = now - datetime.timedelta(days=14)
+    six_months_ago = now - datetime.timedelta(days=180)
+    last_year = now - datetime.timedelta(days=365)
+    thread = ThreadFactory.create(date=last_year)
+    MessageFactory.create(email_list=public,
+                          thread=thread,
+                          thread_order=10,
+                          msgid='api301',
+                          date=today)
+    MessageFactory.create(email_list=public,
+                          thread=thread,
+                          thread_order=9,
+                          msgid='api302',
+                          date=yesterday)
+    MessageFactory.create(email_list=public,
+                          thread=thread,
+                          thread_order=8,
+                          msgid='api303',
+                          date=two_weeks_ago)
+    MessageFactory.create(email_list=public,
+                          thread=thread,
+                          thread_order=7,
+                          msgid='api304',
+                          date=six_months_ago)
+    call_command('rebuild_index', interactive=False, stdout=content)
+
+
+@pytest.fixture()
+def private_messages():
+    """Load some latin1"""
+    private = EmailListFactory.create(name='private', private=True)
+    content = StringIO()
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'private.mbox')
+    call_command('load', path, listname='private', summary=True, stdout=content)
+    print(content.read())
+    assert Message.objects.count() > 0
+
+
+@pytest.fixture()
 def windows1252_messages():
     """Load some windows1252"""
     content = StringIO()
@@ -252,7 +329,33 @@ def windows1252_messages():
 
 
 @pytest.fixture()
+def db_only():
+    now = datetime.datetime.now()
+    yesterday = now - datetime.timedelta(hours=24)
+    content = StringIO()
+    call_command('clear_index', interactive=False, stdout=content)
+    public = EmailListFactory.create(name='public')
+    athread = ThreadFactory.create(date=datetime.datetime(2017, 1, 1))
+    MessageFactory.create(email_list=public,
+                          thread=athread,
+                          thread_order=0,
+                          msgid='x001',
+                          date=datetime.datetime(2017, 1, 1))
+    MessageFactory.create(email_list=public,
+                          thread=athread,
+                          thread_order=0,
+                          msgid='x002',
+                          date=datetime.datetime(2018, 1, 1))
+    MessageFactory.create(email_list=public,
+                          thread=athread,
+                          thread_order=0,
+                          msgid='x003',
+                          date=yesterday)
+
+
+@pytest.fixture()
 def thread_messages_db_only():
+    '''db_only doesn't work. do to signal?'''
     public = EmailListFactory.create(name='public')
     athread = ThreadFactory.create(date=datetime.datetime(2017, 1, 1))
     bthread = ThreadFactory.create(date=datetime.datetime(2017, 2, 1))
@@ -362,7 +465,4 @@ def celery_service():
 
 @pytest.fixture(scope='session')
 def celery_config():
-    return {
-        'broker_url': 'amqp://',
-        #'result_backend': 'redis://'
-    }
+    return {'broker_url': 'amqp://'}

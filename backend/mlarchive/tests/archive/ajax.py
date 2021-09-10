@@ -4,8 +4,11 @@ import pytest
 from django.conf import settings
 from django.core.cache import cache
 from django.urls import reverse
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Search
 from factories import EmailListFactory, ThreadFactory, MessageFactory, UserFactory
 from pyquery import PyQuery
+
 from mlarchive.archive.models import Message, Thread
 from mlarchive.archive.ajax import (get_query_results, get_browse_results,
     get_browse_results_gbt, get_browse_results_date)
@@ -109,7 +112,7 @@ def test_ajax_get_messages(client, messages, settings):
     assert response.status_code == 200
     # for x in response.context['results']:
     #     print type(x)
-    assert len(response.context['results']) == 6
+    assert len(response.context['results']) == 7
     q = PyQuery(response.content)
     id = q('.msg-list').attr('data-queryid')
 
@@ -157,7 +160,8 @@ def test_ajax_get_messages_browse_next(client, messages):
         reverse('ajax_messages'), message.pk)
     response = client.get(url)
     assert response.status_code == 200
-    assert len(response.context['results']) == 3
+    assert len(response.context['results']) == 4
+    assert [m.msgid for m in response.context['results']] == ['a04', 'a03', 'a02', 'a01']
 
 
 @pytest.mark.django_db(transaction=True)
@@ -167,7 +171,8 @@ def test_ajax_get_messages_browse_previous(client, messages):
         reverse('ajax_messages'), message.pk)
     response = client.get(url)
     assert response.status_code == 200
-    assert len(response.context['results']) == 3
+    assert len(response.context['results']) == 4
+    assert [m.msgid for m in response.context['results']] == ['a05', 'a04', 'a03', 'a02']
 
 
 @pytest.mark.django_db(transaction=True)
@@ -213,17 +218,21 @@ def test_get_query_results(client, messages, settings):
     # run initial query to setup cache
     url = '%s?email_list=pubthree&so=-date' % reverse('archive_search')
     response = client.get(url)
-    print(response.content)
+    # print(response.content)
     assert response.status_code == 200
-    assert len(response.context['results']) == settings.HAYSTACK_SEARCH_RESULTS_PER_PAGE
+    assert len(response.context['results']) == settings.SEARCH_RESULTS_PER_PAGE
     q = PyQuery(response.content)
     qid = q('.msg-list').attr('data-queryid')
-    query = cache.get(qid)
+    query_dict = cache.get(qid)
+    client = Elasticsearch()
+    query = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+    # query = query.extra(size=settings.SEARCH_RESULTS_PER_PAGE)
+    query = query.update_from_dict(query_dict)
     messages = messages.filter(email_list__name='pubthree').order_by('-date')
     results = get_query_results(query=query, referenceitem=10, direction='next')
     # assert we get the remaining messages ordered by date descending
     assert len(results) == 11
-    assert [r.object.pk for r in results] == [m.pk for m in messages[10:]]
+    assert [int(r.django_id) for r in results] == [m.pk for m in messages[10:]]
 
 
 @pytest.mark.django_db(transaction=True)

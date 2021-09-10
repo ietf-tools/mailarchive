@@ -1,22 +1,14 @@
-
-
 import hashlib
 import six
-import time
 from collections import OrderedDict
 
 from django import forms
-from django.conf import settings
-from django.core.cache import cache
-from django.utils.decorators import method_decorator
 from django.utils.http import urlencode
-from haystack.forms import FacetedSearchForm
 
-from mlarchive.archive.query_utils import (get_kwargs, generate_queryid, get_filter_params,
-    parse_query, get_base_query, get_order_fields)
+from mlarchive.archive.query_utils import get_base_query
 from mlarchive.archive.models import EmailList
 from mlarchive.archive.utils import get_noauth
-from mlarchive.utils.decorators import log_timing
+
 
 import logging
 logger = logging.getLogger(__name__)
@@ -133,6 +125,10 @@ class AdminForm(forms.Form):
     spam_score = forms.CharField(max_length=6, required=False)
     exclude_whitelisted_senders = forms.BooleanField(required=False)
 
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request')
+        super(self.__class__, self).__init__(*args, **kwargs)
+
     def clean_email_list(self):
         # return a list of names for use in search query
         # so we match get_kwargs() api
@@ -155,22 +151,20 @@ class LowerCaseModelMultipleChoiceField(forms.ModelMultipleChoiceField):
 
 
 # @method_decorator(log_timing, name='get_facets')
-class AdvancedSearchForm(FacetedSearchForm):
-    # start_date = forms.DateField(required=False,
-    #        widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
+class AdvancedSearchForm(forms.Form):
+    """The form which builds the elasticsearch-dsl Search object"""
+    q = forms.CharField(required=False, label=('Search'),
+                        widget=forms.TextInput(attrs={'type': 'search'}))
     start_date = DatepickerDateField(
         date_format="yyyy-mm-dd",
         picker_settings={"autoclose": "1"},
         label='Start date',
         required=False)
-    # end_date = forms.DateField(required=False,
-    #        widget=forms.TextInput(attrs={'class':'defaultText','title':'YYYY-MM-DD'}))
     end_date = DatepickerDateField(
         date_format="yyyy-mm-dd",
         picker_settings={"autoclose": "1"},
         label='End date',
         required=False)
-    # email_list = forms.CharField(max_length=255,required=False,widget=forms.HiddenInput)
     email_list = LowerCaseModelMultipleChoiceField(queryset=EmailList.objects, to_field_name='name', required=False)
     subject = forms.CharField(max_length=255, required=False)
     frm = forms.CharField(max_length=255, required=False)
@@ -178,7 +172,7 @@ class AdvancedSearchForm(FacetedSearchForm):
     # operator = forms.ChoiceField(choices=(('AND','ALL'),('OR','ANY')))
     so = forms.CharField(max_length=25, required=False, widget=forms.HiddenInput)
     sso = forms.CharField(max_length=25, required=False, widget=forms.HiddenInput)
-    spam_score = forms.CharField(max_length=3, required=False)
+    spam_score = forms.IntegerField(required=False)
     # group and filter fields
     gbt = forms.BooleanField(required=False)                     # group by thread
     qdr = forms.ChoiceField(choices=TIME_CHOICES, required=False, label='Time')  # qualified date range
@@ -188,6 +182,7 @@ class AdvancedSearchForm(FacetedSearchForm):
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request')
+
         # can't use reserved word "from" as field name, so we need to map to "frm"
         # args is a tuple and args[0] is either None or a QueryDict
         if len(args) and isinstance(args[0], dict) and 'from' in args[0]:
@@ -197,140 +192,6 @@ class AdvancedSearchForm(FacetedSearchForm):
 
         super(self.__class__, self).__init__(*args, **kwargs)
         self.fields["email_list"].widget.attrs["placeholder"] = "List names"
-
-    def get_facets(self, sqs):
-        """Get facets for the SearchQuerySet
-
-        Because we have two optional filters: f_list, f_from, we need to take into
-        consideration if a filter has been applied.  The filters need to interact.
-        Therefore each filter set is limited by the other filter's results.
-
-        NOTE: this function expects to receive the query that has not yet applied
-        filters.
-        """
-        cache_key = get_cache_key(self.request)
-        facets = cache.get(cache_key)
-        if facets:
-            return facets
-
-        # calculating facet_counts on large results sets is too costly so skip it
-        # If you call results.count() before results.facet_counts() the facet_counts
-        # are corrupted in Xapian backend.
-
-        temp = sqs._clone()
-        count = temp.count()
-        facets = {'fields': {}, 'dates': {}, 'queries': {}}
-
-        if 0 < count < settings.FILTER_CUTOFF:
-            logger.debug('Calculating facets (queryset_size={})'.format(count))
-            clone = sqs._clone()
-            sqs = clone.facet('email_list').facet('frm_name')
-
-            # if query contains no filters compute simple facet counts
-            filters = get_filter_params(self.request.GET)
-            if not filters:
-                facets = sqs.facet_counts()
-
-            elif filters == ['f_list']:
-                base = sqs.facet_counts()
-                filtered = sqs.filter(email_list__in=self.f_list).facet_counts()
-                base['fields']['frm_name'] = filtered['fields']['frm_name']
-                facets = base
-
-            elif filters == ['f_from']:
-                base = sqs.facet_counts()
-                filtered = sqs.filter(frm_name__in=self.f_from).facet_counts()
-                base['fields']['email_list'] = filtered['fields']['email_list']
-                facets = base
-
-            # if both f_list and f_from run each filter independently
-            else:
-                copy = sqs._clone()
-                frm_count = sqs.filter(frm_name__in=self.f_from).facet_counts()
-                list_count = copy.filter(email_list__in=self.f_list).facet_counts()
-                facets['fields']['email_list'] = frm_count['fields']['email_list']
-                facets['fields']['frm_name'] = list_count['fields']['frm_name']
-
-            for field in facets['fields']:
-                facets['fields'][field].sort()  # sort by name
-
-        # save in cache
-        cache.set(cache_key, facets)
-        return facets
-
-    def process_query(self):
-        if self.q:
-            logger.info('Query String: %s' % self.q)
-            logger.debug('Query Params: %s' % self.data)
-            self.searchqueryset.query.raw_search(self.q)
-
-        return self.searchqueryset
-
-    def search(self, email_list=None, skip_facets=False):
-        """Custom search function.  This completely overrides the parent
-        search().  Returns a SearchQuerySet object.
-        """
-        # for now if search form doesn't validate return empty results
-        if not self.is_valid():
-            return self.no_query_found()
-
-        self.f_list = self.cleaned_data['f_list']
-        self.f_from = self.cleaned_data['f_from']
-        self.q = parse_query(self.request)
-        data = self.cleaned_data
-        if email_list:
-            data['email_list'] = [email_list.name]
-        self.kwargs = get_kwargs(data)
-
-        # return empty queryset if no parameters passed
-        if not (self.q or self.kwargs):
-            return self.no_query_found()
-
-        sqs = self.process_query()
-
-        # handle URL parameters -----------------------------------
-        if self.kwargs:
-            sqs = sqs.filter(**self.kwargs)
-
-        # private lists -------------------------------------------
-        sqs = sqs.exclude(email_list__in=get_noauth(self.request.user))
-
-        # faceting ------------------------------------------------
-        # call this before running sorts or applying filters to queryset
-        if skip_facets:
-            facets = []
-        else:
-            facets = self.get_facets(sqs)
-
-        # filters -------------------------------------------------
-        if self.f_list:
-            sqs = sqs.filter(email_list__in=self.f_list)
-        if self.f_from:
-            sqs = sqs.filter(frm_name__in=self.f_from)
-
-        # Populate all all SearchResult.object with efficient db query
-        # when called via urls.py / search_view_factory default load_all=True
-        if self.load_all:
-            sqs = sqs.load_all()
-
-        # grouping and sorting  -----------------------------------
-        # perform this step last because other operations, if they clone the
-        # SearchQuerySet, cause the query to be re-run which loses custom sort order
-        fields = get_order_fields(self.request.GET)
-        sqs = sqs.order_by(*fields)
-
-        # save query in cache with random id for security
-        queryid = generate_queryid()
-        sqs.query_string = self.request.META['QUERY_STRING']
-        sqs.queryid = queryid
-        cache.set(queryid, sqs, 7200)           # 2 hours
-
-        logger.debug('Backend Query: %s' % sqs.query.build_query())
-
-        # insert facets just before returning query, so they don't get overridden
-        sqs.myfacets = facets
-
-        return sqs
 
     def clean_email_list(self):
         return [n.name for n in self.cleaned_data.get('email_list', [])]
@@ -347,6 +208,11 @@ class AdvancedSearchForm(FacetedSearchForm):
             return names.split(',')
 
 # ---------------------------------------------------------
+
+
+class SearchForm(forms.Form):
+    q = forms.CharField(required=False, label='Search',
+                        widget=forms.TextInput(attrs={'type': 'search'}))
 
 
 class BrowseForm(forms.Form):

@@ -24,14 +24,14 @@
                         <div id="list-filter" class="filter" tabindex="-1">
                             <form id="list-filter-form">
                             <ul class="filter-options" tabindex="-1">
-                            {% if facets.fields.email_list %}
-                                {% for list in facets.fields.email_list %}
+                            {% if aggregations.list_terms.buckets %}
+                                {% for list in aggregations.list_terms.buckets %}
                                     <li class="filter-option form-check">
-                                        <input class="form-check-input list-facet facetchk" type="checkbox" id="id_f_list_{{ forloop.counter }}" name="f_list" value="{{ list.0 }}" {% checked request 'f_list' list.0 %}>
-                                        <label class="form-check-label" for="id_f_list_{{ forloop.counter }}">{{ list.0 }} ({{ list.1 }})</label>
+                                        <input class="form-check-input list-facet facetchk" type="checkbox" id="id_f_list_{{ forloop.counter }}" name="f_list" value="{{ list.key }}" {% checked request 'f_list' list.key %}>
+                                        <label class="form-check-label" for="id_f_list_{{ forloop.counter }}">{{ list.key }} ({{ list.doc_count }})</label>
                                     </li>
                                 {% endfor %}
-                                {% if facets.fields.email_list|length > 6 %}
+                                {% if aggregations.list_terms.buckets|length > 6 %}
                                     <li class="control"><a class="more-link" href="">more...</a></li>
                                 {% endif %}
                                 <li class="control"><a id="list-filter-clear" href="">Clear</a></li>
@@ -45,15 +45,15 @@
                     <div id="from-filter" class="filter" tabindex="-1">
                         <form id="from-filter-form">
                         <ul class="filter-options" tabindex="-1">
-                         {% if facets.fields.frm_name %}
-                            {% for name in facets.fields.frm_name %}
+                         {% if aggregations.from_terms.buckets  %}
+                            {% for name in aggregations.from_terms.buckets %}
                                 <li class="filter-option form-check">
-                                    <input class="form-check-input from-facet facetchk" type="checkbox" id="id_f_from_{{ forloop.counter }}"" name="f_from" value="{{ name.0 }}" {% checked request 'f_from' name.0 %}>
-                                    <label class="form-check-label truncated" for="id_f_from_{{ forloop.counter }}">{{ name.0|truncatechars:24 }}</label>
-                                    <label class="form-check-label full" for="id_f_from_{{ forloop.counter }}">{{ name.0|truncatechars:48 }}</label> ({{ name.1 }})
+                                    <input class="form-check-input from-facet facetchk" type="checkbox" id="id_f_from_{{ forloop.counter }}"" name="f_from" value="{{ name.key }}" {% checked request 'f_from' name.key %}>
+                                    <label class="form-check-label truncated" for="id_f_from_{{ forloop.counter }}">{{ name.key|truncatechars:24 }}</label>
+                                    <label class="form-check-label full" for="id_f_from_{{ forloop.counter }}">{{ name.key|truncatechars:48 }}</label> ({{ name.doc_count }})
                                 </li>
                             {% endfor %}
-                            {% if facets.fields.frm_name|length > 6 %}
+                            {% if aggregations.from_terms.buckets|length > 6 %}
                                 <li class="control"><a class="more-link" href="">more...</a></li>
                             {% endif %}
                             <li class="control"><a id="from-filter-clear" href="">Clear</a></li>

@@ -96,8 +96,6 @@ INSTALLED_APPS = [
     'django.contrib.sitemaps',
     'mozilla_django_oidc',
     'bootstrap4',
-    'celery_haystack',
-    'haystack',
     'mlarchive.archive.apps.ArchiveConfig',
     'widget_tweaks',
 ]
@@ -161,44 +159,51 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 # CUSTOM SETTINGS
 # -------------------------------------
 
-# HAYSTACK SETTINGS
-HAYSTACK_DEFAULT_OPERATOR = 'AND'
-HAYSTACK_SIGNAL_PROCESSOR = env('HAYSTACK_SIGNAL_PROCESSOR')
-HAYSTACK_SEARCH_RESULTS_PER_PAGE = 40
-
-HAYSTACK_CONNECTIONS = {
-    'default': {
-        'ENGINE': 'mlarchive.archive.backends.custom.ConfigurableElasticSearchEngine',
-        'URL': 'http://127.0.0.1:9200/',
-        'INDEX_NAME': 'mail-archive',
-    },
-}
+SEARCH_RESULTS_PER_PAGE = 40
 
 # ELASTICSEARCH SETTINGS
+ELASTICSEARCH_INDEX_NAME = 'mail-archive'
+ELASTICSEARCH_SILENTLY_FAIL = True
+ELASTICSEARCH_CONNECTION = {
+    'URL': 'http://127.0.0.1:9200/',
+    'INDEX_NAME': 'mail-archive',
+}
+ELASTICSEARCH_RESULTS_PER_PAGE = 40
+ELASTICSEARCH_SIGNAL_PROCESSOR = env('ELASTICSEARCH_SIGNAL_PROCESSOR')
+ELASTICSEARCH_DEFAULT_OPERATOR = 'AND'
+
+"""
+Elastic field mappings
+
+ use text field for search and keyword fields for sorting, filter, aggregations
+ id and url are multifields
+ https://www.elastic.co/guide/en/elasticsearch/reference/current/multi-fields.html
+"""
+
 ELASTICSEARCH_INDEX_MAPPINGS = {
-    "django_ct": {'type': 'keyword'},           # "archive.message"
-    "django_id": {'type': 'long'},              # primary key of message
-    "date": {"type": "date"},
-    "email_list": {"type": "keyword"},
-    "email_list_exact": {"type": "keyword"},    # can this be an alias?
-    "frm": {"type": "text"},
-    # "frm_exact": {"type": "keyword"},         # don't need this, faceting on frm_name
-    "frm_name": {"type": "keyword"},
-    "frm_name_exact": {"type": "keyword"},      # can this be an alias?
-    "from": {"type": "alias", "path": "frm"},   # make this an alias of frm to use as search keyword
-    "id": {"type": "text", "fields": {"keyword": {"type": "keyword", "ignore_above": 256}}},
-    # "id": {"type": "keyword"},                # combo of django_ct + django_id e.g. archive.message.1
-    "msgid": {"type": "keyword"},
-    # "msgid_exact": {"type": "keyword"},       # don't need
-    "spam_score": {"type": "integer"},
-    "subject": {"type": "text"},
-    "subject_base": {"type": "keyword"},        # for sorting on subject
-    "base_subject": {"type": "alias", "path": "subject_base"},
-    "tdate": {"type": "date"},
-    "text": {"type": "text"},
-    "tid": {"type": "long"},
-    # "to": {"type": "text"},                   # get rid of this
-    "torder": {"type": "long"}
+    'properties': {
+        'base_subject': {'type': 'alias', 'path': 'subject_base'},
+        'date': {'type': 'date'},
+        'django_ct': {'type': 'keyword'},
+        'django_id': {'type': 'long'},
+        'email_list': {'type': 'keyword'},
+        'email_list_exact': {'type': 'keyword'},
+        'frm': {'type': 'text'},
+        'frm_name': {'type': 'keyword'},
+        'frm_name_exact': {'type': 'keyword'},
+        'from': {'type': 'alias', 'path': 'frm'},
+        'id': {'type': 'text', 'fields': {'keyword': {'type': 'keyword', 'ignore_above': 256}}},
+        'msgid': {'type': 'keyword'},
+        'spam_score': {'type': 'integer'},
+        'subject': {'type': 'text'},
+        'subject_base': {'type': 'keyword'},
+        'text': {'type': 'text'},
+        'thread_date': {'type': 'date'},
+        'thread_depth': {'type': 'long'},
+        'thread_id': {'type': 'long'},
+        'thread_order': {'type': 'long'},
+        'url': {'type': 'text', 'fields': {'keyword': {'type': 'keyword', 'ignore_above': 256}}}
+    }
 }
 
 # SECURITY SETTINGS
@@ -226,7 +231,7 @@ MAILMAN_DIR = '/usr/lib/mailman'
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 # number of messages to load when scrolling search results
-SEARCH_SCROLL_BUFFER_SIZE = HAYSTACK_SEARCH_RESULTS_PER_PAGE
+SEARCH_SCROLL_BUFFER_SIZE = SEARCH_RESULTS_PER_PAGE
 TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
 USE_EXTERNAL_PROCESSOR = False
 MAX_THREAD_DEPTH = 6
@@ -283,6 +288,7 @@ CACHE_MIDDLEWARE_ALIAS = 'disk'
 CELERY_BROKER_URL = 'amqp://'
 CELERY_TIMEZONE = 'America/Los_Angeles'
 CELERY_ENABLE_UTC = True
+CELERY_DEFAULT_TASK = 'mlarchive.archive.tasks.CelerySignalHandler'
 CELERY_HAYSTACK_DEFAULT_ALIAS = 'default'
 CELERY_HAYSTACK_MAX_RETRIES = 1
 CELERY_HAYSTACK_RETRY_DELAY = 300
@@ -357,11 +363,6 @@ LOGGING = {
         'mlarchive.custom': {
             'handlers': ['mlarchive'],
             'level': 'DEBUG',
-            'propagate': False,
-        },
-        'haystack': {
-            'handlers': ['mlarchive'],
-            'level': 'INFO',
             'propagate': False,
         }
     }

@@ -172,6 +172,14 @@ ELASTICSEARCH_RESULTS_PER_PAGE = 40
 ELASTICSEARCH_SIGNAL_PROCESSOR = env('ELASTICSEARCH_SIGNAL_PROCESSOR')
 ELASTICSEARCH_DEFAULT_OPERATOR = 'AND'
 
+"""
+Elastic field mappings
+
+ use text field for search and keyword fields for sorting, filter, aggregations
+ id and url are multifields
+ https://www.elastic.co/guide/en/elasticsearch/reference/current/multi-fields.html
+"""
+
 ELASTICSEARCH_INDEX_MAPPINGS = {
     'properties': {
         'base_subject': {'type': 'alias', 'path': 'subject_base'},

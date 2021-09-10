@@ -513,7 +513,7 @@ def admin(request):
     results.  Available actions are defined in actions.py
     """
     results = []
-    form = AdminForm()
+    form = AdminForm(request=request)
     action_form = AdminActionForm()
 
     # def is_not_whitelisted(search_result):
@@ -524,23 +524,17 @@ def admin(request):
 
     # admin search query
     if request.method == 'GET' and request.GET:
-        form = AdminForm(request.GET)
+        form = AdminForm(request.GET, request=request)
         # refactor to build_search()
 
         if not request.GET:
             results = []
 
         elif form.is_valid():
-            client = Elasticsearch()
-            sqs = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
-
-            for f in filters_from_params(form.cleaned_data):
-                sqs = sqs.filter(f)
-            for q in queries_from_params(form.cleaned_data):
-                sqs = sqs.query(q)
-            sqs = sqs.sort('date')
-            logger.debug('admin query: {}'.format(sqs.to_dict()))
-            results = list(sqs.scan())  # convert to list for tests
+            search = search_from_form(form)
+            logger.debug('admin query: {}'.format(search.to_dict()))
+            results = list(search.scan())  # convert to list for tests
+            
             # if form.cleaned_data.get('exclude_whitelisted_senders'):
             #     whitelist = Message.objects.filter(spam_score=-1).values_list('frm', flat=True).distinct()
             #     results = list(filter(is_not_whitelisted, results))
@@ -714,12 +708,10 @@ def detail(request, list_name, id, msg):
 
     if search and not is_static_on:
         previous_in_search, next_in_search = get_query_neighbors(search=search, message=msg)
-        search_url = reverse('archive_search') + '?' + sqs.query_string
     else:
         previous_in_search = None
         next_in_search = None
         queryid = None
-        search_url = None
 
     response = render(request, 'archive/detail.html', {
         'msg': msg,
@@ -731,7 +723,6 @@ def detail(request, list_name, id, msg):
         'previous_in_thread': msg.previous_in_thread(),
         'previous_in_search': previous_in_search,
         'queryid': queryid,
-        'search_url': search_url,
     })
 
     if msg.email_list.private:

@@ -57,7 +57,8 @@ class ESBackend():
         '[', ']', '^', '"', '~', '*', '?', ':', '/',
     )
 
-    # Settings to add an n-gram & edge n-gram analyzer.
+    # Settings to add an n-gram & edge n-gram analyzers
+    # for use in autocomplete feature
     DEFAULT_SETTINGS = {
         'settings': {
             "analysis": {
@@ -65,21 +66,21 @@ class ESBackend():
                     "ngram_analyzer": {
                         "type": "custom",
                         "tokenizer": "standard",
-                        "filter": ["haystack_ngram", "lowercase"]
+                        "filter": ["ngram_filter", "lowercase"]
                     },
                     "edgengram_analyzer": {
                         "type": "custom",
                         "tokenizer": "standard",
-                        "filter": ["haystack_edgengram", "lowercase"]
+                        "filter": ["edgengram_filter", "lowercase"]
                     }
                 },
                 "tokenizer": {
-                    "haystack_ngram_tokenizer": {
+                    "custom_ngram_tokenizer": {
                         "type": "nGram",
                         "min_gram": 4,
                         "max_gram": 4,
                     },
-                    "haystack_edgengram_tokenizer": {
+                    "custom_edgengram_tokenizer": {
                         "type": "edgeNGram",
                         "min_gram": 4,
                         "max_gram": 4,
@@ -87,12 +88,12 @@ class ESBackend():
                     }
                 },
                 "filter": {
-                    "haystack_ngram": {
+                    "ngram_filter": {
                         "type": "nGram",
                         "min_gram": 4,
                         "max_gram": 4
                     },
-                    "haystack_edgengram": {
+                    "edgengram_filter": {
                         "type": "edgeNGram",
                         "min_gram": 4,
                         "max_gram": 4
@@ -134,18 +135,10 @@ class ESBackend():
         self.setup_complete = True
 
     def clear(self, commit=True):
-        '''Clears index of all data'''
+        '''Clears index of all data, and runs setup, leaving 
+        an empty index.'''
         self.client.indices.delete(index=self.index_name, ignore=404)
-        # client.indices.create(index=index_name, body=DEFAULT_SETTINGS, ignore=400)
-        # ignore 400 cause by IndexAlreadyExistsException when creating an index
-        
-        self.setup_complete = False
-
-        self.client.indices.create(index=self.index_name, ignore=400)
-        self.client.indices.put_mapping(
-            index=self.index_name,
-            doc_type='modelresult',
-            body=self.mapping)
+        self.setup()
 
     def update(self, iterable, commit=True):
         '''Update index records using iterable of instances'''

@@ -125,6 +125,10 @@ class AdminForm(forms.Form):
     spam_score = forms.CharField(max_length=6, required=False)
     exclude_whitelisted_senders = forms.BooleanField(required=False)
 
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request')
+        super(self.__class__, self).__init__(*args, **kwargs)
+
     def clean_email_list(self):
         # return a list of names for use in search query
         # so we match get_kwargs() api

@@ -41,7 +41,7 @@ from django.core.cache import cache
 from django.db.models import Count
 from haystack.query import SearchQuerySet
 
-from mlarchive.archive.models import *
+from mlarchive.archive.models import EmailList, Message, Thread, Legacy
 from mlarchive.bin.scan_utils import *
 from mlarchive.utils.encoding import decode_rfc2047_header, is_attachment
 from mlarchive.archive.mail import (MessageWrapper, lookup_extension, get_mb,
@@ -659,7 +659,7 @@ def long_header():
     print(groups)
 
 
-def lookups():  
+def lookups():
     """Test the message find routines"""
     from mlarchive.archive.view_funcs import find_message_date, find_message_date_reverse, find_message_gbt
 

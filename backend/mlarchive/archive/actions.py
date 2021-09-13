@@ -2,8 +2,6 @@
 Built-in, globally-available admin actions. (ala Django)
 These take a request object and queryset of objects to act on.
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 from django.contrib import messages
 from django.shortcuts import redirect
 

@@ -249,8 +249,8 @@ class Generator:
         """Fallback handler for text/* MIME parts.  Takes a message.Message part
         Used by text/plain, text/enriched, etc
         """
-        if settings.DEBUG:
-            logger.debug('called: _handle_text [{0}]'.format(self.msg.msgid))
+        # if settings.DEBUG:
+        #     logger.debug('called: _handle_text [{0}]'.format(self.msg.msgid))
 
         payload = self._get_decoded_payload(part)
         if self.text_only:

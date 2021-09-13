@@ -2,7 +2,6 @@
 This module contains functions used in views.  We place them here to keep views "skinny"
 and facilitate clean unit testing.
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 from builtins import range
 
 import datetime

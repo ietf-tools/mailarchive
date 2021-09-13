@@ -137,6 +137,7 @@ class ESBackend():
     def clear(self, commit=True):
         '''Clears index of all data, and runs setup, leaving 
         an empty index.'''
+        logger.debug('ESBackend.clear() called.')
         self.client.indices.delete(index=self.index_name, ignore=404)
         self.setup()
 

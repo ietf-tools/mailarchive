@@ -19,7 +19,6 @@ by the subject, and they have no references, we will get a top-level dummy
 container that has these as siblings to the original first message of
 the thread.
 '''
-from __future__ import absolute_import, division, print_function, unicode_literals
 from builtins import input
 
 import re

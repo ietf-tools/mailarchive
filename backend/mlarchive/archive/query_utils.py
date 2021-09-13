@@ -111,41 +111,6 @@ def queries_from_params(params):
     return queries
 
 
-def get_kwargs(data):
-    """Returns a dictionary to be used as kwargs for the SearchQuerySet, data is
-    a dictionary from form.cleaned_data.  This function can be used with multiple
-    forms which may not include exactly the same fields, so we use the get() method.
-    """
-    kwargs = {}
-    # spam_score = data.get('spam_score')
-    for key in ('msgid',):
-        if data.get(key):
-            kwargs[key] = data[key]
-    if data.get('start_date'):
-        kwargs['date__gte'] = data['start_date']
-    if data.get('end_date'):
-        kwargs['date__lte'] = data['end_date']
-    if data.get('email_list'):
-        kwargs['email_list__in'] = data['email_list']
-    if data.get('frm'):
-        kwargs['frm__contains'] = data['frm']   # use __contains for faceted(keyword) field
-    if data.get('subject'):
-        kwargs['subject'] = data['subject']
-    if data.get('spam'):
-        kwargs['spam_score__gt'] = 0
-    # if spam_score and spam_score.isdigit():
-    #     bits = [x for x in range(255) if x & int(spam_score)]
-    #     kwargs['spam_score__in'] = bits
-    if data.get('spam_score'):
-        kwargs['spam_score'] = data['spam_score']
-    if data.get('to'):
-        kwargs['to'] = data['to']
-    kwargs.update(get_qdr_kwargs(data))
-
-    logger.debug('get_kwargs: {}'.format(kwargs))
-    return kwargs
-
-
 def get_qdr_kwargs(data):
     qdr_kwargs = {}
     if data.get('qdr') and data['qdr'] in ('d', 'w', 'm', 'y'):

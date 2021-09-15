@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 @receiver([post_save, post_delete], sender=EmailList)
 def _clear_lists_cache(sender, instance, **kwargs):
-    """If EmailList object is saved or deleted remove the list_info cache entry
+    """If EmailList object is saved or deleted remove the list cache entries
     """
     cache.delete('lists')
     cache.delete('lists_public')

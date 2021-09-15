@@ -175,10 +175,10 @@ class Command(BaseCommand):
         if self.end_date:
             kwargs['date__lte'] = self.end_date
 
-        qs = Message.objects.filter(**kwargs)
+        qs = Message.objects.filter(**kwargs).order_by('id')
         total = qs.count()
 
-        logger.debug('updating index. kwargs={}, count={}'.format(
+        logger.info('updating index. kwargs={}, count={}'.format(
             kwargs, total))
 
         if self.verbosity >= 1:
@@ -187,7 +187,6 @@ class Command(BaseCommand):
         batch_size = self.batchsize
 
         max_pk = None
-        print(total,batch_size)
         for start in range(0, total, batch_size):
             end = min(start + batch_size, total)
 
@@ -195,6 +194,7 @@ class Command(BaseCommand):
                                verbosity=self.verbosity,
                                commit=self.commit, max_retries=self.max_retries,
                                last_max_pk=max_pk)
+            logger.debug('max_pk: {}'.format(max_pk))
 
         if self.remove:
             if self.start_date or self.end_date or total <= 0:

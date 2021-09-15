@@ -346,7 +346,7 @@ LOGGING = {
     'handlers': {
         'mlarchive':
         {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'formatter': 'simple',
             'class': 'logging.handlers.WatchedFileHandler',
             'filename': LOG_FILE,

@@ -261,8 +261,8 @@ class Generator:
     @skip_attachment
     def _handle_text_html(self, part):
         """Handler for text/HTML MIME parts.  Takes a message.Message part"""
-        if settings.DEBUG:
-            logger.debug('called: _handle_text_html [{0}, {1}]'.format(self.msg.email_list, self.msg.msgid))
+        # if settings.DEBUG:
+        #     logger.debug('called: _handle_text_html [{0}, {1}]'.format(self.msg.email_list, self.msg.msgid))
 
         payload = self._get_decoded_payload(part)
 

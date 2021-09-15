@@ -143,8 +143,8 @@ class ESBackend():
 
     def update(self, iterable, commit=True):
         '''Update index records using iterable of instances'''
-        logger.debug('ESBackend.update() called. iterable={}, commit={}, setup_complete={}'.format(
-            type(iterable), commit, self.setup_complete))
+        logger.debug('ESBackend.update() called. iterable={}, iterable_length={}, last_message={}, commit={}, setup_complete={}'.format(
+            type(iterable), len(iterable), iterable[-1].django_id, commit, self.setup_complete))
         
         if not self.setup_complete:
             try:

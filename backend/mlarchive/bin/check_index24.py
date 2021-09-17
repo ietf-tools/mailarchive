@@ -13,7 +13,9 @@ import argparse
 import datetime
 import os
 from django.conf import settings
-from haystack.query import SearchQuerySet
+# from haystack.query import SearchQuerySet
+from elasticsearch import Elasticsearch
+from elasticsearch_dsl import Search
 from mlarchive.archive.models import Message
 
 import logging
@@ -32,10 +34,13 @@ def main():
     end = now - datetime.timedelta(minutes=1)
     count = 0
     stat = {}
+    client = Elasticsearch()
     messages = Message.objects.filter(updated__gte=start,updated__lt=end)
     for message in messages:
-        sqs = SearchQuerySet().filter(msgid=message.msgid,email_list=message.email_list.name)
-        if sqs.count() != 1:
+        s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
+        s = s.query('match', msgid=message.msgid)
+        s = s.query('match', email_list=message.email_list.name)
+        if s.count() != 1:
             print("Message not indexed.  {list}: {msgid}".format(
                 list=message.email_list,
                 msgid=message.msgid))

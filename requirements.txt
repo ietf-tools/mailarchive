@@ -7,7 +7,7 @@ beautifulsoup4
 celery==5.0.2
 cloudflare==2.8.15
 cryptography
-Django>=2.0,<3.0
+Django>=3.2,<3.3
 django-appconf		# 0.6 was installed
 django-bootstrap4
 django-csp==3.6

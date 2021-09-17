@@ -160,4 +160,4 @@ def test_asf_search_from(client, messages):
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
-    assert len(results) == 2
+    assert len(results) == 1

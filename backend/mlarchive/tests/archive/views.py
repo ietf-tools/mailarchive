@@ -11,7 +11,7 @@ from django.contrib.auth import SESSION_KEY
 from django.test import RequestFactory
 from django.urls import reverse
 from django.utils.http import urlencode
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 from factories import EmailListFactory, MessageFactory, UserFactory, AttachmentFactory
 from mlarchive.archive.models import Message, Attachment
 from mlarchive.archive.mail import archive_message
@@ -178,9 +178,9 @@ def test_admin_search_from(client, messages):
 def test_admin_menu(client, admin_client):
     url = reverse('archive')
     response = client.get(url)
-    assert 'id="navbar-admin"' not in smart_text(response.content)
+    assert 'id="navbar-admin"' not in smart_str(response.content)
     response = admin_client.get(url)
-    assert 'id="navbar-admin"' in smart_text(response.content)
+    assert 'id="navbar-admin"' in smart_str(response.content)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -318,7 +318,7 @@ def test_browse_static(client, messages):
     response = client.get(url)
     assert response.status_code == 200
     msg = messages.filter(email_list__private=False).first()
-    assert msg.email_list.name in smart_text(response.content)
+    assert msg.email_list.name in smart_str(response.content)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -394,8 +394,8 @@ def test_browse_static_small_year_month(client, static_list, settings):
     url = reverse('archive_browse_static_date', kwargs={'list_name': static_list.name, 'date': '2015-06'})
     response = client.get(url)
     assert response.status_code == 200
-    assert 'http-equiv="refresh"' in smart_text(response.content)
-    assert 'public/2015' in smart_text(response.content)
+    assert 'http-equiv="refresh"' in smart_str(response.content)
+    assert 'public/2015' in smart_str(response.content)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -408,7 +408,7 @@ def test_browse_static_small_year_current(client, settings):
     url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': '{}-{:02d}'.format(today.year, today.month)})
     response = client.get(url)
     assert response.status_code == 200
-    assert message.subject in smart_text(response.content)
+    assert message.subject in smart_str(response.content)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -417,8 +417,8 @@ def test_browse_static_big_year_year(client, static_list, settings):
     url = reverse('archive_browse_static_date', kwargs={'list_name': static_list.name, 'date': '2017'})
     response = client.get(url)
     assert response.status_code == 200
-    assert 'http-equiv="refresh"' in smart_text(response.content)
-    assert 'public/2017-12' in smart_text(response.content)
+    assert 'http-equiv="refresh"' in smart_str(response.content)
+    assert 'public/2017-12' in smart_str(response.content)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -515,7 +515,7 @@ def test_attachment(client, attachment_messages_no_index):
     assert response.status_code == 200
     assert response['Content-Type'] == 'text/plain'
     assert response['Content-Disposition'] == 'attachment; filename=skip32.c'
-    assert 'unsigned' in smart_text(response.content)
+    assert 'unsigned' in smart_str(response.content)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -555,7 +555,7 @@ def test_attachment_folded_name(client, attachment_messages_no_index):
     assert response.status_code == 200
     assert response['Content-Type'] == 'text/plain'
     assert response['Content-Disposition'] == 'attachment; filename=this_is_a really_long filename'
-    assert 'unsigned' in smart_text(response.content)
+    assert 'unsigned' in smart_str(response.content)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -613,7 +613,7 @@ def test_export_limit(admin_client, messages, settings):
     # print(response.content)
     print(type(response.content))
     assert response.status_code == 200
-    assert 'Export is limited to 0 messages.' in smart_text(response.content)
+    assert 'Export is limited to 0 messages.' in smart_str(response.content)
     q = PyQuery(response.content)
     assert len(q('.export-link.disabled')) == 3
     url = reverse('archive_export', kwargs={'type': 'mbox'}) + '?email_list=pubone'

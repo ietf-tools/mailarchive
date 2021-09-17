@@ -123,7 +123,7 @@ This is a test email.  database
 
 
 @pytest.mark.django_db(transaction=True)
-def test_archive_message_encoded_word(client):
+def test_archive_message_encoded_word(client, clear_index):
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'encoded_word.mail')
     with open(path, 'rb') as f:
         data = f.read()
@@ -140,7 +140,7 @@ def test_archive_message_encoded_word(client):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_archive_message_encoded_word_alternate(client):
+def test_archive_message_encoded_word_alternate(client, clear_index):
     """Test that encoded-word followed by non-whitespace,
     double quote or right paren, gets decoded properly
     """
@@ -161,7 +161,7 @@ def test_archive_message_encoded_word_alternate(client):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_archive_message_encoded_word_high_plane(client):
+def test_archive_message_encoded_word_high_plane(client, clear_index):
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'encoded_word_3.mail')
     with open(path, 'rb') as f:
         data = f.read()

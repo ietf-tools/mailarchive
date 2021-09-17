@@ -4,7 +4,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import pytest
 
 from django.urls import reverse
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 from factories import EmailListFactory, UserFactory
 from mlarchive.archive.models import Message
 
@@ -53,7 +53,7 @@ def test_auth_browse(client):
     url = reverse('archive_browse')
     response = client.get(url)
     assert response.status_code == 200
-    q = PyQuery(smart_text(response.content))
+    q = PyQuery(smart_str(response.content))
     print(elist.name, elist.private, elist.members.all())
     print(user)
     print(type(response.content))
@@ -69,7 +69,7 @@ def test_not_logged_browse_private_list(client, messages):
     message = Message.objects.filter(email_list__name='private').first()
     url = reverse('archive_search') + '?email_list=private&index={}'.format(message.hashcode.strip('='))
     response = client.get(url)
-    assert 'No results found' in smart_text(response.content)
+    assert 'No results found' in smart_str(response.content)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -127,7 +127,7 @@ def test_queries_from_field(client, messages):
     response = client.get(url)
     assert response.status_code == 200
     results = response.context['results']
-    assert len(results) == 2
+    assert len(results) == 1
     assert 'larry@amsl.com' in getattr(results[0], 'frm')
 
 
@@ -348,7 +348,7 @@ def test_odd_queries(client, messages):
     url = url + '?q=-'
     response = client.get(url, follow=True)
     assert response.status_code == 200
-    assert 'Invalid search' in smart_text(response.content)
+    assert 'Invalid search' in smart_str(response.content)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -366,7 +366,7 @@ def test_queries_two_periods(client, messages):
     url = reverse('archive_search') + '?q=spec...)'
     response = client.get(url, follow=True)
     assert response.status_code == 200
-    assert 'Invalid search' in smart_text(response.content)
+    assert 'Invalid search' in smart_str(response.content)
 
 
 @pytest.mark.django_db(transaction=True)

@@ -9,7 +9,7 @@ from elasticsearch_dsl import Search, A, Q
 from django.conf import settings
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 
 from mlarchive.archive.query_utils import (queries_from_params,
     filters_from_params, get_order_fields, generate_queryid, parse_query)
@@ -23,9 +23,9 @@ def full_prepare(message):
     '''Takes database Message object and returns dictionary for index update.
     For dates use isoformat().'''
     prepared_data = {
-        'id': 'archive.message.' + force_text(message.pk),
+        'id': 'archive.message.' + force_str(message.pk),
         'django_ct': 'archive.message',
-        'django_id': force_text(message.pk),
+        'django_id': force_str(message.pk),
     }
     prepared_data['text'] = '\n'.join([message.subject, message.get_body()])
     prepared_data['date'] = message.date.isoformat()
@@ -181,7 +181,7 @@ class ESBackend():
                 # to avoid the possibility of that generating encoding errors while
                 # processing the log message:
                 extra = {"data": {"index": self.index_name,
-                                  "object": force_text(obj.pk)}}
+                                  "object": force_str(obj.pk)}}
                 logger.error(
                     u"%s while preparing object for update" % e.__class__.__name__,
                     exec_info=True,

@@ -3,15 +3,8 @@
 This module contains pytest fixtures
 '''
 
-from __future__ import absolute_import, division, print_function, unicode_literals
-
-# for Python 2/3 compatability
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-
 import datetime
+import io
 import os
 import pytest
 import subprocess
@@ -106,7 +99,7 @@ def load_db():
     MessageFactory.create(email_list=pubone,
                           thread=athread,
                           thread_order=1,
-                          frm='larry@amsl.com',
+                          frm='george@amsl.com',
                           subject='[RE] BBQ Invitation things',
                           base_subject=get_base_subject('[RE] BBQ Invitation things'),
                           date=datetime.datetime(2014, 1, 1),
@@ -188,8 +181,8 @@ def index_resource():
     if not Message.objects.first():
         load_db()
     # build index
-    content = StringIO()
-    call_command('update_index', stdout=content)
+    content = io.StringIO()
+    call_command('rebuild_index', interactive=False, stdout=content)
     print(content.read())
 
     yield
@@ -210,7 +203,7 @@ def messages(index_resource):
 @pytest.fixture()
 def attachment_messages_no_index(settings):
     settings.ELASTICSEARCH_SIGNAL_PROCESSOR = 'mlarchive.archive.signals.BaseSignalProcessor'
-    content = StringIO()
+    content = io.StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'attachment.mail')
     call_command('load', path, listname='acme', summary=True, stdout=content)
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'attachment_windows1252.mail')
@@ -225,15 +218,16 @@ def attachment_messages_no_index(settings):
 @pytest.fixture()
 def thread_messages():
     """Load some threads"""
-    content = StringIO()
+    content = io.StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'thread.mail')
+    call_command('clear_index', interactive=False, stdout=content)
     call_command('load', path, listname='acme', summary=True, stdout=content)
 
 
 @pytest.fixture()
 def urlize_messages():
     """Load some threads"""
-    content = StringIO()
+    content = io.StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'urlize.mbox')
     call_command('load', path, listname='acme', summary=True, stdout=content)
 
@@ -241,7 +235,7 @@ def urlize_messages():
 @pytest.fixture()
 def latin1_messages():
     """Load some latin1"""
-    content = StringIO()
+    content = io.StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'latin1.mbox')
     call_command('clear_index', interactive=False, stdout=content)
     call_command('load', path, listname='acme', summary=True, stdout=content)
@@ -252,7 +246,7 @@ def latin1_messages():
 @pytest.fixture()
 def search_api_messages():
     """Load messages for search_api tests"""
-    content = StringIO()
+    content = io.StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'search_api.mbox')
     call_command('clear_index', interactive=False, stdout=content)
     call_command('load', path, listname='acme', summary=True, stdout=content)
@@ -263,7 +257,7 @@ def search_api_messages():
 @pytest.fixture()
 def search_api_messages_ford():
     """Load second list for search_api"""
-    content = StringIO()
+    content = io.StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'search_api_ford.mbox')
     call_command('load', path, listname='ford', summary=True, stdout=content)
     print(content.read())
@@ -273,7 +267,7 @@ def search_api_messages_ford():
 @pytest.fixture()
 def search_api_messages_qdr():
     """Load messages with dynamic dates for qdr tests"""
-    content = StringIO()
+    content = io.StringIO()
     call_command('clear_index', interactive=False, stdout=content)
     public = EmailListFactory.create(name='public')
     now = datetime.datetime.now()
@@ -310,7 +304,7 @@ def search_api_messages_qdr():
 def private_messages():
     """Load some latin1"""
     private = EmailListFactory.create(name='private', private=True)
-    content = StringIO()
+    content = io.StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'private.mbox')
     call_command('load', path, listname='private', summary=True, stdout=content)
     print(content.read())
@@ -320,7 +314,7 @@ def private_messages():
 @pytest.fixture()
 def windows1252_messages():
     """Load some windows1252"""
-    content = StringIO()
+    content = io.StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'windows1252.mbox')
     call_command('clear_index', interactive=False, stdout=content)
     call_command('load', path, listname='acme', summary=True, stdout=content)
@@ -330,9 +324,10 @@ def windows1252_messages():
 
 @pytest.fixture()
 def db_only():
+    '''This isn't really db_only, messages get added to index on save'''
     now = datetime.datetime.now()
     yesterday = now - datetime.timedelta(hours=24)
-    content = StringIO()
+    content = io.StringIO()
     call_command('clear_index', interactive=False, stdout=content)
     public = EmailListFactory.create(name='public')
     athread = ThreadFactory.create(date=datetime.datetime(2017, 1, 1))
@@ -433,7 +428,7 @@ def static_list():
 @pytest.fixture()
 def query_messages():
     """Load some threads"""
-    content = StringIO()
+    content = io.StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'query_acme.mail')
     call_command('load', path, listname='acme', summary=True, stdout=content)
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'query_star.mail')
@@ -448,6 +443,13 @@ def static_dir(data_dir):
         os.makedirs(path)
     yield settings.STATIC_INDEX_DIR
     # teardown
+
+
+@pytest.fixture()
+def clear_index():
+    """A fixture to clear the Elasticsearch index before running the test"""
+    content = io.StringIO()
+    call_command('clear_index', interactive=False, stdout=content)
 
 
 # --------------------------------------------------

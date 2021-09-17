@@ -86,7 +86,7 @@ def test_ajax_get_msg_cache_control(client, admin_client, admin_user):
     response = admin_client.get(url)
     assert response.status_code == 200
     print(response['cache-control'])
-    assert response['cache-control'] == 'max-age=0, no-cache, no-store, must-revalidate'
+    assert response['cache-control'] == 'max-age=0, no-cache, no-store, must-revalidate, private'
 
 
 @pytest.mark.django_db(transaction=True)
@@ -110,8 +110,11 @@ def test_ajax_get_messages(client, messages, settings):
     url = '%s?email_list=pubone&email_list=pubtwo' % reverse('archive_search')
     response = client.get(url)
     assert response.status_code == 200
-    # for x in response.context['results']:
-    #     print type(x)
+    for m in Message.objects.filter(email_list__name__in=['pubone', 'pubtwo']):
+        print(m.pk, m.subject)
+    print(response.context['results'].object_list)
+    for x in response.context['results']:
+        print(x.django_id, x.email_list)
     assert len(response.context['results']) == 7
     q = PyQuery(response.content)
     id = q('.msg-list').attr('data-queryid')

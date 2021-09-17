@@ -1,6 +1,3 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
-
-import email
 import glob
 import io
 import mailbox
@@ -12,24 +9,15 @@ from factories import EmailListFactory, UserFactory
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 from django.conf import settings
-from django.contrib.auth.models import AnonymousUser
-from django.http import HttpResponse
 from django.urls import reverse
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 
 from mlarchive.archive.view_funcs import (chunks, initialize_formsets, get_columns,
     get_export, get_query_neighbors, apply_objects)
-from mlarchive.archive.models import EmailList, Message
+from mlarchive.archive.models import EmailList
 from mlarchive.utils.test_utils import get_request
 
 from mlarchive.archive.view_funcs import get_message_index
-
-
-# for Python 2/3 compatability
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
 
 def get_search():
@@ -202,7 +190,7 @@ def test_get_export_url(messages):
     assert response.status_code == 200
     search_response = search.execute()
     apply_objects(search_response.hits)
-    assert search_response[0].object.get_absolute_url() in smart_text(response.content)
+    assert search_response[0].object.get_absolute_url() in smart_str(response.content)
 
 
 @pytest.mark.django_db(transaction=True)

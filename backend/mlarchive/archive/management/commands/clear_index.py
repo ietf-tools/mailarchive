@@ -1,8 +1,9 @@
 # encoding: utf-8
 
+import six
+
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.utils import six
 
 from mlarchive.archive.backends.elasticsearch import ESBackend
 

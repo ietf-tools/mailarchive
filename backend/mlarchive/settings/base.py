@@ -281,9 +281,6 @@ CACHES = {
     }
 }
 
-CACHE_MIDDLEWARE_KEY_PREFIX = 'arch'
-CACHE_MIDDLEWARE_ALIAS = 'disk'
-
 # Celery Settings
 CELERY_BROKER_URL = 'amqp://'
 CELERY_TIMEZONE = 'America/Los_Angeles'

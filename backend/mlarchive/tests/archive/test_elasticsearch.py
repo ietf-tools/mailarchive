@@ -52,10 +52,10 @@ def test_rebuild_index(db_only):
     new_uuid = info.split()[3]
     assert new_uuid != uuid
     s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
-    s = s.source(fields={'includes': ['django_id', 'id']})
+    s = s.source(fields={'includes': ['msgid', 'id']})
     s = s.scan()
-    index_pks = [h['django_id'] for h in s]
-    assert sorted(index_pks) == ['3', '4']
+    index_msgids = [h['msgid'] for h in s]
+    assert sorted(index_msgids) == ['x003', 'x004']
 
 
 @pytest.mark.django_db(transaction=True)
@@ -73,10 +73,11 @@ def test_update_index(db_only):
     s = Search(using=client, index=index)
     assert s.count() == 3
 
+    msg = Message.objects.first()
     doc = client.get(index=index,
                      doc_type='modelresult',
-                     id='archive.message.1')
-    assert doc['_source']['django_id'] == '1'
+                     id='archive.message.{}'.format(msg.pk))
+    assert doc['_source']['django_id'] == str(msg.pk)
     assert doc['_source']['text'] == 'This is a test message\nError reading message file'
     assert doc['_source']['email_list'] == 'public'
     assert doc['_source']['date'] == '2017-01-01T00:00:00'
@@ -91,7 +92,6 @@ def test_update_index_date_range(db_only):
     out = StringIO()
     call_command('clear_index', interactive=False, stdout=out)
     client = Elasticsearch()
-    # assert client.indices.exists(index=index) is False
     s = Search(using=client, index=index)
     assert s.count() == 0
     out = StringIO()
@@ -102,9 +102,10 @@ def test_update_index_date_range(db_only):
     assert 'Indexing 1 Messages' in out.getvalue()
     s = Search(using=client, index=index)
     assert s.count() == 1
+    msg = Message.objects.get(msgid='x001')
     doc = client.get(index=index,
                      doc_type='modelresult',
-                     id='archive.message.1')
+                     id='archive.message.{}'.format(msg.pk))
     assert doc['_source']['msgid'] == 'x001'
 
 
@@ -114,7 +115,6 @@ def test_update_index_age(db_only):
     out = StringIO()
     call_command('clear_index', interactive=False, stdout=out)
     client = Elasticsearch()
-    # assert client.indices.exists(index=index) is False
     s = Search(using=client, index=index)
     assert s.count() == 0
     out = StringIO()
@@ -124,9 +124,10 @@ def test_update_index_age(db_only):
     assert 'Indexing 1 Messages' in out.getvalue()
     s = Search(using=client, index=index)
     assert s.count() == 1
+    msg = Message.objects.get(msgid='x003')
     doc = client.get(index=index,
                      doc_type='modelresult',
-                     id='archive.message.3')
+                     id='archive.message.{}'.format(msg.pk))
     assert doc['_source']['msgid'] == 'x003'
 
 
@@ -136,7 +137,9 @@ def test_update_index_remove(db_only):
     s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
     assert s.count() == 3
     out = StringIO()
-    Message.objects.get(msgid='x003').delete()
+    msg = Message.objects.get(msgid='x003')
+    pk = msg.pk
+    msg.delete()
     call_command('update_index', 
                  remove=True,
                  stdout=out)
@@ -146,7 +149,7 @@ def test_update_index_remove(db_only):
     with pytest.raises(NotFoundError) as excinfo:
         client.get(index=settings.ELASTICSEARCH_INDEX_NAME,
                    doc_type='modelresult',
-                   id='archive.message.3')
+                   id='archive.message.{}'.format(pk))
         assert 'NotFoundError' in str(excinfo.value)
 
 

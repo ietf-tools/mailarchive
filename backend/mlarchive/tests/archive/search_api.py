@@ -326,9 +326,9 @@ def test_form_filter_from(rf, client, search_api_messages):
     search = search_from_form(form)
     print(search.to_dict())
     results = search.execute()
-    assert len(results) == 2
+    assert len(results) == 1
     ids = [h.msgid for h in results]
-    assert sorted(ids) == ['api002', 'api004']
+    assert sorted(ids) == ['api002']
 
 
 # ------------------------------
@@ -367,10 +367,13 @@ def test_form_aggs(rf, client, search_api_messages, search_api_messages_ford):
     assert results.aggregations.list_terms.buckets == [
         {'key': 'acme', 'doc_count': 4},
         {'key': 'ford', 'doc_count': 4}]
-    assert results.aggregations.from_terms.buckets == [
-        {'key': 'Holden Ford', 'doc_count': 3},
-        {'key': 'User', 'doc_count': 3},
+    fbuckets = results.aggregations.from_terms.buckets
+    sfbuckets = sorted(fbuckets, key=lambda x: x['key'])
+    assert sfbuckets == [
         {'key': 'Bilbo Baggins', 'doc_count': 1},
+        {'key': 'Holden Ford', 'doc_count': 2},
+        {'key': 'Huxley Ford', 'doc_count': 1},
+        {'key': 'User', 'doc_count': 3},
         {'key': 'Zaphod Beeblebrox', 'doc_count': 1}]
 
 
@@ -386,9 +389,12 @@ def test_form_aggs_list_filter(rf, client, search_api_messages, search_api_messa
     assert len(results) == 4
     assert hasattr(results, 'aggregations')
     assert results.aggregations.list_terms.buckets == [{'key': 'acme', 'doc_count': 4}]
-    assert results.aggregations.from_terms.buckets == [
-        {'key': 'Holden Ford', 'doc_count': 2},
+    fbuckets = results.aggregations.from_terms.buckets
+    sfbuckets = sorted(fbuckets, key=lambda x: x['key'])
+    assert sfbuckets == [
         {'key': 'Bilbo Baggins', 'doc_count': 1},
+        {'key': 'Holden Ford', 'doc_count': 1},
+        {'key': 'Huxley Ford', 'doc_count': 1},
         {'key': 'Zaphod Beeblebrox', 'doc_count': 1}]
 
 
@@ -401,13 +407,13 @@ def test_form_aggs_from_filter(rf, client, search_api_messages, search_api_messa
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     results = search.execute()
-    assert len(results) == 3
+    assert len(results) == 2
     assert hasattr(results, 'aggregations')
     assert results.aggregations.list_terms.buckets == [
-        {'key': 'acme', 'doc_count': 2},
+        {'key': 'acme', 'doc_count': 1},
         {'key': 'ford', 'doc_count': 1}]
     assert results.aggregations.from_terms.buckets == [
-        {'key': 'Holden Ford', 'doc_count': 3}]
+        {'key': 'Holden Ford', 'doc_count': 2}]
 
 
 @pytest.mark.django_db(transaction=True)
@@ -419,11 +425,11 @@ def test_form_aggs_both_filters(rf, client, search_api_messages, search_api_mess
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     results = search.execute()
-    assert len(results) == 2
+    assert len(results) == 1
     assert hasattr(results, 'aggregations')
-    assert results.aggregations.list_terms.buckets == [{'key': 'acme', 'doc_count': 2}]
+    assert results.aggregations.list_terms.buckets == [{'key': 'acme', 'doc_count': 1}]
     assert results.aggregations.from_terms.buckets == [
-        {'key': 'Holden Ford', 'doc_count': 2}]
+        {'key': 'Holden Ford', 'doc_count': 1}]
 
 
 # ------------------------------
@@ -445,7 +451,7 @@ def test_form_fields_subject(rf, client, search_api_messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_form_fields_frm(rf, client, search_api_messages):
-    data = {'q': 'from:Holden'}
+    data = {'q': 'from:Ford'}
     request = rf.get('/arch/search/?' + urlencode(data))
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)

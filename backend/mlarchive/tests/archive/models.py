@@ -5,7 +5,7 @@ import pytest
 
 from factories import EmailListFactory, ThreadFactory, MessageFactory
 from django.urls import reverse
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 from django.utils.http import urlencode
 from mlarchive.archive.models import Message, Attachment, is_attachment
 from mlarchive.utils.test_utils import message_from_file
@@ -275,7 +275,7 @@ def test_attachment_get_sub_message(client, attachment_messages_no_index):
     assert sub.get_content_type() == 'text/plain'
     assert get_filename(sub) == 'skip32.c'
     print(type(sub.get_payload(decode=True)))
-    assert 'unsigned' in smart_text(sub.get_payload(decode=True))
+    assert 'unsigned' in smart_str(sub.get_payload(decode=True))
 
 
 def test_is_attachment():

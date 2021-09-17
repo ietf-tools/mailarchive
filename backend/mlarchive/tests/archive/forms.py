@@ -1,16 +1,13 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import pytest
 from django.contrib.auth.models import AnonymousUser
 from django.http import QueryDict
 from django.test.client import RequestFactory
 from django.urls import reverse
 from factories import UserFactory
-from mlarchive.archive.forms import AdvancedSearchForm, get_base_query, get_cache_key
+from mlarchive.archive.forms import get_base_query, get_cache_key
 from pyquery import PyQuery
 
 from mlarchive.archive.models import Message
-from mlarchive.archive.forms import AdvancedSearchForm
 
 
 def test_get_base_query():

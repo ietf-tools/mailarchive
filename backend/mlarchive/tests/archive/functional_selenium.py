@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import pytest
 
 from requests.compat import urljoin
@@ -9,7 +7,6 @@ from urllib.parse import urlparse, unquote
 from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, HASH_SESSION_KEY
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.urls import reverse
-from pyquery import PyQuery
 from selenium.webdriver import ChromeOptions
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait

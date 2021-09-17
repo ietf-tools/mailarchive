@@ -10,7 +10,7 @@ cryptography
 Django>=3.2,<3.3
 django-appconf		# 0.6 was installed
 django-bootstrap4
-django-csp==3.6
+django-csp==3.7
 django-debug-toolbar>=1.7
 django-environ
 django-referrer-policy>=1.0

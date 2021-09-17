@@ -1,12 +1,10 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import pytest
 from django.conf import settings
 from django.core.cache import cache
 from django.urls import reverse
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
-from factories import EmailListFactory, ThreadFactory, MessageFactory, UserFactory
+from factories import EmailListFactory, ThreadFactory, MessageFactory
 from pyquery import PyQuery
 
 from mlarchive.archive.models import Message, Thread

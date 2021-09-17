@@ -1,6 +1,3 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
-
-from io import StringIO
 import mailbox
 import pytest
 import requests
@@ -10,12 +7,8 @@ import os
 import subprocess   # noqa
 import xml.etree.ElementTree as ET
 
-from elasticsearch import Elasticsearch
-from elasticsearch_dsl import Search
-
 from django.conf import settings
 from django.core.cache import cache
-from django.core.management import call_command
 from django.contrib.auth.models import AnonymousUser
 from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     lookup_user, process_members, get_membership, check_inactive, EmailList,

@@ -1,9 +1,6 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import datetime
 import os
 import pytest
-import six
 from email.utils import parseaddr
 
 from django.conf import settings
@@ -12,7 +9,7 @@ from django.test import RequestFactory
 from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils.encoding import smart_str
-from factories import EmailListFactory, MessageFactory, UserFactory, AttachmentFactory
+from factories import EmailListFactory, MessageFactory, UserFactory
 from mlarchive.archive.models import Message, Attachment
 from mlarchive.archive.mail import archive_message
 from mlarchive.archive.views import (TimePeriod, add_nav_urls, is_small_year,

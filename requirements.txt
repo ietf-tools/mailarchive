@@ -4,7 +4,7 @@
 setuptools==53.0.0         # Require this first, to prevent later errors
 #bs4			# 4.1.3 was installed
 beautifulsoup4
-celery==5.0.2
+celery==5.1.2
 cloudflare==2.8.15
 cryptography
 Django>=3.2,<3.3
@@ -24,7 +24,7 @@ jedi==0.17.2              # 0.18 has bug with ipython
 lxml>=3.3.5
 mysqlclient
 mock>=2.0.0
-mozilla-django-oidc==1.2.4
+mozilla-django-oidc==2.0.0
 passlib
 pyopenssl
 pyquery

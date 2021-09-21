@@ -75,7 +75,6 @@ def test_update_index(db_only):
 
     msg = Message.objects.first()
     doc = client.get(index=index,
-                     doc_type='modelresult',
                      id='archive.message.{}'.format(msg.pk))
     assert doc['_source']['django_id'] == str(msg.pk)
     assert doc['_source']['text'] == 'This is a test message\nError reading message file'
@@ -104,7 +103,6 @@ def test_update_index_date_range(db_only):
     assert s.count() == 1
     msg = Message.objects.get(msgid='x001')
     doc = client.get(index=index,
-                     doc_type='modelresult',
                      id='archive.message.{}'.format(msg.pk))
     assert doc['_source']['msgid'] == 'x001'
 
@@ -126,7 +124,6 @@ def test_update_index_age(db_only):
     assert s.count() == 1
     msg = Message.objects.get(msgid='x003')
     doc = client.get(index=index,
-                     doc_type='modelresult',
                      id='archive.message.{}'.format(msg.pk))
     assert doc['_source']['msgid'] == 'x003'
 
@@ -148,7 +145,6 @@ def test_update_index_remove(db_only):
     assert s.count() == 2
     with pytest.raises(NotFoundError) as excinfo:
         client.get(index=settings.ELASTICSEARCH_INDEX_NAME,
-                   doc_type='modelresult',
                    id='archive.message.{}'.format(pk))
         assert 'NotFoundError' in str(excinfo.value)
 

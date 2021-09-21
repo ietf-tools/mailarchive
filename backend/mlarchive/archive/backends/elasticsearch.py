@@ -76,12 +76,12 @@ class ESBackend():
                 },
                 "tokenizer": {
                     "custom_ngram_tokenizer": {
-                        "type": "nGram",
+                        "type": "ngram",
                         "min_gram": 4,
                         "max_gram": 4,
                     },
                     "custom_edgengram_tokenizer": {
-                        "type": "edgeNGram",
+                        "type": "edge_ngram",
                         "min_gram": 4,
                         "max_gram": 4,
                         "side": "front"
@@ -89,12 +89,12 @@ class ESBackend():
                 },
                 "filter": {
                     "ngram_filter": {
-                        "type": "nGram",
+                        "type": "ngram",
                         "min_gram": 4,
                         "max_gram": 4
                     },
                     "edgengram_filter": {
-                        "type": "edgeNGram",
+                        "type": "edge_ngram",
                         "min_gram": 4,
                         "max_gram": 4
                     }
@@ -128,8 +128,7 @@ class ESBackend():
         if not self.client.indices.exists(self.index_name):
             self.client.indices.create(index=self.index_name,
                                        body=self.DEFAULT_SETTINGS)
-            self.client.indices.put_mapping(index=self.index_name, 
-                                            doc_type='modelresult',
+            self.client.indices.put_mapping(index=self.index_name,
                                             body=self.mapping)
 
         self.setup_complete = True
@@ -188,8 +187,7 @@ class ESBackend():
                     extra=extra)
 
         results = bulk(self.client, prepped_docs,
-                       index=self.index_name,
-                       doc_type='modelresult')
+                       index=self.index_name)
         logger.debug('ESBackend.update() bulk results={}'.format(results))
 
         if commit:
@@ -211,7 +209,7 @@ class ESBackend():
                 return
 
         try:
-            self.client.delete(index=self.index_name, doc_type='modelresult', id=doc_id, ignore=404)
+            self.client.delete(index=self.index_name, id=doc_id, ignore=404)
 
             if commit:
                 self.client.indices.refresh(index=self.index_name)

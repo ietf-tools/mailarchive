@@ -10,7 +10,8 @@
     {% block prestyle %}{% endblock %}
 
     <link rel="stylesheet" type="text/css" href="{% static 'fontawesome/css/all.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'bootstrap4/css/bootstrap_custom.css' %}">
+    <!-- <link rel="stylesheet" type="text/css" href="{% static 'bootstrap4/css/bootstrap_custom.css' %}"> -->
+    <link rel="stylesheet" type="text/css" href="{% static 'bootstrap-5.1.1-dist/css/bootstrap.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'mlarchive/css/styles.css' %}">
 
     {% block extrastyle %}{% endblock %}
@@ -125,9 +126,13 @@
 
 {% block modal %}{% endblock %}
 
+<!--
 <script src="{% static 'jquery/js/jquery-3.4.1.min.js' %}" crossorigin="anonymous"></script>
 <script src="{% static 'popper/js/popper.min.js' %}" crossorigin="anonymous"></script>
 <script src="{% static 'bootstrap/4.3.1/js/bootstrap.min.js' %}" crossorigin="anonymous"></script>
+-->
+<script src="{% static 'jquery/js/jquery-3.6.0.js' %}" crossorigin="anonymous"></script>
+<script src="{% static 'bootstrap-5.1.1-dist/js/bootstrap.bundle.js' %}" crossorigin="anonymous"></script>
 
 <script type="text/javascript" src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
 <script type="text/javascript" src="{% static 'mlarchive/js/base.js' %}"></script>

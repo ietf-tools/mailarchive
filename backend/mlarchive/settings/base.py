@@ -95,7 +95,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.sitemaps',
     'mozilla_django_oidc',
-    'bootstrap4',
+    'django_bootstrap5',
     'mlarchive.archive.apps.ArchiveConfig',
     'widget_tweaks',
 ]

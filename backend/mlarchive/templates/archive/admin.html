@@ -79,8 +79,8 @@
             <div class="col-md-4">
                 <div class="d-flex">
                     <div class="btn-group mr-2" role="group" aria-label="spam buttons">
-                        <button id="spam-toggle" type="button" class="btn btn-primary" data-toggle="button" aria-pressed="false" autocomplete="off">Spam Mode</button>
-                        <button id="spam-process" type="button" class="btn btn-primary disabled" data-toggle="button" aria-pressed="false" autocomplete="off">Process Spam</button>
+                        <button id="spam-toggle" type="button" class="btn btn-primary" data-bs-toggle="button" aria-pressed="false" autocomplete="off">Spam Mode</button>
+                        <button id="spam-process" type="button" class="btn btn-primary disabled" data-bs-toggle="button" aria-pressed="false" autocomplete="off">Process Spam</button>
                     </div>
                     <div class="spinner d-none">
                         <i class="fa fa-sync-alt fa-spin fa-2x"></i>
@@ -98,9 +98,9 @@
         <div class="spam-top d-none">
           <div class="alert alert-warning" role="alert">Use left and right arrow keys to sort messages.  Right = spam, Left = not spam.  Use Process Spam button to remove spam and mark clean messages.</div>
           <ul class="nav nav-tabs nav-justified">
-            <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#clean-pane">Clean - 0</a></li>
-            <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#search-pane">Search - {{ results|length }}</a></li>
-            <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#spam-pane">Spam - 0</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#clean-pane">Clean - 0</a></li>
+            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#search-pane">Search - {{ results|length }}</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#spam-pane">Spam - 0</a></li>
           </ul>
         </div>
 
@@ -134,7 +134,7 @@
     <!-- Modal content-->
     <div class="modal-content">
         <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
           <h4 class="modal-title">Spam</h4>
         </div>
         <div class="modal-body">

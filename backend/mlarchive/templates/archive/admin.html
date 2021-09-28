@@ -17,7 +17,7 @@
         <div id="admin-view-pane" class="d-none"></div>
         <div id="admin_search_form">
             <form id="id_admin_form" name="admin-search-form" action="." method="get">
-                <div class="row form-group">
+                <div class="row mb-3">
                     <div class="col-md-4 offset-md-2">
                         {% render_field form.subject class="form-control" placeholder="Subject" %}
                     </div>
@@ -25,7 +25,7 @@
                         {% render_field form.msgid class="form-control" placeholder="Message-Id" %}
                     </div>
                 </div>
-                <div class="row form-group">
+                <div class="row mb-3">
                     <div class="col-md-4 offset-md-2">
                         {% render_field form.frm class="form-control" placeholder="From" %}
                     </div>
@@ -33,13 +33,13 @@
                         {% render_field form.email_list class="form-control" placeholder="Email List" %}
                     </div>
                 </div>
-                <div class="row form-group">
+                <div class="row mb-3">
                     <div class="col-md-4 offset-md-2">
-                        <div class="form-row">
-                            <div class="col-md-6">
+                        <div class="row">
+                            <div class="col">
                               {% render_field form.start_date class="form-control" placeholder="Start Date" %}
                             </div>
-                            <div class="col-md-6">
+                            <div class="col">
                                 {% render_field form.end_date class="form-control" placeholder="End Date" %}
                             </div>
                         </div>
@@ -60,12 +60,12 @@
         <h3>Results{% if results %} ({{ results|length }}){% endif %}</h3>
         <form id="id_admin_action" name="admin-action-form" action="." method="post">{% csrf_token %}
 
-        <div class="row form-group">
+        <div class="row mb-3">
             <div class="col-md-1 offset-md-1 form-check form-check-inline">
                 <input class="form-check-input" type="checkbox" id="selectall" name="selectall" value="selectall">
                 <label class="form-check-label" for="selectall">Select All</label>
             </div>
-            <div class="col-md-4 form-inline">
+            <div class="col-md-4 d-flex">
                 <label class="sr-only" for="action-select">Action</label>
                 {{ action_form.action.errors }}
                 <select id="action-select" name="action" class="form-control" placeholder="Select action">

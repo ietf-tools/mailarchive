@@ -4,9 +4,12 @@
 // Other variables are derived from these, so they must be overriden
 // before importing the bootstrap partials
 
+// Default variable overrides
 $primary:                     #337ab7;
 $line-height-base:            1.42857;
 $font-size-base:              0.875rem;
+$link-decoration:             none;
+
 
 @import "../node_modules/bootstrap/scss/functions";
 @import "../node_modules/bootstrap/scss/variables";

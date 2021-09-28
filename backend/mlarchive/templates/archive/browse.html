@@ -15,9 +15,10 @@
     
   <div class="row mb-3">
     <div class="offset-md-1 col-md-10 mt-4">
-      <form id="id_browse_form" name="browse-form" class="form-inline" action="." method="get">
-        {% bootstrap_form form layout='inline' show_label=False %}
-        <div class="form-group ml-2">
+      <form id="id_browse_form" name="browse-form" class="row" action="." method="get">
+        {% bootstrap_form form layout="inline" show_label=False %}
+        <!-- {% bootstrap_field form.list show_label=False wrapper_class="col" %} -->
+        <div class="mb-3 ml-2 col">
             <button type="submit" value="Go" class="btn btn-secondary">Go</button>
         </div>
       </form>

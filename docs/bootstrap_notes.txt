@@ -1,0 +1,32 @@
+The frontend for Mail Archive uses Bootstrap 5. Source files can be found in
+the frontend/ directory. The directory is setup to handle building the css/js
+files using npm.
+
+
+How to rebuild from source
+
+Initialize frontend directory
+> cd frontend/
+> npm install   # installs node_modules/ packages
+
+Rebuild CSS files
+> npm run build
+
+
+From scratch
+> npm init (answer questions)
+> npm install bootstrap --save
+> npm install @popperjs/core --save
+
+
+Making Changes
+
+Overrides to Bootstrap SCSS are made in frontend/scss/_custom.scss.
+See documentation here: https://getbootstrap.com/docs/5.1/customize/sass/
+
+The underscore indicates a partial, Sass files that are only meant to be imported, not compiled on their own.
+https://sass-lang.com/documentation/at-rules/import#partials
+
+
+> npm run build
+> manage.py collectstatic

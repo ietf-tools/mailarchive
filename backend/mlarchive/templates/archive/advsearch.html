@@ -4,7 +4,6 @@
 {% block title %}Mail Archive Advanced Search{% endblock %}
 
 {% block extrastyle %}
-<link rel="stylesheet" href="{% static 'selectize/css/selectize.bootstrap4.css' %}" type="text/css">
 <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" type="text/css">
 {% endblock %}
 
@@ -89,7 +88,7 @@
             {% bootstrap_field form.start_date form_group_class="mb-3" %}
             {% bootstrap_field form.end_date form_group_class="mb-3" %}
           </div>
-          {% bootstrap_field form.email_list show_help=False show_label=False %}
+          {% bootstrap_field form.email_list show_label=False %}
         </fieldset>
 
         <div class="mb-3">
@@ -117,7 +116,6 @@
 
 {% block js %}
 <script type="text/javascript" src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'selectize/js/standalone/selectize.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'jquery.query/jquery.query.js' %}"></script>
 <script type="text/javascript" src="{% static 'mlarchive/js/search_advanced.js' %}"></script>
 {% endblock %}

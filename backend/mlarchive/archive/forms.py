@@ -165,7 +165,11 @@ class AdvancedSearchForm(forms.Form):
         picker_settings={"autoclose": "1"},
         label='End date',
         required=False)
-    email_list = LowerCaseModelMultipleChoiceField(queryset=EmailList.objects, to_field_name='name', required=False)
+    email_list = LowerCaseModelMultipleChoiceField(
+        queryset=EmailList.objects,
+        to_field_name='name',
+        required=False,
+        help_text='Select one or more lists')
     subject = forms.CharField(max_length=255, required=False)
     frm = forms.CharField(max_length=255, required=False)
     msgid = forms.CharField(max_length=255, required=False)
@@ -216,13 +220,13 @@ class SearchForm(forms.Form):
 
 
 class BrowseForm(forms.Form):
-    list = forms.ModelChoiceField(queryset=EmailList.objects, label='List')
+    list = forms.ModelChoiceField(queryset=EmailList.objects, empty_label='(choose list)')
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request')
         super(BrowseForm, self).__init__(*args, **kwargs)
         self.fields['list'].queryset = EmailList.objects.exclude(name__in=get_noauth(self.request.user)).order_by('name')
-        self.fields["list"].widget.attrs["placeholder"] = "List name"
+        self.fields['list'].widget.attrs["placeholder"] = "List name"
 
 
 class FilterForm(forms.Form):

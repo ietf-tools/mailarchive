@@ -2,7 +2,6 @@
 {% load static django_bootstrap5 widget_tweaks %}
 
 {% block extrastyle %}
-<link rel="stylesheet" href="{% static 'selectize/css/selectize.bootstrap4.css' %}" type="text/css">
 <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" type="text/css">
 {% endblock %}
 
@@ -152,7 +151,6 @@
 
 {% block js %}
 <script type="text/javascript" src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'selectize/js/standalone/selectize.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
 <script type="text/javascript" src="{% static 'mlarchive/js/admin.js' %}"></script>
 {% endblock %}

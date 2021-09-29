@@ -618,7 +618,14 @@ def attachment(request, list_name, id, sequence, msg):
 
 
 def advsearch(request):
-    """Advanced Search View"""
+    """Advanced Search View
+
+    Presents an extendable search form. Javascript converts
+    field queries to a text input 'q' field. For example:
+    text:(database)
+
+    The form is submitted to the search view
+    """
     NoJSRulesFormset = formset_factory(RulesForm, extra=3)
     nojs_query_formset = NoJSRulesFormset(prefix='nojs-query')
     nojs_not_formset = NoJSRulesFormset(prefix='nojs-not')

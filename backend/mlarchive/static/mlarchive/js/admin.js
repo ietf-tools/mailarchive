@@ -4,6 +4,7 @@
 var mailarchAdmin = {
     
     spamModeActive: false,
+    focusInSearchForm: false,
     subjectCol: 2,
     fromCol: 3,
     rowsToMove: $(),
@@ -17,6 +18,7 @@ var mailarchAdmin = {
     },
         
     cacheDom: function() {
+        mailarchAdmin.$adminSearchForm = $('#id_admin_form');
         mailarchAdmin.$adminResults = $('#admin-results');
         mailarchAdmin.$activeResultTable = $('.active .result-table');
         mailarchAdmin.$ResultTableRows = $('.result-table tr');
@@ -33,6 +35,8 @@ var mailarchAdmin = {
     
     bindEvents: function() {
         //mailarchAdmin.$resultTable.on('keydown', mailarchAdmin.messageNav);
+        mailarchAdmin.$adminSearchForm.on('focusin', mailarchAdmin.focusInSearchFormOn);
+        mailarchAdmin.$adminSearchForm.on('focusout', mailarchAdmin.focusInSearchFormOff);
         mailarchAdmin.$selectAll.on('click', mailarchAdmin.selectAll);
         mailarchAdmin.$ResultTableRows.on('click', mailarchAdmin.selectRowHandler);
         mailarchAdmin.$ResultTableRows.on('dblclick', mailarchAdmin.openMsg);
@@ -46,6 +50,16 @@ var mailarchAdmin = {
         $( document ).ajaxStop(function() {
             $(".spinner").addClass("d-none");
         });
+    },
+
+    focusInSearchFormOn: function() {
+        focusInSearchForm = true;
+        console.log("focusInSearchForm:" + focusInSearchForm);
+    },
+
+    focusInSearchFormOff: function() {
+        focusInSearchForm = false;
+        console.log("focusInSearchForm:" + focusInSearchForm);
     },
 
     doAction: function(row) {
@@ -79,6 +93,9 @@ var mailarchAdmin = {
             arrow = {up: 38, down: 40, left: 37, right: 39};
             enter = 13;
             space = 32;
+        if (focusInSearchForm==true) {
+            return true;
+        }
         switch (keyCode) {
             case arrow.up:
                 event.preventDefault();

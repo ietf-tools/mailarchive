@@ -117,10 +117,14 @@ class AdminForm(forms.Form):
         picker_settings={"autoclose": "1"},
         label='End date',
         required=False)
-    email_list = forms.ModelMultipleChoiceField(
-        queryset=EmailList.objects.all().order_by('name'),
-        to_field_name='name',
-        required=False)
+    # email_list = forms.ModelMultipleChoiceField(
+    #     queryset=EmailList.objects.all().order_by('name'),
+    #     to_field_name='name',
+    #     required=False)
+    email_list = forms.CharField(
+        max_length=255,
+        required=False,
+        help_text='Enter one or more list names separated by a space')
     spam = forms.BooleanField(required=False)
     spam_score = forms.CharField(max_length=6, required=False)
     exclude_whitelisted_senders = forms.BooleanField(required=False)
@@ -129,13 +133,24 @@ class AdminForm(forms.Form):
         self.request = kwargs.pop('request')
         super(self.__class__, self).__init__(*args, **kwargs)
 
+    '''
     def clean_email_list(self):
         # return a list of names for use in search query
         # so we match get_kwargs() api
         email_list = self.cleaned_data.get('email_list')
         if email_list:
             return [e.name for e in email_list]
-
+    '''
+    def clean_email_list(self):
+        '''A special clean function which can handle multiple email_list
+        parameters in the query string, ie. from a multiselect widget,
+        or a space separated string of email list names, ie from a 
+        text input. Returns a list of email list names (strings).
+        '''
+        if len(self.data.getlist('email_list')) > 1:
+            return [n.lower() for n in self.data.getlist('email_list')]
+        else:
+            return [n.lower() for n in self.data.get('email_list', '').split()]
 
 class AdminActionForm(forms.Form):
     action = forms.CharField(max_length=255)
@@ -152,7 +167,14 @@ class LowerCaseModelMultipleChoiceField(forms.ModelMultipleChoiceField):
 
 # @method_decorator(log_timing, name='get_facets')
 class AdvancedSearchForm(forms.Form):
-    """The form which builds the elasticsearch-dsl Search object"""
+    """The form used to construct the elasticsearch-dsl Search object.
+
+    NOTE: email_list was a LowerCaseModelMultipleChoiceField and used
+    the selectize.js widget, https://selectize.dev/. As of 09/29/2021 
+    this widget doesn't support Bootstrap 5 so changed to text field 
+    that can take muliple list names space deliminated. See
+    clean_email_list() can still handle either input type.
+    """
     q = forms.CharField(required=False, label=('Search'),
                         widget=forms.TextInput(attrs={'type': 'search'}))
     start_date = DatepickerDateField(
@@ -165,11 +187,17 @@ class AdvancedSearchForm(forms.Form):
         picker_settings={"autoclose": "1"},
         label='End date',
         required=False)
+    '''
     email_list = LowerCaseModelMultipleChoiceField(
         queryset=EmailList.objects,
         to_field_name='name',
         required=False,
         help_text='Select one or more lists')
+    '''
+    email_list = forms.CharField(
+        max_length=255,
+        required=False,
+        help_text='Enter one or more list names separated by a space')
     subject = forms.CharField(max_length=255, required=False)
     frm = forms.CharField(max_length=255, required=False)
     msgid = forms.CharField(max_length=255, required=False)
@@ -197,8 +225,19 @@ class AdvancedSearchForm(forms.Form):
         super(self.__class__, self).__init__(*args, **kwargs)
         self.fields["email_list"].widget.attrs["placeholder"] = "List names"
 
+    # def clean_email_list(self):
+    #    return [n.name for n in self.cleaned_data.get('email_list', [])]
+
     def clean_email_list(self):
-        return [n.name for n in self.cleaned_data.get('email_list', [])]
+        '''A special clean function which can handle multiple email_list
+        parameters in the query string, ie. from a multiselect widget,
+        or a space separated string of email list names, ie from a 
+        text input. Returns a list of email list names (strings).
+        '''
+        if len(self.data.getlist('email_list')) > 1:
+            return [n.lower() for n in self.data.getlist('email_list')]
+        else:
+            return [n.lower() for n in self.data.get('email_list', '').split()]
 
     def clean_f_list(self):
         # take a comma separated list of email_list names and convert to list

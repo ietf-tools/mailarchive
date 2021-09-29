@@ -29,7 +29,7 @@
                         {% render_field form.frm class="form-control" placeholder="From" %}
                     </div>
                     <div class="col-md-4">
-                        {% render_field form.email_list class="form-control" placeholder="Email List" %}
+                        {% render_field form.email_list class="form-control" placeholder="Email List Name (one or more separated by spaces)" %}
                     </div>
                 </div>
                 <div class="row mb-3">
@@ -151,7 +151,6 @@
 
 {% block js %}
 <script type="text/javascript" src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
 <script type="text/javascript" src="{% static 'mlarchive/js/admin.js' %}"></script>
 {% endblock %}
 

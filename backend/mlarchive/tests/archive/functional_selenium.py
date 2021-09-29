@@ -251,7 +251,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         self.assertIn('IETF Mail List Archives', self.selenium.title)
         self.selenium.get_screenshot_as_file('tests/tmp/advanced_search.png')
         o = urlparse(self.selenium.current_url)
-        assert unquote(o.query) == 'qdr=a&start_date=&end_date=&q=text:(data)&as=1'
+        assert unquote(o.query) == 'qdr=a&start_date=&end_date=&email_list=&q=text:(data)&as=1'
 
     def test_advanced_search_exact(self):
         url = urljoin(self.live_server_url, reverse('archive_advsearch'))
@@ -272,7 +272,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         self.assertIn('IETF Mail List Archives', self.selenium.title)
         self.selenium.get_screenshot_as_file('tests/tmp/advanced_search.png')
         o = urlparse(self.selenium.current_url)
-        assert unquote(o.query) == 'qdr=a&start_date=&end_date=&q=text:"data"&as=1'
+        assert unquote(o.query) == 'qdr=a&start_date=&end_date=&email_list=&q=text:"data"&as=1'
 
     @pytest.mark.usefixtures("thread_messages")
     def test_message_detail_date_link(self):

@@ -372,6 +372,10 @@ class CustomBrowseView(CustomSearchView):
     def extra_context(self):
         """Add variables to template context"""
         extra = {}
+        query_string = get_query_string(self.request)
+
+        # settings
+        extra['query_string'] = query_string
         extra['browse_list'] = self.list_name
         extra['queryset_offset'] = '0'
         extra['count'] = get_count(self.search)
@@ -389,6 +393,9 @@ class CustomBrowseView(CustomSearchView):
 
         extra['static_off_url'] = reverse('archive_browse_list', kwargs={'list_name': self.list_name})
         extra['static_on_url'] = reverse('archive_browse_static', kwargs={'list_name': self.list_name})
+
+        self.set_thread_links(extra)
+        self.set_page_links(extra)
 
         return extra
 

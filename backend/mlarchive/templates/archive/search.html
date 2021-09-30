@@ -97,8 +97,8 @@
                             {% endif %}
                             <!-- <li><a id="clear-sort" href="#">Clear Sort</a></li> -->
                             {% if browse_list %}
-                                <li class="nav-item{% if not group_by_thread %} active{% endif %}"><a class="nav-link" href="{{ view_date_url }}">Date</a></li>
-                                <li class="nav-item{% if group_by_thread %} active{% endif %}"><a id="gbt-link" class="nav-link" href="{{ view_thread_url }}">Thread</a></li>
+                                <li class="nav-item"><a class="nav-link{% if not group_by_thread %} active{% endif %}" href="{{ view_date_url }}">Date</a></li>
+                                <li class="nav-item"><a id="gbt-link" class="nav-link{% if group_by_thread %} active{% endif %}" href="{{ view_thread_url }}">Thread</a></li>
                             {% endif %}
                         </ul>
                         

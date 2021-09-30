@@ -65,7 +65,7 @@
                 <label class="form-check-label" for="selectall">Select All</label>
             </div>
             <div class="col-md-4 d-flex">
-                <label class="sr-only" for="action-select">Action</label>
+                <label class="visually-hidden" for="action-select">Action</label>
                 {{ action_form.action.errors }}
                 <select id="action-select" name="action" class="form-control" placeholder="Select action">
                     <option value="" selected="selected" disabled>Select Action</option>
@@ -77,7 +77,7 @@
             </div>
             <div class="col-md-4">
                 <div class="d-flex">
-                    <div class="btn-group mr-2" role="group" aria-label="spam buttons">
+                    <div class="btn-group me-2" role="group" aria-label="spam buttons">
                         <button id="spam-toggle" type="button" class="btn btn-primary" data-bs-toggle="button" aria-pressed="false" autocomplete="off">Spam Mode</button>
                         <button id="spam-process" type="button" class="btn btn-primary disabled" data-bs-toggle="button" aria-pressed="false" autocomplete="off">Process Spam</button>
                     </div>
@@ -133,7 +133,7 @@
     <!-- Modal content-->
     <div class="modal-content">
         <div class="modal-header">
-          <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           <h4 class="modal-title">Spam</h4>
         </div>
         <div class="modal-body">

@@ -1,11 +1,11 @@
 import pytest
-from urllib.parse import urlencode
 
 from django.contrib.auth.models import AnonymousUser
 from django.http import QueryDict
 
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.backends.elasticsearch import search_from_form
+from mlarchive.archive.models import EmailList, User
 
 # --------------------------------------------------
 # Low level form.search() tests
@@ -298,15 +298,29 @@ def test_form_private_no_access(rf, client, search_api_messages, private_message
 
 
 @pytest.mark.django_db(transaction=True)
-def test_form_private_logged_in_no_access(rf, client, search_api_messages, private_messages):
+def test_form_private_logged_in_no_access(rf, client, messages):
     '''Logged in, no access'''
-    pass
+    request = rf.get('/arch/search/?q=privateops')
+    request.user = User.objects.get(username='private_user')
+    data = QueryDict('q=privateops')
+    form = AdvancedSearchForm(data=data, request=request)
+    search = search_from_form(form)
+    results = search.execute()
+    assert len(results) == 0
 
 
 @pytest.mark.django_db(transaction=True)
-def test_form_private_logged_in_access(rf, client, search_api_messages, private_messages):
+def test_form_private_logged_in_access(rf, client, messages):
     '''Logged in with access'''
-    pass
+    request = rf.get('/arch/search/?q=private')
+    request.user = User.objects.get(username='private_user')
+    data = QueryDict('q=private')
+    form = AdvancedSearchForm(data=data, request=request)
+    search = search_from_form(form)
+    results = search.execute()
+    assert len(results) == 1
+    ids = [h.msgid for h in results]
+    assert sorted(ids) == ['p001']
 
 # ------------------------------
 # Filtering

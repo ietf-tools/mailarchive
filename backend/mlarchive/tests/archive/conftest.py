@@ -9,7 +9,7 @@ import os
 import pytest
 import subprocess
 
-from factories import EmailListFactory, ThreadFactory, MessageFactory
+from factories import EmailListFactory, ThreadFactory, MessageFactory, UserFactory
 from django.conf import settings
 from django.core.management import call_command
 from mlarchive.archive.mail import get_base_subject
@@ -165,15 +165,28 @@ def load_db():
                           thread_order=1,
                           msgid='c06',
                           date=datetime.datetime(2017, 1, 6))
-    MessageFactory.create(email_list=private, date=datetime.datetime(2017, 1, 1))
-    MessageFactory.create(email_list=private, date=datetime.datetime(2017, 1, 2))
+    MessageFactory.create(email_list=private,
+                          subject='private conversation',
+                          msgid='p001',
+                          date=datetime.datetime(2017, 1, 1))
+    MessageFactory.create(email_list=private,
+                          msgid='p002',
+                          date=datetime.datetime(2017, 1, 2))
 
     # listnames with hyphen
     devops = EmailListFactory.create(name='dev-ops')
     MessageFactory.create(email_list=devops)
 
     privateops = EmailListFactory.create(name='private-ops', private=True)
-    MessageFactory.create(email_list=privateops)
+    MessageFactory.create(email_list=privateops,
+                          subject='privateops conversation',
+                          msgid='p003')
+
+    # private list users
+    private_user = UserFactory(username='private_user')
+    private.members.add(private_user)
+    privateops_user = UserFactory(username='privateops_user')
+    privateops.members.add(privateops_user)
 
 
 @pytest.fixture()

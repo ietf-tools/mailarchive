@@ -30,9 +30,9 @@
             {% endif %}
             {% if not is_static_on %}
               {% if force_static %}
-                <a class="pull-right" href="{% url 'archive_browse'%}">Go to Regular View</a>
+                <a class="float-end" href="{% url 'archive_browse'%}">Go to Regular View</a>
               {% else %}
-                <a class="pull-right" href="{% url 'archive_browse_static'%}">Go to Static View</a>
+                <a class="float-end" href="{% url 'archive_browse_static'%}">Go to Static View</a>
               {% endif %}
             {% endif %}
           </h3>
@@ -55,9 +55,9 @@
         {% endif %}
         {% if not is_static_on and not columns.private %}
           {% if force_static %}
-            <a class="pull-right" href="{% url 'archive_browse'%}">Go to Regular View</a>
+            <a class="float-end" href="{% url 'archive_browse'%}">Go to Regular View</a>
           {% else %}
-            <a class="pull-right" href="{% url 'archive_browse_static'%}">Go to Static View</a>
+            <a class="float-end" href="{% url 'archive_browse_static'%}">Go to Static View</a>
           {% endif %}
         {% endif %}
         </h3>

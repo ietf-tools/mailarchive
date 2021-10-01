@@ -1,0 +1,34 @@
+The frontend for Mail Archive uses Bootstrap 5. Source SASS files can be found in
+the frontend/scss directory.
+
+bootstrap_custom.scss:  a simple SASS file that combines bootstrap w/ customizations
+_custom.scss:           a SASS partial with overrides of bootstrap variables
+styles.scss:            the SASS file for the archive project
+
+
+How to rebuild from source
+
+Initialize frontend directory
+> cd frontend/
+> npm install           # installs node_modules/ packages
+
+Rebuild CSS files
+> npm run build
+
+
+
+Making Changes
+
+Overrides to Bootstrap SCSS are made in frontend/scss/_custom.scss. All bootstrap
+variables can be found in node_modules/bootstrap/scss/_variables.scss. To 
+override a variable include it in _custom.scss but without the "!default" bit.
+
+See documentation here: https://getbootstrap.com/docs/5.1/customize/sass/.
+
+
+** The underscore indicates a partial, Sass files that are only meant to be imported, not compiled on their own.
+https://sass-lang.com/documentation/at-rules/import#partials
+
+
+> npm run build
+> manage.py collectstatic

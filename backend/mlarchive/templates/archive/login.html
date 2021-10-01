@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load bootstrap4 %}
+{% load django_bootstrap5 %}
 
 {% block title %}Mail Archive{% endblock %}
 
@@ -9,7 +9,9 @@
   <div class="login-container">
     <form action="." method="post">{% csrf_token %}
         {% bootstrap_form form show_label=False %}
-        <button id="login-button" type="submit" value="Login" class="btn btn-primary btn-block">Log In</button>
+        <div class="d-grid">
+          <button id="login-button" type="submit" value="Login" class="btn btn-primary">Log In</button>
+        </div>
     </form>
   </div>  <!-- login-container -->
 </div> <!-- .corral -->

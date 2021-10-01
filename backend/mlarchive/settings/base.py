@@ -95,7 +95,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'django.contrib.sitemaps',
     'mozilla_django_oidc',
-    'bootstrap4',
+    'django_bootstrap5',
     'mlarchive.archive.apps.ArchiveConfig',
     'widget_tweaks',
 ]
@@ -209,7 +209,8 @@ ELASTICSEARCH_INDEX_MAPPINGS = {
 # SECURITY SETTINGS
 # Content security policy configuration (django-csp)
 CSP_REPORT_ONLY = False
-CSP_DEFAULT_SRC = ("'self'")
+CSP_DEFAULT_SRC = ("'self'", )
+CSP_IMG_SRC = ("'self'", 'data:')
 
 # Setting for django_referrer_policy.middleware.ReferrerPolicyMiddleware
 REFERRER_POLICY = 'strict-origin-when-cross-origin'

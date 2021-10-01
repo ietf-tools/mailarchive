@@ -1,10 +1,11 @@
 import pytest
-from urllib.parse import urlencode
 
 from django.contrib.auth.models import AnonymousUser
+from django.http import QueryDict
 
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.backends.elasticsearch import search_from_form
+from mlarchive.archive.models import EmailList, User
 
 # --------------------------------------------------
 # Low level form.search() tests
@@ -23,7 +24,7 @@ def test_form_one_term(rf, client, search_api_messages):
     '''One term'''
     request = rf.get('/arch/search/?q=bananas')
     request.user = AnonymousUser()
-    data = {'q': 'bananas'}
+    data = QueryDict('q=bananas')
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     results = search.execute()
@@ -38,7 +39,7 @@ def test_form_two_term(rf, client, search_api_messages):
     '''Two terms, implied AND'''
     request = rf.get('/arch/search/?q=apples+bananas')
     request.user = AnonymousUser()
-    data = {'q': 'apples+bananas'}
+    data = QueryDict('q=apples+bananas')
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     results = search.execute()
@@ -52,7 +53,7 @@ def test_form_two_term_and(rf, client, search_api_messages):
     '''Two terms, explicit AND'''
     request = rf.get('/arch/search/?q=apples+AND+bananas')
     request.user = AnonymousUser()
-    data = {'q': 'apples+AND+bananas'}
+    data = QueryDict('q=apples+AND+bananas')
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     results = search.execute()
@@ -66,7 +67,7 @@ def test_form_two_term_or(rf, client, search_api_messages):
     '''Two terms, explicit OR'''
     request = rf.get('/arch/search/?q=apples+OR+bananas')
     request.user = AnonymousUser()
-    data = {'q': 'apples+OR+bananas'}
+    data = QueryDict('q=apples+OR+bananas')
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     results = search.execute()
@@ -80,7 +81,7 @@ def test_form_one_term_not(rf, client, search_api_messages):
     '''One term, NOT'''
     request = rf.get('/arch/search/?q=NOT+bananas')
     request.user = AnonymousUser()
-    data = {'q': 'NOT+bananas'}
+    data = QueryDict('q=NOT+bananas')
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     results = search.execute()
@@ -94,7 +95,7 @@ def test_form_one_term_negate(rf, client, search_api_messages):
     '''One term, NOT with minus sign'''
     request = rf.get('/arch/search/?q=-bananas')
     request.user = AnonymousUser()
-    data = {'q': '-bananas'}
+    data = QueryDict('q=-bananas')
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     results = search.execute()
@@ -108,7 +109,7 @@ def test_form_parens(rf, client, search_api_messages):
     '''Parenthesis'''
     request = rf.get('/arch/search/?q=(bananas+AND+apples)+OR+oranges')
     request.user = AnonymousUser()
-    data = {'q': '(bananas+AND+apples)+OR+oranges'}
+    data = QueryDict('q=(bananas+AND+apples)+OR+oranges')
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     results = search.execute()
@@ -124,8 +125,8 @@ def test_form_parens(rf, client, search_api_messages):
 @pytest.mark.django_db(transaction=True)
 def test_form_params_start_date(rf, client, search_api_messages):
     '''Test params: start_date'''
-    data = {'start_date': '2020-02-15'}
-    request = rf.get('/arch/search/?' + urlencode(data))
+    data = QueryDict('start_date=2020-02-15')
+    request = rf.get('/arch/search/?' + data.urlencode())
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
@@ -137,8 +138,8 @@ def test_form_params_start_date(rf, client, search_api_messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_form_params_end_date(rf, client, search_api_messages):
-    data = {'end_date': '2020-02-15'}
-    request = rf.get('/arch/search/?' + urlencode(data))
+    data = QueryDict('end_date=2020-02-15')
+    request = rf.get('/arch/search/?' + data.urlencode())
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
@@ -150,8 +151,8 @@ def test_form_params_end_date(rf, client, search_api_messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_form_params_msgid(rf, client, search_api_messages):
-    data = {'msgid': 'api001'}
-    request = rf.get('/arch/search/?' + urlencode(data))
+    data = QueryDict('msgid=api001')
+    request = rf.get('/arch/search/?' + data.urlencode())
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
@@ -164,8 +165,8 @@ def test_form_params_msgid(rf, client, search_api_messages):
 @pytest.mark.django_db(transaction=True)
 def test_form_params_email_list(rf, client, search_api_messages, search_api_messages_ford):
     # search acme list
-    data = {'email_list': ['acme']}
-    request = rf.get('/arch/search/?' + urlencode(data))
+    data = QueryDict('email_list=acme')
+    request = rf.get('/arch/search/?' + data.urlencode())
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
@@ -174,8 +175,8 @@ def test_form_params_email_list(rf, client, search_api_messages, search_api_mess
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api001', 'api002', 'api003', 'api004']
     # search ford list
-    data = {'email_list': ['ford']}
-    request = rf.get('/arch/search/?' + urlencode(data))
+    data = QueryDict('email_list=ford')
+    request = rf.get('/arch/search/?' + data.urlencode())
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
@@ -186,9 +187,33 @@ def test_form_params_email_list(rf, client, search_api_messages, search_api_mess
 
 
 @pytest.mark.django_db(transaction=True)
+def test_form_params_email_list_multi(rf, client, search_api_messages, search_api_messages_ford):
+    # search two lists - text input
+    data = QueryDict('email_list=acme&email_list=ford')
+    request = rf.get('/arch/search/?' + data.urlencode())
+    request.user = AnonymousUser()
+    form = AdvancedSearchForm(data=data, request=request)
+    search = search_from_form(form)
+    results = search.execute()
+    assert len(results) == 8
+    ids = [h.msgid for h in results]
+    assert sorted(ids) == ['api001', 'api002', 'api003', 'api004', 'api201', 'api202', 'api203', 'api204']
+    # search two lists - multi-select input
+    data = QueryDict('email_list=acme+ford')
+    request = rf.get('/arch/search/?' + data.urlencode())
+    request.user = AnonymousUser()
+    form = AdvancedSearchForm(data=data, request=request)
+    search = search_from_form(form)
+    results = search.execute()
+    assert len(results) == 8
+    ids = [h.msgid for h in results]
+    assert sorted(ids) == ['api001', 'api002', 'api003', 'api004', 'api201', 'api202', 'api203', 'api204']
+
+
+@pytest.mark.django_db(transaction=True)
 def test_form_params_from(rf, client, search_api_messages):
-    data = {'frm': 'Bilbo'}
-    request = rf.get('/arch/search/?' + urlencode(data))
+    data = QueryDict('frm=Bilbo')
+    request = rf.get('/arch/search/?' + data.urlencode())
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
@@ -200,8 +225,8 @@ def test_form_params_from(rf, client, search_api_messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_form_params_subject(rf, client, search_api_messages):
-    data = {'subject': 'apples'}
-    request = rf.get('/arch/search/?' + urlencode(data))
+    data = QueryDict('subject=apples')
+    request = rf.get('/arch/search/?' + data.urlencode())
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
@@ -213,8 +238,8 @@ def test_form_params_subject(rf, client, search_api_messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_form_params_qdr(rf, client, search_api_messages_qdr):
-    data = {'qdr': 'd'}
-    request = rf.get('/arch/search/?' + urlencode(data))
+    data = QueryDict('qdr=d')
+    request = rf.get('/arch/search/?' + data.urlencode())
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
@@ -223,8 +248,8 @@ def test_form_params_qdr(rf, client, search_api_messages_qdr):
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api301']
     # test week
-    data = {'qdr': 'w'}
-    request = rf.get('/arch/search/?' + urlencode(data))
+    data = QueryDict('qdr=w')
+    request = rf.get('/arch/search/?' + data.urlencode())
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
@@ -233,8 +258,8 @@ def test_form_params_qdr(rf, client, search_api_messages_qdr):
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api301', 'api302']
     # test month
-    data = {'qdr': 'm'}
-    request = rf.get('/arch/search/?' + urlencode(data))
+    data = QueryDict('qdr=m')
+    request = rf.get('/arch/search/?' + data.urlencode())
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
@@ -243,8 +268,8 @@ def test_form_params_qdr(rf, client, search_api_messages_qdr):
     ids = [h.msgid for h in results]
     assert sorted(ids) == ['api301', 'api302', 'api303']
     # test year
-    data = {'qdr': 'y'}
-    request = rf.get('/arch/search/?' + urlencode(data))
+    data = QueryDict('qdr=y')
+    request = rf.get('/arch/search/?' + data.urlencode())
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
@@ -263,7 +288,7 @@ def test_form_private_no_access(rf, client, search_api_messages, private_message
     '''Public request, no access'''
     request = rf.get('/arch/search/?q=bananas')
     request.user = AnonymousUser()
-    data = {'q': 'bananas'}
+    data = QueryDict('q=bananas')
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     results = search.execute()
@@ -273,15 +298,29 @@ def test_form_private_no_access(rf, client, search_api_messages, private_message
 
 
 @pytest.mark.django_db(transaction=True)
-def test_form_private_logged_in_no_access(rf, client, search_api_messages, private_messages):
+def test_form_private_logged_in_no_access(rf, client, messages):
     '''Logged in, no access'''
-    pass
+    request = rf.get('/arch/search/?q=privateops')
+    request.user = User.objects.get(username='private_user')
+    data = QueryDict('q=privateops')
+    form = AdvancedSearchForm(data=data, request=request)
+    search = search_from_form(form)
+    results = search.execute()
+    assert len(results) == 0
 
 
 @pytest.mark.django_db(transaction=True)
-def test_form_private_logged_in_access(rf, client, search_api_messages, private_messages):
+def test_form_private_logged_in_access(rf, client, messages):
     '''Logged in with access'''
-    pass
+    request = rf.get('/arch/search/?q=private')
+    request.user = User.objects.get(username='private_user')
+    data = QueryDict('q=private')
+    form = AdvancedSearchForm(data=data, request=request)
+    search = search_from_form(form)
+    results = search.execute()
+    assert len(results) == 1
+    ids = [h.msgid for h in results]
+    assert sorted(ids) == ['p001']
 
 # ------------------------------
 # Filtering
@@ -294,13 +333,13 @@ def test_form_filter_list(rf, client, search_api_messages, search_api_messages_f
     # no filter
     request = rf.get('/arch/search/?q=test')
     request.user = AnonymousUser()
-    data = {'q': 'test'}
+    data = QueryDict('q=test')
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     results = search.execute()
     assert len(results) == 8
     # list filter
-    data = {'q': 'test', 'f_list': 'ford'}
+    data = QueryDict('q=test&f_list=ford')
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     results = search.execute()
@@ -315,13 +354,13 @@ def test_form_filter_from(rf, client, search_api_messages):
     # no filter
     request = rf.get('/arch/search/?q=test')
     request.user = AnonymousUser()
-    data = {'q': 'test'}
+    data = QueryDict('q=test')
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     results = search.execute()
     assert len(results) == 4
     # from filter
-    data = {'q': 'test', 'f_from': 'Holden Ford'}
+    data = QueryDict('q=test&f_from=Holden+Ford')
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     print(search.to_dict())
@@ -340,7 +379,7 @@ def test_form_sort_from(rf, client, search_api_messages):
     '''Test sort by From field'''
     request = rf.get('/arch/search/?q=test&so=frm')
     request.user = AnonymousUser()
-    data = {'q': 'test', 'so': 'frm'}
+    data = QueryDict('q=test&so=frm')
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     results = search.execute()
@@ -358,7 +397,7 @@ def test_form_aggs(rf, client, search_api_messages, search_api_messages_ford):
     '''Aggregates. No filter'''
     request = rf.get('/arch/search/?q=test')
     request.user = AnonymousUser()
-    data = {'q': 'test'}
+    data = QueryDict('q=test')
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     results = search.execute()
@@ -382,7 +421,7 @@ def test_form_aggs_list_filter(rf, client, search_api_messages, search_api_messa
     '''Aggregates. List filter'''
     request = rf.get('/arch/search/?q=test&f_list=acme')
     request.user = AnonymousUser()
-    data = {'q': 'test', 'f_list': 'acme'}
+    data = QueryDict('q=test&f_list=acme')
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     results = search.execute()
@@ -403,7 +442,7 @@ def test_form_aggs_from_filter(rf, client, search_api_messages, search_api_messa
     '''Aggregates. From filter'''
     request = rf.get('/arch/search/?q=test&f_from=Holden+Ford')
     request.user = AnonymousUser()
-    data = {'q': 'test', 'f_from': 'Holden Ford'}
+    data = QueryDict('q=test&f_from=Holden+Ford')
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     results = search.execute()
@@ -421,7 +460,7 @@ def test_form_aggs_both_filters(rf, client, search_api_messages, search_api_mess
     '''Aggregates. List and From filters'''
     request = rf.get('/arch/search/?q=test&f_list=acme&f_from=Holden+Ford')
     request.user = AnonymousUser()
-    data = {'q': 'test', 'f_from': 'Holden Ford', 'f_list': 'acme'}
+    data = QueryDict('q=test&f_from=Holden+Ford&f_list=acme')
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
     results = search.execute()
@@ -438,8 +477,8 @@ def test_form_aggs_both_filters(rf, client, search_api_messages, search_api_mess
 
 @pytest.mark.django_db(transaction=True)
 def test_form_fields_subject(rf, client, search_api_messages):
-    data = {'q': 'subject:apples'}
-    request = rf.get('/arch/search/?' + urlencode(data))
+    data = QueryDict('q=subject:apples')
+    request = rf.get('/arch/search/?' + data.urlencode())
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)
@@ -451,8 +490,8 @@ def test_form_fields_subject(rf, client, search_api_messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_form_fields_frm(rf, client, search_api_messages):
-    data = {'q': 'from:Ford'}
-    request = rf.get('/arch/search/?' + urlencode(data))
+    data = QueryDict('q=from:Ford')
+    request = rf.get('/arch/search/?' + data.urlencode())
     request.user = AnonymousUser()
     form = AdvancedSearchForm(data=data, request=request)
     search = search_from_form(form)

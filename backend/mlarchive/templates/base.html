@@ -10,7 +10,7 @@
     {% block prestyle %}{% endblock %}
 
     <link rel="stylesheet" type="text/css" href="{% static 'fontawesome/css/all.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'bootstrap4/css/bootstrap_custom.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'mlarchive/css/bootstrap_custom.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'mlarchive/css/styles.css' %}">
 
     {% block extrastyle %}{% endblock %}
@@ -36,13 +36,13 @@
                 {% endif %}
                 </span>
             </a>
-            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-main" aria-controls="navbar-main" aria-expanded="false" aria-label="Toggle navigation">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-main" aria-controls="navbar-main" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
             {% if not request.resolver_match.url_name == "django.contrib.auth.views.login" %}
-            <div id="navbar-main" class="navbar-header float-right collapse navbar-collapse">
-                <ul class="navbar-nav ml-auto">
+            <div id="navbar-main" class="navbar-header collapse navbar-collapse">
+                <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="https://www.ietf.org/search/">Search www.ietf.org</a>
                     </li>
@@ -56,7 +56,7 @@
 
                     {% if user.is_superuser or user.is_staff %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbar-admin" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Admin</a>
+                        <a class="nav-link dropdown-toggle" href="#" id="navbar-admin" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Admin</a>
                         <div class="dropdown-menu" aria-labelledby="navbar-admin">
                             <a class="dropdown-item" href="{% url "archive_admin_console" %}">Console</a>
                             {% if user.is_superuser %}
@@ -68,11 +68,11 @@
                     {% endif %}
                     
                     {% if static_mode_enabled %}
-                    <li class="nav-item dropdown mr-2">
-                        <a id="nav-settings-anchor" class="nav-link dropdown-toggle" href="#" id="navbar-settings" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Settings</a>
-                        <div class="dropdown-menu" aria-labelledby="navbar-settings">
-                            <a id="toggle-static" class="dropdown-item" href="#">Turn Static Mode On</a>
-                        </div>
+                    <li class="nav-item dropdown me-2">
+                        <a id="nav-settings-anchor" class="nav-link dropdown-toggle" href="#" id="navbar-settings" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Settings</a>
+                        <ul class="dropdown-menu" aria-labelledby="navbar-settings">
+                            <li><a id="toggle-static" class="dropdown-item" href="#">Turn Static Mode On</a></li>
+                        </ul>
                     </li>
                     {% endif %}
                     {% if user.is_authenticated %}
@@ -125,10 +125,8 @@
 
 {% block modal %}{% endblock %}
 
-<script src="{% static 'jquery/js/jquery-3.4.1.min.js' %}" crossorigin="anonymous"></script>
-<script src="{% static 'popper/js/popper.min.js' %}" crossorigin="anonymous"></script>
-<script src="{% static 'bootstrap/4.3.1/js/bootstrap.min.js' %}" crossorigin="anonymous"></script>
-
+<script src="{% static 'jquery/js/jquery-3.6.0.min.js' %}" crossorigin="anonymous"></script>
+<script src="{% static 'bootstrap-5.1.1-dist/js/bootstrap.bundle.min.js' %}" crossorigin="anonymous"></script>
 <script type="text/javascript" src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
 <script type="text/javascript" src="{% static 'mlarchive/js/base.js' %}"></script>
 {% block js %}{% endblock %}

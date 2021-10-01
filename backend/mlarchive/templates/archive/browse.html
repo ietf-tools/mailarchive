@@ -1,11 +1,7 @@
 {% extends "base.html" %}
-{% load static bootstrap4 %}
+{% load static django_bootstrap5 %}
 
 {% block title %}Mail Archive Browse{% endblock %}
-
-{% block extrastyle %}
-<link rel="stylesheet" href="{% static 'selectize/css/selectize.bootstrap4.css' %}" type="text/css">
-{% endblock %}
 
 {% block header %}{{ block.super }} - Browse{% endblock %}
 
@@ -15,9 +11,9 @@
     
   <div class="row mb-3">
     <div class="offset-md-1 col-md-10 mt-4">
-      <form id="id_browse_form" name="browse-form" class="form-inline" action="." method="get">
-        {% bootstrap_form form layout='inline' show_label=False %}
-        <div class="form-group ml-2">
+      <form id="id_browse_form" name="browse-form" class="row" action="." method="get">
+        {% bootstrap_field form.list show_label=False wrapper_class="col" %}
+        <div class="mb-3 col">
             <button type="submit" value="Go" class="btn btn-secondary">Go</button>
         </div>
       </form>
@@ -34,9 +30,9 @@
             {% endif %}
             {% if not is_static_on %}
               {% if force_static %}
-                <a class="pull-right" href="{% url 'archive_browse'%}">Go to Regular View</a>
+                <a class="float-end" href="{% url 'archive_browse'%}">Go to Regular View</a>
               {% else %}
-                <a class="pull-right" href="{% url 'archive_browse_static'%}">Go to Static View</a>
+                <a class="float-end" href="{% url 'archive_browse_static'%}">Go to Static View</a>
               {% endif %}
             {% endif %}
           </h3>
@@ -59,9 +55,9 @@
         {% endif %}
         {% if not is_static_on and not columns.private %}
           {% if force_static %}
-            <a class="pull-right" href="{% url 'archive_browse'%}">Go to Regular View</a>
+            <a class="float-end" href="{% url 'archive_browse'%}">Go to Regular View</a>
           {% else %}
-            <a class="pull-right" href="{% url 'archive_browse_static'%}">Go to Static View</a>
+            <a class="float-end" href="{% url 'archive_browse_static'%}">Go to Static View</a>
           {% endif %}
         {% endif %}
         </h3>
@@ -102,9 +98,3 @@
     {% include "includes/footer.html" %}
   {% endwith %}
 {% endblock %}
-
-{% block js %}
-<script type="text/javascript" src="{% static 'selectize/js/standalone/selectize.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'mlarchive/js/browse.js' %}"></script>
-{% endblock %}
-

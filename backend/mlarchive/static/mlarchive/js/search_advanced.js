@@ -14,7 +14,6 @@ var advancedSearch = {
         advancedSearch.cacheDom();
         advancedSearch.progressiveFeatures();
         advancedSearch.bindEvents();
-        advancedSearch.$emailList.selectize();
         if(document.location.search.length) {
             advancedSearch.handleReturn();
         }

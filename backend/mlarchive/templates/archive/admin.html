@@ -1,8 +1,7 @@
 {% extends "base.html" %}
-{% load static bootstrap4 widget_tweaks %}
+{% load static django_bootstrap5 widget_tweaks %}
 
 {% block extrastyle %}
-<link rel="stylesheet" href="{% static 'selectize/css/selectize.bootstrap4.css' %}" type="text/css">
 <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" type="text/css">
 {% endblock %}
 
@@ -17,7 +16,7 @@
         <div id="admin-view-pane" class="d-none"></div>
         <div id="admin_search_form">
             <form id="id_admin_form" name="admin-search-form" action="." method="get">
-                <div class="row form-group">
+                <div class="row mb-3">
                     <div class="col-md-4 offset-md-2">
                         {% render_field form.subject class="form-control" placeholder="Subject" %}
                     </div>
@@ -25,21 +24,21 @@
                         {% render_field form.msgid class="form-control" placeholder="Message-Id" %}
                     </div>
                 </div>
-                <div class="row form-group">
+                <div class="row mb-3">
                     <div class="col-md-4 offset-md-2">
                         {% render_field form.frm class="form-control" placeholder="From" %}
                     </div>
                     <div class="col-md-4">
-                        {% render_field form.email_list class="form-control" placeholder="Email List" %}
+                        {% render_field form.email_list class="form-control" placeholder="Email List Name (one or more separated by spaces)" %}
                     </div>
                 </div>
-                <div class="row form-group">
+                <div class="row mb-3">
                     <div class="col-md-4 offset-md-2">
-                        <div class="form-row">
-                            <div class="col-md-6">
+                        <div class="row">
+                            <div class="col">
                               {% render_field form.start_date class="form-control" placeholder="Start Date" %}
                             </div>
-                            <div class="col-md-6">
+                            <div class="col">
                                 {% render_field form.end_date class="form-control" placeholder="End Date" %}
                             </div>
                         </div>
@@ -60,13 +59,13 @@
         <h3>Results{% if results %} ({{ results|length }}){% endif %}</h3>
         <form id="id_admin_action" name="admin-action-form" action="." method="post">{% csrf_token %}
 
-        <div class="row form-group">
+        <div class="row mb-3">
             <div class="col-md-1 offset-md-1 form-check form-check-inline">
                 <input class="form-check-input" type="checkbox" id="selectall" name="selectall" value="selectall">
                 <label class="form-check-label" for="selectall">Select All</label>
             </div>
-            <div class="col-md-4 form-inline">
-                <label class="sr-only" for="action-select">Action</label>
+            <div class="col-md-4 d-flex">
+                <label class="visually-hidden" for="action-select">Action</label>
                 {{ action_form.action.errors }}
                 <select id="action-select" name="action" class="form-control" placeholder="Select action">
                     <option value="" selected="selected" disabled>Select Action</option>
@@ -78,9 +77,9 @@
             </div>
             <div class="col-md-4">
                 <div class="d-flex">
-                    <div class="btn-group mr-2" role="group" aria-label="spam buttons">
-                        <button id="spam-toggle" type="button" class="btn btn-primary" data-toggle="button" aria-pressed="false" autocomplete="off">Spam Mode</button>
-                        <button id="spam-process" type="button" class="btn btn-primary disabled" data-toggle="button" aria-pressed="false" autocomplete="off">Process Spam</button>
+                    <div class="btn-group me-2" role="group" aria-label="spam buttons">
+                        <button id="spam-toggle" type="button" class="btn btn-primary" data-bs-toggle="button" aria-pressed="false" autocomplete="off">Spam Mode</button>
+                        <button id="spam-process" type="button" class="btn btn-primary disabled" data-bs-toggle="button" aria-pressed="false" autocomplete="off">Process Spam</button>
                     </div>
                     <div class="spinner d-none">
                         <i class="fa fa-sync-alt fa-spin fa-2x"></i>
@@ -98,9 +97,9 @@
         <div class="spam-top d-none">
           <div class="alert alert-warning" role="alert">Use left and right arrow keys to sort messages.  Right = spam, Left = not spam.  Use Process Spam button to remove spam and mark clean messages.</div>
           <ul class="nav nav-tabs nav-justified">
-            <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#clean-pane">Clean - 0</a></li>
-            <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#search-pane">Search - {{ results|length }}</a></li>
-            <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#spam-pane">Spam - 0</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#clean-pane">Clean - 0</a></li>
+            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#search-pane">Search - {{ results|length }}</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#spam-pane">Spam - 0</a></li>
           </ul>
         </div>
 
@@ -134,7 +133,7 @@
     <!-- Modal content-->
     <div class="modal-content">
         <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           <h4 class="modal-title">Spam</h4>
         </div>
         <div class="modal-body">
@@ -152,8 +151,6 @@
 
 {% block js %}
 <script type="text/javascript" src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'selectize/js/standalone/selectize.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
 <script type="text/javascript" src="{% static 'mlarchive/js/admin.js' %}"></script>
 {% endblock %}
 

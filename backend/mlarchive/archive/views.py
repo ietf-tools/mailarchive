@@ -372,6 +372,10 @@ class CustomBrowseView(CustomSearchView):
     def extra_context(self):
         """Add variables to template context"""
         extra = {}
+        query_string = get_query_string(self.request)
+
+        # settings
+        extra['query_string'] = query_string
         extra['browse_list'] = self.list_name
         extra['queryset_offset'] = '0'
         extra['count'] = get_count(self.search)
@@ -389,6 +393,9 @@ class CustomBrowseView(CustomSearchView):
 
         extra['static_off_url'] = reverse('archive_browse_list', kwargs={'list_name': self.list_name})
         extra['static_on_url'] = reverse('archive_browse_static', kwargs={'list_name': self.list_name})
+
+        self.set_thread_links(extra)
+        self.set_page_links(extra)
 
         return extra
 
@@ -618,7 +625,14 @@ def attachment(request, list_name, id, sequence, msg):
 
 
 def advsearch(request):
-    """Advanced Search View"""
+    """Advanced Search View
+
+    Presents an extendable search form. Javascript converts
+    field queries to a text input 'q' field. For example:
+    text:(database)
+
+    The form is submitted to the search view
+    """
     NoJSRulesFormset = formset_factory(RulesForm, extra=3)
     nojs_query_formset = NoJSRulesFormset(prefix='nojs-query')
     nojs_not_formset = NoJSRulesFormset(prefix='nojs-not')

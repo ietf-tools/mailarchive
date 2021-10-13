@@ -10,6 +10,7 @@
     <ul class="mt-4">
         <li><a href="#add_list">How do I add a new list?</a></li>
         <li><a href="#import">How do I import messages from an archive file?</a></li>
+        <li><a href="#import_single">How do I import a single message file?</a></li>
         <li><a href="#delete_message">How do I delete unwanted messages from the archive?</a></li>
         <li><a href="#rebuild_index">How do I rebuild the index for a subset of messages?</a></li>
         <li><a href="#subpoena">How do I collect messages for response to a subpoena?</a></li>
@@ -35,6 +36,14 @@ source env/bin/activate
 cd backend
 ./manage.py load [path-to-file/dir] -l [listname]</pre>
     It may take some minutes to run, depending on how many messages are being imported.  It will print some statistics on completion.
+    </p>
+
+    <span id="import_single"></span>
+    <h2>How do I import a single message file?</h2>
+    <p>On rare occassion a message may fail to import, a glitch during the middle of an upgrade for example. Use the following command to load a single message file.<br>
+    <pre>cd /a/mailarch/current/backend/mlarchive/bin
+./archive-mail.py ietf --public < /a/mailarch/data/incoming/ietf.public.nu0BnIRs</pre>
+Use search to check that the message loaded properly.
     </p>
 
     <span id="delete_message"></span>

@@ -51,7 +51,7 @@ cd backend
     first stop the Celery worker from processing new index updates (the updates will safely
     queue in RabbitMQ and be processed when Celery is restarted.
     <pre>sudo systemctl stop celeryd.service</pre>
-    Then use the Haystack update_index command
+    Then use the update_index command
     <pre>cd /a/mailarch/current
 source env/bin/activate
 cd backend

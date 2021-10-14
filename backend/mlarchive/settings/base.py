@@ -37,6 +37,8 @@ env = environ.Env(
     CLOUDFLARE_ZONE_ID=(str, ''),
     OIDC_RP_CLIENT_ID=(str, ''),
     OIDC_RP_CLIENT_SECRET=(str, ''),
+    SCOUT_MONITOR=(bool, False),
+    SCOUT_KEY=(str, ''),
 )
 
 # reading .env file
@@ -329,6 +331,14 @@ if env('DEBUG_TOOLBAR_ON'):
     MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
     DEBUG_TOOLBAR_CONFIG = {'INSERT_BEFORE': '<!-- debug_toolbar_here -->'}
 
+# SCOUTAPM
+if SERVER_MODE == 'production':
+    INSTALLED_APPS.insert(0,'scout_apm.django')
+
+SCOUT_MONITOR = env('SCOUT_MONITOR')
+SCOUT_KEY = env('SCOUT_KEY')
+SCOUT_NAME = 'Mailarchive'
+SCOUT_ERRORS_ENABLED = True
 
 ###########
 # LOGGING #

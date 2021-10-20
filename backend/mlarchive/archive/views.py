@@ -394,6 +394,9 @@ class CustomBrowseView(CustomSearchView):
         extra['static_off_url'] = reverse('archive_browse_list', kwargs={'list_name': self.list_name})
         extra['static_on_url'] = reverse('archive_browse_static', kwargs={'list_name': self.list_name})
 
+        if hasattr(self, 'queryid'):
+            extra['queryid'] = self.queryid
+
         self.set_thread_links(extra)
         self.set_page_links(extra)
 

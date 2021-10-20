@@ -241,6 +241,7 @@ def test_browse_query(client, messages):
     for r in response.context['results']:
         print(r.date, r.subject)
     assert len(response.context['results']) == 3
+    assert response.context['queryid']
 
 
 @pytest.mark.django_db(transaction=True)

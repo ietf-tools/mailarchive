@@ -22,6 +22,7 @@ IDENTIFIER_REGEX = re.compile('^[\w\d_]+\.[\w\d_]+\.[\w\d-]+$')
 def full_prepare(message):
     '''Takes database Message object and returns dictionary for index update.
     For dates use isoformat().'''
+    logger.debug('full_prepare pk:{}'.format(message.pk))
     prepared_data = {
         'id': 'archive.message.' + force_str(message.pk),
         'django_ct': 'archive.message',

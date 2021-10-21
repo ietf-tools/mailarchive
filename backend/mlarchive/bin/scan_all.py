@@ -39,7 +39,7 @@ from pytz import timezone
 
 from django.core.cache import cache
 from django.db.models import Count
-from haystack.query import SearchQuerySet
+# from haystack.query import SearchQuerySet
 
 from mlarchive.archive.models import EmailList, Message, Thread, Legacy
 from mlarchive.bin.scan_utils import *
@@ -718,6 +718,23 @@ def message_rfc822():
 
             if count > 1:
                 print("{}:{}".format(msg.pk,count))
+
+
+def message_rfc822_xml():
+    """Scan all lists for message/rfc822 with a single component that is xml"""
+    for elist in EmailList.objects.all().order_by('name'):
+        print("Scanning {}".format(elist.name), file=sys.stderr)
+
+        for msg in Message.objects.filter(email_list=elist).order_by('date'):
+            message = email.message_from_bytes(msg.get_body_raw())
+            count = 0
+            for part in message.walk():
+                if part.get_content_type() == 'message/rfc822':
+                    count += 1
+                    payload = part.get_payload()
+                    if not isinstance(payload, list) and payload.get_content_type() == 'text/html':
+                        if payload.get_payload().startswith('<?xml'):
+                            print(msg.pk)
 
 
 def mime_encoded_word(start):

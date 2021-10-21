@@ -271,7 +271,7 @@ class Generator:
                           remove_tags=['body'], forms=True, frames=True, add_nofollow=True)
         try:
             clean = cleaner.clean_html(payload)
-        except (XMLSyntaxError, ParserError) as error:
+        except (XMLSyntaxError, ParserError, ValueError) as error:
             logger.error('Error cleaning HTML body [{}, {}, {}]'.format(
                 self.msg.email_list, self.msg.msgid, error.args))
             if self.text_only:

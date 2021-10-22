@@ -13,7 +13,7 @@
             {% if admin_results %}
                 {% for item in admin_results %}
                   <tr>
-                    <td><input type="checkbox" class="action-select" value="{{ item.object.pk }}" name="_selected_action"></td>
+                    <td><input type="checkbox" class="action-select" value="{{ item.django_id }}" name="_selected_action"></td>
                     <td>{{ forloop.counter }}</td>
                     <td>{{ item.subject }}</td>
                     <td>{{ item.frm }}</td>

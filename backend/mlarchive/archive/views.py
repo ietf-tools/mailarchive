@@ -535,12 +535,12 @@ def admin(request):
 
         elif form.is_valid():
             search = search_from_form(form)
-            search = search.sort('date')    # default sort by date
             logger.debug('admin query: {}'.format(search.to_dict()))
             # TODO change in v7
+            # search = search.sort('-date')    # default sort by date descending
             # results = list(search.scan(preserve_order=True))   # convert to list for tests
             results = list(search.scan())   # convert to list for tests
-            results = sorted(results, key=lambda h: h.date)
+            results = sorted(results, key=lambda h: h.date, reverse=True)
             # if form.cleaned_data.get('exclude_whitelisted_senders'):
             #     whitelist = Message.objects.filter(spam_score=-1).values_list('frm', flat=True).distinct()
             #     results = list(filter(is_not_whitelisted, results))

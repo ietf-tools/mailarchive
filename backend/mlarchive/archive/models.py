@@ -137,11 +137,11 @@ class EmailList(models.Model):
 
 
 class Message(models.Model):
-    base_subject = models.CharField(max_length=512, blank=True)
+    base_subject = models.CharField(max_length=512, blank=True, db_index=True)
     cc = models.TextField(blank=True, default='')
     date = models.DateTimeField(db_index=True)
     email_list = models.ForeignKey(EmailList, db_index=True, on_delete=models.PROTECT)
-    frm = models.CharField(max_length=255, blank=True)
+    frm = models.CharField(max_length=255, blank=True, db_index=True)
     from_line = models.CharField(max_length=255, blank=True)
     hashcode = models.CharField(max_length=28, db_index=True)
     in_reply_to = models.ForeignKey('self', null=True, related_name='replies', on_delete=models.SET_NULL)
@@ -156,7 +156,7 @@ class Message(models.Model):
     thread_depth = models.IntegerField(default=0)
     thread_order = models.IntegerField(default=0)
     to = models.TextField(blank=True, default='')
-    updated = models.DateTimeField(auto_now=True)
+    updated = models.DateTimeField(auto_now=True, db_index=True)
     # date_index_page = models.CharField(max_length=64, default='')
     # thread_index_page = models.CharField(max_length=64, default='')
 

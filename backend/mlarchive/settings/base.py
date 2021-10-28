@@ -339,6 +339,8 @@ SCOUT_MONITOR = env('SCOUT_MONITOR')
 SCOUT_KEY = env('SCOUT_KEY')
 SCOUT_NAME = 'Mailarchive'
 SCOUT_ERRORS_ENABLED = True
+SCOUT_CORE_AGENT_VERSION='1.3.0'
+SCOUT_CORE_AGENT_FULL_NAME='scout_apm_core-v1.3.0-x86_64-unknown-linux-musl'
 
 ###########
 # LOGGING #

@@ -445,6 +445,7 @@ def test_detail(client):
     url = reverse('archive_detail', kwargs={'list_name': elist.name, 'id': msg.hashcode})
     response = client.get(url)
     assert response.status_code == 200
+    assert '<title>{}</title>'.format(msg.subject) in smart_str(response.content)
 
 
 @pytest.mark.django_db(transaction=True)

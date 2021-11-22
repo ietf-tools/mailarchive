@@ -84,7 +84,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         # Get results page
         # print self.selenium.page_source
         self.selenium.get_screenshot_as_file('tests/tmp/test_message_detail_next_list.png')
-        self.assertIn('Archive', self.selenium.title)
+        self.assertIn(messages[1].subject, self.selenium.title)
         self.assertIn(messages[1].msgid, self.selenium.page_source)
 
     @pytest.mark.usefixtures("thread_messages")
@@ -103,7 +103,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         # Get results page
         # print self.selenium.page_source
         self.selenium.get_screenshot_as_file('tests/tmp/test_message_detail_previous_list.png')
-        self.assertIn('Archive', self.selenium.title)
+        self.assertIn(messages[0].subject, self.selenium.title)
         self.assertIn(messages[0].msgid, self.selenium.page_source)
 
     """

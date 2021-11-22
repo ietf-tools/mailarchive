@@ -1,6 +1,6 @@
 from .celeryapp import app
 
-__version__ = "2.8.5"
+__version__ = "2.8.6"
 
 __date__    = "$Date$"
 

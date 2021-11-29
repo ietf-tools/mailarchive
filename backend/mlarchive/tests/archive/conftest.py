@@ -238,6 +238,15 @@ def thread_messages():
 
 
 @pytest.fixture()
+def export_messages():
+    """Load some messages"""
+    content = io.StringIO()
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'export.mbox')
+    call_command('clear_index', interactive=False, stdout=content)
+    call_command('load', path, listname='acme', summary=True, stdout=content)
+
+
+@pytest.fixture()
 def urlize_messages():
     """Load some threads"""
     content = io.StringIO()

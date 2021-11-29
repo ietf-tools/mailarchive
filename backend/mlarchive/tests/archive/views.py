@@ -1,6 +1,8 @@
 import datetime
+import io
 import os
 import pytest
+import tarfile
 from email.utils import parseaddr
 
 from django.conf import settings
@@ -563,12 +565,25 @@ def test_attachment_message_rfc822(client, attachment_messages_no_index):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_export(admin_client, thread_messages):
+def test_export(admin_client, export_messages):
     url = reverse('archive_export', kwargs={'type': 'mbox'}) + '?email_list=acme'
     response = admin_client.get(url)
+    print(url)
+    print(response.headers)
     assert response.status_code == 200
     assert response['Content-Disposition'].startswith('attachment;')
     assert response['Content-Type'] == 'application/x-tar-gz'
+    # ensure we are getting all messages in response
+    file_like_object = io.BytesIO(response.content)
+    tar = tarfile.open(fileobj=file_like_object)
+    count = 0 
+    # q&d way to count total messages
+    for member in tar.getmembers():
+        f = tar.extractfile(member)
+        for line in f.readlines():
+            if line.startswith(b'From '):
+                count = count + 1
+    assert count == 21
 
 
 @pytest.mark.django_db(transaction=True)

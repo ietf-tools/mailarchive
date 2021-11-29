@@ -163,24 +163,25 @@ def get_export(search, export_type, request):
         messages.error(request, 'No messages to export.')
         return redirect(redirect_url)
 
-    response = search.execute()
-    apply_objects(response.hits)
+    search = search.params(preserve_order=True)
+    results = list(search.scan())
+    apply_objects(results)
     if export_type == 'url':
-        return get_export_url(response, export_type, request)
+        return get_export_url(results, export_type, request)
     else:
-        return get_export_tar(response, export_type, request)
+        return get_export_tar(results, export_type, request)
 
 
-def get_export_url(sqs, export_type, request):
+def get_export_url(results, export_type, request):
     """Return file containing URLs of all messages in query results"""
     content = []
-    for result in sqs:
+    for result in results:
         url = result.object.get_absolute_url()
         content.append(request.build_absolute_uri(url))
     return HttpResponse('\n'.join(content), content_type='text/plain')
 
 
-def get_export_tar(sqs, export_type, request):
+def get_export_tar(results, export_type, request):
     """Returns a tar archive of messages
 
     sqs is SearchQuerySet object, the result of a search, and type is a string
@@ -194,9 +195,9 @@ def get_export_tar(sqs, export_type, request):
     filename = basename + '.tar.gz'
 
     if export_type == 'maildir':
-        tar = build_maildir_tar(sqs, tar, basename)
+        tar = build_maildir_tar(results, tar, basename)
     elif export_type == 'mbox':
-        tar = build_mbox_tar(sqs, tar, basename)
+        tar = build_mbox_tar(results, tar, basename)
 
     tar.close()
     tardata.seek(0)
@@ -224,24 +225,24 @@ def get_random_token(length=32):
     return ''.join([random.choice(string.ascii_letters + string.digits) for n in range(length)])
 
 
-def build_maildir_tar(sqs, tar, basename):
+def build_maildir_tar(results, tar, basename):
     """Returns tar file with messages from SearchQuerySet in maildir format"""
-    for result in sqs:
+    for result in results:
         arcname = os.path.join(basename, result.object.email_list.name, result.object.hashcode)
         tar.add(result.object.get_file_path(), arcname=arcname)
     return tar
 
 
-def build_mbox_tar(sqs, tar, basename):
+def build_mbox_tar(results, tar, basename):
     """Returns tar file with messages from SearchQuerySet in mmox format.
     There are various problems adding non-file objects (ie. StringIO) to tar files
     therefore the mbox files are first built on disk
     """
-    mbox_date = sqs[0].object.date.strftime('%Y-%m')
-    mbox_list = sqs[0].object.email_list.name
+    mbox_date = results[0].object.date.strftime('%Y-%m')
+    mbox_list = results[0].object.email_list.name
     fd, temp_path = tempfile.mkstemp()
     mbox_file = os.fdopen(fd, 'wb')
-    for result in sqs:
+    for result in results:
         date = result.object.date.strftime('%Y-%m')
         mlist = result.object.email_list.name
         if date != mbox_date or mlist != mbox_list:

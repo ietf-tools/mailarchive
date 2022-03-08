@@ -3,7 +3,7 @@
 <img src="https://raw.githubusercontent.com/ietf-tools/common/main/assets/logos/mailarch.svg" alt="IETF Mail Archive" height="125" />
 
 [![Release](https://img.shields.io/github/release/ietf-tools/mailarch.svg?style=flat&maxAge=300)](https://github.com/ietf-tools/mailarch/releases)
-[![License](https://img.shields.io/github/license/ietf-tools/mailarch)](https://github.com/ietf-tools/mailarch/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/ietf-tools/mailarch?maxAge=3600)](https://github.com/ietf-tools/mailarch/blob/main/LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.6-blue?logo=python&logoColor=white)](#prerequisites)
 [![Django Version](https://img.shields.io/badge/django-3.2-51be95?logo=django&logoColor=white)](#prerequisites)
 [![Node Version](https://img.shields.io/badge/node.js-16.x-green?logo=node.js&logoColor=white)](#prerequisites)
@@ -18,7 +18,7 @@
 - [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md)
 - [Development](#development)
   - [Prerequisites](#prerequisites)
-  - [Running Tests](#running-tests
+  - [Running Tests](#running-tests)
 - [Notes on Infrastructures](#notes-on-infrastructure)
 - [CDN Integration](#cdn-integration)
 

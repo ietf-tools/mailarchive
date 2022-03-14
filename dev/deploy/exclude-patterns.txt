@@ -1,0 +1,13 @@
+.devcontainer
+.github
+.vscode
+.git
+./dev
+./svn-history
+./test
+.editorconfig
+.eslintrc.js
+.npmrc
+.pylintrc
+node_modules
+release.tar.gz

@@ -3,18 +3,17 @@
   "version": "1.0.0",
   "description": "Mail Archive",
   "main": "index.js",
-  "license": "MIT",
+  "author": "IETF Trust",
+  "license": "BSD-3-Clause",
   "scripts": {
-    "sass:bootstrap": "node-sass -o ../backend/mlarchive/static/mlarchive/css/ scss/bootstrap_custom.scss",
-    "sass:mlarchive": "node-sass -o ../backend/mlarchive/static/mlarchive/css/ scss/styles.scss",
-    "build": "npm-run-all -p sass:*"
+    "sass:bootstrap": "sass --no-source-map scss/bootstrap_custom.scss ../backend/mlarchive/static/mlarchive/css/bootstrap_custom.css",
+    "sass:mlarchive": "sass --no-source-map scss/styles.scss ../backend/mlarchive/static/mlarchive/css/styles.css",
+    "build": "npm run sass:bootstrap && npm run sass:mlarchive"
   },
   "dependencies": {
-    "bootstrap": "^5.1.1",
-    "package.json": "^2.0.1"
+    "bootstrap": "^5.1.1"
   },
   "devDependencies": {
-    "node-sass-chokidar": "^1.5.0",
-    "npm-run-all": "^4.1.5"
+    "sass": "^1.49.9"
   }
 }

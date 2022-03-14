@@ -86,8 +86,8 @@ jobs:
       run: |
         echo "Building assets..."
         cd frontend
-        yarn --frozen-lockfile --non-interactive
-        yarn build
+        npm ci
+        npm run build
         cd ..
         echo "Setting version $PKG_VERSION_STRICT..."
         sed -i -r -e "s/^__version__ += '.*'$/__version__ = '$PKG_VERSION_STRICT'/" backend/mlarchive/__init__.py

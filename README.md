@@ -14,7 +14,7 @@
 </div>
 
 - [**Production Website**](https://mailarchive.ietf.org)
-- [Changelog](https://github.com/ietf-tools/mailarch/blob/main/CHANGELOG.md)
+- [Changelog](https://github.com/ietf-tools/mailarch/releases)
 - [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md)
 - [Development](#development)
   - [Prerequisites](#prerequisites)

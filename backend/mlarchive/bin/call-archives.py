@@ -68,6 +68,7 @@ listname, access, _ = os.path.basename(path).split('.')
 old_args = [listname, '-' + access]
 new_args = [listname, '--' + access]
 
+'''
 command = [MHONARC] + old_args
 try:
     p = Popen(command, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
@@ -76,6 +77,7 @@ try:
         handle_error('script failed: {}\n\n (exit_code={})\n\n {}\n\n{}'.format(command[0],p.returncode,stdoutdata, path))
 except Exception as error:
     handle_error(traceback.format_exc())
+'''
 
 command = ['/a/mailarch/current/env/bin/python', MAILARCH] + new_args
 cwd = '/a/mailarch/current/backend/mlarchive/bin'

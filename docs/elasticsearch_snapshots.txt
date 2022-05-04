@@ -35,3 +35,25 @@ curl -X GET "localhost:9200/_slm/policy/nightly-snapshots?human&pretty"
 
 
 How to load a snapshot on a backup server
+- ensure the service is up and running
+systemctl status elasticsearch
+systemctl start elasticsearch
+curl "localhost:9200"
+curl "localhost:9200/_cat/indices"
+
+- if there are any existing old mail-archive indexes delete them
+curl -X DELETE "localhost:9200/mail-archive-02?pretty"
+
+- ensure local snapshot repository exists and contains copies of production snapshots
+list snapshot repositories
+curl "localhost:9200/_snapshot"
+list snapshots
+curl "localhost:9200/_cat/snapshots"
+
+- restore the production index from the latest snapshot
+curl -X POST "localhost:9200/_snapshot/es_snapshot_repo/nightly-snap-2021.10.29-8i3xf9rlsimuvsr8wovh3a/_restore?wait_for_completion=true&pretty" -H 'Content-Type: application/json' -d'
+{
+  "indices": "mail-archive-03",
+  "include_aliases": true
+}
+'

@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'
+      - '*'
 
   workflow_dispatch:
     inputs:
@@ -31,10 +31,8 @@ jobs:
         
     - name: Set Next Version Env Var
       if: ${{ github.event.inputs.publish == 'true' }}
-      env:
-        NEXT_VERSION: ${{ steps.semver.outputs.next }}
       run: |
-        echo "NEXT_VERSION=$next" >> $GITHUB_ENV
+        echo "NEXT_VERSION=$nextStrict" >> $GITHUB_ENV
         
     - name: Create Draft Release
       uses: ncipollo/release-action@v1
@@ -44,7 +42,7 @@ jobs:
         draft: false
         commit: ${{ github.sha }}
         tag: ${{ env.NEXT_VERSION }}
-        name: ${{ env.NEXT_VERSION }}
+        name: v${{ env.NEXT_VERSION }}
         body: '*pending*'
         token: ${{ secrets.GITHUB_TOKEN }}
     
@@ -54,19 +52,16 @@ jobs:
           echo "Using AUTO SEMVER mode: $NEXT_VERSION"
           echo "SHOULD_DEPLOY=true" >> $GITHUB_ENV
           echo "PKG_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
-          echo "PKG_VERSION_STRICT=${NEXT_VERSION#?}" >> $GITHUB_ENV
           echo "::notice::Release created using branch $GITHUB_REF_NAME"
-        elif [[ "$GITHUB_REF" =~ ^refs/tags/v* ]]; then
+        elif [[ "$GITHUB_REF" =~ ^refs/tags/* ]]; then
           echo "Using TAG mode: $GITHUB_REF_NAME"
           echo "SHOULD_DEPLOY=true" >> $GITHUB_ENV
           echo "PKG_VERSION=$GITHUB_REF_NAME" >> $GITHUB_ENV
-          echo "PKG_VERSION_STRICT=${GITHUB_REF_NAME#?}" >> $GITHUB_ENV
           echo "::notice::Release created using tag $GITHUB_REF_NAME"
         else
           echo "Using TEST mode: v2.0.0-dev.$GITHUB_RUN_NUMBER"
           echo "SHOULD_DEPLOY=false" >> $GITHUB_ENV
-          echo "PKG_VERSION=v2.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
-          echo "PKG_VERSION_STRICT=2.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
+          echo "PKG_VERSION=2.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
           echo "::notice::Non-production build created using branch $GITHUB_REF_NAME"
         fi
         
@@ -89,8 +84,8 @@ jobs:
         npm ci
         npm run build
         cd ..
-        echo "Setting version $PKG_VERSION_STRICT..."
-        sed -i -r -e "s/^__version__ += '.*'$/__version__ = '$PKG_VERSION_STRICT'/" backend/mlarchive/__init__.py
+        echo "Setting version $PKG_VERSION..."
+        sed -i -r -e "s/^__version__ += '.*'$/__version__ = '$PKG_VERSION'/" backend/mlarchive/__init__.py
         echo "Build release tarball..."
         mkdir -p /home/runner/work/release
         tar -czf /home/runner/work/release/release.tar.gz -X dev/deploy/exclude-patterns.txt .
@@ -111,7 +106,7 @@ jobs:
         allowUpdates: true
         draft: false
         tag: ${{ env.PKG_VERSION }}
-        name: ${{ env.PKG_VERSION }}
+        name: v${{ env.PKG_VERSION }}
         body: ${{ steps.changelog.outputs.changes }}
         artifacts: "/home/runner/work/release/release.tar.gz"
         token: ${{ secrets.GITHUB_TOKEN }}

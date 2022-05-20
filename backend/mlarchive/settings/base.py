@@ -17,7 +17,7 @@ import os
 import environ
 from email.utils import getaddresses
 
-from mlarchive import __version__
+from mlarchive import __version__, __release_hash__
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

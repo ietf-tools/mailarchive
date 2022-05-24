@@ -1,10 +1,14 @@
 from .celeryapp import app
 
 # Version must stay in single quotes for automatic CI replace
-__version__ = '2.8.8'
+# Don't add patch number here:
+__version__ = '2.0.0-dev'
 
-__date__    = "$Date$"
+# Release hash must stay in single quotes for automatic CI replace
+__release_hash__ = ''
 
-__rev__     = "$Rev$"
+# Release branch must stay in single quotes for automatic CI replace
+__release_branch__ = ''
 
-__id__      = "$Id$"
+# set this to ".p1", ".p2", etc. after patching
+__patch__ = ""

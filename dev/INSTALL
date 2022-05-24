@@ -32,7 +32,7 @@ Email Archive Installation Instructions
       pip install --upgrade setuptools
       pip install -r requirements.txt
 
- 5. Move static files into place for CDN (/a/www/www6s/lib/dt):
+ 5. Move static files into place (/a/mailarch/current/backend/static):
 
       backend/manage.py collectstatic --noinput
 

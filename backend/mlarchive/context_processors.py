@@ -14,7 +14,7 @@ def server_mode(request):
 
 
 def revision_info(request):
-    'A context processor that provides version and svn revision info'
+    'A context processor that provides version and release info'
     return {'release_hash': __release_hash__,
             'release_branch': __release_branch__,
             'version_num': __version__ + __patch__}

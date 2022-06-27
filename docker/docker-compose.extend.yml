@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+    app:
+        ports:
+            - 'CUSTOM_PORT:8000'
+        volumes:
+            - .:/workspace
+            - /workspace/.parcel-cache
+            - /workspace/__pycache__
+    db:
+        ports:
+            - '3306'
+    es:
+        ports:
+            - '9200'
+    rabbit:
+        ports:
+            - '5672'

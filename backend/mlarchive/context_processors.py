@@ -1,5 +1,6 @@
 from django.conf import settings
-from mlarchive import __date__, __rev__, __version__, __id__
+from mlarchive import (__release_hash__, __release_branch__,
+    __version__, __patch__)
 
 
 # --------------------------------------------------
@@ -13,12 +14,10 @@ def server_mode(request):
 
 
 def revision_info(request):
-    'A context processor that provides version and svn revision info'
-    return {'revision_time': __date__[7:32],
-            'revision_date': __date__[7:17],
-            'revision_num': __rev__[6:-2],
-            'revision_id': __id__[5:-2],
-            'version_num': __version__}
+    'A context processor that provides version and release info'
+    return {'release_hash': __release_hash__,
+            'release_branch': __release_branch__,
+            'version_num': __version__ + __patch__}
 
 
 def static_mode_enabled(request):

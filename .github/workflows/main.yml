@@ -84,8 +84,13 @@ jobs:
         npm ci
         npm run build
         cd ..
-        echo "Setting version $PKG_VERSION..."
-        sed -i -r -e "s/^__version__ += '.*'$/__version__ = '$PKG_VERSION'/" backend/mlarchive/__init__.py
+        echo "Setting version"
+        echo "PKG_VERSION: $PKG_VERSION"
+        echo "GITHUB_SHA: $GITHUB_SHA"
+        echo "GITHUB_REF_NAME: $GITHUB_REF_NAME"
+        sed -i -r -e "s|^__version__ += '.*'$|__version__ = '$PKG_VERSION'|" backend/mlarchive/__init__.py
+        sed -i -r -e "s|^__release_hash__ += '.*'$|__release_hash__ = '$GITHUB_SHA'|" backend/mlarchive/__init__.py
+        sed -i -r -e "s|^__release_branch__ += '.*'$|__release_branch__ = '$GITHUB_REF_NAME'|" backend/mlarchive/__init__.py
         echo "Build release tarball..."
         mkdir -p /home/runner/work/release
         tar -czf /home/runner/work/release/release.tar.gz -X dev/deploy/exclude-patterns.txt .

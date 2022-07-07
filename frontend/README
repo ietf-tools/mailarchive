@@ -1,7 +1,0 @@
-Instructions for building CSS resources for Mail Archive
-
-One-time setup
-$ npm install npm-run-all --save-dev
-
-Build CSS resource
-$ yarn build

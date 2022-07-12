@@ -114,6 +114,7 @@ class ESBackend():
 
         self.client = Elasticsearch(
             connection_options['URL'],
+            index=connection_options['INDEX_NAME'],
             **connection_options.get('KWARGS', {}))
         self.index_name = connection_options['INDEX_NAME']
         self.log = logging.getLogger(__name__)
@@ -231,7 +232,11 @@ class ElasticsearchQuery():
     def __init__(self, form, email_list=None, skip_facets=False):
         self.form = form
         self.request = form.request
-        self.client = Elasticsearch()
+        connection_options = settings.ELASTICSEARCH_CONNECTION
+        self.client = Elasticsearch(
+            connection_options['URL'],
+            index=connection_options['INDEX_NAME'],
+            **connection_options.get('KWARGS', {}))
         self.search = Search(using=self.client, index=settings.ELASTICSEARCH_INDEX_NAME)
         self.skip_facets = skip_facets
         self.email_list = email_list

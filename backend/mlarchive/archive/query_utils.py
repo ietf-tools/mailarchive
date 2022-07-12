@@ -58,7 +58,11 @@ def get_cached_query(request):
     search_dict = cache.get(queryid)
     if search_dict:
         logger.debug('Found search in cache: {}'.format(search_dict))
-        client = Elasticsearch()
+        connection_options = settings.ELASTICSEARCH_CONNECTION
+        client = Elasticsearch(
+            connection_options['URL'],
+            index=connection_options['INDEX_NAME'],
+            **connection_options.get('KWARGS', {}))
         search = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
         search = search.update_from_dict(search_dict)
         logger.debug('Built search object from cache: {}'.format(search))
@@ -259,7 +263,11 @@ def get_count(query):
 # TODO: remove?
 def get_empty_response():
     '''Return an empty elasticsearch response'''
-    client = Elasticsearch()
+    connection_options = settings.ELASTICSEARCH_CONNECTION
+    client = Elasticsearch(
+        connection_options['URL'],
+        index=connection_options['INDEX_NAME'],
+        **connection_options.get('KWARGS', {}))
     s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
     s = s.query('term', dummy='')
     return s.execute()

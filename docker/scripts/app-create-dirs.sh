@@ -2,6 +2,7 @@
 
 for sub in \
     /data/archive \
+    /data/log/mail-archive \
     ; do
     if [ ! -d "$sub"  ]; then
         echo "Creating dir $sub"

@@ -8,7 +8,7 @@ sudo service rsyslog start &>/dev/null
 echo "Fixing volumes ownership..."
 sudo chown -R dev:dev "$WORKSPACEDIR/.parcel-cache"
 sudo chown -R dev:dev "$WORKSPACEDIR/__pycache__"
-# sudo chown dev:dev "/assets"
+sudo chown dev:dev "/data"
 
 echo "Fix chromedriver /dev/shm permissions..."
 sudo chmod 1777 /dev/shm
@@ -40,11 +40,6 @@ echo "Creating data directories..."
 chmod +x ./docker/scripts/app-create-dirs.sh
 ./docker/scripts/app-create-dirs.sh
 
-# Download latest coverage results file
-
-# echo "Downloading latest coverage results file..."
-# curl -fsSL https://github.com/ietf-tools/datatracker/releases/latest/download/coverage.json -o release-coverage.json
-
 # Wait for DB container
 
 if [ -n "$EDITOR_VSCODE" ]; then
@@ -61,7 +56,7 @@ echo "Starting memcached..."
 
 echo "Running initial checks..."
 /usr/local/bin/python $WORKSPACEDIR/backend/manage.py check
-# /usr/local/bin/python $WORKSPACEDIR/ietf/manage.py migrate --settings=settings_local
+# /usr/local/bin/python $WORKSPACEDIR/backend/manage.py migrate
 
 echo "-----------------------------------------------------------------"
 echo "Done!"
@@ -74,11 +69,11 @@ if [ -z "$EDITOR_VSCODE" ]; then
         echo
         echo "You can execute arbitrary commands now, e.g.,"
         echo
-        echo "    ietf/manage.py check && ietf/manage.py runserver 0.0.0.0:8000"
+        echo "    backend/manage.py check && backend/manage.py runserver 0.0.0.0:8000"
         echo
         echo "to start a development instance of the Datatracker."
         echo
-        echo "    ietf/manage.py test --settings=settings_sqlitetest"
+        echo "    cd backend/mlarchive && pytest tests"
         echo
         echo "to run all the tests."
         echo

@@ -101,7 +101,10 @@ def test_get_order_fields():
 
 @pytest.mark.django_db(transaction=True)
 def test_get_count(messages):
-    client = Elasticsearch()
+    connection_options = settings.ELASTICSEARCH_CONNECTION
+    client = Elasticsearch(
+        connection_options['URL'],
+        index=connection_options['INDEX_NAME'])
     base = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
     # good query
     s = base.query('query_string', query='message', default_field='text')
@@ -114,7 +117,10 @@ def test_get_count(messages):
 @pytest.mark.django_db(transaction=True)
 def test_CustomPaginator(messages):
     # make query with large result set
-    client = Elasticsearch()
+    connection_options = settings.ELASTICSEARCH_CONNECTION
+    client = Elasticsearch(
+        connection_options['URL'],
+        index=connection_options['INDEX_NAME'])
     base = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
     s = base.query('match', email_list='pubthree')
     assert s.count() == 21

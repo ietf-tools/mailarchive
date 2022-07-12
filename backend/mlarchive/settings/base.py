@@ -31,6 +31,7 @@ env = environ.Env(
     ADMINS=(list, []),
     INTERNAL_IPS=(list, []),
     DATATRACKER_PERSON_ENDPOINT_API_KEY=(str, ''),
+    ELASTICSEARCH_HOST=(str, '127.0.0.1'),
     USING_CDN=(bool, False),
     CLOUDFLARE_AUTH_EMAIL=(str, ''),
     CLOUDFLARE_AUTH_KEY=(str, ''),
@@ -67,6 +68,9 @@ DATABASES = {
         'TEST': {'CHARSET': 'utf8mb4'}
     }
 }
+
+if env("DATABASES_HOST"):
+    DATABASES['default']['HOST'] = env("DATABASES_HOST")
 
 SITE_ID = 1
 
@@ -167,8 +171,9 @@ SEARCH_RESULTS_PER_PAGE = 40
 # ELASTICSEARCH SETTINGS
 ELASTICSEARCH_INDEX_NAME = 'mail-archive'
 ELASTICSEARCH_SILENTLY_FAIL = True
+ES_URL = 'http://{}:9200/'.format(env('ELASTICSEARCH_HOST'))
 ELASTICSEARCH_CONNECTION = {
-    'URL': 'http://127.0.0.1:9200/',
+    'URL': ES_URL,
     'INDEX_NAME': 'mail-archive',
 }
 ELASTICSEARCH_RESULTS_PER_PAGE = 40

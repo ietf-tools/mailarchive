@@ -8,6 +8,7 @@ from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, HASH_SESSION_K
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.urls import reverse
 from selenium.webdriver import ChromeOptions
+from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support.ui import Select
@@ -75,11 +76,11 @@ class MySeleniumTests(StaticLiveServerTestCase):
         messages = Message.objects.all().order_by('date')
         url = urljoin(self.live_server_url, messages[0].get_absolute_url())
         self.selenium.get(url)
-        self.selenium.find_element_by_class_name('next-in-list').click()
+        self.selenium.find_element(By.CLASS_NAME, 'next-in-list').click()
 
         # Wait until the response is received
         WebDriverWait(self.selenium, timeout).until(
-            lambda driver: driver.find_element_by_tag_name('body'))
+            lambda driver: driver.find_element(By.TAG_NAME, 'body'))
 
         # Get results page
         # print self.selenium.page_source
@@ -94,11 +95,11 @@ class MySeleniumTests(StaticLiveServerTestCase):
         self.assertEqual(len(messages), 4)
         url = urljoin(self.live_server_url, messages[1].get_absolute_url())
         self.selenium.get(url)
-        self.selenium.find_element_by_class_name('previous-in-list').click()
+        self.selenium.find_element(By.CLASS_NAME, 'previous-in-list').click()
 
         # Wait until the response is received
         WebDriverWait(self.selenium, timeout).until(
-            lambda driver: driver.find_element_by_tag_name('body'))
+            lambda driver: driver.find_element(By.TAG_NAME, 'body'))
 
         # Get results page
         # print self.selenium.page_source
@@ -121,19 +122,19 @@ class MySeleniumTests(StaticLiveServerTestCase):
         next_message_url = message_url.text()
 
         # navigate to first message detail
-        elements = self.selenium.find_elements_by_css_selector("a.msg-detail")
+        elements = self.selenium.find_elements(By.CSS_SELECTOR"a.msg-detail")
         elements[0].click()
 
         # Wait until the response is received
         WebDriverWait(self.selenium, timeout).until(
-            lambda driver: driver.find_element_by_tag_name('body'))
+            lambda driver: driver.find_element(By.TAG_NAME, 'body'))
 
         # click next in search button
-        self.selenium.find_element_by_class_name('next-in-search').click()
+        self.selenium.find_element(By.CLASS_NAME, 'next-in-search').click()
 
         # Wait until the response is received
         WebDriverWait(self.selenium, timeout).until(
-            lambda driver: driver.find_element_by_tag_name('body'))
+            lambda driver: driver.find_element(By.TAG_NAME, 'body'))
 
         print self.selenium.current_url
         self.assertIn(next_message_url, self.selenium.current_url)
@@ -147,21 +148,21 @@ class MySeleniumTests(StaticLiveServerTestCase):
         self.selenium.get(url)
 
         # navbar is there
-        element = self.selenium.find_element_by_class_name('navbar-msg-detail')
+        element = self.selenium.find_element(By.CLASS_NAME, 'navbar-msg-detail')
         assert element.is_displayed()
 
         # click hide
-        self.selenium.find_element_by_link_text('Hide Navigation Bar').click()
+        self.selenium.find_element(By.LINK_TEXT, 'Hide Navigation Bar').click()
 
         # navbar is gone
-        element = self.selenium.find_element_by_class_name('navbar-msg-detail')
+        element = self.selenium.find_element(By.CLASS_NAME, 'navbar-msg-detail')
         assert not element.is_displayed()
 
         # click to show
-        self.selenium.find_element_by_link_text('Show Navigation Bar').click()
+        self.selenium.find_element(By.LINK_TEXT, 'Show Navigation Bar').click()
 
         # navbar is there
-        element = self.selenium.find_element_by_class_name('navbar-msg-detail')
+        element = self.selenium.find_element(By.CLASS_NAME, 'navbar-msg-detail')
         assert element.is_displayed()
 
     @pytest.mark.usefixtures("thread_messages")
@@ -172,42 +173,42 @@ class MySeleniumTests(StaticLiveServerTestCase):
         self.selenium.get(url)
 
         # header is hidden
-        element = self.selenium.find_element_by_id('msg-header')
+        element = self.selenium.find_element(By.ID, 'msg-header')
         assert not element.is_displayed()
 
         # click show
-        self.selenium.find_element_by_link_text('Show header').click()
+        self.selenium.find_element(By.LINK_TEXT, 'Show header').click()
 
         # header is visible
         self.selenium.get_screenshot_as_file('tests/tmp/test_message_detail_toggle_msg_header.png')
-        element = self.selenium.find_element_by_id('msg-header')
+        element = self.selenium.find_element(By.ID, 'msg-header')
         assert element.is_displayed()
 
         # click to hide
-        self.selenium.find_element_by_link_text('Hide header').click()
+        self.selenium.find_element(By.LINK_TEXT, 'Hide header').click()
 
         # header is hidden
-        element = self.selenium.find_element_by_id('msg-header')
+        element = self.selenium.find_element(By.ID, 'msg-header')
         assert not element.is_displayed()
 
     def test_back_to_search(self):
         # User performs search
         url = urljoin(self.live_server_url, reverse('archive'))
         self.selenium.get(url)
-        query_input = self.selenium.find_element_by_id('id_q')
+        query_input = self.selenium.find_element(By.ID, 'id_q')
         query_input.send_keys('data')
-        self.selenium.find_element_by_name('search-form').submit()
+        self.selenium.find_element(By.NAME, 'search-form').submit()
         # Wait until the response is received
         WebDriverWait(self.selenium, timeout).until(
-            lambda driver: driver.find_element_by_tag_name('body'))
+            lambda driver: driver.find_element(By.TAG_NAME, 'body'))
 
         # Get results page
         self.assertIn('IETF Mail List Archives', self.selenium.title)
 
         # Press back button
-        self.selenium.find_element_by_id('modify-search').click()
+        self.selenium.find_element(By.ID, 'modify-search').click()
         WebDriverWait(self.selenium, timeout).until(
-            lambda driver: driver.find_element_by_tag_name('body'))
+            lambda driver: driver.find_element(By.TAG_NAME, 'body'))
 
         # End up back at basic search
         self.selenium.get_screenshot_as_file('tests/tmp/back_to_search.png')
@@ -215,24 +216,23 @@ class MySeleniumTests(StaticLiveServerTestCase):
 
     def test_back_to_advanced_search(self):
         # User performs search
-        url = urljoin(self.live_server_url,
-                               reverse('archive_advsearch'))
+        url = urljoin(self.live_server_url, reverse('archive_advsearch'))
         self.selenium.get(url)
-        query_input = self.selenium.find_element_by_id('id_query-0-value')
+        query_input = self.selenium.find_element(By.ID, 'id_query-0-value')
         query_input.send_keys('data')
-        self.selenium.find_element_by_id('advanced-search-form').submit()
+        self.selenium.find_element(By.ID, 'advanced-search-form').submit()
         # Wait until the response is received
         WebDriverWait(self.selenium, timeout).until(
-            lambda driver: driver.find_element_by_tag_name('body'))
+            lambda driver: driver.find_element(By.TAG_NAME, 'body'))
 
         # Get results page
         self.assertIn('IETF Mail List Archives', self.selenium.title)
         self.selenium.get_screenshot_as_file('tests/tmp/mailarch_test.png')
 
         # Press back button
-        self.selenium.find_element_by_id('modify-search').click()
+        self.selenium.find_element(By.ID, 'modify-search').click()
         WebDriverWait(self.selenium, timeout).until(
-            lambda driver: driver.find_element_by_tag_name('body'))
+            lambda driver: driver.find_element(By.TAG_NAME, 'body'))
 
         # End up back at advanced search
         self.assertEqual('Mail Archive Advanced Search', self.selenium.title)
@@ -240,12 +240,12 @@ class MySeleniumTests(StaticLiveServerTestCase):
     def test_advanced_search_contains(self):
         url = urljoin(self.live_server_url, reverse('archive_advsearch'))
         self.selenium.get(url)
-        query_input = self.selenium.find_element_by_id('id_query-0-value')
+        query_input = self.selenium.find_element(By.ID, 'id_query-0-value')
         query_input.send_keys('data')
-        self.selenium.find_element_by_id('advanced-search-form').submit()
+        self.selenium.find_element(By.ID, 'advanced-search-form').submit()
         # Wait until the response is received
         WebDriverWait(self.selenium, timeout).until(
-            lambda driver: driver.find_element_by_tag_name('body'))
+            lambda driver: driver.find_element(By.TAG_NAME, 'body'))
 
         # Get results page
         self.assertIn('IETF Mail List Archives', self.selenium.title)
@@ -257,16 +257,16 @@ class MySeleniumTests(StaticLiveServerTestCase):
         url = urljoin(self.live_server_url, reverse('archive_advsearch'))
         self.selenium.get(url)
 
-        select = Select(self.selenium.find_element_by_id('id_query-0-qualifier'))
+        select = Select(self.selenium.find_element(By.ID, 'id_query-0-qualifier'))
         select.select_by_visible_text('exact')
 
-        query_input = self.selenium.find_element_by_id('id_query-0-value')
+        query_input = self.selenium.find_element(By.ID, 'id_query-0-value')
         query_input.send_keys('data')
 
-        self.selenium.find_element_by_id('advanced-search-form').submit()
+        self.selenium.find_element(By.ID, 'advanced-search-form').submit()
         # Wait until the response is received
         WebDriverWait(self.selenium, timeout).until(
-            lambda driver: driver.find_element_by_tag_name('body'))
+            lambda driver: driver.find_element(By.TAG_NAME, 'body'))
 
         # Get results page
         self.assertIn('IETF Mail List Archives', self.selenium.title)
@@ -285,20 +285,20 @@ class MySeleniumTests(StaticLiveServerTestCase):
         self.selenium.get(url)
 
         #
-        self.selenium.find_element_by_id('nav-settings-anchor').click()
-        self.selenium.find_element_by_id('toggle-static').click()
+        self.selenium.find_element(By.ID, 'nav-settings-anchor').click()
+        self.selenium.find_element(By.ID, 'toggle-static').click()
 
         # Click date link
-        self.selenium.find_element_by_class_name('date-index').click()
+        self.selenium.find_element(By.CLASS_NAME, 'date-index').click()
         WebDriverWait(self.selenium, timeout).until(
-            lambda driver: driver.find_element_by_tag_name('body'))
+            lambda driver: driver.find_element(By.TAG_NAME, 'body'))
 
         # Confirm index and message in focus
         self.assertIn('Date Index', self.selenium.title)
         self.assertTrue(self.is_element_focus(message.hashcode.strip('=')))
 
     def is_element_focus(self, id):
-        return self.selenium.find_element_by_id(id) == self.selenium.switch_to.active_element
+        return self.selenium.find_element(By.ID, id) == self.selenium.switch_to.active_element
 
 """
     def test_static_mode(self):
@@ -309,14 +309,14 @@ class MySeleniumTests(StaticLiveServerTestCase):
         print self.selenium.page_source
 
         # click Legacy Mode On
-        self.selenium.find_element_by_id('nav-settings').click()
+        self.selenium.find_element(By.ID, 'nav-settings').click()
         self.selenium.get_screenshot_as_file('tests/tmp/test_static_mode.png')
-        #self.selenium.find_element_by_link_text('Legacy Mode On').click()
-        self.selenium.find_element_by_id('toggle-static').click()
+        #self.selenium.find_element(By.LINK_TEXT, 'Legacy Mode On').click()
+        self.selenium.find_element(By.ID, 'toggle-static').click()
 
         # Wait until the response is received
         #WebDriverWait(self.selenium, timeout).until(
-        #    lambda driver: driver.find_element_by_tag_name('body'))
+        #    lambda driver: driver.find_element(By.TAG_NAME, 'body'))
 
         cookies = self.selenium.get_cookies()
         print cookies

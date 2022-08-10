@@ -1,10 +1,30 @@
-version: '3'
+version: '3.8'
 
 services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+
+    init: true
+
+    # Overrides default command so things don't shut down after the process ends.
+    command: sleep infinity
+
+    # Runs app on the same network as the database container, allows "forwardPorts" in devcontainer.json function.
+    # network_mode: service:db
+
+    depends_on:
+        - db
+        - es
+        - rabbit
+
+    ipc: host
+
   es:
-    image: "elasticsearch:6.8.8"
-    ports:
-     - "9200:9200"
+    image: "elasticsearch:7.17.4"
+    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
+    # (Adding the "ports" property to this file will not forward from a Codespace.)
 
   db:
     image: mysql:5.6
@@ -13,15 +33,11 @@ services:
     environment:
       MYSQL_DATABASE: db
       MYSQL_ROOT_PASSWORD: ${DOCKER_MYSQL_ROOT_PASSWORD}
-    ports:
-      - '3306:3306'
-    expose:
-      - '3306'
+    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
+    # (Adding the "ports" property to this file will not forward from a Codespace.)
 
   rabbit:
-    image: rabbitmq:3.7
+    image: rabbitmq:3.10
     restart: always
-    ports:
-      - "5672:5672"
-    expose:
-      - "5672"
+    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
+    # (Adding the "ports" property to this file will not forward from a Codespace.)

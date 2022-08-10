@@ -9,8 +9,9 @@ AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
 # ELASTICSEARCH SETTINGS
 ELASTICSEARCH_INDEX_NAME = 'test-mail-archive'
 ELASTICSEARCH_SILENTLY_FAIL = True
+ES_URL = 'http://{}:9200/'.format(env('ELASTICSEARCH_HOST'))
 ELASTICSEARCH_CONNECTION = {
-    'URL': 'http://127.0.0.1:9200/',
+    'URL': ES_URL,
     'INDEX_NAME': 'test-mail-archive',
 }
 ELASTICSEARCH_SIGNAL_PROCESSOR = 'mlarchive.archive.signals.RealtimeSignalProcessor'

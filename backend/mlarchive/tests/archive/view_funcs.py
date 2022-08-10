@@ -18,16 +18,17 @@ from mlarchive.archive.models import EmailList
 from mlarchive.utils.test_utils import get_request
 
 from mlarchive.archive.view_funcs import get_message_index
+from mlarchive.archive.backends.elasticsearch import ESBackend
 
 
 def get_search():
-    client = Elasticsearch()
+    client = ESBackend().client
     s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
     return s
 
 
 def get_empty_search():
-    client = Elasticsearch()
+    client = ESBackend().client
     s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
     s = s.query('match', subject='')
     return s

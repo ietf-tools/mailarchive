@@ -5,6 +5,7 @@ from django.urls import reverse
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 from factories import EmailListFactory, ThreadFactory, MessageFactory
+from mock import patch
 from pyquery import PyQuery
 
 from mlarchive.archive.models import Message, Thread
@@ -14,8 +15,10 @@ import os
 import shutil
 
 
+@patch('mlarchive.archive.tasks.update_mbox.delay')
 @pytest.mark.django_db(transaction=True)
-def test_ajax_admin_action(admin_client):
+def test_ajax_admin_action(mock_update, admin_client):
+    mock_update.return_value = None
     elist = EmailListFactory.create(name='public')
     msg = MessageFactory.create(email_list=elist)
     url = reverse('ajax_admin_action')
@@ -225,7 +228,10 @@ def test_get_query_results(client, messages, settings):
     q = PyQuery(response.content)
     qid = q('.msg-list').attr('data-queryid')
     query_dict = cache.get(qid)
-    client = Elasticsearch()
+    connection_options = settings.ELASTICSEARCH_CONNECTION
+    client = Elasticsearch(
+        connection_options['URL'],
+        index=connection_options['INDEX_NAME'])
     query = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
     # query = query.extra(size=settings.SEARCH_RESULTS_PER_PAGE)
     query = query.update_from_dict(query_dict)

@@ -4,31 +4,29 @@ from io import StringIO
 
 from django.conf import settings
 from django.core.management import call_command
-from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import NotFoundError
 from elasticsearch_dsl import Search
 from factories import EmailListFactory, ThreadFactory, MessageFactory
 
 from mlarchive.archive.models import Message
+from mlarchive.archive.backends.elasticsearch import ESBackend
 
 
 @pytest.mark.django_db(transaction=True)
 def test_clear_index(search_api_messages):
     index = settings.ELASTICSEARCH_INDEX_NAME
-    client = Elasticsearch()
+    client = ESBackend().client
     s = Search(using=client, index=index)
     assert s.count() > 0
     out = StringIO()
     call_command('clear_index', interactive=False, stdout=out)
-    client = Elasticsearch()
-    # assert client.indices.exists(index=index) is False
     s = Search(using=client, index=index)
     assert s.count() == 0
 
 
 @pytest.mark.django_db(transaction=True)
 def test_rebuild_index(db_only):
-    client = Elasticsearch()
+    client = ESBackend().client
     s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
     assert s.count() == 3
     info = client.cat.indices(settings.ELASTICSEARCH_INDEX_NAME)
@@ -63,8 +61,7 @@ def test_update_index(db_only):
     index = settings.ELASTICSEARCH_INDEX_NAME
     out = StringIO()
     call_command('clear_index', interactive=False, stdout=out)
-    client = Elasticsearch()
-    # assert client.indices.exists(index=index) is False
+    client = ESBackend().client
     s = Search(using=client, index=index)
     assert s.count() == 0
     out = StringIO()
@@ -90,7 +87,7 @@ def test_update_index_date_range(db_only):
     index = settings.ELASTICSEARCH_INDEX_NAME
     out = StringIO()
     call_command('clear_index', interactive=False, stdout=out)
-    client = Elasticsearch()
+    client = ESBackend().client
     s = Search(using=client, index=index)
     assert s.count() == 0
     out = StringIO()
@@ -112,7 +109,7 @@ def test_update_index_age(db_only):
     index = settings.ELASTICSEARCH_INDEX_NAME
     out = StringIO()
     call_command('clear_index', interactive=False, stdout=out)
-    client = Elasticsearch()
+    client = ESBackend().client
     s = Search(using=client, index=index)
     assert s.count() == 0
     out = StringIO()
@@ -130,7 +127,7 @@ def test_update_index_age(db_only):
 
 @pytest.mark.django_db(transaction=True)
 def test_update_index_remove(db_only):
-    client = Elasticsearch()
+    client = ESBackend().client
     s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
     assert s.count() == 3
     out = StringIO()

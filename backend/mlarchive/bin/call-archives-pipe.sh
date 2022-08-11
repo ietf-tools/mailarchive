@@ -13,7 +13,7 @@
 # ietfarch-ietf-archive:          '|/a/mailarch/current/backend/mlarchive/bin/call-archives-pipe.sh ietf'
 
 # save message
-FILE=`/usr/bin/mktemp -u --tmpdir=/a/mailarch/data/incoming $1.private.XXXXXXXX`
+FILE=`/usr/bin/mktemp -u --tmpdir=/a/mailarch/data/incoming $1.public.XXXXXXXX`
 cat > $FILE
 
 # archive message

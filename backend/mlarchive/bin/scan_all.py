@@ -220,6 +220,17 @@ def attachments():
         print("CONTENT_DISPOSITION: %s (%s)" % (key, value))
 
 
+def bad_transfer_encoding():
+    """Searches the archive for base64 with trailing space"""
+    for elist in EmailList.objects.all().order_by('name'):
+        print("Scanning {}".format(elist.name))
+        for msg in Message.objects.filter(email_list=elist).order_by('date'):
+            message = email.message_from_bytes(msg.get_body_raw())
+            for part in message.walk():
+                if not part.is_multipart():
+                    if part['Content-Transfer-Encoding'] == 'base64 ':
+                        print('{}:{}:{}:{}'.format(msg.pk,msg.frm,msg.date.year,msg.url))
+
 def bodies():
     """Call get_body_html() and get_body() for every message in db. Use logging in
     generator_handler methods to gather stats.

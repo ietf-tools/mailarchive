@@ -215,6 +215,7 @@ ELASTICSEARCH_INDEX_MAPPINGS = {
 }
 
 # SECURITY SETTINGS
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Content security policy configuration (django-csp)
 CSP_REPORT_ONLY = False
 CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'")

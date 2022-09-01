@@ -27,7 +27,7 @@ Email Archive Installation Instructions
 
  4. Setup a new virtual environment and install requirements::
 
-      python3 -m venv env
+      python3.9 -m venv env
       source env/bin/activate
       pip install --upgrade setuptools
       pip install -r requirements.txt
@@ -60,7 +60,7 @@ Email Archive Installation Instructions
 
 Prerequisites
 -------------
-- Python 3.6
+- Python 3.9
 - Chromedriver *
 - Docker & Docker Compose
 
@@ -93,7 +93,7 @@ Prerequisites
 
 3. Setup Python virtual environment
 
-    python3 -m venv env
+    python3.9 -m venv env
     source env/bin/activate
     pip install -U setuptools
     pip install -r requirements.txt
@@ -138,7 +138,7 @@ Production Setup
 
 EXTERNAL DEPENDENCIES
 =====================
-Python 3.6
+Python 3.9
 MySQL 5.6
 Elasticsearch 7.x
 Memcached 1.4

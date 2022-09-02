@@ -350,6 +350,8 @@ SCOUT_SHUTDOWN_MESSAGE_ENABLED = False
 SCOUT_REVISION_SHA=__release_hash__[:7]
 SCOUT_CORE_AGENT_DIR = '/a/core-agent/1.4.0'
 SCOUT_CORE_AGENT_FULL_NAME = 'scout_apm_core-v1.4.0-x86_64-unknown-linux-musl'
+SCOUT_CORE_AGENT_DOWNLOAD = False
+SCOUT_CORE_AGENT_LAUNCH = False
 
 ###########
 # LOGGING #

@@ -36,23 +36,30 @@ Email Archive Installation Instructions
 
       backend/manage.py collectstatic --noinput
 
- 6. Run migrations:  
+ 6. Stop the mail archive service
+      (run in a different terminal window with access to sudo)
+      sudo systemctl stop mailarchive.socket mailarchive.service
 
+ 7. Run migrations:  
       backend/manage.py migrate
 
       Take note if any migrations were executed.
  
- 7. Back out one directory level, then re-point the 'current' symlink::
+ 8. Back out one directory level, then re-point the 'current' symlink::
 
       cd ..
       rm ./current; ln -s ${releasenumber} current
 
- 8. Verify operation: 
+ 9. Start the mail archive service
+      (run in a different terminal window with access to sudo)
+      sudo systemctl start mailarchive.socket mailarchive.service
+
+ 10. Verify operation: 
 
       http://mailarchive.ietf.org/
 
- 9. If install failed and there were no migrations at step 6,
-    revert web symlink. If there were migrations at step 6, they will need to be reversed. If it's not obvious what to do to reverse the migrations, contact the dev team.
+ 11. If install failed and there were no migrations at step 7,
+    revert web symlink. If there were migrations at step 7, they will need to be reversed. If it's not obvious what to do to reverse the migrations, contact the dev team.
 
 
 2. Simple development setup

@@ -21,7 +21,7 @@ from django.forms.formsets import formset_factory
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.utils.encoding import smart_text, smart_bytes
+from django.utils.encoding import smart_bytes
 
 from mlarchive.archive.forms import RulesForm
 from mlarchive.archive.models import EmailList, Message

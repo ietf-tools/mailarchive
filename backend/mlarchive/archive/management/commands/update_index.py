@@ -8,7 +8,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import close_old_connections, reset_queries
-from django.utils.encoding import force_text, smart_bytes
+from django.utils.encoding import smart_bytes
 from django.utils.timezone import now
 from elasticsearch_dsl import Search
 

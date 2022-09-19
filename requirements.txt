@@ -30,6 +30,7 @@ mysqlclient
 mock>=2.0.0
 mozilla-django-oidc==2.0.0
 passlib
+pymemcache==3.5.2
 pyopenssl
 pyquery
 pytest

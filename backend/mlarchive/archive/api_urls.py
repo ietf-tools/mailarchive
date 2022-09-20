@@ -4,5 +4,5 @@ from mlarchive.archive import api
 
 
 urlpatterns = [
-    path('msg_counts/', api.MsgCountView.as_view(), name='api_msg_counts'),
+    path('v1/stats/msg_counts/', api.MsgCountView.as_view(), name='api_msg_counts'),
 ]

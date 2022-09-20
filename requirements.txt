@@ -30,6 +30,7 @@ mysqlclient
 mock>=2.0.0
 mozilla-django-oidc==2.0.0
 passlib
+pymemcache==3.5.2
 pyopenssl
 pyquery
 pytest
@@ -38,7 +39,6 @@ pytest-flakes
 pytest-pycodestyle
 pytest-django>=2.9.1
 python-dateutil>=2.2
-python-memcached>=1.48
 scout-apm>=2.23.0
 selenium
 six

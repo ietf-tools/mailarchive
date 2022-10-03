@@ -223,6 +223,7 @@ CSP_IMG_SRC = ("'self'", 'data:', 'https://online.swagger.io', 'https://validato
 CSP_FONT_SRC = ("'self'", 'data:', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com')
 CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com')
 CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com')
+CSP_CONNECT_SRC = ("'self'", 'https://raw.githubusercontent.com')
 
 # Setting for django_referrer_policy.middleware.ReferrerPolicyMiddleware
 REFERRER_POLICY = 'strict-origin-when-cross-origin'

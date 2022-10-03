@@ -22,6 +22,7 @@ urlpatterns = [
     path('arch/', include('mlarchive.archive.urls')),
     path('api/', include('mlarchive.archive.api_urls')),
     path('admin/', admin.site.urls),
+    path('docs/', include('mlarchive.archive.docs_urls')),
     path('oidc/', include('mozilla_django_oidc.urls')),
     path('sitemap\.xml', cache_page(86400)(gzip_page(sitemap)), {'sitemaps': sitemaps},
         name='django.contrib.sitemaps.views.sitemap'),

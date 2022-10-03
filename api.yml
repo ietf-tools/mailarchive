@@ -1,0 +1,87 @@
+---
+openapi: "3.0.3"
+info:
+  title: IETF Mail Archive API
+  version: 0.1.0
+servers:
+  - url: https://mailarchive.ietf.org
+    description: server
+paths:
+  /api/v1/stats/msg_counts:
+    get:
+      summary: Number of messages for given list(s), date range 
+      parameters:
+        - in: query
+          name: list
+          schema:
+            type: string
+          description: Email list(s). Optional. Comma separated list of Email Lists. If not provided return counts for all lists
+          examples:
+            one:
+              value: dnsop
+              summary: stats for one list
+            multi:
+              value: dnsop,v6ops
+              summary: stats for multiple lists
+        - in: query
+          name: start 
+          schema:
+            type: string
+            format: date
+            example: 20200101
+          description: Start Date ISO Format. Optional. Defaults to thirty days ago
+        - in: query 
+          name: end 
+          schema:
+            type: string
+            format: date
+            example: 20201231
+          description: End Date ISO Format. Optional. Defaults to today
+        - in: query 
+          name: duration 
+          schema:
+            type: string
+          description: Time duration. Optional. N(years|months|weeks|days|hours|minutes)
+          examples:
+            none:
+              value:
+              summary: no duration
+            weeks:
+              value: 6weeks
+              summary: a duration of 6 weeks
+            years:
+              value: 2years
+              summary: a duration of 2 years
+      responses:
+        '200':
+          description: Returns message counts 
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  start:
+                    type: string
+                    description: Start date
+                  end:
+                    type: string
+                    description: End date
+                  msg_counts:
+                    type: object
+                    description: Counts per list
+              example:
+                start: 20200101
+                end: 20201231
+                msg_counts:
+                  dnsop: 1764
+
+        '400':
+          description: Error has occured.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error description

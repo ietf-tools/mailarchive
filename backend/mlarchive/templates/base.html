@@ -50,8 +50,12 @@
                         <a class="nav-link" href="https://datatracker.ietf.org">Search Datatracker</a>
                     </li>
 		    <li class="nav-item navbar-text pipe"></li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url "archive_help" %}">Help</a>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbar-help" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Help</a>
+                        <div class="dropdown-menu" aria-labelledby="navbar-help">
+                            <a class="dropdown-item" href="{% url "archive_help" %}">Search Syntax</a>
+                            <a class="dropdown-item" href="{% url "docs_api_reference" %}">API Reference</a>
+                        </div>
                     </li>
 
                     {% if user.is_superuser or user.is_staff %}

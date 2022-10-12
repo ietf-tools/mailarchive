@@ -4,9 +4,9 @@
 show_help() {
     cat << EOF
 Usage: ${0##*/} [-h] [-p PORT] [-r]
-Run datatracker in dev containers using docker-compose.
+Run mail archive in dev containers using docker-compose.
     -h          display this help and exit
-    -p PORT     use custom HTTP port for datatracker
+    -p PORT     use custom HTTP port for mail archive
     -r          force rebuild the app container
 EOF
 }

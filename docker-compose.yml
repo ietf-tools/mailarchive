@@ -25,14 +25,16 @@ services:
     image: "elasticsearch:7.17.4"
     # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
     # (Adding the "ports" property to this file will not forward from a Codespace.)
-
+    environment:
+        - discovery.type=single-node
+        - xpack.security.enabled=false
+        
   db:
-    image: mysql:5.6
-    command: --default-authentication-plugin=mysql_native_password
+    image: mariadb:10.9
     restart: always
     environment:
       MYSQL_DATABASE: db
-      MYSQL_ROOT_PASSWORD: ${DOCKER_MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: franticmarble
     # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
     # (Adding the "ports" property to this file will not forward from a Codespace.)
 

@@ -33,7 +33,7 @@ services:
     image: mariadb:10.9
     restart: always
     environment:
-      MYSQL_DATABASE: db
+      MYSQL_DATABASE: mailarch
       MYSQL_ROOT_PASSWORD: franticmarble
     # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
     # (Adding the "ports" property to this file will not forward from a Codespace.)

@@ -35,10 +35,18 @@ else
 fi
 
 # Create data directories
-
 echo "Creating data directories..."
-chmod +x ./docker/scripts/app-create-dirs.sh
-./docker/scripts/app-create-dirs.sh
+for sub in \
+    /data/archive \
+    /data/log/mail-archive \
+    ; do
+    if [ ! -d "$sub"  ]; then
+        echo "Creating dir $sub"
+        mkdir -p "$sub";
+    fi
+    sudo chown -R dev:dev "/data"
+done
+
 
 # Wait for DB container
 
@@ -56,7 +64,7 @@ echo "Starting memcached..."
 
 echo "Running initial checks..."
 /usr/local/bin/python $WORKSPACEDIR/backend/manage.py check
-# /usr/local/bin/python $WORKSPACEDIR/backend/manage.py migrate
+/usr/local/bin/python $WORKSPACEDIR/backend/manage.py migrate
 
 echo "-----------------------------------------------------------------"
 echo "Done!"

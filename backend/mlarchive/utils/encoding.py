@@ -58,8 +58,10 @@ def is_attachment(sub_message):
 
 class CustomContentTransferEncodingHeader(ContentTransferEncodingHeader):
     """
-    Copied and updated from email/headerregistry.py to handle
-    'base64 ', with trailing whitespace
+    Custom header subclass. Override __str__ to return self.cte, attribute
+    which is the header value stripped of whitespace.
+    See this issue for more context:
+    https://github.com/python/cpython/issues/98188
     """
     def __str__(self):
         return str(self.cte)

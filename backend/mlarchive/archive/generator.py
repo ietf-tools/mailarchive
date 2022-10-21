@@ -23,7 +23,7 @@ from django.template.loader import render_to_string
 from lxml.etree import XMLSyntaxError, ParserError
 from lxml.html.clean import Cleaner
 
-from mlarchive.utils.encoding import decode_safely, get_filename, is_attachment
+from mlarchive.utils.encoding import decode_safely, get_filename, is_attachment, custom_policy
 
 import logging
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class Generator:
         self.error = None
         try:
             with open(msg.get_file_path(), 'rb') as f:
-                self.mdmsg = mailbox.MaildirMessage(f)
+                self.mdmsg = email.message_from_binary_file(f, policy=custom_policy)
         except IOError:
             logger.error('Error reading message file: %s' % msg.get_file_path())
             self.error = 'Error reading message file'

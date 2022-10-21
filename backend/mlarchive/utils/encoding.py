@@ -2,7 +2,10 @@ import binascii
 import email
 import re
 import six
+from email import policy
 from email.header import HeaderParseError, decode_header
+from email.headerregistry import HeaderRegistry, ContentTransferEncodingHeader
+
 import logging
 
 DEFAULT_CHARSET = 'latin1'
@@ -52,3 +55,19 @@ def is_attachment(sub_message):
         return True
     else:
         return False
+
+class CustomContentTransferEncodingHeader(ContentTransferEncodingHeader):
+    """
+    Custom header subclass. Override __str__ to return self.cte, attribute
+    which is the header value stripped of whitespace.
+    See this issue for more context:
+    https://github.com/python/cpython/issues/98188
+    """
+    def __str__(self):
+        return str(self.cte)
+
+
+header_factory = HeaderRegistry()
+header_factory.map_to_type('content-transfer-encoding', CustomContentTransferEncodingHeader)
+
+custom_policy = policy.default.clone(header_factory=header_factory)

@@ -1,0 +1,23 @@
+Mime-Version: 1.0
+Date: Tue, 7 Mar 2017 09:08:13 +0800 (CST)
+From: <foo@example.com>
+To: <bar@example.com>
+Subject: Test
+Content-Type: multipart/mixed;
+        boundary="=====_001_next====="
+
+--=====_001_next=====
+Content-Transfer-Encoding: base64 
+Content-Type: text/plain;
+        charset="UTF-8"
+
+SGVsbG8uIFRlc3Rpbmc=
+
+--=====_001_next=====
+Content-Transfer-Encoding: base64
+Content-Type: text/html ;
+        charset="UTF-8"
+
+PGgxPkhlbGxvLiBUZXN0aW5nPC9oMT4=
+
+--=====_001_next=====--

@@ -451,6 +451,21 @@ def test_detail(client):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_detail_bad_content_transfer_encoding(client):
+    '''Test that message with content_transfer_encoding = "base64 ",
+    with trailing whitespace is decoded properly
+    '''
+    listname = 'public'
+    load_message('bad_transfer_encoding.mail', listname=listname)
+    msg = Message.objects.first()
+    url = reverse('archive_detail', kwargs={'list_name': listname, 'id': msg.hashcode})
+    response = client.get(url)
+    assert response.status_code == 200
+    print(response.content)
+    assert 'Hello. Testing' in smart_str(response.content)
+
+
+@pytest.mark.django_db(transaction=True)
 def test_detail_content_link(client):
     '''Test that url in message content appears as a link'''
     listname = 'public'

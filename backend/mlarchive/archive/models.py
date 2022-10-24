@@ -464,3 +464,11 @@ class Legacy(models.Model):
 
     def __str__(self):
         return '%s:%s' % (self.email_list_id, self.msgid)
+
+
+class Redirect(models.Model):
+    old = models.CharField(max_length=255, db_index=True)
+    new = models.CharField(max_length=255)
+
+    def __str__(self):
+        return '{} -> {}'.format(self.old, self.new)

@@ -175,6 +175,25 @@ def archived_at():
     print('mismatches: {} of ({})'.format(mismatch, count))
 
 
+def archived_at_report():
+    """Find messages whose Archived-At header does not match url"""
+    from email.parser import BytesParser
+    parser = BytesParser()
+    for message in Message.objects.filter(date__year__gte=2013).order_by('-date'):
+        msg = parser.parsebytes(message.get_body_raw(), headersonly=True)
+        archives = msg.get_all('archived-at')
+        if not archives:
+            continue
+        # if any archive-at values are ours, one must match
+        matches = []
+        hashcode = message.hashcode.strip('=')
+        for url in archives:
+            if 'mailarchive' in url:
+                matches.append(hashcode in url)
+        if matches and not any(matches):
+            print('{},{},{}'.format(message.date.strftime('%m-%d-%Y'),url, hashcode))
+
+
 def attachments():
     """Scan all lists, analyze attachments"""
     missing_from_db = 0

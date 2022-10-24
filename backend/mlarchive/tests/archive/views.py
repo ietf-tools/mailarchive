@@ -12,12 +12,13 @@ from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils.encoding import smart_str
 from factories import EmailListFactory, MessageFactory, UserFactory
-from mlarchive.archive.models import Message, Attachment
+from mlarchive.archive.models import Message, Attachment, Redirect
 from mlarchive.archive.mail import archive_message
 from mlarchive.archive.views import (TimePeriod, add_nav_urls, is_small_year,
     add_one_month, get_this_next_periods, get_date_endpoints, get_thread_endpoints,
     DateStaticIndexView)
 from pyquery import PyQuery
+
 
 
 # --------------------------------------------------
@@ -692,3 +693,24 @@ def test_search(client):
     url = reverse('archive_search') + '?q=%CF%80'
     response = client.get(url)
     assert response.status_code == 200
+
+
+@pytest.mark.django_db(transaction=True)
+def test_redirect(client):
+    Redirect.objects.create(old='/arch/msg/ietf/sssUEHOjoGhGRvDHFDrMP7h3Yf8/', new='/arch/msg/ietf/QajUS7jafu9sclZTiz4TMSehcjE/')
+    url = reverse('archive_detail', kwargs={'list_name': 'ietf', 'id': 'sssUEHOjoGhGRvDHFDrMP7h3Yf8'})
+    response = client.get(url)
+    assert response.status_code == 301
+    assert response['location'] == '/arch/msg/ietf/QajUS7jafu9sclZTiz4TMSehcjE/'
+
+
+@pytest.mark.django_db(transaction=True)
+def test_removed_message(client, thread_messages):
+    msg = Message.objects.last()
+    path = msg.get_file_path()
+    assert os.path.exists(path)
+    msg.delete()
+    response = client.get(msg.get_absolute_url())
+    assert response.status_code == 410
+    assert 'This message has been removed' in smart_str(response.content)
+

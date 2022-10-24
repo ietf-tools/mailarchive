@@ -1,11 +1,12 @@
 import datetime
+import os
 import time
 
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect, render
 from functools import wraps
-from mlarchive.archive.models import Message, EmailList
+from mlarchive.archive.models import Message, EmailList, Redirect
 
 import logging
 logger = logging.getLogger(__name__)
@@ -25,7 +26,27 @@ def check_access(func):
             msg = get_object_or_404(Message.objects.select_related(), id=request.GET['id'])
         # if passed as a function argument id is a hashcode (less common)
         elif 'id' in kwargs:
-            msg = get_object_or_404(Message.objects.select_related(), hashcode=kwargs['id'])
+            try:
+                msg = Message.objects.get(hashcode=kwargs['id'], email_list__name=kwargs['list_name'])
+            except Message.DoesNotExist: 
+                # look in redirect table
+                try:
+                    redir = Redirect.objects.get(old=request.get_full_path())
+                    return redirect(redir.new, permanent=True)
+                except Redirect.DoesNotExist:
+                    pass
+                # look in _removed
+                try:
+                    email_list = EmailList.objects.get(name=kwargs['list_name'])
+                except EmailList.DoesNotExist:
+                    raise Http404
+                hashcode = kwargs['id']
+                if not hashcode.endswith('='):
+                    hashcode = hashcode + '='
+                path = os.path.join(email_list.removed_dir, hashcode)
+                if os.path.exists(path):
+                    return render(request, 'archive/removed.html', {}, status=410)
+                raise Http404
         else:
             raise Http404
 

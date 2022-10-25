@@ -192,12 +192,16 @@ def archived_at_report(fix=False):
         if len(archives) == 1 and 'mailarchive' in archives[0] and hashcode not in archives[0]:
             print('{},{},{}'.format(message.date.strftime('%m-%d-%Y'),archives[0], hashcode))
             if fix:
+                new = message.get_absolute_url()
                 parts = urlparse(archives[0].strip('<>'))
                 if parts.path:
                     try:
-                        Redirect.objects.create(old=parts.path, new=message.get_absolute_url())
-                    except IntegrityError:
-                        pass
+                        redir = Redirect.objects.get(old=parts.path)
+                        if redir.new != new:
+                            err = 'Redirect already exists with different target. exists:{}, trying:{}, (pk={})'
+                            raise Exception(err.format(redir, new, message.pk))
+                    except Redirect.DoesNotExist:
+                        Redirect.objects.create(old=parts.path, new=new)
 
 
 def attachments():

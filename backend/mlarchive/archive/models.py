@@ -467,7 +467,7 @@ class Legacy(models.Model):
 
 
 class Redirect(models.Model):
-    old = models.CharField(max_length=255, db_index=True)
+    old = models.CharField(max_length=255, db_index=True, unique=True)
     new = models.CharField(max_length=255)
 
     def __str__(self):

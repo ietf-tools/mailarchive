@@ -175,23 +175,29 @@ def archived_at():
     print('mismatches: {} of ({})'.format(mismatch, count))
 
 
-def archived_at_report():
-    """Find messages whose Archived-At header does not match url"""
+def archived_at_report(fix=False):
+    """Find messages whose Archived-At header does not match url.
+    --fix will populate Redirect table for mismatched URLs
+    """
+    from django.db.utils import IntegrityError
+    from mlarchive.archive.models import Redirect
+    from urllib.parse import urlparse
     from email.parser import BytesParser
     parser = BytesParser()
     for message in Message.objects.filter(date__year__gte=2013).order_by('-date'):
         msg = parser.parsebytes(message.get_body_raw(), headersonly=True)
         archives = msg.get_all('archived-at')
-        if not archives:
-            continue
-        # if any archive-at values are ours, one must match
-        matches = []
         hashcode = message.hashcode.strip('=')
-        for url in archives:
-            if 'mailarchive' in url:
-                matches.append(hashcode in url)
-        if matches and not any(matches):
-            print('{},{},{}'.format(message.date.strftime('%m-%d-%Y'),url, hashcode))
+        # problem messages will have one mailarchive archived-at header that does not match
+        if len(archives) == 1 and 'mailarchive' in archives[0] and hashcode not in archives[0]:
+            print('{},{},{}'.format(message.date.strftime('%m-%d-%Y'),archives[0], hashcode))
+            if fix:
+                parts = urlparse(archives[0].strip('<>'))
+                if parts.path:
+                    try:
+                        Redirect.objects.create(old=parts.path, new=message.get_absolute_url())
+                    except IntegrityError:
+                        pass
 
 
 def attachments():

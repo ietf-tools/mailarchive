@@ -466,6 +466,51 @@ def test_detail_bad_content_transfer_encoding(client):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_detail_bad_to_address(client):
+    '''Test that message with bad To address doesn't break detail view.
+    To address contains "::;"
+    '''
+    listname = 'public'
+    load_message('bad_to_address.mail', listname=listname)
+    msg = Message.objects.first()
+    url = reverse('archive_detail', kwargs={'list_name': listname, 'id': msg.hashcode})
+    response = client.get(url)
+    assert response.status_code == 200
+    # print(response.content)
+    # from mlarchive.archive.generator import Generator
+    # g = Generator(msg)
+    # text = g.as_text()
+    # print(text)
+    # print(msg.get_body())
+    import email
+    from email import policy
+    path = msg.get_file_path()
+    with open(path, 'rb') as f:
+        m = email.message_from_binary_file(f, policy=policy.compat32)
+    assert isinstance(m, email.message.Message)
+    print(vars(m))
+    print(msg.get_file_path())
+    assert 'Hello. Testing' in smart_str(response.content)
+
+
+@pytest.mark.skip(reason='Not representative of data ?')
+@pytest.mark.django_db(transaction=True)
+def test_detail_bad_date(client):
+    '''Test that message with bad date header doesn't break detail view.
+    Date header is very old like: Date: 04-Jan-93 13:22:13
+    '''
+    listname = 'public'
+    load_message('bad_date.mail', listname=listname)
+    print(Message.objects.count())
+    msg = Message.objects.first()
+    url = reverse('archive_detail', kwargs={'list_name': listname, 'id': msg.hashcode})
+    response = client.get(url)
+    assert response.status_code == 200
+    print(response.content)
+    assert 'Hello. Testing' in smart_str(response.content)
+
+
+@pytest.mark.django_db(transaction=True)
 def test_detail_content_link(client):
     '''Test that url in message content appears as a link'''
     listname = 'public'

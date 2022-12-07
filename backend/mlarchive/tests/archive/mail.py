@@ -2,6 +2,7 @@
 import datetime
 import email
 import email.message
+from email import policy
 import glob
 import io
 import mailbox
@@ -11,7 +12,7 @@ import pytz
 import shutil
 import six
 import sys
-from io import StringIO
+from io import StringIO, BytesIO
 
 from django.conf import settings
 from django.core.management import call_command
@@ -20,7 +21,7 @@ from mlarchive.archive.models import Message, EmailList
 from mlarchive.archive.mail import (archive_message, clean_spaces, MessageWrapper,
     get_base_subject, get_envelope_date, tzoffset, get_from, get_header_date, get_mb,
     is_aware, get_received_date, parsedate_to_datetime, subject_is_reply,
-    lookup_extension)
+    lookup_extension, get_message_from_bytes)
 from factories import EmailListFactory, MessageFactory, ThreadFactory
 from mlarchive.utils.test_utils import message_from_file
 
@@ -503,6 +504,29 @@ def test_lookup_extension():
     assert lookup_extension('image/jpeg') == 'jpeg'
     assert lookup_extension('text/html') == 'html'
     assert lookup_extension('hologram/3d') == 'bin'     # default for unknown
+
+
+def test_get_mail_from_bytes():
+    # test with problematic header
+    b = b'''Date: Thu, 7 Nov 2013 17:54:55 +0000
+    To: <joe@example.com>
+    From: Bob <.bob@example.com>
+    Subject: This is a test
+
+    Testing.
+    '''
+    msg = get_message_from_bytes(b, policy=policy.SMTP)
+    assert isinstance(msg, email.message.Message)
+    # test with clean header
+    b = b'''Date: Thu, 7 Nov 2013 17:54:55 +0000
+    To: <joe@example.com>
+    From: Bob <bob@example.com>
+    Subject: This is a test
+
+    Testing.
+    '''
+    msg = get_message_from_bytes(b, policy=policy.SMTP)
+    assert isinstance(msg, email.message.EmailMessage)
 
 
 # test various exceptions raised

@@ -17,6 +17,7 @@ import mailbox
 import six
 
 from email.utils import collapse_rfc2231_value
+from email import policy as email_policy
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -48,6 +49,19 @@ def skip_attachment(function):
         return function(*args, **kwargs)
     return _inner
 
+
+def get_message_from_binary_file(f, policy):
+    '''Wrapper function for email.message_from_binary_file. Returns EmailMessage
+    unless header parsing fails, else Message
+    '''
+    msg = email.message_from_binary_file(f, policy=policy)
+    try:
+        _ = list(msg.items())
+        return msg
+    except:
+        f.seek(0)
+        return email.message_from_binary_file(f, policy=email_policy.compat32)
+
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------
@@ -68,7 +82,7 @@ class Generator:
         self.error = None
         try:
             with open(msg.get_file_path(), 'rb') as f:
-                self.mdmsg = email.message_from_binary_file(f, policy=custom_policy)
+                self.mdmsg = get_message_from_binary_file(f, policy=custom_policy)
         except IOError:
             logger.error('Error reading message file: %s' % msg.get_file_path())
             self.error = 'Error reading message file'

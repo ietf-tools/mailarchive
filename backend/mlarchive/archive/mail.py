@@ -14,7 +14,7 @@ import tempfile
 import traceback
 import uuid
 from collections import deque
-from email import policy
+from email import policy as email_policy
 from email.utils import parsedate_tz, getaddresses, make_msgid
 from email.utils import parsedate_to_datetime
 from io import StringIO
@@ -35,7 +35,7 @@ from mlarchive.utils.encoding import decode_safely, decode_rfc2047_header, get_f
 import logging
 logger = logging.getLogger(__name__)
 
-NO_REFOLD_POLICY = policy.SMTP.clone(refold_source='none')
+NO_REFOLD_POLICY = email_policy.SMTP.clone(refold_source='none')
 
 '''
 Notes on character encoding.
@@ -451,6 +451,29 @@ def lookup_extension(mime_type):
     return mime_types.get(mime_type, 'bin')
 
 
+'''
+The following function is a wrapper for email parsing convenience function:
+message_from_bytes. See also get_message_from_binary_file in generator.py
+
+Background: the Python email package received a major upgrade in 
+Python 3.3, to improve the email interface and add support for unicode.
+The new object model, email.message.EmailMessage saves headers as
+string-like smart objects. To accomplish this more detailed header
+parsing is done. The side effect is occasional header parsing errors
+with malformed header values. When this happens we want to drop back
+to the legacy object email.message.Message by using the commpat32 
+policy.
+'''
+
+def get_message_from_bytes(b, policy):
+    msg = email.message_from_bytes(b, policy=policy)
+    try:
+        _ = list(msg.items())
+        return msg
+    except:
+        return email.message_from_bytes(b, policy=email_policy.compat32)
+
+
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------
@@ -636,7 +659,7 @@ class MessageWrapper(object):
         self.created_id = False
         if bytes is not None:
             self.bytes = bytes
-            self.email_message = email.message_from_bytes(bytes, policy=NO_REFOLD_POLICY)
+            self.email_message = get_message_from_bytes(bytes, policy=NO_REFOLD_POLICY)
         else:
             self.bytes = message.as_bytes(policy=NO_REFOLD_POLICY)
             self.email_message = message

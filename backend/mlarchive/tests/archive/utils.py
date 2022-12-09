@@ -1,3 +1,4 @@
+import datetime
 import mailbox
 import pytest
 import requests
@@ -12,7 +13,8 @@ from django.core.cache import cache
 from django.contrib.auth.models import AnonymousUser
 from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     lookup_user, process_members, get_membership, check_inactive, EmailList,
-    create_mbox_file, _get_lists_as_xml)
+    create_mbox_file, _get_lists_as_xml, get_subscribers, Subscriber,
+    get_known_mailman_lists, get_subscriber_count)
 from factories import EmailListFactory
 
 
@@ -199,3 +201,42 @@ def test_get_lists_as_xml(client):
 
     private_test = root.find("shared_root/[@name='private']").find("user/[@name='test']")
     assert private_test.attrib['access'] == 'read,write'
+
+
+@patch('subprocess.check_output')
+@pytest.mark.django_db(transaction=True)
+def test_get_subscribers(mock_output):
+    public = EmailListFactory.create(name='public')
+    # handle multiple calls to check_output
+    mock_output.return_value = b'joe@example.com\nfred@example.com\n'
+    subs = get_subscribers('public')
+    assert subs == ['joe@example.com', 'fred@example.com']
+
+
+@patch('subprocess.check_output')
+@pytest.mark.django_db(transaction=True)
+def test_get_subscriber_count(mock_output):
+    public = EmailListFactory.create(name='public')
+
+    # handle multiple calls to check_output
+    mock_output.side_effect = [
+        b'     public - Public List\n     private - Private List',
+        b'joe@example.com\nfred@example.com\nmary@example.com\n',
+    ]
+    assert Subscriber.objects.count() == 0
+    get_subscriber_count()
+    subscriber = Subscriber.objects.first()
+    assert subscriber.email_list == public
+    assert subscriber.date == datetime.date.today()
+    assert subscriber.count == 3
+
+
+@patch('subprocess.check_output')
+@pytest.mark.django_db(transaction=True)
+def test_get_known_mailman_lists(mock_output):
+    public = EmailListFactory.create(name='public')
+    private = EmailListFactory.create(name='private', private=True)
+    mock_output.return_value = b'    public - Public Email List\n   private - Private Email List'
+    mlists = get_known_mailman_lists(private=False)
+    assert len(mlists) == 1
+    assert list(mlists) == [public]

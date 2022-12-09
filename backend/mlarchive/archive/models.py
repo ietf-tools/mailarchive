@@ -464,3 +464,12 @@ class Legacy(models.Model):
 
     def __str__(self):
         return '%s:%s' % (self.email_list_id, self.msgid)
+
+
+class Subscriber(models.Model):
+    email_list = models.ForeignKey(EmailList, db_index=True, on_delete=models.PROTECT)
+    date = models.DateField(auto_now_add=True)
+    count = models.PositiveIntegerField()
+
+    def __str__(self):
+        return '{}: {}'.format(self.email_list, self.count)

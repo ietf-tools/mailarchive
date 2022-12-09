@@ -18,7 +18,7 @@ from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.http import HttpResponse
 from django.utils.encoding import smart_bytes
-from mlarchive.archive.models import EmailList
+from mlarchive.archive.models import EmailList, Subscriber
 # from mlarchive.archive.signals import _export_lists, _list_save_handler
 
 
@@ -192,15 +192,9 @@ def process_members(email_list, emails):
                 email_list.members.add(user)
 
 
-def get_membership(options, args):
-    list_members_cmd = os.path.join(settings.MAILMAN_DIR, 'bin/list_members')
+def get_known_mailman_lists(private=None):
+    '''Returns EmailLists that are managed by mailman'''
     list_lists_cmd = os.path.join(settings.MAILMAN_DIR, 'bin/list_lists')
-
-    # disconnect the EmailList post_save signal, we don't want to call it multiple
-    # times if many lists memberships have changed
-    # signals.post_save.disconnect(_list_save_handler, sender=EmailList)
-    has_changed = False
-
     known_lists = []
     data = subprocess.check_output([list_lists_cmd])
     output = data.decode('ascii').splitlines()
@@ -208,21 +202,46 @@ def get_membership(options, args):
         match = LIST_LISTS_PATTERN.match(line)
         if match:
             known_lists.append(match.groups()[0].lower())
+    
+    mlists = EmailList.objects.filter(name__in=known_lists)
+    if isinstance(private, bool):
+        mlists = mlists.filter(private=private)
+    return mlists
 
-    for mlist in EmailList.objects.filter(private=True, name__in=known_lists, active=True):
+
+def get_subscribers(listname):
+    '''Gets list of subscribers for listname from mailman'''
+    list_members_cmd = os.path.join(settings.MAILMAN_DIR, 'bin/list_members')
+    subscribers = []
+    try:
+        output = subprocess.check_output([list_members_cmd, listname]).decode('latin1')
+    except subprocess.CalledProcessError:
+        return []
+    return output.split()
+
+
+def get_subscriber_count():
+    '''Populates Subscriber table with subscriber counts from mailman'''
+    for mlist in get_known_mailman_lists():
+        Subscriber.objects.create(email_list=mlist, count=len(get_subscribers(mlist.name)))
+
+
+def get_membership(options, args):
+    # disconnect the EmailList post_save signal, we don't want to call it multiple
+    # times if many lists memberships have changed
+    # signals.post_save.disconnect(_list_save_handler, sender=EmailList)
+    has_changed = False
+
+    for mlist in get_known_mailman_lists(private=True):
         if not options.quiet:
             print("Processing: %s" % mlist.name)
 
-        try:
-            output = subprocess.check_output([list_members_cmd, mlist.name]).decode('latin1')
-        except subprocess.CalledProcessError:
-            continue
-
-        sha = hashlib.sha1(smart_bytes(output))
+        subscribers = get_subscribers(mlist.name)
+        sha = hashlib.sha1(smart_bytes(subscribers))
         digest = base64.urlsafe_b64encode(sha.digest())
         if mlist.members_digest != digest:
             has_changed = True
-            process_members(mlist, output.split())
+            process_members(mlist, subscribers)
             mlist.members_digest = digest
             mlist.save()
 

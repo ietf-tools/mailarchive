@@ -85,3 +85,57 @@ paths:
                   error:
                     type: string
                     description: Error description
+        
+  /api/v1/stats/subscriber_counts:
+    get:
+      summary: Number of subscribers for given list(s), for date
+      parameters:
+        - in: query
+          name: list
+          schema:
+            type: string
+          description: Email list(s). Optional. Comma separated list of Email Lists. If not provided return counts for all lists
+          examples:
+            one:
+              value: dnsop
+              summary: stats for one list
+            multi:
+              value: dnsop,v6ops
+              summary: stats for multiple lists
+        - in: query
+          name: date 
+          schema:
+            type: string
+            format: date
+            example: 20200101
+          description: Start Date ISO Format. Optional. Defaults to first day of last month
+
+      responses:
+        '200':
+          description: Returns subscriber counts 
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  date:
+                    type: string
+                    description: Date
+                  subscriber_counts:
+                    type: object
+                    description: Counts per list
+              example:
+                date: 20200101
+                subscriber_counts:
+                  dnsop: 315
+
+        '400':
+          description: Error has occured.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    description: Error description

@@ -16,6 +16,7 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 class EmailListFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = EmailList
+        django_get_or_create = ('name',)
 
     name = 'public'
 

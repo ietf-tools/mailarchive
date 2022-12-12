@@ -8,7 +8,7 @@ from django.views import View
 from django.http import JsonResponse
 
 from mlarchive.exceptions import HttpJson400, HttpJson404
-from mlarchive.archive.models import Message, EmailList
+from mlarchive.archive.models import Message, EmailList, Subscriber
 
 
 duration_pattern = re.compile(r'(?P<num>\d+)(?P<unit>years|months|weeks|days|hours|minutes)')
@@ -106,3 +106,64 @@ class MsgCountView(View):
         self.data['msg_counts'] = msg_counts
         return JsonResponse(self.data)
         
+
+class SubscriberCountsView(View):
+    '''An API to get subscriber counts for given lists.
+    
+    Parameters:
+    list:   the email list name. Multiple can be provided
+    date:   date in ISO form
+    '''
+    def setup(self, request, *args, **kwargs):
+        self.data = OrderedDict()
+        return super().setup(request, *args, **kwargs)
+    
+    def get_filters(self):
+        '''Build Message query filters from GET parameters'''
+        filters = {}
+
+        # date
+        if 'date' in self.request.GET:
+            self.data['date'] = self.request.GET.get('date')
+            try:
+                filters['date'] = isoparse(self.data['date'])
+            except ValueError:
+                raise HttpJson400('invalid date')
+        # default to previous month if date not given
+        else:
+            date = datetime.date.today() - relativedelta(months=1)
+            date = date.replace(day=1)
+            self.data['date'] = date.strftime("%Y%m%d")
+            filters['date'] = date
+
+        return filters
+    
+    def get_lists(self):
+        assert self.request
+        if 'list' in self.request.GET:
+            list_names = self.request.GET.get('list', '').split(',')
+            for list_name in list_names:
+                try:
+                    elist = EmailList.objects.get(name=list_name, private=False)
+                except EmailList.DoesNotExist:
+                    raise HttpJson404('list not found')
+        else:
+            list_names = [x.name for x in EmailList.objects.filter(private=False)]
+        return list_names
+
+    def get(self, request, *args, **kwargs):
+        subscribers = {}
+        filters = self.get_filters()
+        list_names = self.get_lists()
+
+        for list_name in list_names:
+            try:
+                subscribers[list_name] = Subscriber.objects.get(email_list__name=list_name, **filters).count
+            except Subscriber.MultipleObjectsReturned:
+                data = dict(error='multiple records for that date')
+                return JsonResponse(data, status=500)
+            except Subscriber.ObjectDoesNotExist:
+                data = dict(error='no record for that date')
+                return JsonResponse(data, status=404)
+        self.data['subscriber_counts'] = subscribers
+        return JsonResponse(self.data)

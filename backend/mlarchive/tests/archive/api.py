@@ -3,7 +3,7 @@ import pytest
 
 from django.urls import reverse
 from factories import EmailListFactory, MessageFactory
-
+from mlarchive.archive.models import Subscriber
 
 @pytest.mark.django_db(transaction=True)
 def test_msg_counts_one_list(client, messages):
@@ -143,3 +143,39 @@ def test_msg_counts_duration_invalid(client, messages):
      data = response.json()
      assert response.status_code == 400
      assert data == {'error': 'invalid duration'}
+
+
+@pytest.mark.django_db(transaction=True)
+def test_subscriber_counts_one_list(client, subscribers):
+     url = reverse('api_subscriber_counts') + '?list=pubone'
+     response = client.get(url)
+     data = response.json()
+     print(data)
+     print(vars(Subscriber.objects.first()))
+     assert 'pubone' in data['subscriber_counts']
+     assert data['subscriber_counts']['pubone'] == 5
+
+
+@pytest.mark.django_db(transaction=True)
+def test_subscriber_counts_no_lists(client, subscribers):
+     url = reverse('api_subscriber_counts')
+     response = client.get(url)
+     data = response.json()
+     print(data)
+     print(vars(Subscriber.objects.first()))
+     assert len(data['subscriber_counts']) == 2
+     assert 'pubone' in data['subscriber_counts']
+     assert data['subscriber_counts']['pubone'] == 5
+     assert 'pubtwo' in data['subscriber_counts']
+     assert data['subscriber_counts']['pubtwo'] == 3
+
+@pytest.mark.django_db(transaction=True)
+def test_subscriber_counts_date(client, subscribers):
+     url = reverse('api_subscriber_counts') + '?list=pubtwo&date=2022-01-01'
+     response = client.get(url)
+     data = response.json()
+     print(data)
+     print(vars(Subscriber.objects.first()))
+     assert 'pubtwo' in data['subscriber_counts']
+     assert data['subscriber_counts']['pubtwo'] == 2
+

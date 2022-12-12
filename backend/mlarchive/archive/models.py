@@ -468,7 +468,7 @@ class Legacy(models.Model):
 
 class Subscriber(models.Model):
     email_list = models.ForeignKey(EmailList, db_index=True, on_delete=models.PROTECT)
-    date = models.DateField(auto_now_add=True)
+    date = models.DateField(default=datetime.date.today)
     count = models.PositiveIntegerField()
 
     def __str__(self):

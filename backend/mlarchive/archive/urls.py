@@ -31,5 +31,7 @@ urlpatterns = [
     path('msg/<list_name>/<id>/', views.detail, name='archive_detail'),
     path('msg/<list_name>/<id>/<int:sequence>/', views.attachment, name='archive_attachment'),
     path('search/', views.CustomSearchView.as_view(), name='archive_search'),
+    # reports    ----------------
+    path('reports/subscribers/', views.ReportsSubscribersView.as_view(), name='reports_subscribers'),
     # test pages ----------------
 ]

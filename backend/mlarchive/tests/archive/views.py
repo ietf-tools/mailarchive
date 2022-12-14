@@ -4,6 +4,7 @@ import os
 import pytest
 import tarfile
 from email.utils import parseaddr
+from dateutil.relativedelta import relativedelta
 
 from django.conf import settings
 from django.contrib.auth import SESSION_KEY
@@ -692,3 +693,22 @@ def test_search(client):
     url = reverse('archive_search') + '?q=%CF%80'
     response = client.get(url)
     assert response.status_code == 200
+
+
+@pytest.mark.django_db(transaction=True)
+def test_reports_subscribers(client, subscribers):
+    url = reverse('reports_subscribers')
+    response = client.get(url)
+    assert response.status_code == 200
+    # default date is last month
+    date = datetime.date.today() - relativedelta(months=1)
+    date = date.replace(day=1)
+    assert response.context['date'] == date
+    assert len(response.context['subscribers']) == 2
+    # month with data
+    url = reverse('reports_subscribers') + '?date=2022-01-01'
+    response = client.get(url)
+    print(response.context)
+    assert response.status_code == 200
+    assert response.context['date'] == datetime.date(2022,1,1)
+    assert len(response.context['subscribers']) == 1

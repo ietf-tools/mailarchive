@@ -55,7 +55,7 @@ SERVER_MODE = env('SERVER_MODE')
 SECRET_KEY = env('SECRET_KEY')
 ADMINS = getaddresses(env('ADMINS'))
 #ALLOWED_HOSTS = env('ALLOWED_HOSTS')
-ALLOWED_HOSTS = ['.ietf.org', '.amsl.com']
+ALLOWED_HOSTS = ['.ietf.org', '.amsl.com', '127.0.0.1']
 
 DATABASES = {
     'default': {
@@ -219,10 +219,10 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Content security policy configuration (django-csp)
 CSP_REPORT_ONLY = False
 CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'")
-CSP_IMG_SRC = ("'self'", 'data:', 'https://online.swagger.io', 'https://validator.swagger.io')
+CSP_IMG_SRC = ("'self'", 'data:', 'https://online.swagger.io', 'https://validator.swagger.io', 'https://cdn.datatables.net')
 CSP_FONT_SRC = ("'self'", 'data:', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com')
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com')
-CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com')
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com', 'https://cdn.datatables.net')
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com', 'https://cdn.datatables.net')
 CSP_CONNECT_SRC = ("'self'", 'https://raw.githubusercontent.com')
 
 # Setting for django_referrer_policy.middleware.ReferrerPolicyMiddleware

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Mail Archive - Subscribers{% endblock %}
+{% block extrahead %}
+  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.css">
+{% endblock %}
+
+{% block content %}
+
+<h3 class="text-center mt-4">List Subscribers</h3>
+<h6 class="text-center text-muted mb-4">Date: {{ date|date:"Y-m-d" }}</h6>
+<div class="row results mt-2">
+  <div class="col-md-6 offset-md-3">
+    <table class="smart-table compact stripe">
+      <thead>
+        <tr>
+          <th>List Name</th>
+          <th>Subscribers</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for subscriber in subscribers %}
+        <tr>
+          <td>{{ subscriber.email_list.name }}</td>
+          <td>{{ subscriber.count }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div> <!-- col -->
+  <div class="col-md-3">
+    <form action="." method="get">
+      <div class="row mb-3 mt-2">
+        <div class="col-md-10 offset-md-1">
+          <label for="id_date">Date</label>
+          <input type="text" name="date" placeholder="YYYY-MM-DD" class="form-control" id="id_date">
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-10 offset-md-1">
+          <input class="btn btn-primary w-100" type="submit" value="submit">
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-10 offset-md-1">
+          <p class="text-muted">Historic data, before Jan 2023, is only available monthly,
+            so use the first day of the month. e.g. 2021-04-01
+          </p>
+        </div>
+      </div>
+    </form>
+  </div> <!-- col -->
+</div> <!-- row -->
+
+{% endblock %}
+
+{% block footer %}
+  {% with extra_class="scrolling" %}
+    {% include "includes/footer.html" %}
+  {% endwith %}
+{% endblock %}
+
+{% block js %}
+  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.js"></script>
+  <script>
+    $('.smart-table').DataTable({
+      paging: false,
+      searching: false,
+      info: false
+  });
+  </script>
+{% endblock %}

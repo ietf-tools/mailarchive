@@ -30,6 +30,7 @@ import re
 import shutil
 import sys
 import time
+from email import policy
 from pickle import load
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
@@ -175,6 +176,34 @@ def archived_at():
     print('mismatches: {} of ({})'.format(mismatch, count))
 
 
+def archived_at_report(fix=False):
+    """Find messages whose Archived-At header does not match url.
+    --fix will populate Redirect table for mismatched URLs
+    """
+    from mlarchive.archive.models import Redirect
+    from urllib.parse import urlparse
+    from email.parser import BytesParser
+    parser = BytesParser()
+    for message in Message.objects.filter(date__year__gte=2013).order_by('-date'):
+        msg = parser.parsebytes(message.get_body_raw(), headersonly=True)
+        archives = msg.get_all('archived-at')
+        hashcode = message.hashcode.strip('=')
+        # problem messages will have one mailarchive archived-at header that does not match
+        if len(archives) == 1 and 'mailarchive' in archives[0] and hashcode not in archives[0]:
+            print('{},{},{}'.format(message.date.strftime('%m-%d-%Y'), archives[0], hashcode))
+            if fix:
+                new = message.get_absolute_url()
+                parts = urlparse(archives[0].strip('<>'))
+                if parts.path:
+                    try:
+                        redir = Redirect.objects.get(old=parts.path)
+                        if redir.new != new:
+                            err = 'Redirect already exists with different target. exists:{}, trying:{}, (pk={})'
+                            raise Exception(err.format(redir, new, message.pk))
+                    except Redirect.DoesNotExist:
+                        Redirect.objects.create(old=parts.path, new=new)
+
+
 def attachments():
     """Scan all lists, analyze attachments"""
     missing_from_db = 0
@@ -229,7 +258,8 @@ def bad_transfer_encoding():
             for part in message.walk():
                 if not part.is_multipart():
                     if part['Content-Transfer-Encoding'] == 'base64 ':
-                        print('{}:{}:{}:{}'.format(msg.pk,msg.frm,msg.date.year,msg.url))
+                        print('{}:{}:{}:{}'.format(msg.pk, msg.frm, msg.date.year, msg.url))
+
 
 def bodies():
     """Call get_body_html() and get_body() for every message in db. Use logging in
@@ -1056,6 +1086,19 @@ def test():
         time.sleep(5)
         print(n)
 
+
+def test_headers():
+    '''Try new EmailMessage header access'''
+    for elist in EmailList.objects.all().order_by('name'):
+        print("Scanning {}".format(elist.name))
+        for msg in Message.objects.filter(email_list=elist).order_by('date'):
+            message = email.message_from_bytes(msg.get_body_raw(), policy=policy.default)
+            assert isinstance(message, email.message.EmailMessage)
+            try:
+                headers = list(message.items())
+            except AttributeError:
+                print('Error: {} {}'.format(msg.email_list, msg.date.strftime('%Y-%m-%d')))
+    
 
 def test_read():
     """Try email.message_from_binary_file on messages"""

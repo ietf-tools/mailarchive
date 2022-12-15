@@ -13,12 +13,13 @@ from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils.encoding import smart_str
 from factories import EmailListFactory, MessageFactory, UserFactory
-from mlarchive.archive.models import Message, Attachment
+from mlarchive.archive.models import Message, Attachment, Redirect
 from mlarchive.archive.mail import archive_message
 from mlarchive.archive.views import (TimePeriod, add_nav_urls, is_small_year,
     add_one_month, get_this_next_periods, get_date_endpoints, get_thread_endpoints,
     DateStaticIndexView)
 from pyquery import PyQuery
+
 
 
 # --------------------------------------------------
@@ -467,6 +468,51 @@ def test_detail_bad_content_transfer_encoding(client):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_detail_bad_to_address(client):
+    '''Test that message with bad To address doesn't break detail view.
+    To address contains "::;"
+    '''
+    listname = 'public'
+    load_message('bad_to_address.mail', listname=listname)
+    msg = Message.objects.first()
+    url = reverse('archive_detail', kwargs={'list_name': listname, 'id': msg.hashcode})
+    response = client.get(url)
+    assert response.status_code == 200
+    # print(response.content)
+    # from mlarchive.archive.generator import Generator
+    # g = Generator(msg)
+    # text = g.as_text()
+    # print(text)
+    # print(msg.get_body())
+    import email
+    from email import policy
+    path = msg.get_file_path()
+    with open(path, 'rb') as f:
+        m = email.message_from_binary_file(f, policy=policy.compat32)
+    assert isinstance(m, email.message.Message)
+    print(vars(m))
+    print(msg.get_file_path())
+    assert 'Hello. Testing' in smart_str(response.content)
+
+
+@pytest.mark.skip(reason='Not representative of data ?')
+@pytest.mark.django_db(transaction=True)
+def test_detail_bad_date(client):
+    '''Test that message with bad date header doesn't break detail view.
+    Date header is very old like: Date: 04-Jan-93 13:22:13
+    '''
+    listname = 'public'
+    load_message('bad_date.mail', listname=listname)
+    print(Message.objects.count())
+    msg = Message.objects.first()
+    url = reverse('archive_detail', kwargs={'list_name': listname, 'id': msg.hashcode})
+    response = client.get(url)
+    assert response.status_code == 200
+    print(response.content)
+    assert 'Hello. Testing' in smart_str(response.content)
+
+
+@pytest.mark.django_db(transaction=True)
 def test_detail_content_link(client):
     '''Test that url in message content appears as a link'''
     listname = 'public'
@@ -712,3 +758,23 @@ def test_reports_subscribers(client, subscribers):
     assert response.status_code == 200
     assert response.context['date'] == datetime.date(2022,1,1)
     assert len(response.context['subscribers']) == 1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_redirect(client):
+    Redirect.objects.create(old='/arch/msg/ietf/sssUEHOjoGhGRvDHFDrMP7h3Yf8/', new='/arch/msg/ietf/QajUS7jafu9sclZTiz4TMSehcjE/')
+    url = reverse('archive_detail', kwargs={'list_name': 'ietf', 'id': 'sssUEHOjoGhGRvDHFDrMP7h3Yf8'})
+    response = client.get(url)
+    assert response.status_code == 301
+    assert response['location'] == '/arch/msg/ietf/QajUS7jafu9sclZTiz4TMSehcjE/'
+
+
+@pytest.mark.django_db(transaction=True)
+def test_removed_message(client, thread_messages):
+    msg = Message.objects.last()
+    path = msg.get_file_path()
+    assert os.path.exists(path)
+    msg.delete()
+    response = client.get(msg.get_absolute_url())
+    assert response.status_code == 410
+    assert 'This message has been removed' in smart_str(response.content)

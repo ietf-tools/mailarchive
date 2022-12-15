@@ -473,3 +473,11 @@ class Subscriber(models.Model):
 
     def __str__(self):
         return '{}: {}'.format(self.email_list, self.count)
+
+
+class Redirect(models.Model):
+    old = models.CharField(max_length=255, db_index=True, unique=True)
+    new = models.CharField(max_length=255)
+
+    def __str__(self):
+        return '{} -> {}'.format(self.old, self.new)

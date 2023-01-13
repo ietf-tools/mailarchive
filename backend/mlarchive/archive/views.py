@@ -4,6 +4,8 @@ import os
 import re
 from operator import itemgetter
 from collections import namedtuple
+from dateutil.relativedelta import relativedelta
+from dateutil.parser import isoparse
 
 from csp.decorators import csp_exempt
 from django.conf import settings
@@ -14,6 +16,7 @@ from django.core.paginator import InvalidPage
 from django.utils.decorators import method_decorator
 from django.forms.formsets import formset_factory
 from django.views.generic.detail import DetailView
+from django.views.generic.base import TemplateView
 from django.http import Http404, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse, NoReverseMatch
@@ -33,7 +36,8 @@ from mlarchive.archive.query_utils import (get_qdr_kwargs,
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     get_query_neighbors, get_query_string, get_lists_for_user, get_random_token)
 
-from mlarchive.archive.models import EmailList, Message, Thread, Attachment
+from mlarchive.archive.models import (EmailList, Message, Thread, Attachment,
+    Subscriber)
 from mlarchive.archive.forms import (AdminForm, AdminActionForm, 
     AdvancedSearchForm, BrowseForm, RulesForm, SearchForm)
 
@@ -799,3 +803,25 @@ def main(request):
 
 class MessageDetailView(DetailView):
     model = Message
+
+
+class ReportsSubscribersView(TemplateView):
+    """Subscriber Counts Report"""
+    template_name = 'archive/reports_subscribers.html'
+
+    def get_context_data(self, **kwargs):
+        kwargs = super().get_context_data(**kwargs)
+        date = None
+        if self.request.GET.get('date'):
+            try:
+                date = isoparse(self.request.GET.get('date'))
+                # convert datetime to date
+                date = date.date()
+            except ValueError:
+                pass
+        if not date:
+            date = datetime.date.today() - relativedelta(months=1)
+            date = date.replace(day=1)
+        kwargs['subscribers'] = Subscriber.objects.filter(date=date)
+        kwargs['date'] = date
+        return kwargs

@@ -8,12 +8,13 @@ import io
 import os
 import pytest
 import subprocess
+from dateutil.relativedelta import relativedelta
 
 from factories import EmailListFactory, ThreadFactory, MessageFactory, UserFactory
 from django.conf import settings
 from django.core.management import call_command
 from mlarchive.archive.mail import get_base_subject
-from mlarchive.archive.models import Message, Thread
+from mlarchive.archive.models import Message, Thread, Subscriber
 
 # `pytest` automatically calls this function once when tests are run.
 
@@ -211,6 +212,17 @@ def messages(index_resource):
     if not Message.objects.first():
         load_db()
     yield Message.objects.all()
+
+
+@pytest.fixture()
+def subscribers():
+    pubone = EmailListFactory(name='pubone')
+    pubtwo = EmailListFactory(name='pubtwo')
+    last_month = datetime.date.today() - relativedelta(months=1)
+    last_month = last_month.replace(day=1)
+    Subscriber.objects.create(email_list=pubone, date=last_month, count=5)
+    Subscriber.objects.create(email_list=pubtwo, date=last_month, count=3)
+    Subscriber.objects.create(email_list=pubtwo, date=datetime.date(2022,1,1), count=2)
 
 
 @pytest.fixture()

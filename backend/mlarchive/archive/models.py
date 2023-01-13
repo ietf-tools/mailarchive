@@ -466,6 +466,15 @@ class Legacy(models.Model):
         return '%s:%s' % (self.email_list_id, self.msgid)
 
 
+class Subscriber(models.Model):
+    email_list = models.ForeignKey(EmailList, db_index=True, on_delete=models.PROTECT)
+    date = models.DateField(default=datetime.date.today)
+    count = models.PositiveIntegerField()
+
+    def __str__(self):
+        return '{}: {}'.format(self.email_list, self.count)
+
+
 class Redirect(models.Model):
     old = models.CharField(max_length=255, db_index=True, unique=True)
     new = models.CharField(max_length=255)

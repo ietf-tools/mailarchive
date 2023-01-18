@@ -3,7 +3,7 @@
 
 {% block title %}Mail Archive - Subscribers{% endblock %}
 {% block extrahead %}
-  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.21/css/jquery.dataTables.css">
+  <link rel="stylesheet" type="text/css" href="{% static 'datatables/css/jquery.dataTables.min.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -62,7 +62,7 @@
 {% endblock %}
 
 {% block js %}
-  <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.21/js/jquery.dataTables.js"></script>
+  <script src="{% static 'datatables/js/jquery.dataTables.min.js' %}" crossorigin="anonymous"></script>
   <script>
     $('.smart-table').DataTable({
       paging: false,

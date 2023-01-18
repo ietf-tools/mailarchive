@@ -179,3 +179,10 @@ def test_subscriber_counts_date(client, subscribers):
      assert 'pubtwo' in data['subscriber_counts']
      assert data['subscriber_counts']['pubtwo'] == 2
 
+
+@pytest.mark.django_db(transaction=True)
+def test_subscriber_counts_not_exist(client, subscribers):
+     url = reverse('api_subscriber_counts') + '?list=pubtwo&date=2001-01-01'
+     response = client.get(url)
+     assert response.status_code == 200
+     assert response.json() == {}

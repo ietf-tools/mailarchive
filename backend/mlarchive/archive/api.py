@@ -162,8 +162,7 @@ class SubscriberCountsView(View):
             except Subscriber.MultipleObjectsReturned:
                 data = dict(error='multiple records for that date')
                 return JsonResponse(data, status=500)
-            except Subscriber.ObjectDoesNotExist:
-                data = dict(error='no record for that date')
-                return JsonResponse(data, status=404)
+            except Subscriber.DoesNotExist:
+                return JsonResponse({})
         self.data['subscriber_counts'] = subscribers
         return JsonResponse(self.data)

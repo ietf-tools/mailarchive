@@ -82,10 +82,9 @@ TIME_ZONE = 'America/Los_Angeles'
 LANGUAGE_CODE = 'en-us'
 
 USE_TZ = False
-
 USE_I18N = False
-
 USE_L10N = True
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 INTERNAL_IPS = env('INTERNAL_IPS')
 

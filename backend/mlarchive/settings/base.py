@@ -332,6 +332,9 @@ OIDC_OP_JWKS_ENDPOINT = 'https://auth.ietf.org/api/openid/jwks/'
 OIDC_OP_AUTHORIZATION_ENDPOINT = 'https://auth.ietf.org/api/openid/authorize/'
 OIDC_OP_TOKEN_ENDPOINT = 'https://auth.ietf.org/api/openid/token/'
 OIDC_OP_USER_ENDPOINT = 'https://auth.ietf.org/api/openid/userinfo/'
+OIDC_OP_X_END_SESSION_ENDPOINT = 'https://auth.ietf.org/api/openid/end-session/'
+OIDC_OP_LOGOUT_URL_METHOD = 'mlarchive.authbackend.oidc.get_logout_url'
+OIDC_STORE_ID_TOKEN = True
 OIDC_USERNAME_ALGO = 'mlarchive.authbackend.oidc.generate_username'
 
 # DJANGO DEBUG TOOLBAR SETTINGS

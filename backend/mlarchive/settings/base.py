@@ -243,6 +243,8 @@ LOG_FILE = os.path.join(LOG_DIR, 'mlarchive.log')
 MAILMAN_DIR = '/usr/lib/mailman'
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_SECURE = True
+
 # number of messages to load when scrolling search results
 SEARCH_SCROLL_BUFFER_SIZE = SEARCH_RESULTS_PER_PAGE
 TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'

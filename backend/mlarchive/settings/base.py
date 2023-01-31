@@ -243,6 +243,8 @@ LOG_FILE = os.path.join(LOG_DIR, 'mlarchive.log')
 MAILMAN_DIR = '/usr/lib/mailman'
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_SECURE = True
+
 # number of messages to load when scrolling search results
 SEARCH_SCROLL_BUFFER_SIZE = SEARCH_RESULTS_PER_PAGE
 TEST_DATA_DIR = BASE_DIR + '/archive/fixtures'
@@ -332,6 +334,9 @@ OIDC_OP_JWKS_ENDPOINT = 'https://auth.ietf.org/api/openid/jwks/'
 OIDC_OP_AUTHORIZATION_ENDPOINT = 'https://auth.ietf.org/api/openid/authorize/'
 OIDC_OP_TOKEN_ENDPOINT = 'https://auth.ietf.org/api/openid/token/'
 OIDC_OP_USER_ENDPOINT = 'https://auth.ietf.org/api/openid/userinfo/'
+OIDC_OP_X_END_SESSION_ENDPOINT = 'https://auth.ietf.org/api/openid/end-session/'
+OIDC_OP_LOGOUT_URL_METHOD = 'mlarchive.authbackend.oidc.get_logout_url'
+OIDC_STORE_ID_TOKEN = True
 OIDC_USERNAME_ALGO = 'mlarchive.authbackend.oidc.generate_username'
 
 # DJANGO DEBUG TOOLBAR SETTINGS

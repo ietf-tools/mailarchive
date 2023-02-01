@@ -176,7 +176,7 @@ def archived_at():
     print('mismatches: {} of ({})'.format(mismatch, count))
 
 
-def archived_at_report(start='2013-01-01', fix=False, verbose=False):
+def archived_at_report(start='2013-01-01', fix=False):
     """Find messages whose Archived-At header does not match url.
     --fix will populate Redirect table for mismatched URLs
     --start, the date to start scan from, defaults to 2013-01-01
@@ -184,14 +184,14 @@ def archived_at_report(start='2013-01-01', fix=False, verbose=False):
     Examples:
     ./scan_all.py archived_at_report
     ./scan_all.py --start=2023-01-01 archived_at_report
-    ./scan_all.py --start=2023-01-20 --fix --verbose archived_at_report
+    ./scan_all.py --start=2023-01-20 --fix archived_at_report
     """
     from mlarchive.archive.models import Redirect
     from urllib.parse import urlparse
     from email.parser import BytesParser
     parser = BytesParser()
     start_date = parse(start)
-    print("start: {}    fix: {}    verbose: {}".format(start, fix, verbose))
+    print("start: {}    fix: {}".format(start, fix))
     for message in Message.objects.filter(date__gte=start_date).order_by('-date'):
         msg = parser.parsebytes(message.get_body_raw(), headersonly=True)
         archives = msg.get_all('archived-at')
@@ -211,8 +211,7 @@ def archived_at_report(start='2013-01-01', fix=False, verbose=False):
                             raise Exception(err.format(redir, new, message.pk))
                     except Redirect.DoesNotExist:
                         obj = Redirect.objects.create(old=parts.path, new=new)
-                        if verbose:
-                            print('Created entry: {}'.format(obj))
+                        print('Created entry: {}'.format(obj))
 
 
 def attachments():

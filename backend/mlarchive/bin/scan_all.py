@@ -176,15 +176,23 @@ def archived_at():
     print('mismatches: {} of ({})'.format(mismatch, count))
 
 
-def archived_at_report(fix=False):
+def archived_at_report(start='2013-01-01', fix=False):
     """Find messages whose Archived-At header does not match url.
     --fix will populate Redirect table for mismatched URLs
+    --start, the date to start scan from, defaults to 2013-01-01
+
+    Examples:
+    ./scan_all.py archived_at_report
+    ./scan_all.py --start=2023-01-01 archived_at_report
+    ./scan_all.py --start=2023-01-20 --fix archived_at_report
     """
     from mlarchive.archive.models import Redirect
     from urllib.parse import urlparse
     from email.parser import BytesParser
     parser = BytesParser()
-    for message in Message.objects.filter(date__year__gte=2013).order_by('-date'):
+    start_date = parse(start)
+    print("start: {}    fix: {}".format(start, fix))
+    for message in Message.objects.filter(date__gte=start_date).order_by('-date'):
         msg = parser.parsebytes(message.get_body_raw(), headersonly=True)
         archives = msg.get_all('archived-at')
         hashcode = message.hashcode.strip('=')
@@ -202,7 +210,8 @@ def archived_at_report(fix=False):
                             err = 'Redirect already exists with different target. exists:{}, trying:{}, (pk={})'
                             raise Exception(err.format(redir, new, message.pk))
                     except Redirect.DoesNotExist:
-                        Redirect.objects.create(old=parts.path, new=new)
+                        obj = Redirect.objects.create(old=parts.path, new=new)
+                        print('Created entry: {}'.format(obj))
 
 
 def attachments():
@@ -1133,7 +1142,9 @@ def year_max():
 
 def main():
     parser = argparse.ArgumentParser(description='Run an archive scan.')
-    parser.add_argument('-f','--fix',help="perform fix",action='store_true')
+    parser.add_argument('-f', '--fix', help="perform fix", action='store_true')
+    parser.add_argument('-v', '--verbose', help="verbose mode", action='store_true')
+    parser.add_argument('-s', '--start', help="date to start scan")
     parser.add_argument('function')
     parser.add_argument('extras', nargs=argparse.REMAINDER)
     args = vars(parser.parse_args())
@@ -1152,8 +1163,14 @@ def _get_kwargs(args):
     kwargs.pop('function')
     if 'extras' in kwargs:
         kwargs.pop('extras')
-    if args['fix'] == False:
+    # don't pass kwargs if they aren't specified. This way function
+    # can define it's own defaults
+    if args['fix'] is False:
         kwargs.pop('fix')
+    if args['start'] is None:
+        kwargs.pop('start')
+    if args['verbose'] is False:
+        kwargs.pop('verbose')
     return kwargs
 
 

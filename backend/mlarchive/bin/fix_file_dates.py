@@ -22,8 +22,8 @@ def main():
     cutoff = datetime.datetime(2014, 5, 10)
     for message in Message.objects.filter(date__lt=cutoff):
         path = message.get_file_path()
-        mtime = message.date.timestamp()
-        os.utime(path, times=(mtime, mtime))
+        atime = mtime = message.date.timestamp()
+        os.utime(path, times=(atime, mtime))
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@ import json
 import os
 import re
 from operator import itemgetter
-from collections import namedtuple
+from collections import namedtuple, Counter
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import isoparse
 
@@ -39,7 +39,7 @@ from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_
 from mlarchive.archive.models import (EmailList, Message, Thread, Attachment,
     Subscriber)
 from mlarchive.archive.forms import (AdminForm, AdminActionForm, 
-    AdvancedSearchForm, BrowseForm, RulesForm, SearchForm)
+    AdvancedSearchForm, BrowseForm, RulesForm, SearchForm, DateForm)
 
 import logging
 logger = logging.getLogger(__name__)
@@ -825,3 +825,53 @@ class ReportsSubscribersView(TemplateView):
         kwargs['subscribers'] = Subscriber.objects.filter(date=date)
         kwargs['date'] = date
         return kwargs
+
+
+class ReportsMessagesView(View):
+    """Message Counts Report"""
+    
+    def get_message_stats(self, sdate, edate):
+        """Returns a tuple ( total messages, message counts as
+        list of tuples (listname, count))"""
+        messages = Message.objects.filter(
+            date__gte=sdate,
+            date__lt=edate,
+            email_list__private=False)
+        counter = Counter(messages.values_list('email_list__name', flat=True))
+        return (messages.count(), sorted(counter.items()))
+
+    def get(self, request, *args, **kwargs):
+        form = DateForm(request.GET)
+        
+        # if no date submitted default to last month
+        if not request.GET:
+            today = datetime.date.today()
+            edate = today.replace(day=1)
+            sdate = edate - relativedelta(months=1)
+            total, message_counts = self.get_message_stats(sdate, edate)
+            form = DateForm(initial={
+                'start_date': sdate.strftime('%Y-%m-%d'),
+                'end_date': edate.strftime('%Y-%m-%d'),
+            })
+        elif form.is_valid():
+            sdate = form.cleaned_data['start_date']
+            edate = form.cleaned_data['end_date']
+            total, message_counts = self.get_message_stats(sdate, edate)
+            # always pass back an unbound form to avoid annoying is-valid styling
+            form = DateForm(initial={
+                'start_date': sdate.strftime('%Y-%m-%d'),
+                'end_date': edate.strftime('%Y-%m-%d'),
+            })
+        else:
+            sdate = None
+            edate = None
+            message_counts = []
+            total = 0
+
+        return render(request, 'archive/reports_messages.html', {
+            'message_counts': message_counts,
+            'total': total,
+            'sdate': sdate,
+            'edate': edate,
+            'form': form},
+        )

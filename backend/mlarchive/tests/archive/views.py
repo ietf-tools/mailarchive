@@ -756,8 +756,22 @@ def test_reports_subscribers(client, subscribers):
     response = client.get(url)
     print(response.context)
     assert response.status_code == 200
-    assert response.context['date'] == datetime.date(2022,1,1)
+    assert response.context['date'] == datetime.date(2022, 1, 1)
     assert len(response.context['subscribers']) == 1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_reports_messages(client):
+    date = datetime.datetime(2022, 2, 1)
+    elist = EmailListFactory.create(name='acme')
+    _ = MessageFactory.create(email_list=elist, date=date)
+    url = reverse('reports_messages') + '?start_date=2022-01-01&end_date=2023-01-01'
+    response = client.get(url)
+    assert response.status_code == 200
+    assert 'Total Messages: 1' in smart_str(response.content)
+    q = PyQuery(response.content)
+    rows = [c.text() for c in q('table tr td').items()]
+    assert rows == ['acme', '1']
 
 
 @pytest.mark.django_db(transaction=True)

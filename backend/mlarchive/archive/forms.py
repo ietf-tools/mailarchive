@@ -1,6 +1,7 @@
 import hashlib
 import six
 from collections import OrderedDict
+from dateutil.parser import isoparse
 
 from django import forms
 from django.utils.http import urlencode
@@ -152,6 +153,7 @@ class AdminForm(forms.Form):
         else:
             return [n.lower() for n in self.data.get('email_list', '').split()]
 
+
 class AdminActionForm(forms.Form):
     action = forms.CharField(max_length=255)
 
@@ -279,3 +281,24 @@ class RulesForm(forms.Form):
             widget=forms.Select(attrs={'class': 'qualifier'}))
     value = forms.CharField(max_length=120,
             widget=forms.TextInput(attrs={'class': 'operand'}))
+
+
+class DateForm(forms.Form):
+    start_date = forms.CharField(required=True)
+    end_date = forms.CharField(required=True)
+
+    def clean_start_date(self):
+        start_date = self.cleaned_data['start_date']
+        try:
+            sdate = isoparse(start_date)
+        except ValueError:
+            raise forms.ValidationError('Invalid date')
+        return sdate
+
+    def clean_end_date(self):
+        end_date = self.cleaned_data['end_date']
+        try:
+            edate = isoparse(end_date)
+        except ValueError:
+            raise forms.ValidationError('Invalid date')
+        return edate

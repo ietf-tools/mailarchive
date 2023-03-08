@@ -33,5 +33,6 @@ urlpatterns = [
     path('search/', views.CustomSearchView.as_view(), name='archive_search'),
     # reports    ----------------
     path('reports/subscribers/', views.ReportsSubscribersView.as_view(), name='reports_subscribers'),
+    path('reports/messages/', views.ReportsMessagesView.as_view(), name='reports_messages'),
     # test pages ----------------
 ]

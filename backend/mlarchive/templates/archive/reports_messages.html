@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% load static django_bootstrap5 %}
+
+{% block title %}Mail Archive - Messages{% endblock %}
+{% block extrahead %}
+  <link rel="stylesheet" type="text/css" href="{% static 'datatables/css/jquery.dataTables.min.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<h3 class="text-center mt-4">Message Counts by List</h3>
+<h6 class="text-center text-muted">Start Date: {{ sdate|date:"Y-m-d" }} | End Date: {{ edate|date:"Y-m-d" }}</h6>
+<h6 class="text-center text-muted mb-4">Total Messages: {{ total }}</h6>
+<div class="row results mt-2">
+  <div class="col-md-6 offset-md-3">
+    <table class="smart-table compact stripe">
+      <thead>
+        <tr>
+          <th>List Name</th>
+          <th>Message Count</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for count in message_counts %}
+        <tr>
+          <td>{{ count.0 }}</td>
+          <td>{{ count.1 }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div> <!-- col -->
+  <div class="col-md-3">
+    <form action="." method="get">
+      <div class="row">
+        <div class="col-md-10 offset-md-1">
+          {% bootstrap_field form.start_date placeholder="YYYY-MM-DD" %}
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-10 offset-md-1">
+          {% bootstrap_field form.end_date placeholder="YYYY-MM-DD" %}
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-10 offset-md-1">
+          <input class="btn btn-primary w-100" type="submit" value="Submit">
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-10 offset-md-1">
+          <p class="text-muted">Data is for public lists. End Date is non-inclusive</p>
+        </div>
+      </div>
+    </form>
+  </div> <!-- col -->
+</div> <!-- row -->
+
+{% endblock %}
+
+{% block footer %}
+  {% with extra_class="scrolling" %}
+    {% include "includes/footer.html" %}
+  {% endwith %}
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'datatables/js/jquery.dataTables.min.js' %}" crossorigin="anonymous"></script>
+  <script>
+    $('.smart-table').DataTable({
+      paging: false,
+      searching: false,
+      info: false
+  });
+  </script>
+{% endblock %}

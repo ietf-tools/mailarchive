@@ -1,4 +1,6 @@
+import csv
 import datetime
+import functools
 import json
 import os
 import re
@@ -13,13 +15,14 @@ from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import InvalidPage
-from django.utils.decorators import method_decorator
 from django.forms.formsets import formset_factory
 from django.views.generic.detail import DetailView
 from django.views.generic.base import TemplateView
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, QueryDict
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse, NoReverseMatch
+from django.utils.decorators import method_decorator
+from django.utils.http import urlencode
 from django.utils.safestring import mark_safe
 from django.utils.cache import add_never_cache_headers, patch_cache_control
 from django.views.generic import View
@@ -114,6 +117,86 @@ def add_one_month(dt0):
 def is_small_year(email_list, year):
     count = Message.objects.filter(email_list=email_list, date__year=year).count()
     return count < settings.STATIC_INDEX_YEAR_MINIMUM
+
+
+# --------------------------------------------------
+# Mixins
+# --------------------------------------------------
+
+
+class CSVResponseMixin(object):
+    """
+    A generic mixin that constructs a CSV response from 'object_list'
+    in the the context data if the CSV export option was provided in
+    the request. 'object_list' can be a list of Django models or
+    a list of named tuples.
+    NOTE: use attribute csv_fields to specify which object fields to 
+    include, else all fields.
+    """
+    def recursive_getattr(self, obj, attr, *args):
+        def _getattr(obj, attr):
+            attribute = getattr(obj, attr, *args)
+            if hasattr(attribute, 'strftime'):
+                return attribute.strftime("%Y-%m-%d %H:%M:%S")
+            else:
+                return attribute
+        return functools.reduce(_getattr, [obj] + attr.split('.'))
+
+    def get_csv_headers(self, obj):
+        if hasattr(self, 'csv_fields'):
+            return [field.split('.')[-1] for field in self.csv_fields]
+        elif hasattr(obj, '_fields'):
+            return obj._fields
+        else:
+            return []
+
+    def get_csv_row(self, obj):
+        """
+        Returns a list of values to write a csv row
+        """
+        if hasattr(self, 'csv_fields'):
+            return [self.recursive_getattr(obj, field) for field in self.csv_fields]
+        # from Django model
+        elif hasattr(self, 'model'):
+            meta = self.model._meta
+            field_names = [field.name for field in meta.fields]
+            return [getattr(obj, field) for field in field_names]
+        # from namedtuple
+        elif hasattr(obj, '_fields'):
+            return [getattr(obj, field) for field in obj._fields]
+        else:
+            return []
+
+    def get_csv_url(self, **kwargs):
+        path_info = self.request.META['PATH_INFO']
+        query = self.request.META['QUERY_STRING']
+        querydict = QueryDict(query, mutable=True)
+        querydict['export'] = 'csv'
+        query_string = querydict.urlencode()
+        csv_url = f'{path_info}?{query_string}'
+        return csv_url
+
+    def render_to_response(self, context, **response_kwargs):
+        """
+        Creates a CSV response if requested, otherwise returns the default
+        template response.
+        """
+        # Sniff if we need to return a CSV export
+        if 'csv' in self.request.GET.get('export', ''):
+            response = HttpResponse(content_type='text/csv')
+            filename = 'export.csv'
+            response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+
+            writer = csv.writer(response)
+            # write headers
+            writer.writerow(self.get_csv_headers(context['object_list'][0]))
+            for obj in context['object_list']:
+                writer.writerow(self.get_csv_row(obj))
+
+            return response
+        # Business as usual otherwise
+        else:
+            return super().render_to_response(context, **response_kwargs)
 
 
 # --------------------------------------------------
@@ -805,12 +888,14 @@ class MessageDetailView(DetailView):
     model = Message
 
 
-class ReportsSubscribersView(TemplateView):
+class ReportsSubscribersView(CSVResponseMixin, TemplateView):
     """Subscriber Counts Report"""
     template_name = 'archive/reports_subscribers.html'
+    csv_fields = ['email_list.name', 'count']
 
     def get_context_data(self, **kwargs):
-        kwargs = super().get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
+        params = dict(self.request.GET.items())
         date = None
         if self.request.GET.get('date'):
             try:
@@ -822,29 +907,39 @@ class ReportsSubscribersView(TemplateView):
         if not date:
             date = datetime.date.today() - relativedelta(months=1)
             date = date.replace(day=1)
-        kwargs['subscribers'] = Subscriber.objects.filter(date=date)
-        kwargs['date'] = date
-        return kwargs
+        context['object_list'] = Subscriber.objects.filter(date=date)
+        context['date'] = date
+        export_params = params.copy()
+        export_params['export'] = 'csv'
+        context['export_query_string'] = urlencode(export_params)
+        return context
 
 
-class ReportsMessagesView(View):
+class ReportsMessagesView(CSVResponseMixin, TemplateView):
     """Message Counts Report"""
-    
+    template_name = 'archive/reports_messages.html'
+    csv_fields = ['listname', 'count']
+
     def get_message_stats(self, sdate, edate):
         """Returns a tuple ( total messages, message counts as
-        list of tuples (listname, count))"""
+        list of named tuples (listname, count))"""
         messages = Message.objects.filter(
             date__gte=sdate,
             date__lt=edate,
             email_list__private=False)
         counter = Counter(messages.values_list('email_list__name', flat=True))
-        return (messages.count(), sorted(counter.items()))
+        Count = namedtuple('Count', 'listname count')
+        data = [Count(i[0], i[1]) for i in counter.items()]
+        return (messages.count(), data)
 
-    def get(self, request, *args, **kwargs):
-        form = DateForm(request.GET)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        params = dict(self.request.GET.items())
+
+        form = DateForm(self.request.GET)
         
         # if no date submitted default to last month
-        if not request.GET:
+        if not self.request.GET:
             today = datetime.date.today()
             edate = today.replace(day=1)
             sdate = edate - relativedelta(months=1)
@@ -868,10 +963,12 @@ class ReportsMessagesView(View):
             message_counts = []
             total = 0
 
-        return render(request, 'archive/reports_messages.html', {
-            'message_counts': message_counts,
-            'total': total,
-            'sdate': sdate,
-            'edate': edate,
-            'form': form},
-        )
+        export_params = params.copy()
+        export_params['export'] = 'csv'
+        context['export_query_string'] = urlencode(export_params)
+        context['object_list'] = message_counts
+        context['total'] = total
+        context['sdate'] = sdate
+        context['edate'] = edate
+        context['form'] = form
+        return context

@@ -20,7 +20,7 @@
         </tr>
       </thead>
       <tbody>
-      {% for subscriber in subscribers %}
+      {% for subscriber in object_list %}
         <tr>
           <td>{{ subscriber.email_list.name }}</td>
           <td>{{ subscriber.count }}</td>
@@ -29,6 +29,7 @@
       </tbody>
     </table>
   </div> <!-- col -->
+
   <div class="col-md-3">
     <form action="." method="get">
       <div class="row mb-3 mt-2">
@@ -39,7 +40,7 @@
       </div>
       <div class="row mb-3">
         <div class="col-md-10 offset-md-1">
-          <input class="btn btn-primary w-100" type="submit" value="submit">
+          <input class="btn btn-primary w-100" type="submit" value="Submit">
         </div>
       </div>
       <div class="row mb-3">
@@ -50,7 +51,14 @@
         </div>
       </div>
     </form>
+    <div class="row mt-5">
+        <div class="col-md-10 offset-md-1">
+          <a class="btn btn-primary w-100" href="?{{ export_query_string }}">Export</a>
+          <p class="text-muted mt-3">Export data as csv file</p>
+        </div>
+    </div>
   </div> <!-- col -->
+
 </div> <!-- row -->
 
 {% endblock %}

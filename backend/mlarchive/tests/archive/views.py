@@ -1,3 +1,4 @@
+import csv
 import datetime
 import io
 import os
@@ -750,14 +751,24 @@ def test_reports_subscribers(client, subscribers):
     date = datetime.date.today() - relativedelta(months=1)
     date = date.replace(day=1)
     assert response.context['date'] == date
-    assert len(response.context['subscribers']) == 2
+    assert len(response.context['object_list']) == 2
     # month with data
     url = reverse('reports_subscribers') + '?date=2022-01-01'
     response = client.get(url)
     print(response.context)
     assert response.status_code == 200
     assert response.context['date'] == datetime.date(2022, 1, 1)
-    assert len(response.context['subscribers']) == 1
+    assert len(response.context['object_list']) == 1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_reports_subscribers_csv(client, subscribers):
+    url = reverse('reports_subscribers') + '?export=csv'
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response['Content-Type'] == 'text/csv'
+    print(smart_str(response.content))
+    assert 'pubone,5' in smart_str(response.content).splitlines()
 
 
 @pytest.mark.django_db(transaction=True)
@@ -772,6 +783,19 @@ def test_reports_messages(client):
     q = PyQuery(response.content)
     rows = [c.text() for c in q('table tr td').items()]
     assert rows == ['acme', '1']
+
+
+@pytest.mark.django_db(transaction=True)
+def test_reports_messages_csv(client):
+    date = datetime.datetime(2022, 2, 1)
+    elist = EmailListFactory.create(name='acme')
+    _ = MessageFactory.create(email_list=elist, date=date)
+    url = reverse('reports_messages') + '?start_date=2022-01-01&end_date=2023-01-01&export=csv'
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response['Content-Type'] == 'text/csv'
+    print(smart_str(response.content))
+    assert 'acme,1' in smart_str(response.content).splitlines()
 
 
 @pytest.mark.django_db(transaction=True)

@@ -21,10 +21,10 @@
         </tr>
       </thead>
       <tbody>
-      {% for count in message_counts %}
+      {% for obj in object_list %}
         <tr>
-          <td>{{ count.0 }}</td>
-          <td>{{ count.1 }}</td>
+          <td>{{ obj.listname }}</td>
+          <td>{{ obj.count }}</td>
         </tr>
       {% endfor %}
       </tbody>
@@ -53,6 +53,12 @@
         </div>
       </div>
     </form>
+    <div class="row mt-5">
+      <div class="col-md-10 offset-md-1">
+          <a class="btn btn-primary w-100" href="?{{ export_query_string }}">Export</a>
+          <p class="text-muted mt-3">Export data as csv file</p>
+      </div>
+    </div>
   </div> <!-- col -->
 </div> <!-- row -->
 

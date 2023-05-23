@@ -43,13 +43,14 @@
             {% if not request.resolver_match.url_name == "django.contrib.auth.views.login" %}
             <div id="navbar-main" class="navbar-header collapse navbar-collapse">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
+                    <li class="nav-item d-none d-lg-inline">
                         <a class="nav-link" href="https://www.ietf.org/search/">Search www.ietf.org</a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item d-none d-lg-inline">
                         <a class="nav-link" href="https://datatracker.ietf.org">Search Datatracker</a>
                     </li>
-		    <li class="nav-item navbar-text pipe"></li>
+		            <li class="nav-item d-none d-lg-inline navbar-text pipe"></li>
+
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbar-help" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Help</a>
                         <div class="dropdown-menu" aria-labelledby="navbar-help">
@@ -58,6 +59,16 @@
                         </div>
                     </li>
 
+                    {% if user.is_superuser or user.is_staff %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbar-reports" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Reports</a>
+                        <div class="dropdown-menu" aria-labelledby="navbar-help">
+                            <a class="dropdown-item" href="{% url "reports_subscribers" %}">Subscribers</a>
+                            <a class="dropdown-item" href="{% url "reports_messages" %}">Messages</a>
+                        </div>
+                    </li>
+                    {% endif %}
+                    
                     {% if user.is_superuser or user.is_staff %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbar-admin" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Admin</a>
@@ -79,13 +90,22 @@
                         </ul>
                     </li>
                     {% endif %}
+
                     {% if user.is_authenticated %}
-                    <li class="nav-item navbar-text pipe">{{ user}}</li>
-                    <li class="nav-item"> 
-                        <form action="{% url 'oidc_logout' %}" method="post">
-                            {% csrf_token %}
-                            <input class="nav-link btn-link-custom" type="submit" value="Logout">
-                        </form>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarUserDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{ user }}</a>
+                        <ul class="dropdown-menu">
+                        {% if server_mode == "production" or server_mode == "development" %}
+                            <li>
+                                <form action="{% url 'oidc_logout' %}" method="post">
+                                    {% csrf_token %}
+                                    <button class="dropdown-item" id="id_signout" type="submit">Sign Out</button>
+                                </form>
+                            </li>
+                        {% else %}
+                            <li><a class="dropdown-item" id="dt_signout_link" href="{% url 'reg-logout' %}">Sign Out</a></li>
+                        {% endif %}
+                        </ul>
                     </li>
                     {% else %}
                     <li class="nav-item">

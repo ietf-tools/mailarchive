@@ -254,6 +254,14 @@ header.navbar {
     border-right: none;
 }
 
+/* correct for bootstrap5 where active class was moved to dropdown-item */
+.typeahead.dropdown-menu li.active .dropdown-item {
+  color: #fff;
+  text-decoration: none;
+  background-color: #337ab7;
+  background-image: var(--bs-gradient);
+}
+
 /* ==========================================================================
    Browse
    ========================================================================== */

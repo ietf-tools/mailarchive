@@ -14,7 +14,7 @@ $(function() {
     var $input = $(".typeahead");
     $input.typeahead({
       source: source,
-      autoSelect: true
+      autoSelect: false
     });
     $input.change(function() {
       var current = $input.typeahead("getActive");

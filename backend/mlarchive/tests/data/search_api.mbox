@@ -1,5 +1,5 @@
 From beeble@example.com  Wed Jan 1 17:54:55 2020
-From: Zaphod Beeblebrox<user@example.com>
+From: Zaphod Beeblebrox <zaphod@example.com>
 To: ACME List <acme@example.com>
 Date: Wed, 1 Jan 2020 17:54:55 +0000
 Message-ID: <api001>
@@ -24,6 +24,7 @@ Hello,
 
 This is a test email. 
 apples
+applebody
 
 
 From baggins@example.com  Sun Mar 1 17:54:55 2020
@@ -47,7 +48,7 @@ To: AMCE List <acme@example.com>
 Date: Wed, 1 Apr 2020 17:54:55 +0000
 Message-ID: <api004>
 Content-Type: text/plain; charset="us-ascii"
-Subject: This is a oranges test
+Subject: This is a oranges test orangesubject
 
 Hello,
 

@@ -74,7 +74,7 @@ def test_update_index(db_only):
     doc = client.get(index=index,
                      id='archive.message.{}'.format(msg.pk))
     assert doc['_source']['django_id'] == str(msg.pk)
-    assert doc['_source']['text'] == 'This is a test message\nError reading message file'
+    assert doc['_source']['text'] == 'John Smith <john@example.com>\nThis is a test message\nError reading message file'
     assert doc['_source']['email_list'] == 'public'
     assert doc['_source']['date'] == '2017-01-01T00:00:00'
     assert doc['_source']['frm'] == 'John Smith <john@example.com>'

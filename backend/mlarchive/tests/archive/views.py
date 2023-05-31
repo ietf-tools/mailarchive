@@ -6,6 +6,7 @@ import pytest
 import tarfile
 from email.utils import parseaddr
 from dateutil.relativedelta import relativedelta
+from urllib import parse
 
 from django.conf import settings
 from django.contrib.auth import SESSION_KEY
@@ -235,6 +236,30 @@ def test_browse_list_private(client, messages):
 def test_browse_list_bogus_index(client, messages):
     url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?index={}'.format('x' * 27)
     response = client.get(url)
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_list_mixed_unicode(client, messages):
+    '''This is a test which comes from bogus requests
+    to the production system. The mixed 3byte and 4byte
+    unicode in the URL caused Illegal mix of collation
+    errors when using utf8mb3 database character set.
+    Switch to utf8mb4 to resolve.
+    '''
+    url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'})
+    REPLACEMENT_CHARACTER = '%EF%BF%BD'     # 3byte code
+    ELECTRIC_LIGHT_BULB = '%F0%9F%92%A1'    # 4byte code
+    path = f"/arch/browse/email_list%20=%20{REPLACEMENT_CHARACTER}%5C{ELECTRIC_LIGHT_BULB}"
+    parts = parse.urlsplit(url)
+    new_parts = parts._replace(path=path)
+    garbage_url = parse.urlunsplit(new_parts)
+    response = client.get(garbage_url, follow=True)
+    print(garbage_url)
+    print(parts)
+    print(response.status_code)
+    # print(response['location'])
+    # assert False
     assert response.status_code == 404
 
 

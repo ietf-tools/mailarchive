@@ -51,10 +51,15 @@ def test_form_text_frm_domain(rf, client, search_api_messages):
     assert sorted(ids) == ['api001', 'api002', 'api003', 'api004']
 
 
-@pytest.mark.skip(reason='Does not break out domain parts, which seems ok')
+@pytest.mark.skip(reason='Review tokenizers and revisit (see comments)')
 @pytest.mark.django_db(transaction=True)
 def test_form_text_frm_domain_part(rf, client, search_api_messages):
-    '''From field term, email domain'''
+    '''The Standard Tokenzier does not break on period (FULL STOP)
+    between two characters. This means search for "example" will not 
+    find "joe@example.com", you must search "example.com". This 
+    could surprise users. Review Elasticsearch tokenizers (and filters)
+    to see if there is a good way to resolve.
+    '''
     request = rf.get('/arch/search/?q=example')
     request.user = AnonymousUser()
     data = QueryDict('q=example')

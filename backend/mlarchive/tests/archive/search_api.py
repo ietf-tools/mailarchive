@@ -17,8 +17,110 @@ def test_ensure_index(settings):
 
 
 # ------------------------------
+# Core Search
+# ------------------------------
+
+
+@pytest.mark.django_db(transaction=True)
+def test_form_text_frm_name(rf, client, search_api_messages):
+    '''From field term, name'''
+    request = rf.get('/arch/search/?q=zaphod')
+    request.user = AnonymousUser()
+    data = QueryDict('q=zaphod')
+    form = AdvancedSearchForm(data=data, request=request)
+    search = search_from_form(form)
+    results = search.execute()
+    print(search.to_dict())
+    assert len(results) == 1
+    ids = [h.msgid for h in results]
+    assert sorted(ids) == ['api001']
+
+
+@pytest.mark.django_db(transaction=True)
+def test_form_text_frm_domain(rf, client, search_api_messages):
+    '''From field term, email domain'''
+    request = rf.get('/arch/search/?q=example.com')
+    request.user = AnonymousUser()
+    data = QueryDict('q=example.com')
+    form = AdvancedSearchForm(data=data, request=request)
+    search = search_from_form(form)
+    results = search.execute()
+    print(search.to_dict())
+    assert len(results) == 4
+    ids = [h.msgid for h in results]
+    assert sorted(ids) == ['api001', 'api002', 'api003', 'api004']
+
+
+@pytest.mark.skip(reason='Review tokenizers and revisit (see comments)')
+@pytest.mark.django_db(transaction=True)
+def test_form_text_frm_domain_part(rf, client, search_api_messages):
+    '''The Standard Tokenzier does not break on period (FULL STOP)
+    between two characters. This means search for "example" will not 
+    find "joe@example.com", you must search "example.com". This 
+    could surprise users. Review Elasticsearch tokenizers (and filters)
+    to see if there is a good way to resolve.
+    '''
+    request = rf.get('/arch/search/?q=example')
+    request.user = AnonymousUser()
+    data = QueryDict('q=example')
+    form = AdvancedSearchForm(data=data, request=request)
+    search = search_from_form(form)
+    results = search.execute()
+    print(search.to_dict())
+    assert len(results) == 1
+    ids = [h.msgid for h in results]
+    assert sorted(ids) == ['api001']
+
+
+@pytest.mark.django_db(transaction=True)
+def test_form_text_frm_email_exact(rf, client, search_api_messages):
+    '''From field term, email domain'''
+    request = rf.get('/arch/search/?q=zaphod@example.com')
+    request.user = AnonymousUser()
+    data = QueryDict('q=zaphod@example.com')
+    form = AdvancedSearchForm(data=data, request=request)
+    search = search_from_form(form)
+    results = search.execute()
+    print(search.to_dict())
+    assert len(results) == 1
+    ids = [h.msgid for h in results]
+    assert sorted(ids) == ['api001']
+
+
+@pytest.mark.django_db(transaction=True)
+def test_form_text_subject(rf, client, search_api_messages):
+    '''Subject field term'''
+    request = rf.get('/arch/search/?q=orangesubject')
+    request.user = AnonymousUser()
+    data = QueryDict('q=orangesubject')
+    form = AdvancedSearchForm(data=data, request=request)
+    search = search_from_form(form)
+    results = search.execute()
+    print(search.to_dict())
+    assert len(results) == 1
+    ids = [h.msgid for h in results]
+    assert sorted(ids) == ['api004']
+
+
+@pytest.mark.django_db(transaction=True)
+def test_form_text_body(rf, client, search_api_messages):
+    '''Body field term'''
+    request = rf.get('/arch/search/?q=applebody')
+    request.user = AnonymousUser()
+    data = QueryDict('q=applebody')
+    form = AdvancedSearchForm(data=data, request=request)
+    search = search_from_form(form)
+    results = search.execute()
+    print(search.to_dict())
+    assert len(results) == 1
+    ids = [h.msgid for h in results]
+    assert sorted(ids) == ['api002']
+
+# ------------------------------
 # Boolean Operators
 # ------------------------------
+
+
 @pytest.mark.django_db(transaction=True)
 def test_form_one_term(rf, client, search_api_messages):
     '''One term'''

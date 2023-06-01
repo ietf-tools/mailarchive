@@ -19,6 +19,12 @@ logger = logging.getLogger(__name__)
 IDENTIFIER_REGEX = re.compile('^[\w\d_]+\.[\w\d_]+\.[\w\d-]+$')
 
 
+def prep_text(message):
+    '''Prepare the "text" field that is used as the default field for 
+    search queries, ie. no field designator'''
+    return '\n'.join([message.frm, message.subject, message.get_body()])
+
+
 def full_prepare(message):
     '''Takes database Message object and returns dictionary for index update.
     For dates use isoformat().'''
@@ -28,7 +34,7 @@ def full_prepare(message):
         'django_ct': 'archive.message',
         'django_id': force_str(message.pk),
     }
-    prepared_data['text'] = '\n'.join([message.subject, message.get_body()])
+    prepared_data['text'] = prep_text(message)
     prepared_data['date'] = message.date.isoformat()
     prepared_data['email_list'] = message.email_list.name
     prepared_data['email_list_exact'] = message.email_list.name

@@ -86,6 +86,9 @@ tar cvf sub012214.tar ./sub012214</pre></p>
     <span id="rebuild_index_in_place"></span>
     <h2>How do I rebuild the index in place?</h2>
     <p><strong>Overview</strong>: Occasionally there are code changes that effect how messages are indexed. Assuming the changes are backwards compatible you can deploy the new code then rebuild the entire index. In brief the process is: run rebuild_index command using a new index name, then point the archive index alias to this new index.</p>
+    <p>Review the current index and alias settings using the commands:</p>
+    <pre>curl -X GET "localhost:9200/_cat/indices/?v"
+    curl -X GET "localhost:9200/mail-archive/_alias/*?pretty"</pre>
     <p>Create a settings file called backend/mlarchive/settings/settings_rebuild.py with the following contents</p>
     <pre># settings/settings_rebuild.py
 from .base import *
@@ -97,12 +100,12 @@ ELASTICSEARCH_CONNECTION = {
     'URL': 'http://127.0.0.1:9200/',
     'INDEX_NAME': 'mail-archive-NN',
 }</pre>
-    <p>Where NN is an unused number like 02. Then run the following command from cron</p>
+    <p>Where NN is the next increment. Then run the following command from cron</p>
     <pre>cd /a/mailarch/current && source env/bin/activate && cd backend && export PYTHONPATH=$PWD && ./manage.py rebuild_index --batch-size=20000 --noinput --settings=mlarchive.settings.settings_rebuild</pre>
-    <p>This will take several hours at least. When complete check that the new index is roughly the same size as the live index. The live index will be slightly larger as new messages have been added</p>
+    <p>This will take ~10 hours. When complete check that the new index is roughly the same size as the live index. The live index will be slightly larger as new messages have been added</p>
     <pre>curl -X GET "localhost:9200/_cat/indices/?v"</pre>
-    <p>Assuming all looks good change the alias</p>
-    <pre>curl -XPOST localhost:9200/_aliases -d '{"actions":[{"remove" : {"index" : "*", "alias" : "mail-archive"}},{"add" : { "index" : "${newIndex}", "alias" : "mail-archive" }}]}'</pre>
+    <p>Assuming all looks good change the alias. ** Replace ${newIndex} with index name **</p>
+    <pre>curl -XPOST localhost:9200/_aliases -H 'Content-Type: application/json' -d '{"actions":[{"remove" : {"index" : "*", "alias" : "mail-archive"}},{"add" : { "index" : "${newIndex}", "alias" : "mail-archive" }}]}'</pre>
     <p>Confirm that the new index is now being used by running the above _cat/indices command and checking that docs.count increases as new messages are added. During the new index build some number of messages will have come in, that won't be in the new index. To index these use the "How do I rebuild the index for a subset of messages?" instructions above to index messages from the last N hours using --age. Go back a little further than the start of the rebuild, messages already indexed will be skipped. Later, when you are SURE everything is working properly delete the old index.</p>
     <pre>curl -X DELETE "localhost:9200/${oldIndex}?pretty"</pre>
 

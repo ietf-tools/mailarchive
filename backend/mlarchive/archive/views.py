@@ -464,6 +464,7 @@ class CustomBrowseView(CustomSearchView):
         # settings
         extra['query_string'] = query_string
         extra['browse_list'] = self.list_name
+        extra['browse_list_placeholder'] = 'Search {}'.format(self.list_name)
         extra['queryset_offset'] = '0'
         extra['count'] = get_count(self.search)
 

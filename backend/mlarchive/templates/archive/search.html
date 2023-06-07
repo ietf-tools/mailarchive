@@ -1,15 +1,17 @@
 {% extends 'base.html' %}
 {% load static humanize archive_extras widget_tweaks %}
 
-
 {% block title %}{% if browse_list %}{{ browse_list }}{% else %}{{ block.super }} Search Results{% endif %}{% endblock %}
-
 
 {% block content %}
 
     <div id="msg-container">
         <div id="sidebar">
             <div id="search-filters">
+                {% if browse_list %}
+                    <p class="text-center">Viewing List:<br><span class="browse-list-name"><b>{{ browse_list }}</b></span></p>
+                    <hr>
+                {% endif %}
                 <h5 class="mt-4">FILTER BY TIME</h5>
                 <ul class="filter-options" tabindex="-1">
                   <li class="filter-item"><a class="{% selected request 'qdr' '' %}" href="{% query_string '' 'qdr' %}">Anytime</a></li>

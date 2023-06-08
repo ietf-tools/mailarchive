@@ -73,7 +73,7 @@ class Generator:
     Based on email.generator.Generator.  Takes a mlarchive Message object
 
     msg: mlarchive Message
-    mdmsg: mailbox.MaildirMessage
+    pymsg: Python message, email.EmailMessage
     text_only: used when generating index data, do not include html markup or headers
     """
     def __init__(self, msg):
@@ -82,7 +82,7 @@ class Generator:
         self.error = None
         try:
             with open(msg.get_file_path(), 'rb') as f:
-                self.mdmsg = get_message_from_binary_file(f, policy=custom_policy)
+                self.pymsg = get_message_from_binary_file(f, policy=custom_policy)
         except IOError:
             logger.error('Error reading message file: %s' % msg.get_file_path())
             self.error = 'Error reading message file'
@@ -304,15 +304,14 @@ class Generator:
     def parse_body(self, request=None):
         """Using internal or external function, convert a MIME email object to a string.
         """
-        headers = list(self.mdmsg.items())
+        headers = list(self.pymsg.items())
         if settings.USE_EXTERNAL_PROCESSOR:
             parts = [self.msg.as_html()]
         else:
-            parts = self.parse_entity(self.mdmsg)
+            parts = self.parse_entity(self.pymsg)
 
         if not self.text_only:
             context = {'msg': self.msg,
-                       'maildirmessage': self.mdmsg,
                        'headers': headers,
                        'parts': parts,
                        'request': request}

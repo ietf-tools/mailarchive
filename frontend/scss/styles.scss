@@ -701,6 +701,16 @@ table.msg-list-header-table th a.btn {
     color: $gray5;
 }
 
+#msg-body a.reply-link {
+    position:  absolute;
+    top: 8px;
+    right: 42px;
+    padding: 5px;
+    z-index: 10;
+    background-color:  white;
+    color: $gray5;
+}
+
 #msg-body h3 {
     font-size: 18px;
     font-weight: normal;

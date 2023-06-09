@@ -17,14 +17,13 @@ import mailbox
 import six
 
 from email.utils import collapse_rfc2231_value
-from email import policy as email_policy
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.template.loader import render_to_string
 from lxml.etree import XMLSyntaxError, ParserError
 from lxml.html.clean import Cleaner
 
-from mlarchive.utils.encoding import decode_safely, get_filename, is_attachment, custom_policy
+from mlarchive.utils.encoding import decode_safely, get_filename, is_attachment
 
 import logging
 logger = logging.getLogger(__name__)
@@ -50,18 +49,6 @@ def skip_attachment(function):
     return _inner
 
 
-def get_message_from_binary_file(f, policy):
-    '''Wrapper function for email.message_from_binary_file. Returns EmailMessage
-    unless header parsing fails, else Message
-    '''
-    msg = email.message_from_binary_file(f, policy=policy)
-    try:
-        _ = list(msg.items())
-        return msg
-    except:
-        f.seek(0)
-        return email.message_from_binary_file(f, policy=email_policy.compat32)
-
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------
@@ -75,17 +62,16 @@ class Generator:
     msg: mlarchive Message
     pymsg: Python message, email.EmailMessage
     text_only: used when generating index data, do not include html markup or headers
+    
+    Methods
+    as_html(): return message as HTML
+    as_text(): return message as text (for indexing)
     """
     def __init__(self, msg):
         self.msg = msg
         self.text_only = False
-        self.error = None
-        try:
-            with open(msg.get_file_path(), 'rb') as f:
-                self.pymsg = get_message_from_binary_file(f, policy=custom_policy)
-        except IOError:
-            logger.error('Error reading message file: %s' % msg.get_file_path())
-            self.error = 'Error reading message file'
+        self.pymsg = msg.pymsg
+        self.error = msg.pymsg_error
 
     def as_html(self, request):
         self.text_only = False

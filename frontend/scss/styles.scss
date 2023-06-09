@@ -407,6 +407,11 @@ ul.export-buttons li {
     margin-bottom: 18px;
 }
 
+.browse-list-name {
+    font-size: 1.5em;
+    color: rgb(242, 163, 65);
+}
+
 a.selected {
     color: $link-hover-color;
     text-decoration: $link-hover-decoration;

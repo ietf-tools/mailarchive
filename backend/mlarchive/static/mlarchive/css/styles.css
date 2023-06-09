@@ -375,6 +375,11 @@ ul.export-buttons li {
   margin-bottom: 18px;
 }
 
+.browse-list-name {
+  font-size: 1.5em;
+  color: #f2a341;
+}
+
 a.selected {
   color: #22527b;
   text-decoration: underline;

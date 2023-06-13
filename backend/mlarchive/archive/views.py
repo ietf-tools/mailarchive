@@ -188,6 +188,12 @@ class CSVResponseMixin(object):
             response['Content-Disposition'] = 'attachment; filename="%s"' % filename
 
             writer = csv.writer(response)
+            
+            # empty list
+            if len(context['object_list']) == 0:
+                writer.writerow(['empty list'])
+                return response
+            
             # write headers
             writer.writerow(self.get_csv_headers(context['object_list'][0]))
             for obj in context['object_list']:
@@ -940,7 +946,7 @@ class ReportsMessagesView(CSVResponseMixin, TemplateView):
         form = DateForm(self.request.GET)
         
         # if no date submitted default to last month
-        if not self.request.GET:
+        if 'start_date' not in self.request.GET and 'end_date' not in self.request.GET:
             today = datetime.date.today()
             edate = today.replace(day=1)
             sdate = edate - relativedelta(months=1)

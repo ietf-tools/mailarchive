@@ -799,6 +799,21 @@ def test_reports_messages_csv(client):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_reports_messages_csv_no_date(client):
+    '''Test that no date defaults to last month'''
+    date = datetime.datetime.now()
+    date = date - relativedelta(months=1)
+    elist = EmailListFactory.create(name='acme')
+    _ = MessageFactory.create(email_list=elist, date=date)
+    url = reverse('reports_messages') + '?export=csv'
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response['Content-Type'] == 'text/csv'
+    print(smart_str(response.content))
+    assert 'acme,1' in smart_str(response.content).splitlines()
+
+
+@pytest.mark.django_db(transaction=True)
 def test_redirect(client):
     Redirect.objects.create(old='/arch/msg/ietf/sssUEHOjoGhGRvDHFDrMP7h3Yf8/', new='/arch/msg/ietf/QajUS7jafu9sclZTiz4TMSehcjE/')
     url = reverse('archive_detail', kwargs={'list_name': 'ietf', 'id': 'sssUEHOjoGhGRvDHFDrMP7h3Yf8'})

@@ -7,7 +7,7 @@ from email import policy
 
 from django.conf import settings
 from django.test.client import RequestFactory
-from mlarchive.archive.generator import Generator, get_message_from_binary_file
+from mlarchive.archive.generator import Generator
 from mlarchive.archive.mail import archive_message
 from mlarchive.archive.models import Message
 from mlarchive.utils.test_utils import message_from_file
@@ -182,26 +182,3 @@ def test_generator_multipart_malformed(client):
     text = g.as_text()
     print(type(text))
     assert isinstance(text, six.text_type)
-
-
-def test_get_mail_from_binary_file():
-    # test with problematic header
-    b = b'''Date: Thu, 7 Nov 2013 17:54:55 +0000
-    To: <joe@example.com>
-    From: Bob <.bob@example.com>
-    Subject: This is a test
-
-    Testing.
-    '''
-    msg = get_message_from_binary_file(io.BytesIO(b), policy=policy.SMTP)
-    assert isinstance(msg, email.message.Message)
-    # test with clean header
-    b = b'''Date: Thu, 7 Nov 2013 17:54:55 +0000
-    To: <joe@example.com>
-    From: Bob <bob@example.com>
-    Subject: This is a test
-
-    Testing.
-    '''
-    msg = get_message_from_binary_file(io.BytesIO(b), policy=policy.SMTP)
-    assert isinstance(msg, email.message.EmailMessage)

@@ -1,12 +1,15 @@
 import datetime
+import email
+import io
 import pytest
+from email import policy
 
 from factories import EmailListFactory, ThreadFactory, MessageFactory
 from django.urls import reverse
 from django.utils.encoding import smart_str
 from django.utils.http import urlencode
-from mlarchive.archive.models import Message, Attachment, is_attachment
-from mlarchive.utils.test_utils import message_from_file
+from mlarchive.archive.models import Message, Attachment, is_attachment, get_message_from_binary_file
+from mlarchive.utils.test_utils import message_from_file, load_message
 from mlarchive.utils.encoding import get_filename
 
 
@@ -48,6 +51,30 @@ def test_message_get_date_index_url(client):
     msg = MessageFactory.create(email_list=elist)
     assert msg.get_date_index_url() == '/arch/browse/public/?index={hashcode}'.format(
         hashcode=msg.hashcode.strip('='))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_message_pymsg(client):
+    load_message('reply_to_url.mail')
+    msg = Message.objects.first()
+    print(msg.get_file_path())
+    print(type(msg.pymsg))
+    assert isinstance(msg.pymsg, email.message.EmailMessage)
+    assert msg.pymsg.get('List-Post') == '<mailto:public@example.com>'
+
+
+@pytest.mark.django_db(transaction=True)
+def test_message_pymsg_error(client):
+    elist = EmailListFactory.create(name='public')
+    msg = MessageFactory.create(email_list=elist)
+    assert msg.pymsg_error == 'Error reading message file'
+
+
+@pytest.mark.django_db(transaction=True)
+def test_message_get_reply_url(client):
+    load_message('reply_to_url.mail')
+    msg = Message.objects.first()
+    assert msg.get_reply_url() == 'mailto:public@example.com?subject=Re: This is a test'
 
 
 @pytest.mark.django_db(transaction=True)
@@ -282,3 +309,26 @@ def test_is_attachment():
     assert is_attachment(parts[0]) is False
     assert is_attachment(parts[1]) is False
     assert is_attachment(parts[2]) is True
+
+
+def test_get_mail_from_binary_file():
+    # test with problematic header
+    b = b'''Date: Thu, 7 Nov 2013 17:54:55 +0000
+    To: <joe@example.com>
+    From: Bob <.bob@example.com>
+    Subject: This is a test
+
+    Testing.
+    '''
+    msg = get_message_from_binary_file(io.BytesIO(b), policy=policy.SMTP)
+    assert isinstance(msg, email.message.Message)
+    # test with clean header
+    b = b'''Date: Thu, 7 Nov 2013 17:54:55 +0000
+    To: <joe@example.com>
+    From: Bob <bob@example.com>
+    Subject: This is a test
+
+    Testing.
+    '''
+    msg = get_message_from_binary_file(io.BytesIO(b), policy=policy.SMTP)
+    assert isinstance(msg, email.message.EmailMessage)

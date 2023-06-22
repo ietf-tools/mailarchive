@@ -932,7 +932,7 @@ class ReportsMessagesView(CSVResponseMixin, TemplateView):
         list of named tuples (listname, count))"""
         messages = Message.objects.filter(
             date__gte=sdate,
-            date__lt=edate,
+            date__lte=edate,
             email_list__private=False)
         counter = Counter(messages.values_list('email_list__name', flat=True))
         Count = namedtuple('Count', 'listname count')
@@ -948,8 +948,8 @@ class ReportsMessagesView(CSVResponseMixin, TemplateView):
         # if no date submitted default to last month
         if 'start_date' not in self.request.GET and 'end_date' not in self.request.GET:
             today = datetime.date.today()
-            edate = today.replace(day=1)
-            sdate = edate - relativedelta(months=1)
+            edate = today.replace(day=1) - relativedelta(days=1)    # last day of last month
+            sdate = edate.replace(day=1)                            # first day of last month
             total, message_counts = self.get_message_stats(sdate, edate)
             form = DateForm(initial={
                 'start_date': sdate.strftime('%Y-%m-%d'),

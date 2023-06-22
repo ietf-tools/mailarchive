@@ -786,6 +786,35 @@ def test_reports_messages(client):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_reports_messages_default(client):
+    '''Test that report defaults to last month'''
+    today = datetime.date.today()
+    elist = EmailListFactory.create(name='acme')
+    # Create messages
+    # Today
+    _ = MessageFactory.create(email_list=elist, date=today)
+    # two months ago
+    xdate = today - relativedelta(months=2)
+    _ = MessageFactory.create(email_list=elist, date=xdate)
+    # last day of last month
+    ydate = today.replace(day=1) - relativedelta(days=1)
+    _ = MessageFactory.create(email_list=elist, date=ydate)
+    # first day of last month
+    zdate = ydate.replace(day=1)
+    _ = MessageFactory.create(email_list=elist, date=zdate)
+    # middle of last month
+    adate = zdate + relativedelta(days=14)
+    _ = MessageFactory.create(email_list=elist, date=adate)
+    url = reverse('reports_messages')
+    response = client.get(url)
+    assert response.status_code == 200
+    assert 'Total Messages: 3' in smart_str(response.content)
+    q = PyQuery(response.content)
+    rows = [c.text() for c in q('table tr td').items()]
+    assert rows == ['acme', '3']
+
+
+@pytest.mark.django_db(transaction=True)
 def test_reports_messages_csv(client):
     date = datetime.datetime(2022, 2, 1)
     elist = EmailListFactory.create(name='acme')

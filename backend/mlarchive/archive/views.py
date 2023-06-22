@@ -30,7 +30,7 @@ from django.views.generic import View
 from elasticsearch.exceptions import RequestError
 
 from mlarchive.utils.decorators import (check_access, superuser_only, pad_id, 
-    check_list_access)
+    check_list_access, staff_only)
 from mlarchive.archive import actions
 from mlarchive.archive.backends.elasticsearch import search_from_form
 from mlarchive.archive.query_utils import (get_qdr_kwargs,
@@ -895,6 +895,7 @@ class MessageDetailView(DetailView):
     model = Message
 
 
+@method_decorator(staff_only, name='dispatch')
 class ReportsSubscribersView(CSVResponseMixin, TemplateView):
     """Subscriber Counts Report"""
     template_name = 'archive/reports_subscribers.html'
@@ -922,6 +923,7 @@ class ReportsSubscribersView(CSVResponseMixin, TemplateView):
         return context
 
 
+@method_decorator(staff_only, name='dispatch')
 class ReportsMessagesView(CSVResponseMixin, TemplateView):
     """Message Counts Report"""
     template_name = 'archive/reports_messages.html'

@@ -592,24 +592,12 @@ var mailarch = {
         var msgId = row.find(".xtd.id-col").html();
         if(/^\d+$/.test(msgId)){
             mailarch.$viewPane.load('/arch/ajax/msg/?id=' + msgId, function() {
-                // NTOE: don't use cached DOM objects here because these change
+                // NOTE: don't use cached DOM objects here because these change
                 $('#msg-date').after('<a id="toggle-msg-header" class="toggle" href="#">Show header</a>');
                 $('#toggle-msg-header').click(function(ev) {
                     $('#msg-header').toggle();
                     $(this).html(($('#toggle-msg-header').text() == 'Show header') ? 'Hide header' : 'Show header');
                 });
-                // add detail link
-                let url = $('#msg-body').data('message-url');
-                let html = '<a href="' + url + '" class="detail-link" title="Message Detail"><i class="fa fa-link fa-lg" aria-hidden="true"></i></a>'
-                $('#msg-body').prepend(html);
-                // add reply link
-                let replyUrl = $('#msg-body').data('reply-url');
-                if(replyUrl) {
-                    console.log("have reply-url");
-                    let replyHtml = '<a href="' + replyUrl + '" class="reply-link" title="Reply"><i class="fas fa-reply fa-lg" aria-hidden="true"></i></a>'
-                    $('#msg-body').prepend(replyHtml);
-                }
-
                 mailarch.$viewPane.scrollTop(0);    // should this be msg-body?
             });
         }

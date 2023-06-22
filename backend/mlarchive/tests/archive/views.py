@@ -600,6 +600,7 @@ def test_attachment_bad_sequence(client, attachment_messages_no_index):
     # response = client.get(url)
     # assert response.status_code == 404
 
+
 @pytest.mark.django_db(transaction=True)
 def test_attachment_folded_name(client, attachment_messages_no_index):
     message = Message.objects.get(msgid='attachment.folded.name')
@@ -808,3 +809,26 @@ def test_removed_message(client, thread_messages):
     response = client.get(msg.get_absolute_url())
     assert response.status_code == 410
     assert 'This message has been removed' in smart_str(response.content)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_message_download(client):
+    listname = 'public'
+    load_message('mail_normal.1', listname=listname)
+    msg = Message.objects.first()
+    url = reverse('archive_message_download', kwargs={'list_name': listname, 'id': msg.hashcode})
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response.content == msg.get_body_raw()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_message_download_private(client):
+    # test private message, no access
+    elist = EmailListFactory.create(name='private', private=True)
+    load_message('mail_normal.1', listname='private')
+    msg = Message.objects.get(email_list__name='private')
+    print(msg.email_list.private, msg.email_list.members.all())
+    url = reverse('archive_message_download', kwargs={'list_name': 'private', 'id': msg.hashcode})
+    response = client.get(url)
+    assert response.status_code == 403

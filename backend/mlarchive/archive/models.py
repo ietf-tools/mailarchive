@@ -310,6 +310,11 @@ class Message(models.Model):
         fragment = '?index={}'.format(self.hashcode.rstrip('='))
         return base + fragment
 
+    def get_download_url(self):
+        return reverse('archive_message_download', kwargs={
+            'list_name': self.email_list.name,
+            'id': self.hashcode.rstrip('=')})
+
     def get_reply_url(self):
         '''Return URL to use in Reply-To link for this message'''
         list_post = self.pymsg.get('List-Post')

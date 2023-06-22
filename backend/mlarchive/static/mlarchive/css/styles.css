@@ -664,7 +664,7 @@ table.msg-list-header-table th a.btn {
   word-break: normal;
 }
 
-#msg-body a.detail-link {
+#msg-body #message-links {
   position: absolute;
   top: 8px;
   right: 12px;
@@ -674,14 +674,12 @@ table.msg-list-header-table th a.btn {
   color: #808080;
 }
 
-#msg-body a.reply-link {
-  position: absolute;
-  top: 8px;
-  right: 42px;
-  padding: 5px;
-  z-index: 10;
-  background-color: white;
-  color: #808080;
+#msg-body #message-links a {
+  margin-left: 8px;
+}
+
+.msg-detail #msg-body {
+  position: relative;
 }
 
 #msg-body h3 {

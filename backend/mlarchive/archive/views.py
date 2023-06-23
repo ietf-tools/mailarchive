@@ -30,7 +30,7 @@ from django.views.generic import View
 from elasticsearch.exceptions import RequestError
 
 from mlarchive.utils.decorators import (check_access, superuser_only, pad_id, 
-    check_list_access)
+    check_list_access, staff_only)
 from mlarchive.archive import actions
 from mlarchive.archive.backends.elasticsearch import search_from_form
 from mlarchive.archive.query_utils import (get_qdr_kwargs,
@@ -188,6 +188,12 @@ class CSVResponseMixin(object):
             response['Content-Disposition'] = 'attachment; filename="%s"' % filename
 
             writer = csv.writer(response)
+            
+            # empty list
+            if len(context['object_list']) == 0:
+                writer.writerow(['empty list'])
+                return response
+            
             # write headers
             writer.writerow(self.get_csv_headers(context['object_list'][0]))
             for obj in context['object_list']:
@@ -889,6 +895,7 @@ class MessageDetailView(DetailView):
     model = Message
 
 
+@method_decorator(staff_only, name='dispatch')
 class ReportsSubscribersView(CSVResponseMixin, TemplateView):
     """Subscriber Counts Report"""
     template_name = 'archive/reports_subscribers.html'
@@ -916,6 +923,7 @@ class ReportsSubscribersView(CSVResponseMixin, TemplateView):
         return context
 
 
+@method_decorator(staff_only, name='dispatch')
 class ReportsMessagesView(CSVResponseMixin, TemplateView):
     """Message Counts Report"""
     template_name = 'archive/reports_messages.html'
@@ -926,7 +934,7 @@ class ReportsMessagesView(CSVResponseMixin, TemplateView):
         list of named tuples (listname, count))"""
         messages = Message.objects.filter(
             date__gte=sdate,
-            date__lt=edate,
+            date__lte=edate,
             email_list__private=False)
         counter = Counter(messages.values_list('email_list__name', flat=True))
         Count = namedtuple('Count', 'listname count')
@@ -940,10 +948,10 @@ class ReportsMessagesView(CSVResponseMixin, TemplateView):
         form = DateForm(self.request.GET)
         
         # if no date submitted default to last month
-        if not self.request.GET:
+        if 'start_date' not in self.request.GET and 'end_date' not in self.request.GET:
             today = datetime.date.today()
-            edate = today.replace(day=1)
-            sdate = edate - relativedelta(months=1)
+            edate = today.replace(day=1) - relativedelta(days=1)    # last day of last month
+            sdate = edate.replace(day=1)                            # first day of last month
             total, message_counts = self.get_message_stats(sdate, edate)
             form = DateForm(initial={
                 'start_date': sdate.strftime('%Y-%m-%d'),

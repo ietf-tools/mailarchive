@@ -6,6 +6,7 @@ import pytest
 import tarfile
 from email.utils import parseaddr
 from dateutil.relativedelta import relativedelta
+from pyquery import PyQuery
 
 from django.conf import settings
 from django.contrib.auth import SESSION_KEY
@@ -18,10 +19,8 @@ from mlarchive.archive.models import Message, Attachment, Redirect
 from mlarchive.archive.views import (TimePeriod, add_nav_urls, is_small_year,
     add_one_month, get_this_next_periods, get_date_endpoints, get_thread_endpoints,
     DateStaticIndexView)
+from mlarchive.utils.test_utils import login_testing_unauthorized
 from mlarchive.utils.test_utils import load_message
-
-from pyquery import PyQuery
-
 
 
 # --------------------------------------------------
@@ -600,6 +599,7 @@ def test_attachment_bad_sequence(client, attachment_messages_no_index):
     # response = client.get(url)
     # assert response.status_code == 404
 
+
 @pytest.mark.django_db(transaction=True)
 def test_attachment_folded_name(client, attachment_messages_no_index):
     message = Message.objects.get(msgid='attachment.folded.name')
@@ -735,8 +735,9 @@ def test_search(client):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_reports_subscribers(client, subscribers):
+def test_reports_subscribers(client, users, subscribers):
     url = reverse('reports_subscribers')
+    login_testing_unauthorized(client, url)
     response = client.get(url)
     assert response.status_code == 200
     # default date is last month
@@ -754,8 +755,9 @@ def test_reports_subscribers(client, subscribers):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_reports_subscribers_csv(client, subscribers):
+def test_reports_subscribers_csv(client, users, subscribers):
     url = reverse('reports_subscribers') + '?export=csv'
+    login_testing_unauthorized(client, url)
     response = client.get(url)
     assert response.status_code == 200
     assert response['Content-Type'] == 'text/csv'
@@ -764,11 +766,12 @@ def test_reports_subscribers_csv(client, subscribers):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_reports_messages(client):
+def test_reports_messages(client, users):
     date = datetime.datetime(2022, 2, 1)
     elist = EmailListFactory.create(name='acme')
     _ = MessageFactory.create(email_list=elist, date=date)
-    url = reverse('reports_messages') + '?start_date=2022-01-01&end_date=2023-01-01'
+    url = reverse('reports_messages') + '?start_date=2022-01-01&end_date=2022-12-31'
+    login_testing_unauthorized(client, url)
     response = client.get(url)
     assert response.status_code == 200
     assert 'Total Messages: 1' in smart_str(response.content)
@@ -778,11 +781,58 @@ def test_reports_messages(client):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_reports_messages_csv(client):
+def test_reports_messages_default(client, users):
+    '''Test that report defaults to last month'''
+    today = datetime.date.today()
+    elist = EmailListFactory.create(name='acme')
+    # Create messages
+    # Today
+    _ = MessageFactory.create(email_list=elist, date=today)
+    # two months ago
+    xdate = today - relativedelta(months=2)
+    _ = MessageFactory.create(email_list=elist, date=xdate)
+    # last day of last month
+    ydate = today.replace(day=1) - relativedelta(days=1)
+    _ = MessageFactory.create(email_list=elist, date=ydate)
+    # first day of last month
+    zdate = ydate.replace(day=1)
+    _ = MessageFactory.create(email_list=elist, date=zdate)
+    # middle of last month
+    adate = zdate + relativedelta(days=14)
+    _ = MessageFactory.create(email_list=elist, date=adate)
+    url = reverse('reports_messages')
+    login_testing_unauthorized(client, url)
+    response = client.get(url)
+    assert response.status_code == 200
+    assert 'Total Messages: 3' in smart_str(response.content)
+    q = PyQuery(response.content)
+    rows = [c.text() for c in q('table tr td').items()]
+    assert rows == ['acme', '3']
+
+
+@pytest.mark.django_db(transaction=True)
+def test_reports_messages_csv(client, users):
     date = datetime.datetime(2022, 2, 1)
     elist = EmailListFactory.create(name='acme')
     _ = MessageFactory.create(email_list=elist, date=date)
     url = reverse('reports_messages') + '?start_date=2022-01-01&end_date=2023-01-01&export=csv'
+    login_testing_unauthorized(client, url)
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response['Content-Type'] == 'text/csv'
+    print(smart_str(response.content))
+    assert 'acme,1' in smart_str(response.content).splitlines()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_reports_messages_csv_no_date(client, users):
+    '''Test that no date defaults to last month'''
+    date = datetime.datetime.now()
+    date = date - relativedelta(months=1)
+    elist = EmailListFactory.create(name='acme')
+    _ = MessageFactory.create(email_list=elist, date=date)
+    url = reverse('reports_messages') + '?export=csv'
+    login_testing_unauthorized(client, url)
     response = client.get(url)
     assert response.status_code == 200
     assert response['Content-Type'] == 'text/csv'

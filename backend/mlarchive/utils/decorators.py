@@ -156,3 +156,14 @@ def superuser_only(function):
             raise PermissionDenied
         return function(request, *args, **kwargs)
     return _inner
+
+
+def staff_only(function):
+    '''
+    Limit view to staff only.
+    '''
+    def _inner(request, *args, **kwargs):
+        if not request.user.is_staff:
+            raise PermissionDenied
+        return function(request, *args, **kwargs)
+    return _inner

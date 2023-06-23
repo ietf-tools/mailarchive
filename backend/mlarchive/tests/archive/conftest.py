@@ -486,6 +486,15 @@ def clear_index():
     call_command('clear_index', interactive=False, stdout=content)
 
 
+@pytest.fixture()
+def users():
+    """A fixture with various types of Users for testing"""
+    staff_user = UserFactory(
+        username='staff@example.com',
+        email='staff@example.com',
+        password='password',
+        is_staff=True)
+
 # --------------------------------------------------
 # Celery Fixtures
 # --------------------------------------------------

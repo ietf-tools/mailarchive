@@ -43,3 +43,12 @@ def load_message(filename, listname='public'):
     with open(path, 'rb') as f:
         data = f.read()
     archive_message(data, listname)
+
+
+def login_testing_unauthorized(client, url, username='staff@example.com'):
+    '''Utility function to test url access'''
+    response = client.get(url)
+    assert response.status_code in (302, 403, 405)
+    if response.status_code == 302:
+        assert '/accounts/login' in response['Location']
+    return client.login(username=username, password='password')

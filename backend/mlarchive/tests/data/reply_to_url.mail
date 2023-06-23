@@ -1,0 +1,11 @@
+From: User <user@example.com>
+To: <public@example.com>
+Date: Thu, 7 Nov 2013 17:54:55 +0000
+Message-ID: <0000000350@amsl.com>
+Content-Type: text/plain; charset="us-ascii"
+Subject: This is a test
+List-Post: <mailto:public@example.com>
+
+Hello,
+
+This is a test email.

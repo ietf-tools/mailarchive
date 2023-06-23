@@ -1,4 +1,5 @@
 from email.utils import parseaddr
+from email import policy as email_policy
 import datetime
 import email
 import logging
@@ -15,7 +16,7 @@ from django.template.loader import render_to_string
 
 from mlarchive.archive.generator import Generator
 from mlarchive.archive.thread import parse_message_ids
-from mlarchive.utils.encoding import is_attachment
+from mlarchive.utils.encoding import is_attachment, custom_policy
 
 
 TXT2HTML = ['/usr/bin/mhonarc', '-single']
@@ -36,6 +37,19 @@ def get_in_reply_to_message(in_reply_to_value, email_list):
     if not msgids:
         return None
     return get_message_prefer_list(msgids[0], email_list)
+
+
+def get_message_from_binary_file(f, policy):
+    '''Wrapper function for email.message_from_binary_file. Returns EmailMessage
+    unless header parsing fails, else Message
+    '''
+    msg = email.message_from_binary_file(f, policy=policy)
+    try:
+        _ = list(msg.items())
+        return msg
+    except:
+        f.seek(0)
+        return email.message_from_binary_file(f, policy=email_policy.compat32)
 
 
 def get_message_prefer_list(msgid, email_list):
@@ -219,6 +233,31 @@ class Message(models.Model):
         '''Map for index.result.django_id'''
         return str(self.id)
 
+    @property
+    def pymsg(self):
+        '''A lazy attribute for the Python message object, email.EmailMessage.
+        Use this for direct access to message for headers, body etc.
+        '''
+        if hasattr(self, '_pymsg'):
+            return self._pymsg
+        else:
+            try:
+                with open(self.get_file_path(), 'rb') as f:
+                    self._pymsg = get_message_from_binary_file(f, policy=custom_policy)
+                    self._pymsg_error = ''
+            except IOError:
+                logger.error('Error reading message file: %s' % self.get_file_path())
+                self._pymsg = None
+                self._pymsg_error = 'Error reading message file'
+            return self._pymsg
+    
+    @property
+    def pymsg_error(self):
+        '''Any errors trying to get Python message, self.pymsg'''
+        if not hasattr(self, '_pymsg_error'):
+            _ = self.pymsg
+        return self._pymsg_error
+    
     def get_absolute_url(self):
         # strip padding, "=", to shorten URL
         return reverse('archive_detail', kwargs={
@@ -270,6 +309,18 @@ class Message(models.Model):
         base = reverse('archive_browse_list', kwargs={'list_name': self.email_list.name})
         fragment = '?index={}'.format(self.hashcode.rstrip('='))
         return base + fragment
+
+    def get_reply_url(self):
+        '''Return URL to use in Reply-To link for this message'''
+        list_post = self.pymsg.get('List-Post')
+        if not list_post:
+            return ''
+        url = list_post.strip('<>')
+        subject = self.subject
+        if not subject.startswith('Re:'):
+            subject = 'Re: ' + subject
+        url = url + '?subject=' + subject
+        return url
 
     def get_thread_index_url(self):
         base = reverse('archive_browse_list', kwargs={'list_name': self.email_list.name})

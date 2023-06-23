@@ -16,25 +16,16 @@ from django.utils.http import urlencode
 from django.utils.encoding import smart_str
 from factories import EmailListFactory, MessageFactory, UserFactory
 from mlarchive.archive.models import Message, Attachment, Redirect
-from mlarchive.archive.mail import archive_message
 from mlarchive.archive.views import (TimePeriod, add_nav_urls, is_small_year,
     add_one_month, get_this_next_periods, get_date_endpoints, get_thread_endpoints,
     DateStaticIndexView)
 from mlarchive.utils.test_utils import login_testing_unauthorized
+from mlarchive.utils.test_utils import load_message
 
 
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
-
-
-def load_message(filename, listname='public'):
-    """Loads a message given path"""
-    path = os.path.join(settings.BASE_DIR, 'tests', 'data', filename)
-    with open(path, 'rb') as f:
-        data = f.read()
-    archive_message(data, listname)
-
 
 def assert_href(content, selector, value):
     q = PyQuery(content)
@@ -607,6 +598,7 @@ def test_attachment_bad_sequence(client, attachment_messages_no_index):
     # attachment = message.attachment_set.first()
     # response = client.get(url)
     # assert response.status_code == 404
+
 
 @pytest.mark.django_db(transaction=True)
 def test_attachment_folded_name(client, attachment_messages_no_index):

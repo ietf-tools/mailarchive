@@ -6,6 +6,8 @@ from django.contrib.auth.models import AnonymousUser
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.test import RequestFactory
 
+from mlarchive.archive.mail import archive_message
+
 # for Python 2/3 compatability
 try:
     from email import message_from_binary_file
@@ -33,6 +35,14 @@ def message_from_file(filename):
     with open(path, 'rb') as f:
         msg = message_from_binary_file(f)
     return msg
+
+
+def load_message(filename, listname='public'):
+    """Loads a message given path"""
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', filename)
+    with open(path, 'rb') as f:
+        data = f.read()
+    archive_message(data, listname)
 
 
 def login_testing_unauthorized(client, url, username='staff@example.com'):

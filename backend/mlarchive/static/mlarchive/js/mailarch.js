@@ -598,9 +598,18 @@ var mailarch = {
                     $('#msg-header').toggle();
                     $(this).html(($('#toggle-msg-header').text() == 'Show header') ? 'Hide header' : 'Show header');
                 });
-                var url = $('#msg-body').data('message-url');
-                var html = '<a href="' + url + '" class="detail-link" title="Message Detail"><i class="fa fa-link fa-lg" aria-hidden="true"></i></a>'
+                // add detail link
+                let url = $('#msg-body').data('message-url');
+                let html = '<a href="' + url + '" class="detail-link" title="Message Detail"><i class="fa fa-link fa-lg" aria-hidden="true"></i></a>'
                 $('#msg-body').prepend(html);
+                // add reply link
+                let replyUrl = $('#msg-body').data('reply-url');
+                if(replyUrl) {
+                    console.log("have reply-url");
+                    let replyHtml = '<a href="' + replyUrl + '" class="reply-link" title="Reply"><i class="fas fa-reply fa-lg" aria-hidden="true"></i></a>'
+                    $('#msg-body').prepend(replyHtml);
+                }
+
                 mailarch.$viewPane.scrollTop(0);    // should this be msg-body?
             });
         }

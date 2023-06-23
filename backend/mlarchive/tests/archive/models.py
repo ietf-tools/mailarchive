@@ -78,6 +78,13 @@ def test_message_get_reply_url(client):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_message_get_download_url(client):
+    load_message('reply_to_url.mail')
+    msg = Message.objects.first()
+    assert msg.get_download_url() == '/arch/msg/public/eBMNsgSMJKrUS4JXbAhN4hxPsJo/download/'
+
+
+@pytest.mark.django_db(transaction=True)
 def test_message_get_thread_index_url(client):
     elist = EmailListFactory.create(name='public')
     msg = MessageFactory.create(email_list=elist)

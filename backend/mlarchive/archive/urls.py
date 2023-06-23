@@ -30,6 +30,7 @@ urlpatterns = [
     # url(r'^msg/(?P<list_name>[a-z0-9_\-\+]+)/(?P<id>[a-zA-Z0-9_\-]+)(=)?/(?P<sequence>\d+)(/)?$', views.attachment, name='a
     path('msg/<list_name>/<id>/', views.detail, name='archive_detail'),
     path('msg/<list_name>/<id>/<int:sequence>/', views.attachment, name='archive_attachment'),
+    path('msg/<list_name>/<id>/download/', views.message_download, name='archive_message_download'),
     path('search/', views.CustomSearchView.as_view(), name='archive_search'),
     # reports    ----------------
     path('reports/subscribers/', views.ReportsSubscribersView.as_view(), name='reports_subscribers'),

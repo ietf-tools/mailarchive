@@ -74,16 +74,16 @@ if env("DATABASES_HOST"):
 
 SITE_ID = 1
 
+# Timezone
+USE_TZ = True
+TIME_ZONE = 'UTC'
+
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
-
-TIME_ZONE = 'America/Los_Angeles'
-
 LANGUAGE_CODE = 'en-us'
-
-USE_TZ = False
 USE_I18N = False
 USE_L10N = True
+
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 INTERNAL_IPS = env('INTERNAL_IPS')

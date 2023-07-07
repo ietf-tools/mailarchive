@@ -6,6 +6,7 @@ import os
 import re
 from operator import itemgetter
 from collections import namedtuple, Counter
+from datetime import timezone
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import isoparse
 
@@ -949,9 +950,11 @@ class ReportsMessagesView(CSVResponseMixin, TemplateView):
         
         # if no date submitted default to last month
         if 'start_date' not in self.request.GET and 'end_date' not in self.request.GET:
-            today = datetime.date.today()
-            edate = today.replace(day=1) - relativedelta(days=1)    # last day of last month
-            sdate = edate.replace(day=1)                            # first day of last month
+            now = datetime.datetime.now(timezone.utc)
+            # last day of last month
+            edate = now.replace(day=1, hour=23, minute=59, second=0, microsecond=0) - relativedelta(days=1)
+            # first day of last month
+            sdate = edate.replace(day=1, hour=0, minute=0)
             total, message_counts = self.get_message_stats(sdate, edate)
             form = DateForm(initial={
                 'start_date': sdate.strftime('%Y-%m-%d'),

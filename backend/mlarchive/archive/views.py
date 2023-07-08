@@ -100,10 +100,10 @@ def get_this_next_periods(time_period):
     (datetime(2017,4,1), datetime(2017,5,1))
     """
     if time_period.month:
-        this_period = datetime.datetime(time_period.year, time_period.month, 1)
+        this_period = datetime.datetime(time_period.year, time_period.month, 1, tzinfo=timezone.utc)
         next_period = add_one_month(this_period)
     else:
-        this_period = datetime.datetime(time_period.year, 1, 1)
+        this_period = datetime.datetime(time_period.year, 1, 1, tzinfo=timezone.utc)
         next_period = this_period + datetime.timedelta(days=365)
     return (this_period, next_period)
 

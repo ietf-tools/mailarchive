@@ -82,7 +82,6 @@ TIME_ZONE = 'UTC'
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 LANGUAGE_CODE = 'en-us'
 USE_I18N = False
-USE_L10N = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 

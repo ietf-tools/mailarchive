@@ -1,4 +1,5 @@
 import datetime
+from datetime import timezone
 from collections import namedtuple, defaultdict
 
 import pytest
@@ -54,16 +55,16 @@ def test_build_container():
     message1 = MessageFactory.create(
         email_list=elist,
         msgid='001@example.com',
-        date=datetime.datetime(2016, 1, 1))
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc))
     message2 = MessageFactory.create(
         email_list=elist,
         msgid='002@example.com',
-        date=datetime.datetime(2016, 1, 2),
+        date=datetime.datetime(2016, 1, 2, tzinfo=timezone.utc),
         references='<001@example.com>')
     message3 = MessageFactory.create(
         email_list=elist,
         msgid='003@example.com',
-        date=datetime.datetime(2016, 1, 3),
+        date=datetime.datetime(2016, 1, 3, tzinfo=timezone.utc),
         references='<001@example.com>')
     # simple message
     build_container(message1, id_table, 0)
@@ -98,14 +99,14 @@ def test_compute_thread():
     MessageFactory.create(
         email_list=elist,
         msgid='001@example.com',
-        date=datetime.datetime(2016, 1, 1),
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc),
         thread=thread,
         thread_depth=0,
         thread_order=0)
     MessageFactory.create(
         email_list=elist,
         msgid='002@example.com',
-        date=datetime.datetime(2016, 1, 2),
+        date=datetime.datetime(2016, 1, 2, tzinfo=timezone.utc),
         thread=thread,
         references='<001@example.com>',
         thread_depth=0,
@@ -194,7 +195,7 @@ def test_find_root_set():
     elist = EmailListFactory.create()
     message1 = MessageFactory.create(
         email_list=elist,
-        date=datetime.datetime(2016, 1, 1))
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc))
     build_container(message1, id_table, 0)
     root_node = find_root_set(id_table)
     assert root_node.is_empty()
@@ -218,12 +219,12 @@ def test_gather_subjects():
         email_list=elist,
         subject='New product',
         base_subject='New product',
-        date=datetime.datetime(2016, 1, 1))
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc))
     message2 = MessageFactory.create(
         email_list=elist,
         subject='Re: New product',
         base_subject='New product',
-        date=datetime.datetime(2016, 1, 2))
+        date=datetime.datetime(2016, 1, 2, tzinfo=timezone.utc))
     build_container(message1, id_table, 0)
     build_container(message2, id_table, 0)
     root_node = find_root_set(id_table)
@@ -286,23 +287,23 @@ def test_process_corrupt_refs_1():
     elist = EmailListFactory.create()
     MessageFactory.create(
         email_list=elist,
-        date=datetime.datetime(2016, 1, 1))
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc))
     MessageFactory.create(
         email_list=elist,
-        date=datetime.datetime(2016, 1, 2),
+        date=datetime.datetime(2016, 1, 2, tzinfo=timezone.utc),
         references='<001@example.com>')
     MessageFactory.create(
         email_list=elist,
-        date=datetime.datetime(2016, 1, 3),
+        date=datetime.datetime(2016, 1, 3, tzinfo=timezone.utc),
         references='<001@example.com> <002@example.com>')
     MessageFactory.create(
         email_list=elist,
-        date=datetime.datetime(2016, 1, 4),
+        date=datetime.datetime(2016, 1, 4, tzinfo=timezone.utc),
         references='<001@example.com> <002@example.com> <003@example.com>')
     # references are duplicated here
     MessageFactory.create(
         email_list=elist,
-        date=datetime.datetime(2016, 1, 5),
+        date=datetime.datetime(2016, 1, 5, tzinfo=timezone.utc),
         references=' '.join([
             '<001@example.com>',
             '<002@example.com>',
@@ -314,7 +315,7 @@ def test_process_corrupt_refs_1():
     # and now a corrupted reference
     MessageFactory.create(
         email_list=elist,
-        date=datetime.datetime(2016, 1, 6),
+        date=datetime.datetime(2016, 1, 6, tzinfo=timezone.utc),
         references=' '.join([
             '<000@example.com>',
             '<001@example\t.com>',
@@ -341,13 +342,13 @@ def test_process_corrupt_refs_2():
     MessageFactory.create(
         email_list=elist,
         msgid='000@example.com',
-        date=datetime.datetime(2016, 1, 1),
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc),
         references='<missing1@example.com> <missing2@example.com>')
     # parent reference at beginning of refs
     MessageFactory.create(
         email_list=elist,
         msgid='001@example.com',
-        date=datetime.datetime(2016, 1, 2),
+        date=datetime.datetime(2016, 1, 2, tzinfo=timezone.utc),
         references=' '.join([
             '<000@example.com>',
             '<missing1@example.com>',
@@ -389,12 +390,12 @@ def test_process_in_reply_to():
     original = MessageFactory.create(
         email_list=elist,
         msgid='001@example.com',
-        date=datetime.datetime(2016, 1, 1))
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc))
     # parent reference at beginning of refs
     reply = MessageFactory.create(
         email_list=elist,
         msgid='002@example.com',
-        date=datetime.datetime(2016, 1, 2),
+        date=datetime.datetime(2016, 1, 2, tzinfo=timezone.utc),
         in_reply_to_value='<001@example.com>')
     queryset = Message.objects.all().order_by('date')
     assert queryset.count() == 2
@@ -410,7 +411,7 @@ def test_prune_empty_containers():
     message1 = MessageFactory.create(
         email_list=elist,
         subject='New product',
-        date=datetime.datetime(2016, 1, 1))
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc))
     for container in tree.c1.walk():
         container.message = message1
     container = Container()
@@ -433,16 +434,16 @@ def test_sort_thread():
     message1 = MessageFactory.create(
         email_list=elist,
         msgid='001@example.com',
-        date=datetime.datetime(2016, 1, 1))
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc))
     message2 = MessageFactory.create(
         email_list=elist,
         msgid='002@example.com',
         references='<001@example.com>',
-        date=datetime.datetime(2016, 1, 2))
+        date=datetime.datetime(2016, 1, 2, tzinfo=timezone.utc))
     message3 = MessageFactory.create(
         email_list=elist,
         msgid='003@example.com',
-        date=datetime.datetime(2016, 1, 3))
+        date=datetime.datetime(2016, 1, 3, tzinfo=timezone.utc))
     # newest first so we get an order that will change with sort
     # (build inserts root_set memebers as it processes)
     build_container(message1, id_table, 0)
@@ -460,10 +461,10 @@ def test_subject_is_reply():
     message1 = MessageFactory.create(
         email_list=elist,
         subject='New product',
-        date=datetime.datetime(2016, 1, 1))
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc))
     message2 = MessageFactory.create(
         email_list=elist,
         subject='Re: New product',
-        date=datetime.datetime(2016, 1, 2))
+        date=datetime.datetime(2016, 1, 2, tzinfo=timezone.utc))
     assert subject_is_reply(message2)
     assert not subject_is_reply(message1)

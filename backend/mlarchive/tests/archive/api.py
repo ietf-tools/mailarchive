@@ -5,6 +5,7 @@ from django.urls import reverse
 from factories import EmailListFactory, MessageFactory
 from mlarchive.archive.models import Subscriber
 
+
 @pytest.mark.django_db(transaction=True)
 def test_msg_counts_one_list(client, messages):
      url = reverse('api_msg_counts') + '?list=pubone&start=20130101'
@@ -60,7 +61,7 @@ def test_msg_counts_no_list(client, messages):
 def test_msg_counts_no_date(client, messages):
      '''If no date provided return last month'''
      pubfour = EmailListFactory.create(name='pubfour')
-     date = datetime.datetime.now().replace(second=0, microsecond=0)
+     date = datetime.datetime.now(datetime.timezone.utc).replace(second=0, microsecond=0)
      MessageFactory.create(email_list=pubfour, date=date - datetime.timedelta(days=14))
      MessageFactory.create(email_list=pubfour, date=date - datetime.timedelta(days=35))
      url = reverse('api_msg_counts') + '?list=pubfour'

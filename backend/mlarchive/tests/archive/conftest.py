@@ -447,10 +447,10 @@ def static_list():
     Use STATIC_INDEX_YEAR_MINIMUM = 20 in tests
     """
     public = EmailListFactory.create(name='public')
-    date = datetime.datetime(2015, 6, 30)
+    date = datetime.datetime(2015, 6, 30, tzinfo=timezone.utc)
     for n in range(15):
         MessageFactory.create(email_list=public, date=date - datetime.timedelta(days=n))
-    date = datetime.datetime(2017, 12, 30)
+    date = datetime.datetime(2017, 12, 30, tzinfo=timezone.utc)
     for n in range(25):
         MessageFactory.create(email_list=public, date=date - datetime.timedelta(days=n))
     # set thread.first

@@ -16,7 +16,6 @@ from collections import deque
 from email import policy as email_policy
 from email.utils import getaddresses, make_msgid, parsedate_to_datetime
 from io import StringIO
-from zoneinfo import ZoneInfo
 
 from django.conf import settings
 from django.core.cache import cache
@@ -742,9 +741,9 @@ class MessageWrapper(object):
             date = func(self.email_message)
             if date:
                 if is_aware(date):
-                    return date.astimezone(ZoneInfo('UTC'))
+                    return date.astimezone(datetime.timezone.utc)
                 else:
-                    return date.replace(tzinfo=ZoneInfo('UTC'))
+                    return date.replace(tzinfo=datetime.timezone.utc)
         else:
             # can't really proceed without a date, likely indicates bigger parsing error
             raise DateError("%s, %s" % (self.msgid, self.email_message.get_unixfrom()))

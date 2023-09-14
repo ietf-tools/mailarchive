@@ -5,6 +5,7 @@ import os
 import time
 
 from datetime import timedelta
+from dateutil.parser import isoparse
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
@@ -143,15 +144,15 @@ class Command(BaseCommand):
 
         if start_date is not None:
             try:
-                sdate = datetime.datetime.strptime(start_date, '%Y-%m-%dT%H:%M')
-                self.start_date = sdate.replace(tzinfo=datetime.timezone.utc)
+                sdate = isoparse(start_date)
+                self.start_date = sdate.astimezone(datetime.timezone.utc)
             except ValueError:
                 raise CommandError('Invalid date {}'.format(start_date))
 
         if end_date is not None:
             try:
-                edate = datetime.datetime.strptime(end_date, '%Y-%m-%dT%H:%M')
-                self.end_date = edate.replace(tzinfo=datetime.timezone.utc)
+                edate = isoparse(end_date)
+                self.end_date = edate.astimezone(datetime.timezone.utc)
             except ValueError:
                 raise CommandError('Invalid date {}'.format(end_date))
 

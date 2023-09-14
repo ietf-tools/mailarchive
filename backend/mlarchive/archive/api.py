@@ -35,7 +35,7 @@ class MsgCountView(View):
             self.data['start'] = self.request.GET.get('start')
             try:
                 sdate = isoparse(self.data['start'])
-                filters['date__gte'] = sdate.replace(tzinfo=datetime.timezone.utc)
+                filters['date__gte'] = sdate.astimezone(datetime.timezone.utc)
             except ValueError:
                 raise HttpJson400('invalid start date')
         if 'end' in self.request.GET:
@@ -44,7 +44,7 @@ class MsgCountView(View):
             self.data['end'] = self.request.GET.get('end')
             try:
                 edate = isoparse(self.data['end'])
-                filters['date__lt'] = edate.replace(tzinfo=datetime.timezone.utc)
+                filters['date__lt'] = edate.astimezone(datetime.timezone.utc)
             except ValueError:
                 raise HttpJson400('invalid end date')
         # default to previous month if no dates or duration given
@@ -130,7 +130,7 @@ class SubscriberCountsView(View):
             self.data['date'] = self.request.GET.get('date')
             try:
                 date = isoparse(self.data['date'])
-                filters['date'] = date.replace(tzinfo=datetime.timezone.utc)
+                filters['date'] = date.astimezone(datetime.timezone.utc)
             except ValueError:
                 raise HttpJson400('invalid date')
         # default to previous month if date not given

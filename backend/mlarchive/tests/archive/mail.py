@@ -19,10 +19,12 @@ from datetime import timezone
 from django.conf import settings
 from django.core.management import call_command
 from django.urls import reverse
+from django.utils.timezone import is_aware
+
 from mlarchive.archive.models import Message, EmailList
 from mlarchive.archive.mail import (archive_message, clean_spaces, MessageWrapper,
     get_base_subject, get_envelope_date, get_from, get_header_date, get_mb,
-    is_aware, get_received_date, parsedate_to_datetime, subject_is_reply,
+    get_received_date, parsedate_to_datetime, subject_is_reply,
     lookup_extension, get_message_from_bytes)
 from factories import EmailListFactory, MessageFactory, ThreadFactory
 from mlarchive.utils.test_utils import message_from_file

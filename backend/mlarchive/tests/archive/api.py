@@ -1,5 +1,6 @@
 import datetime
 import pytest
+from datetime import timezone 
 
 from django.urls import reverse
 from factories import EmailListFactory, MessageFactory
@@ -61,7 +62,7 @@ def test_msg_counts_no_list(client, messages):
 def test_msg_counts_no_date(client, messages):
      '''If no date provided return last month'''
      pubfour = EmailListFactory.create(name='pubfour')
-     date = datetime.datetime.now(datetime.timezone.utc).replace(second=0, microsecond=0)
+     date = datetime.datetime.now(timezone.utc).replace(second=0, microsecond=0)
      MessageFactory.create(email_list=pubfour, date=date - datetime.timedelta(days=14))
      MessageFactory.create(email_list=pubfour, date=date - datetime.timedelta(days=35))
      url = reverse('api_msg_counts') + '?list=pubfour'

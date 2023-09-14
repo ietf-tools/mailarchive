@@ -674,7 +674,7 @@ def admin_console(request):
 def get_weekly_data():
     '''Returns weekly archive incoming messages'''
     data = []
-    start = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=365 * 3)
+    start = datetime.datetime.now(timezone.utc) - datetime.timedelta(days=365 * 3)
     start = start.replace(hour=0, second=0, microsecond=0)
     for day in range(156):
         end = start + datetime.timedelta(days=7)
@@ -693,7 +693,7 @@ def datetime_to_millis(date):
 def get_top25_data():
     '''Returns incoming message count for top 25 most active lists'''
     counts = {}
-    end = datetime.datetime.now(datetime.timezone.utc)
+    end = datetime.datetime.now(timezone.utc)
     start = end - datetime.timedelta(days=30)
     for message in Message.objects.filter(date__gte=start, date__lt=end).select_related('email_list'):
         name = message.email_list.name
@@ -793,7 +793,7 @@ def browse_static_redirect(request, list_name):
     if last_message:
         return redirect(last_message.get_static_date_page_url())
     else:
-        return redirect('archive_browse_static_date', list_name=list_name, date=datetime.datetime.now(datetime.timezone.utc).year)
+        return redirect('archive_browse_static_date', list_name=list_name, date=datetime.datetime.now(timezone.utc).year)
 
 
 def browse_static_thread_redirect(request, list_name):
@@ -802,7 +802,7 @@ def browse_static_thread_redirect(request, list_name):
     if last_message:
         return redirect(last_message.get_static_thread_page_url())
     else:
-        return redirect('archive_browse_static_thread', list_name=list_name, date=datetime.datetime.now(datetime.timezone.utc).year)
+        return redirect('archive_browse_static_thread', list_name=list_name, date=datetime.datetime.now(timezone.utc).year)
 
 
 @pad_id

@@ -5,6 +5,7 @@ import datetime
 import factory
 import string
 import random
+from datetime import timezone
 
 from mlarchive.archive.mail import get_base_subject
 
@@ -25,14 +26,14 @@ class ThreadFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Thread
 
-    date = datetime.datetime.now().replace(second=0, microsecond=0)
+    date = datetime.datetime.now(timezone.utc).replace(second=0, microsecond=0)
 
 
 class MessageFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Message
 
-    date = datetime.datetime.now().replace(second=0, microsecond=0)
+    date = datetime.datetime.now(timezone.utc).replace(second=0, microsecond=0)
     subject = 'This is a test message'
     base_subject = get_base_subject(subject)
     frm = 'John Smith <john@example.com>'

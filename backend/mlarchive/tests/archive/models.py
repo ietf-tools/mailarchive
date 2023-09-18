@@ -3,6 +3,7 @@ import email
 import io
 import pytest
 from email import policy
+from datetime import timezone
 
 from factories import EmailListFactory, ThreadFactory, MessageFactory
 from django.urls import reverse
@@ -94,7 +95,7 @@ def test_message_get_thread_index_url(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_message_get_static_date_index_url(client):
-    date = datetime.datetime(2017, 4, 1)
+    date = datetime.datetime(2017, 4, 1, tzinfo=timezone.utc)
     elist = EmailListFactory.create(name='public')
     msg = MessageFactory.create(email_list=elist, date=date)
     assert msg.get_static_date_index_url() == '/arch/browse/static/public/2017/#{hashcode}'.format(
@@ -103,7 +104,7 @@ def test_message_get_static_date_index_url(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_message_get_static_thread_index_url(client):
-    date = datetime.datetime(2017, 4, 1)
+    date = datetime.datetime(2017, 4, 1, tzinfo=timezone.utc)
     elist = EmailListFactory.create(name='public')
     msg = MessageFactory.create(email_list=elist, date=date)
     assert msg.get_static_thread_index_url() == '/arch/browse/static/public/thread/2017/#{hashcode}'.format(
@@ -190,7 +191,7 @@ def test_message_get_thread_snippet(client):
     elist = EmailListFactory.create()
     message = MessageFactory.create(
         email_list=elist,
-        date=datetime.datetime(2016, 1, 1))
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc))
     assert message.get_thread_snippet()
 
 
@@ -201,10 +202,10 @@ def test_message_next_in_list(client):
     elist = EmailListFactory.create()
     message1 = MessageFactory.create(
         email_list=elist,
-        date=datetime.datetime(2016, 1, 1))
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc))
     message2 = MessageFactory.create(
         email_list=elist,
-        date=datetime.datetime(2016, 1, 2))
+        date=datetime.datetime(2016, 1, 2, tzinfo=timezone.utc))
     assert Message.objects.count() == 2
     assert message1.next_in_list() == message2
 
@@ -219,12 +220,12 @@ def test_message_next_in_thread(client):
         email_list=elist,
         thread=thread,
         thread_order=1,
-        date=datetime.datetime(2016, 1, 1))
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc))
     message2 = MessageFactory.create(
         email_list=elist,
         thread=thread,
         thread_order=2,
-        date=datetime.datetime(2016, 1, 2))
+        date=datetime.datetime(2016, 1, 2, tzinfo=timezone.utc))
     assert Message.objects.count() == 2
     assert message1.next_in_thread() == message2
 
@@ -236,10 +237,10 @@ def test_message_previous_in_list(client):
     elist = EmailListFactory.create()
     message1 = MessageFactory.create(
         email_list=elist,
-        date=datetime.datetime(2016, 1, 1))
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc))
     message2 = MessageFactory.create(
         email_list=elist,
-        date=datetime.datetime(2016, 1, 2))
+        date=datetime.datetime(2016, 1, 2, tzinfo=timezone.utc))
     assert Message.objects.count() == 2
     assert message2.previous_in_list() == message1
 
@@ -254,12 +255,12 @@ def test_message_previous_in_thread_same_thread(client):
         email_list=elist,
         thread=thread,
         thread_order=1,
-        date=datetime.datetime(2016, 1, 1))
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc))
     message2 = MessageFactory.create(
         email_list=elist,
         thread=thread,
         thread_order=2,
-        date=datetime.datetime(2016, 1, 2))
+        date=datetime.datetime(2016, 1, 2, tzinfo=timezone.utc))
     assert Message.objects.count() == 2
     assert message2.previous_in_thread() == message1
 
@@ -269,23 +270,23 @@ def test_message_previous_in_thread_different_thread(client):
     '''Test that message.next_in_thread returns the next message in the
     thread'''
     elist = EmailListFactory.create()
-    thread1 = ThreadFactory.create(date=datetime.datetime(2016, 1, 1), email_list=elist)
-    thread2 = ThreadFactory.create(date=datetime.datetime(2016, 1, 10), email_list=elist)
+    thread1 = ThreadFactory.create(date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc), email_list=elist)
+    thread2 = ThreadFactory.create(date=datetime.datetime(2016, 1, 10, tzinfo=timezone.utc), email_list=elist)
     message1 = MessageFactory.create(
         email_list=elist,
         thread=thread1,
         thread_order=1,
-        date=datetime.datetime(2016, 1, 1))
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc))
     MessageFactory.create(
         email_list=elist,
         thread=thread1,
         thread_order=2,
-        date=datetime.datetime(2016, 1, 2))
+        date=datetime.datetime(2016, 1, 2, tzinfo=timezone.utc))
     message3 = MessageFactory.create(
         email_list=elist,
         thread=thread2,
         thread_order=1,
-        date=datetime.datetime(2016, 1, 10))
+        date=datetime.datetime(2016, 1, 10, tzinfo=timezone.utc))
     assert Message.objects.count() == 3
     assert thread1.first == message1
     assert message3.previous_in_thread() == message1
@@ -296,7 +297,7 @@ def test_thread_get_snippet(client):
     elist = EmailListFactory.create()
     message = MessageFactory.create(
         email_list=elist,
-        date=datetime.datetime(2016, 1, 1))
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc))
     assert message.thread.get_snippet()
 
 

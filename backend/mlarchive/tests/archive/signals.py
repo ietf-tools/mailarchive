@@ -1,6 +1,7 @@
 import datetime
 import os
 import pytest
+from datetime import timezone
 
 from factories import EmailListFactory, ThreadFactory, MessageFactory
 
@@ -26,15 +27,15 @@ def test_message_remove(client, thread_messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_message_save(client):
-    today = datetime.datetime.now().replace(second=0, microsecond=0)
+    now = datetime.datetime.now(timezone.utc).replace(second=0, microsecond=0)
     public = EmailListFactory.create(name='public', private=False)
     thread = ThreadFactory.create()
     MessageFactory.create(
         email_list=public,
-        date=today,
+        date=now,
         thread=thread)
     thread = Thread.objects.get(pk=thread.pk)
-    assert thread.date == today
+    assert thread.date == now
 
 
 @pytest.mark.django_db(transaction=True)

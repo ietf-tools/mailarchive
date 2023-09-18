@@ -1,12 +1,14 @@
+import datetime
 import logging
 import multiprocessing
 import os
 import time
 
 from datetime import timedelta
+from dateutil.parser import isoparse
 
 from django.conf import settings
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import close_old_connections, reset_queries
 from django.utils.encoding import smart_bytes
 from django.utils.timezone import now
@@ -99,13 +101,11 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             '-s', '--start', dest='start_date',
-            help='The start date for indexing. Can be any dateutil-parsable string;'
-                 ' YYYY-MM-DDTHH:MM:SS is recommended to avoid confusion'
+            help='The start date for indexing in UTC. Use format YYYY-MM-DDTHH:MM'
         )
         parser.add_argument(
             '-e', '--end', dest='end_date',
-            help='The end date for indexing. Can be any dateutil-parsable string;'
-                 ' YYYY-MM-DDTHH:MM:SS is recommended to avoid confusion'
+            help='The end date for indexing in UTC. Use format YYYY-MM-DDTHH:MM'
         )
         parser.add_argument(
             '-b', '--batch-size', dest='batchsize', type=int, default=1000,
@@ -143,20 +143,18 @@ class Command(BaseCommand):
             self.start_date = now() - timedelta(hours=int(age))
 
         if start_date is not None:
-            from dateutil.parser import parse as dateutil_parse
-
             try:
-                self.start_date = dateutil_parse(start_date)
+                sdate = isoparse(start_date)
+                self.start_date = sdate.astimezone(datetime.timezone.utc)
             except ValueError:
-                pass
+                raise CommandError('Invalid date {}'.format(start_date))
 
         if end_date is not None:
-            from dateutil.parser import parse as dateutil_parse
-
             try:
-                self.end_date = dateutil_parse(end_date)
+                edate = isoparse(end_date)
+                self.end_date = edate.astimezone(datetime.timezone.utc)
             except ValueError:
-                pass
+                raise CommandError('Invalid date {}'.format(end_date))
 
         try:
             self.update_backend()

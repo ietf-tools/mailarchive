@@ -13,6 +13,7 @@ from mlarchive.archive.models import Message, EmailList, Subscriber
 
 duration_pattern = re.compile(r'(?P<num>\d+)(?P<unit>years|months|weeks|days|hours|minutes)')
 
+
 class MsgCountView(View):
     '''An API to get message counts for given lists.
     
@@ -33,7 +34,8 @@ class MsgCountView(View):
         if 'start' in self.request.GET:
             self.data['start'] = self.request.GET.get('start')
             try:
-                filters['date__gte'] = isoparse(self.data['start'])
+                sdate = isoparse(self.data['start'])
+                filters['date__gte'] = sdate.astimezone(datetime.timezone.utc)
             except ValueError:
                 raise HttpJson400('invalid start date')
         if 'end' in self.request.GET:
@@ -41,12 +43,13 @@ class MsgCountView(View):
                 raise HttpJson400('cannot provide end date without start date or duration')
             self.data['end'] = self.request.GET.get('end')
             try:
-                filters['date__lt'] = isoparse(self.data['end'])
+                edate = isoparse(self.data['end'])
+                filters['date__lt'] = edate.astimezone(datetime.timezone.utc)
             except ValueError:
                 raise HttpJson400('invalid end date')
         # default to previous month if no dates or duration given
         if 'start' not in self.request.GET and 'end' not in self.request.GET and 'duration' not in self.request.GET:
-            end = datetime.date.today()
+            end = datetime.datetime.now(datetime.timezone.utc)
             start = end - relativedelta(months=1)
             self.data['start'] = start.strftime("%Y%m%d")
             self.data['end'] = end.strftime("%Y%m%d")
@@ -73,7 +76,7 @@ class MsgCountView(View):
                 filters['date__gte'] = start
             else:
                 # only duration appears in parameters
-                end = datetime.date.today()
+                end = datetime.datetime.now(datetime.timezone.utc)
                 start = end - relativedelta(**kwargs)
                 self.data['start'] = start.strftime("%Y%m%d")
                 self.data['end'] = end.strftime("%Y%m%d")
@@ -126,12 +129,13 @@ class SubscriberCountsView(View):
         if 'date' in self.request.GET:
             self.data['date'] = self.request.GET.get('date')
             try:
-                filters['date'] = isoparse(self.data['date'])
+                date = isoparse(self.data['date'])
+                filters['date'] = date.astimezone(datetime.timezone.utc)
             except ValueError:
                 raise HttpJson400('invalid date')
         # default to previous month if date not given
         else:
-            date = datetime.date.today() - relativedelta(months=1)
+            date = datetime.datetime.now(datetime.timezone.utc) - relativedelta(months=1)
             date = date.replace(day=1)
             self.data['date'] = date.strftime("%Y%m%d")
             filters['date'] = date

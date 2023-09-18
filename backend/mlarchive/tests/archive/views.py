@@ -4,11 +4,11 @@ import io
 import os
 import pytest
 import tarfile
+from datetime import timezone
 from email.utils import parseaddr
 from dateutil.relativedelta import relativedelta
 from pyquery import PyQuery
 
-from django.conf import settings
 from django.contrib.auth import SESSION_KEY
 from django.test import RequestFactory
 from django.urls import reverse
@@ -75,20 +75,20 @@ def test_get_date_endpoints(static_list):
 def test_get_this_next_periods(static_list):
     time_period = TimePeriod(year=2017, month=4)
     assert get_this_next_periods(time_period) == (
-        datetime.datetime(2017,4,1),
-        datetime.datetime(2017,5,1))
+        datetime.datetime(2017, 4, 1, tzinfo=timezone.utc),
+        datetime.datetime(2017, 5, 1, tzinfo=timezone.utc))
     time_period = TimePeriod(year=2017, month=None)
     assert get_this_next_periods(time_period) == (
-        datetime.datetime(2017,1,1),
-        datetime.datetime(2018,1,1))
+        datetime.datetime(2017, 1, 1, tzinfo=timezone.utc),
+        datetime.datetime(2018, 1, 1, tzinfo=timezone.utc))
 
 
 @pytest.mark.django_db(transaction=True)
 def test_add_one_month():
-    date = datetime.datetime(2018,1,1)
-    assert add_one_month(date) == datetime.datetime(2018,2,1)
-    date = datetime.datetime(2018,12,1)
-    assert add_one_month(date) == datetime.datetime(2019,1,1)
+    date = datetime.datetime(2018, 1, 1, tzinfo=timezone.utc)
+    assert add_one_month(date) == datetime.datetime(2018, 2, 1, tzinfo=timezone.utc)
+    date = datetime.datetime(2018, 12, 1, tzinfo=timezone.utc)
+    assert add_one_month(date) == datetime.datetime(2019, 1, 1, tzinfo=timezone.utc)
 
 
 # --------------------------------------------------
@@ -329,10 +329,10 @@ def test_browse_static_date(client, static_list):
 
 @pytest.mark.django_db(transaction=True)
 def test_browse_static_unauthorized(client):
-    today = datetime.datetime.today()
+    now = datetime.datetime.now(timezone.utc)
     elist = EmailListFactory.create(name='private', private=True)
-    message = MessageFactory.create(email_list=elist, date=today)
-    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': today.year})
+    message = MessageFactory.create(email_list=elist, date=now)
+    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': now.year})
     response = client.get(url)
     assert response.status_code == 403
 
@@ -340,10 +340,10 @@ def test_browse_static_unauthorized(client):
 @pytest.mark.django_db(transaction=True)
 def test_browse_static_cache_headers_private(admin_client):
     '''Ensure private lists include Cache-Control: private header'''
-    today = datetime.datetime.today()
+    now = datetime.datetime.now(timezone.utc)
     elist = EmailListFactory.create(name='private', private=True)
-    message = MessageFactory.create(email_list=elist, date=today)
-    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': '{}-{:02d}'.format(today.year, today.month)})
+    message = MessageFactory.create(email_list=elist, date=now)
+    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': '{}-{:02d}'.format(now.year, now.month)})
     response = admin_client.get(url)
     assert response.status_code == 200
     assert 'no-cache' in response.get('Cache-Control')
@@ -352,10 +352,10 @@ def test_browse_static_cache_headers_private(admin_client):
 @pytest.mark.django_db(transaction=True)
 def test_browse_static_cache_headers_public(client):
     '''Ensure private lists include Cache-Control: private header'''
-    today = datetime.datetime.today()
+    now = datetime.datetime.now(timezone.utc)
     elist = EmailListFactory.create()
-    message = MessageFactory.create(email_list=elist, date=today)
-    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': today.year})
+    message = MessageFactory.create(email_list=elist, date=now)
+    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': now.year})
     response = client.get(url)
     assert response.status_code == 200
     cache_control = response.get('Cache-Control')
@@ -395,11 +395,11 @@ def test_browse_static_small_year_month(client, static_list, settings):
 @pytest.mark.django_db(transaction=True)
 def test_browse_static_small_year_current(client, settings):
     settings.STATIC_INDEX_YEAR_MINIMUM = 20
-    today = datetime.datetime.today()
-    current_year = today.year
+    now = datetime.datetime.now(timezone.utc)
+    current_year = now.year
     elist = EmailListFactory.create()
-    message = MessageFactory.create(email_list=elist, date=today)
-    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': '{}-{:02d}'.format(today.year, today.month)})
+    message = MessageFactory.create(email_list=elist, date=now)
+    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': '{}-{:02d}'.format(now.year, now.month)})
     response = client.get(url)
     assert response.status_code == 200
     assert message.subject in smart_str(response.content)
@@ -427,7 +427,7 @@ def test_browse_static_redirect(client, static_list, settings):
 @pytest.mark.django_db(transaction=True)
 def test_browse_static_redirect_empty(client):
     elist = EmailListFactory.create()
-    year = datetime.datetime.now().year
+    year = datetime.datetime.now(timezone.utc).year
     url = reverse('archive_browse_static', kwargs={'list_name': elist.name})
     response = client.get(url)
     assert response.status_code == 302
@@ -767,7 +767,7 @@ def test_reports_subscribers_csv(client, users, subscribers):
 
 @pytest.mark.django_db(transaction=True)
 def test_reports_messages(client, users):
-    date = datetime.datetime(2022, 2, 1)
+    date = datetime.datetime(2022, 2, 1, tzinfo=timezone.utc)
     elist = EmailListFactory.create(name='acme')
     _ = MessageFactory.create(email_list=elist, date=date)
     url = reverse('reports_messages') + '?start_date=2022-01-01&end_date=2022-12-31'
@@ -783,16 +783,16 @@ def test_reports_messages(client, users):
 @pytest.mark.django_db(transaction=True)
 def test_reports_messages_default(client, users):
     '''Test that report defaults to last month'''
-    today = datetime.date.today()
+    now = datetime.datetime.now(timezone.utc)
     elist = EmailListFactory.create(name='acme')
     # Create messages
     # Today
-    _ = MessageFactory.create(email_list=elist, date=today)
+    _ = MessageFactory.create(email_list=elist, date=now)
     # two months ago
-    xdate = today - relativedelta(months=2)
+    xdate = now - relativedelta(months=2)
     _ = MessageFactory.create(email_list=elist, date=xdate)
     # last day of last month
-    ydate = today.replace(day=1) - relativedelta(days=1)
+    ydate = now.replace(day=1) - relativedelta(days=1)
     _ = MessageFactory.create(email_list=elist, date=ydate)
     # first day of last month
     zdate = ydate.replace(day=1)
@@ -812,7 +812,7 @@ def test_reports_messages_default(client, users):
 
 @pytest.mark.django_db(transaction=True)
 def test_reports_messages_csv(client, users):
-    date = datetime.datetime(2022, 2, 1)
+    date = datetime.datetime(2022, 2, 1, tzinfo=timezone.utc)
     elist = EmailListFactory.create(name='acme')
     _ = MessageFactory.create(email_list=elist, date=date)
     url = reverse('reports_messages') + '?start_date=2022-01-01&end_date=2023-01-01&export=csv'
@@ -827,7 +827,7 @@ def test_reports_messages_csv(client, users):
 @pytest.mark.django_db(transaction=True)
 def test_reports_messages_csv_no_date(client, users):
     '''Test that no date defaults to last month'''
-    date = datetime.datetime.now()
+    date = datetime.datetime.now(timezone.utc)
     date = date - relativedelta(months=1)
     elist = EmailListFactory.create(name='acme')
     _ = MessageFactory.create(email_list=elist, date=date)

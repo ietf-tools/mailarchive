@@ -1,3 +1,4 @@
+import datetime
 import hashlib
 import six
 from collections import OrderedDict
@@ -293,7 +294,7 @@ class DateForm(forms.Form):
             sdate = isoparse(start_date)
         except ValueError:
             raise forms.ValidationError('Invalid date')
-        return sdate
+        return sdate.astimezone(datetime.timezone.utc)
 
     def clean_end_date(self):
         end_date = self.cleaned_data['end_date']
@@ -301,4 +302,4 @@ class DateForm(forms.Form):
             edate = isoparse(end_date)
         except ValueError:
             raise forms.ValidationError('Invalid date')
-        return edate
+        return edate.astimezone(datetime.timezone.utc)

@@ -19,23 +19,22 @@ from elasticsearch_dsl import Search
 from mlarchive.archive.models import Message
 
 import logging
-logpath = os.path.join(settings.DATA_ROOT,'log/check_index24.log')
-logging.basicConfig(filename=logpath,level=logging.DEBUG)
+logpath = os.path.join(settings.DATA_ROOT, 'log/check_index24.log')
+logging.basicConfig(filename=logpath, level=logging.DEBUG)
 
 
 def main():
     parser = argparse.ArgumentParser(description='Check that messages are indexed')
     parser.add_argument('--age', type=int, default=24, help="Check messages this many hours old.  Default is 24.")
-    parser.add_argument('-f','--fix',help="perform fix",action='store_true')
+    parser.add_argument('-f', '--fix', help="perform fix", action='store_true')
     args = parser.parse_args()
-    
-    now = datetime.datetime.now()
+    now = datetime.datetime.now(datetime.timezone.utc)
     start = now - datetime.timedelta(hours=args.age)
     end = now - datetime.timedelta(minutes=1)
     count = 0
     stat = {}
     client = Elasticsearch()
-    messages = Message.objects.filter(updated__gte=start,updated__lt=end)
+    messages = Message.objects.filter(updated__gte=start, updated__lt=end)
     for message in messages:
         s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
         s = s.query('match', msgid=message.msgid)
@@ -46,16 +45,16 @@ def main():
                 msgid=message.msgid))
             count = count + 1
             logging.warning(message.msgid + '\n')
-            stat[message.email_list.name] = stat.get(message.email_list.name,0) + 1
+            stat[message.email_list.name] = stat.get(message.email_list.name, 0) + 1
             if args.fix:
                 message.save()
             
-
     print("Index Check {date}".format(date=start.strftime('%Y-%m-%d')))
     print("Checked {count}".format(count=messages.count()))
     print("Missing {count}".format(count=count))
-    for k,v in list(stat.items()):
-        print("{}:{}".format(k,v))
+    for k, v in list(stat.items()):
+        print("{}:{}".format(k, v))
+
     
 if __name__ == "__main__":
     main()

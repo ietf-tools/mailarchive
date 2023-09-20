@@ -34,19 +34,17 @@ from email import policy
 from pickle import load
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
-# from tzparse import tzparse
 from pprint import pprint
-from pytz import timezone
 
 from django.core.cache import cache
 from django.db.models import Count
-# from haystack.query import SearchQuerySet
+from django.utils.timezone import is_aware
 
 from mlarchive.archive.models import EmailList, Message, Thread, Legacy
 from mlarchive.bin.scan_utils import *
-from mlarchive.utils.encoding import decode_rfc2047_header, is_attachment
+from mlarchive.utils.encoding import is_attachment
 from mlarchive.archive.mail import (MessageWrapper, lookup_extension, get_mb,
-    parsedate_to_datetime, is_aware, UnknownFormat, NoHeaders, CustomMMDF,
+    parsedate_to_datetime, UnknownFormat, NoHeaders, CustomMMDF,
     SEPARATOR_PATTERNS)
 from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES
 
@@ -59,16 +57,12 @@ from_line_re = re.compile(r'From .* (Sun|Mon|Tue|Wed|Thu|Fri|Sat)( |,)')
 
 MAX_TERM_LENGTH = 245
 
-date_formats = ["%a %b %d %H:%M:%S %Y",
-                "%a, %d %b %Y %H:%M:%S %Z",
-                "%a %b %d %H:%M:%S %Y %Z"]
-
-mlists = ['abfab','alto','aqm','codec','dane','dmarc','dmm','dnsop',
-    'dns-privacy','endymail','gen-art','grow','hipsec','homenet',
-    'i2rs','ipsec','jose','l3vpn','lisp','lwip','mif','multimob',
-    'nvo3','oauth','opsawg','opsec','ospf','p2psip','paws','pce',
-    'perpass','precis','rtgwg','sidr','softwires','spring','sshmgmt',
-    'taps','trans','uta','websec']
+mlists = ['abfab', 'alto', 'aqm', 'codec', 'dane', 'dmarc', 'dmm', 'dnsop',
+    'dns-privacy', 'endymail', 'gen-art', 'grow', 'hipsec', 'homenet',
+    'i2rs', 'ipsec', 'jose', 'l3vpn', 'lisp', 'lwip', 'mif', 'multimob',
+    'nvo3', 'oauth', 'opsawg', 'opsec', 'ospf', 'p2psip', 'paws', 'pce',
+    'perpass', 'precis', 'rtgwg', 'sidr', 'softwires', 'spring', 'sshmgmt',
+    'taps', 'trans', 'uta', 'websec']
 
 ecre = re.compile(r'''
   =\?                   # literal =?
@@ -85,21 +79,6 @@ ecre = re.compile(r'''
 # ---------------------------------------------------------
 
 
-def convert_date(date):
-    """Try different patterns to convert string to naive UTC datetime object"""
-    for format in date_formats:
-        try:
-            result = tzparse(date.rstrip(), format)
-            if result:
-                # convert to UTC and make naive
-                utc_tz = timezone('utc')
-                time = utc_tz.normalize(result.astimezone(utc_tz))
-                time = time.replace(tzinfo=None)                # make naive
-                return time
-        except ValueError:
-            pass
-
-
 def get_date_part(str):
     """Get the date portion of the envelope header.  Based on the observation
     that all date parts start with abbreviated weekday
@@ -112,7 +91,7 @@ def get_date_part(str):
         # which tzparse can't handle.  If this is the case strip it off
         # ie. Wed, 6 Jul 2005 12:24:15 +0100 (BST)
         if dupetz_pattern.search(date):
-            date = re.sub(r'\s\([A-Z]+\)$','',date)
+            date = re.sub(r'\s\([A-Z]+\)$', '', date)
         return date
     else:
         return None
@@ -127,7 +106,7 @@ def has_higher_plane(header):
 
 
 def is_ascii(s):
-    if s == None:
+    if s is None:
         return True
     try:
         s.decode('ascii')
@@ -284,7 +263,7 @@ def bodies():
         except (UnicodeDecodeError, LookupError, TypeError) as e:
             print('{0} [{1}]'.format(e, msg.pk))
         if msg.pk % 1000 == 0:
-            print('processed {0} of {1}'.format(msg.pk,total))
+            print('processed {0} of {1}'.format(msg.pk, total))
 
 
 def bogus_date():
@@ -294,14 +273,14 @@ def bogus_date():
     no_date = 0
     bogus_date = 0
     total = Message.objects.count()
-    min_date = datetime.datetime(1982,1,1)
+    min_date = datetime.datetime(1982, 1, 1)
     max_date = datetime.datetime.today() + datetime.timedelta(days=1)
     for message in Message.objects.iterator():
         with open(message.get_file_path()) as fp:
             msg = email.message_from_file(fp)
         if 'date' not in msg:
             no_date = no_date + 1
-            print("Missing date header: {}:{}".format(message.email_list.name,message.pk))
+            print("Missing date header: {}:{}".format(message.email_list.name, message.pk))
             continue
 
         date = msg.get('date')
@@ -309,10 +288,10 @@ def bogus_date():
         dt = dt.replace(tzinfo=None)                # force naive
         if dt < min_date or dt > max_date:
             bogus_date = bogus_date + 1
-            print("Bogus date: {}:{}, {}".format(message.email_list.name,message.pk,date))
+            print("Bogus date: {}:{}, {}".format(message.email_list.name, message.pk, date))
 
         if message.pk % 1000 == 0:
-            print('processed {0} of {1}'.format(message.pk,total))
+            print('processed {0} of {1}'.format(message.pk, total))
 
     print("No Date:{}".format(no_date))
     print("Bogus Date: {}".format(bogus_date))
@@ -404,8 +383,8 @@ def count_legacy(listname):
         parts = mb._file.name.split('/')
         num = len(mb)
         year = parts[-1][:4]
-        years[year] = years.get(year,0) + num
-        print("%s/%s: %d" % (parts[-2],parts[-1],num))
+        years[year] = years.get(year, 0) + num
+        print("%s/%s: %d" % (parts[-2], parts[-1], num))
         total += num
     print("Total: %d" % total)
     pprint(years)
@@ -433,31 +412,15 @@ def date(start):
             print("Unknown format: %s" % path)
             continue
 
-        for i,msg in enumerate(mb):
+        for i, msg in enumerate(mb):
             total += 1
             try:
-                mw = MessageWrapper.from_message(msg,listname)
+                mw = MessageWrapper.from_message(msg, listname)
                 date = mw.get_date()
             except NoHeaders as error:
                 print("Error: %s,%d (%s)" % (path, i, error.args))
 
     print("Total: %s" % total)
-
-
-def envelope_date():
-    """Quickly test envelope date parsing on every standard mbox file in archive"""
-    # for path in ['/a/www/ietf-mail-archive/text/lemonade/2002-09.mail']:
-    for path in all_mboxs():
-        with open(path) as f:
-            line = f.readline()
-            while not line or line == '\n':
-                line = f.readline()
-            if line.startswith('From '):
-                date = get_date_part(line.rstrip())
-                if date == None:
-                    print(path,line)
-                if not convert_date(date.rstrip()):
-                    print(path,date)
 
 
 def envelope_regex():
@@ -535,7 +498,7 @@ def get_encoded_words():
     """Scan all messages and find those with encoded-words in the headers.  Save list to a file"""
     messages = []
     for elist in EmailList.objects.all().order_by('name'):
-        #if start and start > elist.name:
+        # if start and start > elist.name:
         #    continue
         print("Scanning {}".format(elist.name))
 
@@ -563,23 +526,23 @@ def header_date():
         paths = f.read().splitlines()
     for path in paths:
         mb = get_mb(path)
-        for i,msg in enumerate(mb):
+        for i, msg in enumerate(mb):
             count += 1
             date = msg.get('date')
             if not date:
                 date = msg.get('sent')
 
             if not date:
-                print("Date not found: %s,%s" % (path,i))
+                print("Date not found: %s,%s" % (path, i))
                 nf += 1
-                #sys.exit(1)
+                # sys.exit(1)
                 continue
 
             result = parsedate_to_datetime(date)
             if not result:
                 print("Parse Error: %s" % date)
-                #sys.exit(1)
-    print("Count: %s\nNot Found: %s" % (count,nf))
+                # sys.exit(1)
+    print("Count: %s\nNot Found: %s" % (count, nf))
 
 
 def html_only():
@@ -590,11 +553,11 @@ def html_only():
         if elist != name:
             elist = name
             print("Scanning %s" % name)
-        if name in ('django-project','iab','ietf'):
+        if name in ('django-project', 'iab', 'ietf'):
             continue
         mb = get_mb(path)
         for msg in mb:
-            if msg.is_multipart() == False:
+            if msg.is_multipart() is False:
                 if msg.get_content_type() == 'text/html':
                     print(msg['message-id'])
 
@@ -609,7 +572,7 @@ def incoming(fix=False):
     path = '/a/mailarch/data/incoming'
     arch = '/a/mailarch/data/90days/'
     files = os.listdir(path)
-    for file in  files:
+    for file in files:
         # print(file)
         full = os.path.join(path, file)
         if not os.path.isfile(full):
@@ -649,11 +612,11 @@ def incoming(fix=False):
 def index_test(year_min):
     """Show message breakdown using scheme, lists with < year_min messages / year get
     year page, otherwise monthly"""
-    now = datetime.datetime.now()
+    now = datetime.datetime.now(datetime.timezone.utc)
     active_lists = []
     month100 = 0
     for elist in EmailList.objects.filter(private=False).order_by('name'):
-        end = datetime.datetime(now.year, 1, 1)
+        end = now.replace(day=1, month=1, hour=0, minute=0, second=0, microsecond=0)
         start = end - relativedelta(years=1)
         if elist.message_set.filter(date__gte=end).count() > 0:
             active_lists.append(elist)
@@ -678,7 +641,7 @@ def index_test(year_min):
 
 def legacy():
     """Gather stats on mhonarc mappings"""
-    cutoff = datetime.datetime(2019,1,14)
+    cutoff = datetime.datetime(2019, 1, 14)
     for elist in EmailList.objects.filter(private=False, name='ietf'):
         lcount = Legacy.objects.filter(email_list_id=elist.name).count()
         mcount = elist.message_set.filter(date__lte=cutoff).count()
@@ -695,7 +658,7 @@ def legacy():
 
 def long_header():
     """Find messages that had Archived-At header folded using encoded word"""
-    start = datetime.datetime(2020,2,20)
+    start = datetime.datetime(2020, 2, 20)
     messages = Message.objects.filter(date__gt=start)
     groups = set()
     count = 0
@@ -719,18 +682,18 @@ def lookups():
         sqs = SearchQuerySet().filter(email_list=elist.pk).order_by('date')
         print("-date")
         for m in sqs:
-            if find_message_date(sqs,m.object) == -1:
-                print("Problem with {}:{}".format(elist.name,m.object.msgid))
+            if find_message_date(sqs, m.object) == -1:
+                print("Problem with {}:{}".format(elist.name, m.object.msgid))
         sqs = SearchQuerySet().filter(email_list=elist.pk).order_by('-date')
         print("-date-reverse")
         for m in sqs:
-            if find_message_date_reverse(sqs,m.object) == -1:
-                print("Problem with {}:{}".format(elist.name,m.object.msgid))
-        sqs = SearchQuerySet().filter(email_list=elist.pk).order_by('tdate','date')
+            if find_message_date_reverse(sqs, m.object) == -1:
+                print("Problem with {}:{}".format(elist.name, m.object.msgid))
+        sqs = SearchQuerySet().filter(email_list=elist.pk).order_by('tdate', 'date')
         print("-gbt")
         for m in sqs:
-            if find_message_gbt(sqs,m.object) == -1:
-                print("Problem with {}:{}".format(elist.name,m.object.msgid))
+            if find_message_gbt(sqs, m.object) == -1:
+                print("Problem with {}:{}".format(elist.name, m.object.msgid))
 
 
 def mailbox_types():
@@ -765,10 +728,10 @@ def message_rfc822():
                     count += 1
                     payload = part.get_payload()
                     if len(payload) != 1 or payload[0].get_content_type() != 'text/plain':
-                        print(msg.pk,payload,' '.join([ x.get_content_type() for x in payload]))
+                        print(msg.pk, payload, ' '.join([x.get_content_type() for x in payload]))
 
             if count > 1:
-                print("{}:{}".format(msg.pk,count))
+                print("{}:{}".format(msg.pk, count))
 
 
 def message_rfc822_xml():
@@ -834,9 +797,9 @@ def mime_encoded_word(start):
 def missing_files():
     """Scan messages in date range and report if any are missing the archive file"""
     total = 0
-    start = datetime.datetime(2014,0o1,20)
-    end = datetime.datetime(2014,0o1,23)
-    messages = Message.objects.filter(date__gte=start,date__lte=end)
+    start = datetime.datetime(2014, 1, 20, tzinfo=datetime.timezone.utc)
+    end = datetime.datetime(2014, 1, 23, tzinfo=datetime.timezone.utc)
+    messages = Message.objects.filter(date__gte=start, date__lte=end)
     for message in messages:
         if not os.path.exists(message.get_file_path()):
             print('missing: %s:%s:%s' % (message.email_list, message.pk, message.date))
@@ -873,7 +836,7 @@ def mmdfs():
             mb = get_mb(path)
         except UnknownFormat:
             pass
-        if isinstance(mb,CustomMMDF):
+        if isinstance(mb, CustomMMDF):
             with open(path) as f:
                 if f.read(10) == '\x01\x01\x01\x01\n\x01\x01\x01\x01\n':
                     print("%s" % path)
@@ -883,9 +846,9 @@ def mmdfs():
 
 def month_count():
     """For current lists print total messages per month for last year"""
-    now = datetime.datetime.now()
+    now = datetime.datetime.now(datetime.timezone.utc)
     for elist in EmailList.objects.filter(private=False).order_by('name'):
-        end = datetime.datetime(now.year, 1, 1)
+        end = now.replace(day=1, month=1, hour=0, minute=0, second=0, microsecond=0)
         if elist.message_set.filter(date__gte=end):
             for n in range(1, 13):
                 start = end - relativedelta(months=1)
@@ -904,7 +867,7 @@ def multipart():
             message = email.message_from_string(msg.get_body_raw())
             for part in message.walk():
                 if part.is_multipart():
-                    types[part.get_content_type()] = types.get(part.get_content_type(),0) + 1
+                    types[part.get_content_type()] = types.get(part.get_content_type(), 0) + 1
 
     print(types)
 
@@ -947,7 +910,7 @@ def non_ascii():
 
             for header in ('from', 'subject'):
                 if not is_ascii(message[header]):
-                    print("Message: {},   {}:{}".format(msg.pk,header,message[header]))
+                    print("Message: {},   {}:{}".format(msg.pk, header, message[header]))
                     return
 
 
@@ -977,29 +940,29 @@ def received_date(start):
             print("Unknown format: %s" % path)
             continue
 
-        for i,msg in enumerate(mb):
+        for i, msg in enumerate(mb):
             total += 1
             recs = msg.get_all('received')
             if not recs:
                 norecs += 1
-                print("no received header:%s,%s" % (path,i))
-                nrmap[path] = nrmap.get(path,0) + 1
+                print("no received header:%s,%s" % (path, i))
+                nrmap[path] = nrmap.get(path, 0) + 1
                 continue
             parts = recs[0].split(';')
             try:
                 # take the final bit (almost always 2, but sometimes ";" appears earlier
-                date =  parsedate_to_datetime(parts[-1])
+                date = parsedate_to_datetime(parts[-1])
             except IndexError as error:
-                print("Failed: %s:%s (%s)" % (path,i,error))
+                print("Failed: %s:%s (%s)" % (path, i, error))
                 sys.exit(1)
             if not date:
-                print("Total: %s\nnorecs: %s" % (total,norecs))
-                print("Failed: %s:%s:%s" % (path,i,recs))
+                print("Total: %s\nnorecs: %s" % (total, norecs))
+                print("Failed: %s:%s:%s" % (path, i, recs))
                 sys.exit(1)
             elif is_aware(date):
                 aware += 1
-    print("Total: %s\nnorecs: %s\naware: %s" % (total,norecs,aware))
-    with open('received.log','w') as f:
+    print("Total: %s\nnorecs: %s\naware: %s" % (total, norecs, aware))
+    with open('received.log', 'w') as f:
         for key in nrmap:
             f.write(key + '\n')
 
@@ -1014,14 +977,14 @@ def run_messagewrapper_process():
 
 def same_date():
     """Return messages with the same date of another message in the list"""
-    start = datetime.datetime(2016,1,1)
+    start = datetime.datetime(2016, 1, 1)
     for elist in EmailList.objects.all().order_by('name'):
-        messages = Message.objects.filter(email_list=elist,date__gte=start).order_by('date')
+        messages = Message.objects.filter(email_list=elist, date__gte=start).order_by('date')
         previous = messages.first()
         for message in messages[1:]:
             if message.date == previous.date:
-                print('{}:{}:{}'.format(message.pk,message.date,message.subject))
-                print('{}:{}:{}'.format(previous.pk,previous.date,previous.subject))
+                print('{}:{}:{}'.format(message.pk, message.date, message.subject))
+                print('{}:{}:{}'.format(previous.pk, previous.date, previous.subject))
             previous = message
 
 
@@ -1031,7 +994,7 @@ def shunt():
     files = os.listdir(path)
     for file in files:
         print(file)
-        full = os.path.join(path,file)
+        full = os.path.join(path, file)
         with open(full, 'rb') as fp:
             msg = load(fp, encoding='iso-8859-1')
             data = load(fp)
@@ -1046,7 +1009,7 @@ def shunt():
 def subjects(listname):
     """Return subject line of all messages for listname"""
     for msg in process([listname]):
-        print("%s: %s" % (msg.get('date'),msg.get('subject')))
+        print("%s: %s" % (msg.get('date'), msg.get('subject')))
 
 
 def subject_non_english():
@@ -1060,7 +1023,7 @@ def subject_non_english():
                 subject = msg.subject.encode('latin1')
             except UnicodeEncodeError:
                 count += 1
-                print("Non latin1 subject {} {} {}".format(msg.pk, msg.msgid,msg.subject))
+                print("Non latin1 subject {} {} {}".format(msg.pk, msg.msgid, msg.subject))
     print("Total: {}".format(count))
 
 
@@ -1092,7 +1055,7 @@ def senders():
 
 def test():
     """Just print count every five seconds to test progress"""
-    for n in range(0,10):
+    for n in range(0, 10):
         time.sleep(5)
         print(n)
 
@@ -1152,7 +1115,7 @@ def main():
     if args['function'] in globals():
         func = globals()[args['function']]
         kwargs = _get_kwargs(args)
-        func(*args['extras'],**kwargs)
+        func(*args['extras'], **kwargs)
     else:
         raise argparse.ArgumentTypeError('no scan function: %s' % args['function'])
 

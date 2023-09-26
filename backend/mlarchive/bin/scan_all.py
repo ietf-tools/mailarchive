@@ -1012,7 +1012,7 @@ def subjects(listname):
         print("%s: %s" % (msg.get('date'), msg.get('subject')))
 
 
-def subject_non_english():
+def subject_non_latin1():
     """Scans for subject lines containing non latin1 characters"""
     count = 0
     for email_list in EmailList.objects.order_by('name'):

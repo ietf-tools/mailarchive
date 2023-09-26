@@ -84,8 +84,7 @@ def main():
         basename = os.path.basename(file)
         if basename[:7] >= compstring:
             statinfo = os.stat(file)
-            modified = datetime.datetime.fromtimestamp(statinfo.st_ctime)
-            modified = modified.astimezone(pacific)
+            modified = datetime.datetime.fromtimestamp(statinfo.st_mtime, tz=datetime.timezone.utc)
             if modified > start_date:
                 mbox = mailbox.mbox(file)
                 for message in mbox:

@@ -59,13 +59,10 @@ ALLOWED_HOSTS = ['.ietf.org', '.amsl.com', '127.0.0.1']
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': env("DATABASES_NAME"),
         'USER': env("DATABASES_USER"),
-        'PASSWORD': env("DATABASES_PASSWORD"),
-        # 'HOST': '127.0.0.1',
-        'OPTIONS': {'charset': 'utf8mb4'},
-        'TEST': {'CHARSET': 'utf8mb4'}
+        'PASSWORD': env("DATABASES_PASSWORD")
     }
 }
 

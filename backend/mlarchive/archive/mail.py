@@ -779,13 +779,12 @@ class MessageWrapper(object):
         return msgid
 
     def get_subject(self):
-        """Gets the message subject.  If the subject looks like spam, long line with
-        no spaces, truncate it so as not to cause index errors
+        """Gets the message subject.  Truncate very long lines (probably spam) to
+        avoid databaser errors.
         """
         subject = self.normalize(self.email_message.get('Subject', ''))
-        # TODO: spam?
-        # if len(subject) > 120 and len(subject.split()) == 1:
-        #    subject = subject[:120]
+        if len(subject) > 512:
+            subject = subject[:512]
         return subject
 
     def get_to(self):

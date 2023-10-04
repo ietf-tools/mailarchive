@@ -4,10 +4,10 @@
 
 [![Release](https://img.shields.io/github/release/ietf-tools/mailarch.svg?style=flat&maxAge=300)](https://github.com/ietf-tools/mailarch/releases)
 [![License](https://img.shields.io/github/license/ietf-tools/mailarch?maxAge=3600)](https://github.com/ietf-tools/mailarch/blob/main/LICENSE)
-[![Python Version](https://img.shields.io/badge/python-3.6-blue?logo=python&logoColor=white)](#prerequisites)
-[![Django Version](https://img.shields.io/badge/django-3.2-51be95?logo=django&logoColor=white)](#prerequisites)
+[![Python Version](https://img.shields.io/badge/python-3.9-blue?logo=python&logoColor=white)](#prerequisites)
+[![Django Version](https://img.shields.io/badge/django-4.2-blue?logo=django&logoColor=white)](#prerequisites)
 [![Node Version](https://img.shields.io/badge/node.js-16.x-green?logo=node.js&logoColor=white)](#prerequisites)
-[![MySQL Version](https://img.shields.io/badge/mysql-5.6-blue?logo=mysql&logoColor=white)](#prerequisites)
+[![MySQL Version](https://img.shields.io/badge/postgres-14.6-blue?logo=postgresql&logoColor=white)](#prerequisites)
 
 ##### IETF Mail List Archives
 
@@ -30,9 +30,9 @@ What follows are instructions for setting up a development environment on macOS.
 
 #### Prerequisites
 
-- MySQL 5.6
+- PostgreSQL 14.6
 - Node.js 16.x
-- Python 3.6
+- Python 3.9
 
 #### Running Tests
 
@@ -52,10 +52,7 @@ This section describes some of the parts of the system that aren't obvious.
 
 1) How are records added to the index?
 
-In `settings.py` is a setting:
-`HAYSTACK_SIGNAL_PROCESSOR = 'celery_haystack.signals.CelerySignalProcessor'`
-
-`haystack/__init__.py` uses this to setup Django signals to save records to the index when models are saved.
+When a Message object is saved, the system uses Django Signals to enqueue a Celery task to update the Elasticsearch index. See mlarchive/archive/signals.py, CelerySignalProcessor.  Initialized in archive/apps.py via settings.ELASTICSEARCH_SIGNAL_PROCESSOR.
 
 `CelerySignalProcessor`: when objects are save checks to see if an index exists for them. If so calls task to update index.
 

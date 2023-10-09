@@ -169,7 +169,7 @@ def archived_at_report(start='2013-01-01', fix=False):
     from urllib.parse import urlparse
     from email.parser import BytesParser
     parser = BytesParser()
-    start_date = parse(start)
+    start_date = parse(start).replace(tzinfo=datetime.timezone.utc)
     print("start: {}    fix: {}".format(start, fix))
     for message in Message.objects.filter(date__gte=start_date).order_by('-date'):
         msg = parser.parsebytes(message.get_body_raw(), headersonly=True)
@@ -342,7 +342,7 @@ def check_thread_order(start, fix=False):
     Example: ./scan_all.py --fix check_thread_order 2017-01-15T00:00:00
     """
     print("start: {}    fix: {}".format(start, fix))
-    start_date = parse(start)
+    start_date = parse(start).replace(tzinfo=datetime.timezone.utc)
     threads = Thread.objects.filter(date__gte=start_date)
     print("Checking {} threads.".format(threads.count()))
     total = 0
@@ -641,7 +641,7 @@ def index_test(year_min):
 
 def legacy():
     """Gather stats on mhonarc mappings"""
-    cutoff = datetime.datetime(2019, 1, 14)
+    cutoff = datetime.datetime(2019, 1, 14, tzinfo=datetime.timezone.utc)
     for elist in EmailList.objects.filter(private=False, name='ietf'):
         lcount = Legacy.objects.filter(email_list_id=elist.name).count()
         mcount = elist.message_set.filter(date__lte=cutoff).count()
@@ -658,7 +658,7 @@ def legacy():
 
 def long_header():
     """Find messages that had Archived-At header folded using encoded word"""
-    start = datetime.datetime(2020, 2, 20)
+    start = datetime.datetime(2020, 2, 20, tzinfo=datetime.timezone.utc)
     messages = Message.objects.filter(date__gt=start)
     groups = set()
     count = 0
@@ -810,7 +810,7 @@ def missing_files():
 def missing_from_index(start):
     """Scan messages, starting from updated = start (YYYY-MM-DDTHH:MM:SS),
     and report any that aren't in the search index"""
-    start_date = parse(start)
+    start_date = parse(start).replace(tzinfo=datetime.timezone.utc)
     missing = 0
     messages = Message.objects.filter(updated__gte=start_date)
     for message in messages:
@@ -977,7 +977,7 @@ def run_messagewrapper_process():
 
 def same_date():
     """Return messages with the same date of another message in the list"""
-    start = datetime.datetime(2016, 1, 1)
+    start = datetime.datetime(2016, 1, 1, tzinfo=datetime.timezone.utc)
     for elist in EmailList.objects.all().order_by('name'):
         messages = Message.objects.filter(email_list=elist, date__gte=start).order_by('date')
         previous = messages.first()

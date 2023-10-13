@@ -6,6 +6,7 @@ import os
 import re
 from operator import itemgetter
 from collections import namedtuple, Counter
+from datetime import timezone
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import isoparse
 
@@ -30,7 +31,7 @@ from django.views.generic import View
 from elasticsearch.exceptions import RequestError
 
 from mlarchive.utils.decorators import (check_access, superuser_only, pad_id, 
-    check_list_access)
+    check_list_access, staff_only)
 from mlarchive.archive import actions
 from mlarchive.archive.backends.elasticsearch import search_from_form
 from mlarchive.archive.query_utils import (get_qdr_kwargs,
@@ -99,10 +100,10 @@ def get_this_next_periods(time_period):
     (datetime(2017,4,1), datetime(2017,5,1))
     """
     if time_period.month:
-        this_period = datetime.datetime(time_period.year, time_period.month, 1)
+        this_period = datetime.datetime(time_period.year, time_period.month, 1, tzinfo=timezone.utc)
         next_period = add_one_month(this_period)
     else:
-        this_period = datetime.datetime(time_period.year, 1, 1)
+        this_period = datetime.datetime(time_period.year, 1, 1, tzinfo=timezone.utc)
         next_period = this_period + datetime.timedelta(days=365)
     return (this_period, next_period)
 
@@ -188,6 +189,12 @@ class CSVResponseMixin(object):
             response['Content-Disposition'] = 'attachment; filename="%s"' % filename
 
             writer = csv.writer(response)
+            
+            # empty list
+            if len(context['object_list']) == 0:
+                writer.writerow(['empty list'])
+                return response
+            
             # write headers
             writer.writerow(self.get_csv_headers(context['object_list'][0]))
             for obj in context['object_list']:
@@ -464,6 +471,7 @@ class CustomBrowseView(CustomSearchView):
         # settings
         extra['query_string'] = query_string
         extra['browse_list'] = self.list_name
+        extra['browse_list_placeholder'] = 'Search {}'.format(self.list_name)
         extra['queryset_offset'] = '0'
         extra['count'] = get_count(self.search)
 
@@ -666,7 +674,7 @@ def admin_console(request):
 def get_weekly_data():
     '''Returns weekly archive incoming messages'''
     data = []
-    start = datetime.datetime.today() - datetime.timedelta(days=365 * 3)
+    start = datetime.datetime.now(timezone.utc) - datetime.timedelta(days=365 * 3)
     start = start.replace(hour=0, second=0, microsecond=0)
     for day in range(156):
         end = start + datetime.timedelta(days=7)
@@ -679,13 +687,13 @@ def get_weekly_data():
 
 def datetime_to_millis(date):
     '''Convert a datetime object to Milliseconds since Unix Epoch'''
-    return (date - datetime.datetime(1970, 1, 1)).total_seconds() * 1000
+    return (date - datetime.datetime(1970, 1, 1, tzinfo=timezone.utc)).total_seconds() * 1000
 
 
 def get_top25_data():
-    '''Returns incoming meesage count for top 25 most active lists'''
+    '''Returns incoming message count for top 25 most active lists'''
     counts = {}
-    end = datetime.datetime.today()
+    end = datetime.datetime.now(timezone.utc)
     start = end - datetime.timedelta(days=30)
     for message in Message.objects.filter(date__gte=start, date__lt=end).select_related('email_list'):
         name = message.email_list.name
@@ -785,7 +793,7 @@ def browse_static_redirect(request, list_name):
     if last_message:
         return redirect(last_message.get_static_date_page_url())
     else:
-        return redirect('archive_browse_static_date', list_name=list_name, date=datetime.datetime.now().year)
+        return redirect('archive_browse_static_date', list_name=list_name, date=datetime.datetime.now(timezone.utc).year)
 
 
 def browse_static_thread_redirect(request, list_name):
@@ -794,7 +802,7 @@ def browse_static_thread_redirect(request, list_name):
     if last_message:
         return redirect(last_message.get_static_thread_page_url())
     else:
-        return redirect('archive_browse_static_thread', list_name=list_name, date=datetime.datetime.now().year)
+        return redirect('archive_browse_static_thread', list_name=list_name, date=datetime.datetime.now(timezone.utc).year)
 
 
 @pad_id
@@ -888,6 +896,7 @@ class MessageDetailView(DetailView):
     model = Message
 
 
+@method_decorator(staff_only, name='dispatch')
 class ReportsSubscribersView(CSVResponseMixin, TemplateView):
     """Subscriber Counts Report"""
     template_name = 'archive/reports_subscribers.html'
@@ -915,6 +924,7 @@ class ReportsSubscribersView(CSVResponseMixin, TemplateView):
         return context
 
 
+@method_decorator(staff_only, name='dispatch')
 class ReportsMessagesView(CSVResponseMixin, TemplateView):
     """Message Counts Report"""
     template_name = 'archive/reports_messages.html'
@@ -925,7 +935,7 @@ class ReportsMessagesView(CSVResponseMixin, TemplateView):
         list of named tuples (listname, count))"""
         messages = Message.objects.filter(
             date__gte=sdate,
-            date__lt=edate,
+            date__lte=edate,
             email_list__private=False)
         counter = Counter(messages.values_list('email_list__name', flat=True))
         Count = namedtuple('Count', 'listname count')
@@ -939,10 +949,12 @@ class ReportsMessagesView(CSVResponseMixin, TemplateView):
         form = DateForm(self.request.GET)
         
         # if no date submitted default to last month
-        if not self.request.GET:
-            today = datetime.date.today()
-            edate = today.replace(day=1)
-            sdate = edate - relativedelta(months=1)
+        if 'start_date' not in self.request.GET and 'end_date' not in self.request.GET:
+            now = datetime.datetime.now(timezone.utc)
+            # last day of last month
+            edate = now.replace(day=1, hour=23, minute=59, second=0, microsecond=0) - relativedelta(days=1)
+            # first day of last month
+            sdate = edate.replace(day=1, hour=0, minute=0)
             total, message_counts = self.get_message_stats(sdate, edate)
             form = DateForm(initial={
                 'start_date': sdate.strftime('%Y-%m-%d'),
@@ -972,3 +984,16 @@ class ReportsMessagesView(CSVResponseMixin, TemplateView):
         context['edate'] = edate
         context['form'] = form
         return context
+
+
+@pad_id
+@check_access
+def message_download(request, list_name, id, msg):
+    """Returns the raw message text
+    NOTE: the "msg" argument is a Message object added by the check_access decorator
+    """
+    content = msg.get_body_raw()
+    response = HttpResponse(content, content_type='message/rfc822')
+    filename = '{}_{}.eml'.format(msg.email_list.name, msg.msgid[:6])
+    response['Content-Disposition'] = 'attachment; filename="{}"'.format(filename)
+    return response

@@ -4,11 +4,12 @@ import io
 import os
 import pytest
 import tarfile
+from datetime import timezone
 from email.utils import parseaddr
 from dateutil.relativedelta import relativedelta
 from urllib import parse
+from pyquery import PyQuery
 
-from django.conf import settings
 from django.contrib.auth import SESSION_KEY
 from django.test import RequestFactory
 from django.urls import reverse
@@ -16,26 +17,16 @@ from django.utils.http import urlencode
 from django.utils.encoding import smart_str
 from factories import EmailListFactory, MessageFactory, UserFactory
 from mlarchive.archive.models import Message, Attachment, Redirect
-from mlarchive.archive.mail import archive_message
 from mlarchive.archive.views import (TimePeriod, add_nav_urls, is_small_year,
     add_one_month, get_this_next_periods, get_date_endpoints, get_thread_endpoints,
     DateStaticIndexView)
-from pyquery import PyQuery
-
+from mlarchive.utils.test_utils import login_testing_unauthorized
+from mlarchive.utils.test_utils import load_message
 
 
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
-
-
-def load_message(filename, listname='public'):
-    """Loads a message given path"""
-    path = os.path.join(settings.BASE_DIR, 'tests', 'data', filename)
-    with open(path, 'rb') as f:
-        data = f.read()
-    archive_message(data, listname)
-
 
 def assert_href(content, selector, value):
     q = PyQuery(content)
@@ -85,20 +76,20 @@ def test_get_date_endpoints(static_list):
 def test_get_this_next_periods(static_list):
     time_period = TimePeriod(year=2017, month=4)
     assert get_this_next_periods(time_period) == (
-        datetime.datetime(2017,4,1),
-        datetime.datetime(2017,5,1))
+        datetime.datetime(2017, 4, 1, tzinfo=timezone.utc),
+        datetime.datetime(2017, 5, 1, tzinfo=timezone.utc))
     time_period = TimePeriod(year=2017, month=None)
     assert get_this_next_periods(time_period) == (
-        datetime.datetime(2017,1,1),
-        datetime.datetime(2018,1,1))
+        datetime.datetime(2017, 1, 1, tzinfo=timezone.utc),
+        datetime.datetime(2018, 1, 1, tzinfo=timezone.utc))
 
 
 @pytest.mark.django_db(transaction=True)
 def test_add_one_month():
-    date = datetime.datetime(2018,1,1)
-    assert add_one_month(date) == datetime.datetime(2018,2,1)
-    date = datetime.datetime(2018,12,1)
-    assert add_one_month(date) == datetime.datetime(2019,1,1)
+    date = datetime.datetime(2018, 1, 1, tzinfo=timezone.utc)
+    assert add_one_month(date) == datetime.datetime(2018, 2, 1, tzinfo=timezone.utc)
+    date = datetime.datetime(2018, 12, 1, tzinfo=timezone.utc)
+    assert add_one_month(date) == datetime.datetime(2019, 1, 1, tzinfo=timezone.utc)
 
 
 # --------------------------------------------------
@@ -363,10 +354,10 @@ def test_browse_static_date(client, static_list):
 
 @pytest.mark.django_db(transaction=True)
 def test_browse_static_unauthorized(client):
-    today = datetime.datetime.today()
+    now = datetime.datetime.now(timezone.utc)
     elist = EmailListFactory.create(name='private', private=True)
-    message = MessageFactory.create(email_list=elist, date=today)
-    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': today.year})
+    message = MessageFactory.create(email_list=elist, date=now)
+    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': now.year})
     response = client.get(url)
     assert response.status_code == 403
 
@@ -374,10 +365,10 @@ def test_browse_static_unauthorized(client):
 @pytest.mark.django_db(transaction=True)
 def test_browse_static_cache_headers_private(admin_client):
     '''Ensure private lists include Cache-Control: private header'''
-    today = datetime.datetime.today()
+    now = datetime.datetime.now(timezone.utc)
     elist = EmailListFactory.create(name='private', private=True)
-    message = MessageFactory.create(email_list=elist, date=today)
-    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': '{}-{:02d}'.format(today.year, today.month)})
+    message = MessageFactory.create(email_list=elist, date=now)
+    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': '{}-{:02d}'.format(now.year, now.month)})
     response = admin_client.get(url)
     assert response.status_code == 200
     assert 'no-cache' in response.get('Cache-Control')
@@ -386,10 +377,10 @@ def test_browse_static_cache_headers_private(admin_client):
 @pytest.mark.django_db(transaction=True)
 def test_browse_static_cache_headers_public(client):
     '''Ensure private lists include Cache-Control: private header'''
-    today = datetime.datetime.today()
+    now = datetime.datetime.now(timezone.utc)
     elist = EmailListFactory.create()
-    message = MessageFactory.create(email_list=elist, date=today)
-    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': today.year})
+    message = MessageFactory.create(email_list=elist, date=now)
+    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': now.year})
     response = client.get(url)
     assert response.status_code == 200
     cache_control = response.get('Cache-Control')
@@ -429,11 +420,11 @@ def test_browse_static_small_year_month(client, static_list, settings):
 @pytest.mark.django_db(transaction=True)
 def test_browse_static_small_year_current(client, settings):
     settings.STATIC_INDEX_YEAR_MINIMUM = 20
-    today = datetime.datetime.today()
-    current_year = today.year
+    now = datetime.datetime.now(timezone.utc)
+    current_year = now.year
     elist = EmailListFactory.create()
-    message = MessageFactory.create(email_list=elist, date=today)
-    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': '{}-{:02d}'.format(today.year, today.month)})
+    message = MessageFactory.create(email_list=elist, date=now)
+    url = reverse('archive_browse_static_date', kwargs={'list_name': elist.name, 'date': '{}-{:02d}'.format(now.year, now.month)})
     response = client.get(url)
     assert response.status_code == 200
     assert message.subject in smart_str(response.content)
@@ -461,7 +452,7 @@ def test_browse_static_redirect(client, static_list, settings):
 @pytest.mark.django_db(transaction=True)
 def test_browse_static_redirect_empty(client):
     elist = EmailListFactory.create()
-    year = datetime.datetime.now().year
+    year = datetime.datetime.now(timezone.utc).year
     url = reverse('archive_browse_static', kwargs={'list_name': elist.name})
     response = client.get(url)
     assert response.status_code == 302
@@ -633,6 +624,7 @@ def test_attachment_bad_sequence(client, attachment_messages_no_index):
     # response = client.get(url)
     # assert response.status_code == 404
 
+
 @pytest.mark.django_db(transaction=True)
 def test_attachment_folded_name(client, attachment_messages_no_index):
     message = Message.objects.get(msgid='attachment.folded.name')
@@ -768,8 +760,9 @@ def test_search(client):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_reports_subscribers(client, subscribers):
+def test_reports_subscribers(client, users, subscribers):
     url = reverse('reports_subscribers')
+    login_testing_unauthorized(client, url)
     response = client.get(url)
     assert response.status_code == 200
     # default date is last month
@@ -787,8 +780,9 @@ def test_reports_subscribers(client, subscribers):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_reports_subscribers_csv(client, subscribers):
+def test_reports_subscribers_csv(client, users, subscribers):
     url = reverse('reports_subscribers') + '?export=csv'
+    login_testing_unauthorized(client, url)
     response = client.get(url)
     assert response.status_code == 200
     assert response['Content-Type'] == 'text/csv'
@@ -797,11 +791,12 @@ def test_reports_subscribers_csv(client, subscribers):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_reports_messages(client):
-    date = datetime.datetime(2022, 2, 1)
+def test_reports_messages(client, users):
+    date = datetime.datetime(2022, 2, 1, tzinfo=timezone.utc)
     elist = EmailListFactory.create(name='acme')
     _ = MessageFactory.create(email_list=elist, date=date)
-    url = reverse('reports_messages') + '?start_date=2022-01-01&end_date=2023-01-01'
+    url = reverse('reports_messages') + '?start_date=2022-01-01&end_date=2022-12-31'
+    login_testing_unauthorized(client, url)
     response = client.get(url)
     assert response.status_code == 200
     assert 'Total Messages: 1' in smart_str(response.content)
@@ -811,11 +806,58 @@ def test_reports_messages(client):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_reports_messages_csv(client):
-    date = datetime.datetime(2022, 2, 1)
+def test_reports_messages_default(client, users):
+    '''Test that report defaults to last month'''
+    now = datetime.datetime.now(timezone.utc)
+    elist = EmailListFactory.create(name='acme')
+    # Create messages
+    # Today
+    _ = MessageFactory.create(email_list=elist, date=now)
+    # two months ago
+    xdate = now - relativedelta(months=2)
+    _ = MessageFactory.create(email_list=elist, date=xdate)
+    # last day of last month
+    ydate = now.replace(day=1) - relativedelta(days=1)
+    _ = MessageFactory.create(email_list=elist, date=ydate)
+    # first day of last month
+    zdate = ydate.replace(day=1)
+    _ = MessageFactory.create(email_list=elist, date=zdate)
+    # middle of last month
+    adate = zdate + relativedelta(days=14)
+    _ = MessageFactory.create(email_list=elist, date=adate)
+    url = reverse('reports_messages')
+    login_testing_unauthorized(client, url)
+    response = client.get(url)
+    assert response.status_code == 200
+    assert 'Total Messages: 3' in smart_str(response.content)
+    q = PyQuery(response.content)
+    rows = [c.text() for c in q('table tr td').items()]
+    assert rows == ['acme', '3']
+
+
+@pytest.mark.django_db(transaction=True)
+def test_reports_messages_csv(client, users):
+    date = datetime.datetime(2022, 2, 1, tzinfo=timezone.utc)
     elist = EmailListFactory.create(name='acme')
     _ = MessageFactory.create(email_list=elist, date=date)
     url = reverse('reports_messages') + '?start_date=2022-01-01&end_date=2023-01-01&export=csv'
+    login_testing_unauthorized(client, url)
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response['Content-Type'] == 'text/csv'
+    print(smart_str(response.content))
+    assert 'acme,1' in smart_str(response.content).splitlines()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_reports_messages_csv_no_date(client, users):
+    '''Test that no date defaults to last month'''
+    date = datetime.datetime.now(timezone.utc)
+    date = date - relativedelta(months=1)
+    elist = EmailListFactory.create(name='acme')
+    _ = MessageFactory.create(email_list=elist, date=date)
+    url = reverse('reports_messages') + '?export=csv'
+    login_testing_unauthorized(client, url)
     response = client.get(url)
     assert response.status_code == 200
     assert response['Content-Type'] == 'text/csv'
@@ -841,3 +883,26 @@ def test_removed_message(client, thread_messages):
     response = client.get(msg.get_absolute_url())
     assert response.status_code == 410
     assert 'This message has been removed' in smart_str(response.content)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_message_download(client):
+    listname = 'public'
+    load_message('mail_normal.1', listname=listname)
+    msg = Message.objects.first()
+    url = reverse('archive_message_download', kwargs={'list_name': listname, 'id': msg.hashcode})
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response.content == msg.get_body_raw()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_message_download_private(client):
+    # test private message, no access
+    elist = EmailListFactory.create(name='private', private=True)
+    load_message('mail_normal.1', listname='private')
+    msg = Message.objects.get(email_list__name='private')
+    print(msg.email_list.private, msg.email_list.members.all())
+    url = reverse('archive_message_download', kwargs={'list_name': 'private', 'id': msg.hashcode})
+    response = client.get(url)
+    assert response.status_code == 403

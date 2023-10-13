@@ -117,7 +117,7 @@ def get_purge_cache_urls(message, created=True):
 def purge_files_from_cache(message, created=True):
     """Purge file from Cloudflare cache"""
     urls = get_purge_cache_urls(message, created)
-    with CloudFlare.CloudFlare(email=settings.CLOUDFLARE_AUTH_EMAIL, token=settings.CLOUDFLARE_AUTH_KEY) as cf:
+    with CloudFlare.CloudFlare(token=settings.CLOUDFLARE_AUTH_KEY) as cf:
         try:
             cf.zones.purge_cache.post(settings.CLOUDFLARE_ZONE_ID, data={'files': urls})
             logger.info('purging cached urls for list {}'.format(message.email_list.name))

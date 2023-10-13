@@ -407,6 +407,11 @@ ul.export-buttons li {
     margin-bottom: 18px;
 }
 
+.browse-list-name {
+    font-size: 1.5em;
+    color: rgb(242, 163, 65);
+}
+
 a.selected {
     color: $link-hover-color;
     text-decoration: $link-hover-decoration;
@@ -691,14 +696,22 @@ table.msg-list-header-table th a.btn {
     word-break: normal;
 }
 
-#msg-body a.detail-link {
-    position:  absolute;
+#msg-body #message-links {
+    position: absolute;
     top: 8px;
     right: 12px;
     padding: 5px;
     z-index: 10;
-    background-color:  white;
+    background-color: white;
     color: $gray5;
+}
+
+#msg-body #message-links a {
+    margin-left: 8px;
+}
+
+.msg-detail #msg-body {
+    position: relative;
 }
 
 #msg-body h3 {

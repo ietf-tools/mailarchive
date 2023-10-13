@@ -1,5 +1,6 @@
 import datetime
 import pytest
+from datetime import timezone
 from io import StringIO
 
 from django.conf import settings
@@ -40,7 +41,7 @@ def test_rebuild_index(db_only):
                           thread=msg.thread,
                           thread_order=0,
                           msgid='x004',
-                          date=datetime.datetime(2020, 1, 1))
+                          date=datetime.datetime(2020, 1, 1, tzinfo=timezone.utc))
     out = StringIO()
     call_command('rebuild_index', interactive=False, stdout=out)
     assert 'Indexing 2 Messages' in out.getvalue()
@@ -74,9 +75,9 @@ def test_update_index(db_only):
     doc = client.get(index=index,
                      id='archive.message.{}'.format(msg.pk))
     assert doc['_source']['django_id'] == str(msg.pk)
-    assert doc['_source']['text'] == 'This is a test message\nError reading message file'
+    assert doc['_source']['text'] == 'John Smith <john@example.com>\nThis is a test message\nError reading message file'
     assert doc['_source']['email_list'] == 'public'
-    assert doc['_source']['date'] == '2017-01-01T00:00:00'
+    assert doc['_source']['date'] == '2017-01-01T00:00:00+00:00'
     assert doc['_source']['frm'] == 'John Smith <john@example.com>'
     assert doc['_source']['msgid'] == 'x001'
     assert doc['_source']['subject'] == 'This is a test message'
@@ -92,8 +93,8 @@ def test_update_index_date_range(db_only):
     assert s.count() == 0
     out = StringIO()
     call_command('update_index', 
-                 start='2000-01-01T00:00:00',
-                 end='2017-12-31T00:00:00',
+                 start='2000-01-01T00:00',
+                 end='2017-12-31T00:00',
                  stdout=out)
     assert 'Indexing 1 Messages' in out.getvalue()
     s = Search(using=client, index=index)
@@ -149,7 +150,7 @@ def test_update_index_remove(db_only):
 @pytest.mark.django_db(transaction=True)
 def test_simple():
     pubone = EmailListFactory.create(name='pubone')
-    athread = ThreadFactory.create(date=datetime.datetime(2013, 1, 1), email_list=pubone)
+    athread = ThreadFactory.create(date=datetime.datetime(2013, 1, 1, tzinfo=timezone.utc), email_list=pubone)
     MessageFactory.create(email_list=pubone,
                           frm='Björn',
                           thread=athread,
@@ -157,5 +158,5 @@ def test_simple():
                           subject='Another message about RFC6759',
                           base_subject='Another message about RFC6759',
                           msgid='a01',
-                          date=datetime.datetime(2013, 1, 1))
+                          date=datetime.datetime(2013, 1, 1, tzinfo=timezone.utc))
     assert Message.objects.all().count() == 1

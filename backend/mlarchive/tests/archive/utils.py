@@ -15,6 +15,7 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     lookup_user, process_members, get_membership, check_inactive, EmailList,
     create_mbox_file, _get_lists_as_xml, get_subscribers, Subscriber,
     get_known_mailman_lists, get_subscriber_count)
+from mlarchive.archive.models import User
 from factories import EmailListFactory
 
 
@@ -107,6 +108,22 @@ def test_process_members(mock_post):
     email_list = EmailListFactory.create(name='private', private=True)
     assert email_list.members.count() == 0
     process_members(email_list, ['joe@example.com'])
+    assert email_list.members.count() == 1
+    assert email_list.members.get(username='joe@example.com')
+
+
+@patch('requests.post')
+@pytest.mark.django_db(transaction=True)
+def test_process_members_case_insensitive(mock_post):
+    response = requests.Response()
+    response.status_code = 200
+    response._content = b'{"person.person": {"1": {"user": {"username": "Joe@example.com"}}}}'
+    mock_post.return_value = response
+    email_list = EmailListFactory.create(name='private', private=True)
+    user = User.objects.create(username='joe@example.com')
+    email_list.members.add(user)
+    assert email_list.members.count() == 1
+    process_members(email_list, ['Joe@example.com'])
     assert email_list.members.count() == 1
     assert email_list.members.get(username='joe@example.com')
 

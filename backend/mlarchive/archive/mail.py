@@ -5,7 +5,6 @@ import glob
 import hashlib
 import mailbox
 import os
-import pytz
 import re
 import shutil
 import subprocess
@@ -15,14 +14,12 @@ import traceback
 import uuid
 from collections import deque
 from email import policy as email_policy
-from email.utils import parsedate_tz, getaddresses, make_msgid
-from email.utils import parsedate_to_datetime
+from email.utils import getaddresses, make_msgid, parsedate_to_datetime
 from io import StringIO
 
 from django.conf import settings
 from django.core.cache import cache
 from django.core.management.base import CommandError
-from dateutil.tz import tzoffset
 
 from mlarchive.archive.models import (Attachment, EmailList, Legacy, Message,
     Thread, get_in_reply_to_message, is_attachment)
@@ -163,6 +160,16 @@ def clean_spaces(s):
     return s
 
 
+def datestring_to_datetime(datestring):
+    """Converts string to datetime. Returns a timezone aware date if
+    date includes timezone info, otherwise a naive date.
+    """
+    try:
+        return parsedate_to_datetime(datestring)
+    except ValueError:
+        return None
+
+
 def flatten_message(msg):
     """Returns the message flattened to a string, for use in writing to a file.  NOTE:
     use this instead of message.as_string() to avoid mangling message.
@@ -236,14 +243,12 @@ def get_envelope_date(msg):
     line = get_from(msg)
     if not line:
         return None
-
     match = ENVELOPE_DATE_PATTERN.search(line)
     if match:
         date = match.group()
     else:
         return None
-
-    return parsedate_to_datetime(date)
+    return datestring_to_datetime(date)
 
 
 def get_from(msg):
@@ -272,7 +277,7 @@ def get_header_date(msg):
         date = msg.get('sent')
     if not date:
         return None
-    return parsedate_to_datetime(date)
+    return datestring_to_datetime(date)
 
 
 def get_incr_path(path):
@@ -313,26 +318,14 @@ def get_mb(path):
 
 def get_received_date(msg):
     """Returns the date from the received header field.  Date field is last field
-    using semicolon as separator, per RFC 2821 Section 4.4.  parsedate_to_datetime
-    returns a timezone aware date if date includes timezone info, otherwise a
-    naive date.  Use the most recent Received field, first in list returned by get_all()
+    using semicolon as separator, per RFC 2821 Section 4.4.  Use the most recent
+    Received field, first in list returned by get_all().  
     """
     recs = msg.get_all('received')
     if not recs:
         return None
-    else:
-        return parsedate_to_datetime(recs[0].split(';')[-1])
-
-
-def is_aware(date):
-    """Returns True if the date object passed in timezone aware, False if naive.
-    See http://docs.python.org/2/library/datetime.html section 8.1.1
-    """
-    if not isinstance(date, datetime.datetime):
-        return False
-    if date.tzinfo and date.tzinfo.utcoffset(date) is not None:
-        return True
-    return False
+    datestring = recs[0].split(';')[-1]
+    return datestring_to_datetime(datestring)
 
 
 def save_failed_msg(data, listname, error):
@@ -726,28 +719,28 @@ class MessageWrapper(object):
 
     @check_datetime
     def get_date(self):
-        """Returns the message date.  It takes an email.Message object and returns a naive
-        Datetime object in UTC time.
+        """Returns the message date.  It takes an email.Message object and returns
+        a timezone aware Datetime object in UTC time.
 
-        First we inspect the first Received header field since the format is consistent
-        and the time is actually more reliable then the time on the message.
-        Next check the Date: header field, Unfortunately the Date header
-        can vary dramatically in format or even be missing.  Finally check the envelope
-        date.
+        First we inspect the first Received header field since the format is 
+        consistent and the time is actually more reliable then the time on the
+        message. Next check the Date: header field, Unfortunately the Date header
+        can vary dramatically in format or even be missing.  Finally check the 
+        envelope date.
 
         NOTE: in a test run we can find the date in the Received header in
         2366079 of 2426328 records, 97.5% of the time (all but 2 were timezone aware)
+
+        All get_XXX_date functions take an email.Message object and return either
+        None or the output of email.utils.parsedate_to_datetime which is either 
+        a timezone aware datetime or naive datetime. In the case of naive datetime
+        the UTC timezone is assigned.
         """
         for func in (get_received_date, get_header_date, get_envelope_date):
             date = func(self.email_message)
             if date:
-                if is_aware(date):
-                    # try:
-                    return date.astimezone(pytz.utc).replace(tzinfo=None)   # return as naive UTC
-                    # except ValueError:
-                    #    pass
-                else:
-                    return date
+                return date.astimezone(datetime.timezone.utc)
+
         else:
             # can't really proceed without a date, likely indicates bigger parsing error
             raise DateError("%s, %s" % (self.msgid, self.email_message.get_unixfrom()))
@@ -786,13 +779,12 @@ class MessageWrapper(object):
         return msgid
 
     def get_subject(self):
-        """Gets the message subject.  If the subject looks like spam, long line with
-        no spaces, truncate it so as not to cause index errors
+        """Gets the message subject.  Truncate very long lines (probably spam) to
+        avoid databaser errors.
         """
         subject = self.normalize(self.email_message.get('Subject', ''))
-        # TODO: spam?
-        # if len(subject) > 120 and len(subject.split()) == 1:
-        #    subject = subject[:120]
+        if len(subject) > 512:
+            subject = subject[:512]
         return subject
 
     def get_to(self):

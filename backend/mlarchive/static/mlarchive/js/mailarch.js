@@ -476,11 +476,16 @@ var mailarch = {
     },
     
     initSplitter: function() {
-        // no splitter for mobile
+        // setup
         mailarch.splitterTop = mailarch.getSplitterTop();
+        const msgPanes = document.getElementById("msg-panes");
+        mailarch.msgPanesOffset = msgPanes.getBoundingClientRect().y;
+        // console.log('initializing splitter. top:' + mailarch.splitterTop);
+        
         if (mailarch.isSmallViewport()) {
             return true;
         }
+        // for mouse drag
         mailarch.$splitterPane.draggable({
             axis:"y",
             //containment:"parent",
@@ -497,6 +502,36 @@ var mailarch = {
                 // mailarch.checkMessageListScrollBar();
             }
         });
+
+        // for touch drag (tablet)
+        mailarch.$splitterPane.on('touchstart', mailarch.splitterTouchStart);
+        mailarch.$splitterPane.on('touchend', mailarch.splitterTouchEnd);
+    },
+
+    splitterTouchStart: function(e) {
+        $(this).on('touchmove', mailarch.splitterMove);
+        // mailarch.splitterMove(e);       // required?
+    },
+
+    splitterTouchEnd: function(e) {
+        $(this).off('touchmove');
+        const top = e.pageY - mailarch.msgPanesOffset;
+        mailarch.splitterTop = top;
+        $.cookie("splitter",top);
+        // console.log('TouchEnd top:' + top);
+    },
+
+    splitterMove: function(e) {
+        /* Get the touch screen y-coordinate from e.pageY.
+        Subtract the msgPanes Y offset to get the y-coordinate
+        for the splitter, which is relative to parent element.
+        */
+        e.preventDefault();
+        const top = e.pageY - mailarch.msgPanesOffset;
+        mailarch.$listPane.css("height",top);
+        mailarch.$viewPane.css("top",top + mailarch.splitterHeight);
+        mailarch.$splitterPane.css("top",top);
+        // console.log('TouchMove top:' + top);
     },
     
     isSmallViewport: function() {
@@ -557,15 +592,12 @@ var mailarch = {
         var msgId = row.find(".xtd.id-col").html();
         if(/^\d+$/.test(msgId)){
             mailarch.$viewPane.load('/arch/ajax/msg/?id=' + msgId, function() {
-                // NTOE: don't use cached DOM objects here because these change
+                // NOTE: don't use cached DOM objects here because these change
                 $('#msg-date').after('<a id="toggle-msg-header" class="toggle" href="#">Show header</a>');
                 $('#toggle-msg-header').click(function(ev) {
                     $('#msg-header').toggle();
                     $(this).html(($('#toggle-msg-header').text() == 'Show header') ? 'Hide header' : 'Show header');
                 });
-                var url = $('#msg-body').data('message-url');
-                var html = '<a href="' + url + '" class="detail-link" title="Message Detail"><i class="fa fa-link fa-lg" aria-hidden="true"></i></a>'
-                $('#msg-body').prepend(html);
                 mailarch.$viewPane.scrollTop(0);    // should this be msg-body?
             });
         }

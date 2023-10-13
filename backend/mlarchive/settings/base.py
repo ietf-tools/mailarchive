@@ -59,13 +59,10 @@ ALLOWED_HOSTS = ['.ietf.org', '.amsl.com', '127.0.0.1']
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'django.db.backends.postgresql',
         'NAME': env("DATABASES_NAME"),
         'USER': env("DATABASES_USER"),
-        'PASSWORD': env("DATABASES_PASSWORD"),
-        # 'HOST': '127.0.0.1',
-        'OPTIONS': {'charset': 'utf8mb4'},
-        'TEST': {'CHARSET': 'utf8mb4'}
+        'PASSWORD': env("DATABASES_PASSWORD")
     }
 }
 
@@ -74,16 +71,15 @@ if env("DATABASES_HOST"):
 
 SITE_ID = 1
 
+# Timezone
+USE_TZ = True
+TIME_ZONE = 'UTC'
+
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
-
-TIME_ZONE = 'America/Los_Angeles'
-
 LANGUAGE_CODE = 'en-us'
-
-USE_TZ = False
 USE_I18N = False
-USE_L10N = True
+
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 INTERNAL_IPS = env('INTERNAL_IPS')

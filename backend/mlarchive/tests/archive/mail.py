@@ -13,14 +13,18 @@ import shutil
 import six
 import sys
 from io import StringIO, BytesIO
+from dateutil.tz import tzoffset
+from datetime import timezone
 
 from django.conf import settings
 from django.core.management import call_command
 from django.urls import reverse
+from django.utils.timezone import is_aware
+
 from mlarchive.archive.models import Message, EmailList
 from mlarchive.archive.mail import (archive_message, clean_spaces, MessageWrapper,
-    get_base_subject, get_envelope_date, tzoffset, get_from, get_header_date, get_mb,
-    is_aware, get_received_date, parsedate_to_datetime, subject_is_reply,
+    get_base_subject, get_envelope_date, get_from, get_header_date, get_mb,
+    get_received_date, parsedate_to_datetime, subject_is_reply,
     lookup_extension, get_message_from_bytes)
 from factories import EmailListFactory, MessageFactory, ThreadFactory
 from mlarchive.utils.test_utils import message_from_file
@@ -381,12 +385,12 @@ def test_MessageWrapper_get_thread():
         email_list=list1,
         msgid='001@example.com',
         thread=thread1,
-        date=datetime.datetime(2016, 1, 1))
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc))
     MessageFactory.create(
         email_list=list2,
         msgid='001@example.com',
         thread=thread2,
-        date=datetime.datetime(2016, 1, 1))
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc))
     data = '''From: joe@example.com
 To: larry@example.com
 Cc: list1@example.com
@@ -413,7 +417,7 @@ def test_MessageWrapper_get_thread_subject():
         subject='[public] New Members',
         base_subject='New Members',
         thread=thread,
-        date=datetime.datetime(2016, 1, 1))
+        date=datetime.datetime(2016, 1, 1, tzinfo=timezone.utc))
     data = '''From: joe@example.com
 To: larry@example.com
 Subject: Re: [public] New Members

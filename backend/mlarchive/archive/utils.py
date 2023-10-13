@@ -179,15 +179,18 @@ def process_members(email_list, emails):
     '''
     email_mapping = {}
     members = email_list.members.all()
-    for email in emails:
-        if email in email_mapping:
-            name = email_mapping[email]
+    for address in emails:
+        if address in email_mapping:
+            name = email_mapping[address]
         else:
-            name = lookup_user(email)
-            email_mapping[email] = name
+            name = lookup_user(address)
+            email_mapping[address] = name
 
         if name:
-            user, created = User.objects.get_or_create(username=name)
+            try:
+                user = User.objects.get(username__iexact=name)
+            except User.DoesNotExist:
+                user = User.objects.create(username=name)
             if user not in members:
                 email_list.members.add(user)
 

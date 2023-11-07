@@ -10,7 +10,7 @@ services:
             - /workspace/__pycache__
     db:
         ports:
-            - '3306'
+            - '5432'
     es:
         ports:
             - '9200'

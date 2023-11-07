@@ -52,7 +52,7 @@ done
 
 if [ -n "$EDITOR_VSCODE" ]; then
     echo "Waiting for DB container to come online ..."
-    /usr/local/bin/wait-for localhost:3306 -- echo "DB ready"
+    /usr/local/bin/wait-for localhost:5432 -- echo "DB ready"
 fi
 
 # Run memcached

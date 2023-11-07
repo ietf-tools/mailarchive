@@ -16,7 +16,7 @@ RUN apt-get update --fix-missing && apt-get install -qy \
 	build-essential \
 	curl \
     locales \
-    mariadb-client \
+    postgresql \
     memcached \
     nodejs \
     rsyslog \

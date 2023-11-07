@@ -70,7 +70,7 @@ fi
 
 # Output database port
 echo "Database exposed on port:"
-docker compose port db 3306
+docker compose port db 5432
 
 # Start init script
 docker compose exec app /bin/zsh /docker-init.sh

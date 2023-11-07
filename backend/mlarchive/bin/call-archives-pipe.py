@@ -29,7 +29,7 @@ from subprocess import Popen, PIPE, STDOUT
     
 
 MAILARCH = '/a/mailarch/current/backend/mlarchive/bin/archive-mail.py'
-MAILTO = ['rcross@amsl.com', 'glen@amsl.com']    # send errors to these addrs
+MAILTO = ['rcross@amsl.com']    # send errors to these addrs
 
 
 def handle_error(error):

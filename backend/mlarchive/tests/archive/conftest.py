@@ -495,6 +495,11 @@ def users():
         email='staff@example.com',
         password='password',
         is_staff=True)
+    unprivileged_user = UserFactory(
+        username='unprivileged@example.com',
+        email='unprivileged@example.com',
+        password='password',
+        is_staff=False)
 
 # --------------------------------------------------
 # Celery Fixtures

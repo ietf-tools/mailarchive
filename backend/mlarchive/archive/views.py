@@ -14,6 +14,7 @@ from csp.decorators import csp_exempt
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import InvalidPage
 from django.forms.formsets import formset_factory
@@ -896,8 +897,7 @@ class MessageDetailView(DetailView):
     model = Message
 
 
-@method_decorator(staff_only, name='dispatch')
-class ReportsSubscribersView(CSVResponseMixin, TemplateView):
+class ReportsSubscribersView(LoginRequiredMixin, CSVResponseMixin, TemplateView):
     """Subscriber Counts Report"""
     template_name = 'archive/reports_subscribers.html'
     csv_fields = ['email_list.name', 'count']
@@ -916,7 +916,7 @@ class ReportsSubscribersView(CSVResponseMixin, TemplateView):
         if not date:
             date = datetime.date.today() - relativedelta(months=1)
             date = date.replace(day=1)
-        context['object_list'] = Subscriber.objects.filter(date=date)
+        context['object_list'] = Subscriber.objects.filter(email_list__private=False, date=date)
         context['date'] = date
         export_params = params.copy()
         export_params['export'] = 'csv'
@@ -924,8 +924,7 @@ class ReportsSubscribersView(CSVResponseMixin, TemplateView):
         return context
 
 
-@method_decorator(staff_only, name='dispatch')
-class ReportsMessagesView(CSVResponseMixin, TemplateView):
+class ReportsMessagesView(LoginRequiredMixin, CSVResponseMixin, TemplateView):
     """Message Counts Report"""
     template_name = 'archive/reports_messages.html'
     csv_fields = ['listname', 'count']

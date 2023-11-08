@@ -2,6 +2,8 @@ version: '3.8'
 
 services:
   app:
+    environment: 
+        - DJANGO_SETTINGS_MODULE=mlarchive.settings.settings_docker
     build:
       context: .
       dockerfile: docker/app.Dockerfile

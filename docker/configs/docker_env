@@ -1,6 +1,6 @@
 # DJANGO SETTINGS
 DEBUG=True
-SERVER_MODE=test
+SERVER_MODE=development-localauth
 SECRET_KEY='j&-5nu4sa!dcg2gnkc8tr3($4$)6&i1(!$ju7v50+t-#6jyh7e'
 DATABASES_NAME=mailarch
 DATABASES_USER=django

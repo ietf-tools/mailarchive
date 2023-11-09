@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
-from mlarchive.archive.models import Message, EmailList, Thread, Attachment
+from mlarchive.archive.models import (Message, EmailList, Thread, Attachment,
+    Subscriber)
 
 import datetime
 import factory
@@ -60,3 +61,11 @@ class UserFactory(factory.django.DjangoModelFactory):
     email = 'admin@admin.com'
     username = 'admin'
     password = factory.PostGenerationMethodCall('set_password', 'admin')
+
+
+class SubscriberFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Subscriber
+
+    count = 1
+    date = datetime.datetime.now(timezone.utc).replace(second=0, microsecond=0)

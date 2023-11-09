@@ -1,9 +1,12 @@
 $(function() {
     $('#id_q').focus();
 
-    var lists = $("#id_search_form").data("lists").split(",");
     var source = [];
-    //alert(lists[0]);
+    var lists = [];
+    var list_data = $("#id_search_form").data("lists");
+    if (list_data) {
+        lists = list_data.split(",");
+    }
     $.each(lists, function(index, value) {
       var item = new Object();
       item.id = index;

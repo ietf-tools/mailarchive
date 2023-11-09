@@ -34,6 +34,14 @@ else
     fi
 fi
 
+if [ ! -f "$WORKSPACEDIR/backend/mlarchive/settings/settings_docker.py" ]; then
+    echo "Setting up a default settings_docker.py ..."
+else
+    echo "Renaming existing backend/mlarchive/settings/settings_docker.py to backend/mlarchive/settings/settings_docker.py.bak"
+    mv -f $WORKSPACEDIR/backend/mlarchive/settings/settings_docker.py $WORKSPACEDIR/backend/mlarchive/settings/settings_docker.py.bak
+fi
+cp $WORKSPACEDIR/docker/configs/settings_docker.py $WORKSPACEDIR/backend/mlarchive/settings/settings_docker.py
+
 # Create data directories
 echo "Creating data directories..."
 for sub in \

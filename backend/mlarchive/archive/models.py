@@ -162,7 +162,7 @@ class Message(models.Model):
     in_reply_to_value = models.TextField(blank=True, default='')
     # mapping to MHonArc message number
     legacy_number = models.IntegerField(blank=True, null=True, db_index=True)
-    msgid = models.CharField(max_length=240, db_index=True)
+    msgid = models.CharField(max_length=998, db_index=True) # See RFC 2822
     references = models.TextField(blank=True, default='')
     spam_score = models.IntegerField(default=0)             # > 0 = spam
     subject = models.CharField(max_length=512, blank=True)

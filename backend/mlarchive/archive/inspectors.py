@@ -132,3 +132,10 @@ class NoArchiveInspector(Inspector):
 
     def raise_error(self):
         raise NoArchiveMessage('X-No-Archive  Message-ID: {}'.format(self.message_wrapper.msgid))
+
+
+class LongMessageIDSpamInspector(SpamInspector):
+    '''Checks if the Message-ID header exceeds max length'''
+    def has_condition(self):
+        msgid = self.message_wrapper.email_message.get('Message-ID')
+        return len(msgid) > 998

@@ -3,7 +3,8 @@ import os
 import pytest
 
 from mlarchive.archive.inspectors import (ListIdSpamInspector, SpamMessage,
-    SpamLevelSpamInspector, NoArchiveInspector, NoArchiveMessage)
+    SpamLevelSpamInspector, NoArchiveInspector, NoArchiveMessage,
+    LongMessageIDSpamInspector)
 from mlarchive.archive.mail import MessageWrapper
 
 
@@ -72,3 +73,25 @@ def test_NoArchiveInspector(client, settings):
     with pytest.raises(NoArchiveMessage) as excinfo:
         inspector.inspect()
     assert 'X-No-Archive' in str(excinfo.value)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_LongMessageIDSpamInspector(client, settings):
+    settings.INSPECTORS = {'LongMessageIDSpamInspector': {}}
+    # regular message
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail_normal.1')
+    with open(path) as f:
+        message = email.message_from_file(f)
+    mw = MessageWrapper.from_message(message, 'acme')
+    inspector = LongMessageIDSpamInspector(mw)
+    inspector.inspect()
+    # spam message
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail_long_messageid.1')
+    with open(path) as f:
+        message = email.message_from_file(f)
+    mw = MessageWrapper.from_message(message, 'acme')
+    inspector = LongMessageIDSpamInspector(mw)
+    with pytest.raises(SpamMessage) as excinfo:
+        inspector.inspect()
+    print(excinfo)
+    assert 'Spam' in str(excinfo.value)

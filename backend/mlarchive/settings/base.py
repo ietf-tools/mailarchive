@@ -271,6 +271,7 @@ INSPECTORS = {
     'ListIdExistsSpamInspector': {'includes': ['httpbisa']},
     'SpamLevelSpamInspector': {'includes': ['rfc-dist', 'rfc-interest', 'httpbisa', 'ipp', 'krb-wg', 'ietf-dkim']},
     'NoArchiveInspector': {},
+    'LongMessageIDSpamInspector': {},
 }
 
 # AUTH

@@ -10,13 +10,13 @@ RUN apt-get update \
 
 # Install the packages we need
 RUN apt-get update --fix-missing && apt-get install -qy \
-	apache2-utils \
-	apt-file \
-	bash \
-	build-essential \
-	curl \
+    apache2-utils \
+    apt-file \
+    bash \
+    build-essential \
+    curl \
     locales \
-    postgresql \
+    postgresql-client \
     memcached \
     nodejs \
     rsyslog \

@@ -34,6 +34,9 @@ RUN sed -i 's/\r$//' /tmp/app-install-chromedriver.sh && \
     chmod +x /tmp/app-install-chromedriver.sh
 RUN /tmp/app-install-chromedriver.sh
 
+# Get rid of installation files we don't need in the image, to reduce size
+RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
 # "fake" dbus address to prevent errors
 # https://github.com/SeleniumHQ/docker-selenium/issues/87
 ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
@@ -46,6 +49,10 @@ RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment && \
     locale-gen en_US.UTF-8 && \
     update-locale LC_ALL en_US.UTF-8
 ENV LC_ALL en_US.UTF-8
+
+# Fetch wait-for utility
+ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/
+RUN chmod +rx /usr/local/bin/wait-for
 
 # Create data directory
 RUN mkdir -p /data

@@ -8,6 +8,10 @@ RUN apt-get update \
     && apt-get -qy upgrade \
     && apt-get -y install --no-install-recommends apt-utils dialog 2>&1
 
+# Add PostgreSQL Source 
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
+RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+
 # Install the packages we need
 RUN apt-get update --fix-missing && apt-get install -qy \
     apache2-utils \
@@ -16,7 +20,7 @@ RUN apt-get update --fix-missing && apt-get install -qy \
     build-essential \
     curl \
     locales \
-    postgresql-client \
+    postgresql-client-14 \
     memcached \
     nodejs \
     rsyslog \

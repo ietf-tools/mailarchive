@@ -46,6 +46,13 @@ py.test --flakes archive
 py.test --pep8 archive
 ```
 
+### Test Server
+
+Follow these instructions to deploy a containerized version of the system on a test server.
+
+- Download release tarbal from GitHub and extract
+- run ./docker/run-dev
+
 ### Notes on Infrastructure
 
 This section describes some of the parts of the system that aren't obvious.

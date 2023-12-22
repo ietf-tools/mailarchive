@@ -77,28 +77,4 @@ echo "-----------------------------------------------------------------"
 echo "Done!"
 echo "-----------------------------------------------------------------"
 
-if [ -z "$EDITOR_VSCODE" ]; then
-    CODE=0
-    python -m smtpd -n -c DebuggingServer localhost:2025 &
-    if [ -z "$*" ]; then
-        echo
-        echo "You can execute arbitrary commands now, e.g.,"
-        echo
-        echo "    backend/manage.py check && backend/manage.py runserver 0.0.0.0:8000"
-        echo
-        echo "to start a development instance of the Mail Archive."
-        echo
-        echo "    cd backend/mlarchive && pytest tests"
-        echo
-        echo "to run all the tests."
-        echo
-        zsh
-    else
-        echo "Executing \"$*\" and stopping container."
-        echo
-        zsh -c "$*"
-        CODE=$?
-    fi
-    sudo service rsyslog stop
-    exit $CODE
-fi
+gunicorn --workers 4 --max-requests 32768 --timeout 180 backend.mlarchive.wsgi:application --daemon

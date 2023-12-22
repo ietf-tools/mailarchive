@@ -7,13 +7,13 @@ services:
     build:
       context: .
       dockerfile: docker/app-dev.Dockerfile
+    ports:
+      - target: 8000 published: 8005
 
     init: true
 
-    # Overrides default command so things don't shut down after the process ends.
     command: sleep infinity
 
-    # Runs app on the same network as the database container, allows "forwardPorts" in devcontainer.json function.
     # network_mode: service:db
 
     depends_on:
@@ -25,8 +25,6 @@ services:
 
   es:
     image: "elasticsearch:7.17.4"
-    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
-    # (Adding the "ports" property to this file will not forward from a Codespace.)
     environment:
         - discovery.type=single-node
         - xpack.security.enabled=false
@@ -39,11 +37,7 @@ services:
       POSTGRES_USER: django
       POSTGRES_PASSWORD: franticmarble
       POSTGRES_HOST_AUTH_METHOD: trust
-    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
-    # (Adding the "ports" property to this file will not forward from a Codespace.)
 
   rabbit:
     image: rabbitmq:3.10
     restart: always
-    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
-    # (Adding the "ports" property to this file will not forward from a Codespace.)

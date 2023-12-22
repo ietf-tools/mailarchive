@@ -53,6 +53,6 @@ RUN sudo rm -rf /tmp/pip-tmp
 COPY . .
 
 # host with gunicorn
-CMD gunicorn --workers=4 -b 0.0.0.0:80 'backend.wsgi:application'
+# CMD gunicorn --workers=4 --timeout=180 'backend.mlarchive.wsgi:application'
 
 # VOLUME [ "/assets" ]

@@ -40,6 +40,7 @@ env = environ.Env(
     OIDC_RP_CLIENT_SECRET=(str, ''),
     SCOUT_MONITOR=(bool, False),
     SCOUT_KEY=(str, ''),
+    CELERY_BROKER_URL=(str, 'amqp://'),
 )
 
 # reading .env file
@@ -294,7 +295,7 @@ CACHES = {
 }
 
 # Celery Settings
-CELERY_BROKER_URL = 'amqp://'
+CELERY_BROKER_URL = env('CELERY_BROKER_URL')
 CELERY_TIMEZONE = 'America/Los_Angeles'
 CELERY_ENABLE_UTC = True
 CELERY_DEFAULT_TASK = 'mlarchive.archive.tasks.CelerySignalHandler'

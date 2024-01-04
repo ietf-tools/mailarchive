@@ -1,6 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+# do some setup, migrate, etc
+#
 
 WORKSPACEDIR="/workspace"
+
+# add path of dev local python bin
+export PATH="$PATH:/home/dev/.local/bin"
 
 sudo service rsyslog start &>/dev/null
 
@@ -11,14 +17,6 @@ sudo chown dev:dev "/data"
 
 echo "Fix chromedriver /dev/shm permissions..."
 sudo chmod 1777 /dev/shm
-
-# Build node packages that requrie native compilation
-# echo "Compiling native node packages..."
-# yarn rebuild
-
-# Generate static assets
-# echo "Building static assets... (this could take a minute or two)"
-# yarn build
 
 # Copy config files if needed
 
@@ -73,8 +71,5 @@ echo "Running initial checks..."
 /usr/local/bin/python $WORKSPACEDIR/backend/manage.py check
 /usr/local/bin/python $WORKSPACEDIR/backend/manage.py migrate
 
-echo "-----------------------------------------------------------------"
-echo "Done!"
-echo "-----------------------------------------------------------------"
 
-exec gunicorn --workers 4 --max-requests 32768 --timeout 180 --error-logfile /data/log/gunicorn.error.log backend.mlarchive.wsgi:application --daemon
+exec "$@"

@@ -60,6 +60,6 @@ fi
 # docker compose port db 5432
 
 # Start init script
-docker compose exec app /bin/zsh /docker-init.sh
+# docker compose exec -d -u dev app /bin/bash /docker-init.sh
 
 echo "To stop: docker compose -f compose-dev.yml stop"

@@ -34,6 +34,11 @@ COPY docker/scripts/app-init-dev.sh /docker-init.sh
 RUN sed -i 's/\r$//' /docker-init.sh && \
     chmod +x /docker-init.sh
 
+COPY docker/scripts/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+COPY docker/configs/gunicorn.conf.py /gunicorn.conf.py
+
 # Fix user UID / GID to match host
 RUN groupmod --gid $USER_GID $USERNAME \
     && usermod --uid $USER_UID --gid $USER_GID $USERNAME \
@@ -43,7 +48,7 @@ RUN groupmod --gid $USER_GID $USERNAME \
 # Switch to local dev user
 USER dev:dev
 
-# Install current datatracker python dependencies
+# Install current mail archive python dependencies
 COPY requirements.txt /tmp/pip-tmp/
 RUN pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location -r /tmp/pip-tmp/requirements.txt
 RUN pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location pylint pylint-common pylint-django
@@ -53,6 +58,7 @@ RUN sudo rm -rf /tmp/pip-tmp
 COPY . .
 
 # host with gunicorn
-# CMD gunicorn --workers=4 --timeout=180 'backend.mlarchive.wsgi:application'
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["gunicorn", "-c", "/gunicorn.conf.py", "backend.mlarchive.wsgi:application"]
 
 # VOLUME [ "/assets" ]

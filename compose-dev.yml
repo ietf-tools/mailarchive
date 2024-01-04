@@ -8,11 +8,12 @@ services:
       context: .
       dockerfile: docker/app-dev.Dockerfile
     ports:
-      - target: 8000 published: 8005
+      - 8005:8000
 
     init: true
 
-    command: sleep infinity
+    # use when not using ENTRYPOINT
+    # command: sleep infinity
 
     # network_mode: service:db
 

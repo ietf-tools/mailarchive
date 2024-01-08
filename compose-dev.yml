@@ -23,12 +23,17 @@ services:
         - rabbit
 
     ipc: host
+    volumes:
+        - app-data:/data
+        - app-assets:/assets
 
   es:
     image: "elasticsearch:7.17.4"
     environment:
         - discovery.type=single-node
         - xpack.security.enabled=false
+    volumes:
+        - es-data:/usr/share/elasticsearch/data
         
   db:
     image: postgres:14.6
@@ -38,7 +43,15 @@ services:
       POSTGRES_USER: django
       POSTGRES_PASSWORD: franticmarble
       POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+        - postgresdb-data:/var/lib/postgresql/data
 
   rabbit:
     image: rabbitmq:3.10
     restart: always
+
+volumes:
+    app-assets:
+    app-data:
+    postgresdb-data:
+    es-data:

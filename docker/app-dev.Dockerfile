@@ -57,8 +57,12 @@ RUN sudo rm -rf /tmp/pip-tmp
 # Copy app files
 COPY . .
 
-# host with gunicorn
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["gunicorn", "-c", "/gunicorn.conf.py", "backend.mlarchive.wsgi:application"]
+
+# runserver
+CMD ["./backend/manage.py", "runserver", "0.0.0.0:8000"]
+
+# gunicorn
+# CMD ["gunicorn", "-c", "/gunicorn.conf.py", "backend.mlarchive.wsgi:application"]
 
 # VOLUME [ "/assets" ]

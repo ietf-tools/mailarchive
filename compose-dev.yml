@@ -50,6 +50,24 @@ services:
     image: rabbitmq:3.10
     restart: always
 
+  celery:
+    build:
+      context: .
+      dockerfile: docker/celery.Dockerfile
+    init: true
+    environment:
+      CELERY_APP: mlarchive.celeryapp:app
+      CELERY_ROLE: worker
+      UPDATE_REQUIREMENTS_FROM: requirements.txt
+      DEV_MODE: "yes"
+    depends_on:
+        - db
+    restart: unless-stopped
+    stop_grace_period: 1m
+    volumes:
+        - app-data:/data
+        - app-assets:/assets
+
 volumes:
     app-assets:
     app-data:

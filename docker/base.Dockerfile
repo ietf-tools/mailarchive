@@ -24,6 +24,7 @@ RUN apt-get update --fix-missing && apt-get install -qy \
     memcached \
     nodejs \
     rsyslog \
+    sudo \
     telnet \
     unzip \
     wget \

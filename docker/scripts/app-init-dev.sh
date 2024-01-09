@@ -43,17 +43,8 @@ cp $WORKSPACEDIR/docker/configs/settings_docker.py $WORKSPACEDIR/backend/mlarchi
 
 # Create data directories
 echo "Creating data directories..."
-for sub in \
-    /data/archive \
-    /data/log/mail-archive \
-    ; do
-    if [ ! -d "$sub"  ]; then
-        echo "Creating dir $sub"
-        mkdir -p "$sub";
-    fi
-    sudo chown -R dev:dev "/data"
-done
-
+chmod +x ./docker/scripts/app-create-dirs.sh
+./docker/scripts/app-create-dirs.sh
 
 # Wait for DB container
 

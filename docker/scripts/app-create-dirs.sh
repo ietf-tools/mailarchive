@@ -8,4 +8,5 @@ for sub in \
         echo "Creating dir $sub"
         mkdir -p "$sub";
     fi
+    sudo chown -R dev:dev "/data"
 done

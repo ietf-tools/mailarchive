@@ -22,6 +22,9 @@ CELERY_ROLE="${CELERY_ROLE:-worker}"
 
 cd "$WORKSPACEDIR" || exit 255
 
+export PYTHONPATH="${PYTHONPATH}:/workspace/backend"
+export DJANGO_SETTINGS_MODULE="mlarchive.settings.settings"
+
 if [[ -n "${UPDATE_REQUIREMENTS_FROM}" ]]; then
   # Need to run as root in the container for this
   reqs_file="${WORKSPACEDIR}/${UPDATE_REQUIREMENTS_FROM}"
@@ -75,11 +78,6 @@ cleanup () {
     wait "${celery_pid}"
   fi
 }
-
-# Create data directories
-echo "Creating data directories..."
-chmod +x ./docker/scripts/app-create-dirs.sh
-./docker/scripts/app-create-dirs.sh
 
 echo "Running checks as root to apply patches..."
 /usr/local/bin/python $WORKSPACEDIR/backend/manage.py check

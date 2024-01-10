@@ -60,8 +60,10 @@ services:
       CELERY_ROLE: worker
       UPDATE_REQUIREMENTS_FROM: requirements.txt
       DEV_MODE: "yes"
+      BROKER_URL: amqp://guest:guest@rabbit:5672//
+    # depends on /data subdirectories
     depends_on:
-        - db
+        - app
     restart: unless-stopped
     stop_grace_period: 1m
     volumes:

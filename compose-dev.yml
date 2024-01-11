@@ -3,18 +3,17 @@ version: '3.8'
 services:
   app:
     environment: 
-        - DJANGO_SETTINGS_MODULE=mlarchive.settings.settings_docker
+        # - DJANGO_SETTINGS_MODULE=mlarchive.settings.settings_docker
     build:
       context: .
-      dockerfile: docker/app-dev.Dockerfile
-    ports:
-      - 8005:8000
+      dockerfile: docker/app.Dockerfile
 
     init: true
 
-    # use when not using ENTRYPOINT
-    # command: sleep infinity
+    # Overrides default command so things don't shut down after the process ends.
+    command: sleep infinity
 
+    # Runs app on the same network as the database container, allows "forwardPorts" in devcontainer.json function.
     # network_mode: service:db
 
     depends_on:
@@ -23,17 +22,14 @@ services:
         - rabbit
 
     ipc: host
-    volumes:
-        - app-data:/data
-        - app-assets:/assets
 
   es:
     image: "elasticsearch:7.17.4"
+    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
+    # (Adding the "ports" property to this file will not forward from a Codespace.)
     environment:
         - discovery.type=single-node
         - xpack.security.enabled=false
-    volumes:
-        - es-data:/usr/share/elasticsearch/data
         
   db:
     image: postgres:14.6
@@ -43,36 +39,11 @@ services:
       POSTGRES_USER: django
       POSTGRES_PASSWORD: franticmarble
       POSTGRES_HOST_AUTH_METHOD: trust
-    volumes:
-        - postgresdb-data:/var/lib/postgresql/data
-        - app-assets:/assets
-        
+    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
+    # (Adding the "ports" property to this file will not forward from a Codespace.)
+
   rabbit:
     image: rabbitmq:3.10
     restart: always
-
-  celery:
-    build:
-      context: .
-      dockerfile: docker/celery.Dockerfile
-    init: true
-    environment:
-      CELERY_APP: mlarchive.celeryapp:app
-      CELERY_ROLE: worker
-      UPDATE_REQUIREMENTS_FROM: requirements.txt
-      DEV_MODE: "yes"
-      BROKER_URL: amqp://guest:guest@rabbit:5672//
-    # depends on /data subdirectories
-    depends_on:
-        - app
-    restart: unless-stopped
-    stop_grace_period: 1m
-    volumes:
-        - app-data:/data
-        - app-assets:/assets
-
-volumes:
-    app-assets:
-    app-data:
-    postgresdb-data:
-    es-data:
+    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
+    # (Adding the "ports" property to this file will not forward from a Codespace.)

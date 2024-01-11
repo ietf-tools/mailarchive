@@ -30,7 +30,7 @@ RUN bash /tmp/library-scripts/python-debian.sh "none" "/usr/local" "${PIPX_HOME}
 RUN rm -rf /tmp/library-scripts
 
 # Copy the startup file
-COPY docker/scripts/app-init-dev.sh /docker-init.sh
+COPY docker/scripts/app-init-sandbox.sh /docker-init.sh
 RUN sed -i 's/\r$//' /docker-init.sh && \
     chmod +x /docker-init.sh
 

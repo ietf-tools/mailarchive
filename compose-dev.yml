@@ -45,7 +45,8 @@ services:
       POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
         - postgresdb-data:/var/lib/postgresql/data
-
+        - app-assets:/assets
+        
   rabbit:
     image: rabbitmq:3.10
     restart: always

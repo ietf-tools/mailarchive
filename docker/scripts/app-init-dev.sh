@@ -8,6 +8,7 @@ sudo service rsyslog start &>/dev/null
 echo "Fixing volumes ownership..."
 sudo chown -R dev:dev "$WORKSPACEDIR"
 sudo chown dev:dev "/data"
+sudo chown dev:dev "/assets"
 
 echo "Fix chromedriver /dev/shm permissions..."
 sudo chmod 1777 /dev/shm

@@ -103,13 +103,17 @@
                                 </form>
                             </li>
                         {% else %}
-                            <li><a class="dropdown-item" id="dt_signout_link" href="{% url 'reg-logout' %}">Sign Out</a></li>
+                            <li><a class="dropdown-item" id="dt_signout_link" href="{% url 'archive_logout' %}">Sign Out</a></li>
                         {% endif %}
                         </ul>
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'oidc_authentication_init' %}" rel="nofollow">Sign in</a>
+                        {% if server_mode == "production" or server_mode == "development" %}
+                            <a class="nav-link" href="{% url 'oidc_authentication_init' %}" rel="nofollow">Sign in</a>
+                        {% else %}
+                            <a class="nav-link" href="{% url 'login' %}" rel="nofollow">Sign in</a>
+                        {% endif %}
                     </li>
                     {% endif %}
                 </ul>

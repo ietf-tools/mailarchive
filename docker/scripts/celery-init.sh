@@ -19,7 +19,6 @@
 #
 WORKSPACEDIR="/workspace"
 CELERY_ROLE="${CELERY_ROLE:-worker}"
-CELERY_LOG_LEVEL="${CELERY_LOG_LEVEL:-info}"
 
 cd "$WORKSPACEDIR" || exit 255
 
@@ -34,7 +33,6 @@ if [[ -n "${UPDATE_REQUIREMENTS_FROM}" ]]; then
 fi
 
 CELERY_OPTS=( "${CELERY_ROLE}" )
-CELERY_OPTS+=("--loglevel=${CELERY_LOG_LEVEL}")
 if [[ -n "${CELERY_UID}" ]]; then
   # ensure that a user with the necessary UID exists in container
   if ! id "${CELERY_UID}" ; then

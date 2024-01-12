@@ -48,8 +48,8 @@ RUN sudo rm -rf /tmp/pip-tmp
 COPY . .
 
 # Copy configuration files
-COPY /workspace/docker/configs/docker_env /workspace/.env
-COPY /workspace/docker/configs/settings_docker.py  \
+COPY docker/configs/docker_env /workspace/.env
+COPY docker/configs/settings_docker.py  \
   /workspace/backend/mlarchive/settings/settings_docker.py
 
 ENTRYPOINT ["docker-entrypoint.sh"]

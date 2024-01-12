@@ -25,5 +25,7 @@ COPY . .
 
 # Copy settings
 COPY docker/configs/docker_env /workspace/.env
+COPY docker/configs/settings_docker.py  \
+  /workspace/backend/mlarchive/settings/settings_docker.py
 
 ENTRYPOINT [ "/docker-init.sh" ]

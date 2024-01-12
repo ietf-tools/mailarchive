@@ -48,7 +48,7 @@ services:
         - app-assets:/assets
         
   rabbit:
-    image: rabbitmq:3.10
+    image: rabbitmq:3.12-alpine
     restart: always
 
   celery:

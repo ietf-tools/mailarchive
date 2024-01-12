@@ -29,21 +29,11 @@ RUN bash /tmp/library-scripts/python-debian.sh "none" "/usr/local" "${PIPX_HOME}
 # Remove library scripts for final image
 RUN rm -rf /tmp/library-scripts
 
-# Copy the startup file
-COPY docker/scripts/app-init-sandbox.sh /docker-init.sh
-RUN sed -i 's/\r$//' /docker-init.sh && \
-    chmod +x /docker-init.sh
-
 COPY docker/scripts/docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh && \
+    chmod +x /usr/local/bin/docker-entrypoint.sh
 
 COPY docker/configs/gunicorn.conf.py /gunicorn.conf.py
-
-# Fix user UID / GID to match host
-RUN groupmod --gid $USER_GID $USERNAME \
-    && usermod --uid $USER_UID --gid $USER_GID $USERNAME \
-    && chown -R $USER_UID:$USER_GID /home/$USERNAME \
-    || exit 0
 
 # Switch to local dev user
 USER dev:dev
@@ -57,6 +47,11 @@ RUN sudo rm -rf /tmp/pip-tmp
 # Copy app files
 COPY . .
 
+# Copy configuration files
+COPY /workspace/docker/configs/docker_env /workspace/.env
+COPY /workspace/docker/configs/settings_docker.py  \
+  /workspace/backend/mlarchive/settings/settings_docker.py
+
 ENTRYPOINT ["docker-entrypoint.sh"]
 
 # runserver
@@ -64,5 +59,3 @@ CMD ["./backend/manage.py", "runserver", "0.0.0.0:8000"]
 
 # gunicorn
 # CMD ["gunicorn", "-c", "/gunicorn.conf.py", "backend.mlarchive.wsgi:application"]
-
-# VOLUME [ "/assets" ]

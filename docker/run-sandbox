@@ -1,0 +1,62 @@
+#!/bin/bash
+
+# Usage info
+show_help() {
+    cat << EOF
+Usage: ${0##*/} [-h] [-p PORT] [-r]
+Run mail archive in dev containers using docker-compose.
+    -h          display this help and exit
+    -p PORT     use custom HTTP port for mail archive
+    -r          force rebuild the app container
+EOF
+}
+
+CUSTOM_PORT=8000
+FORCE_REBUILD=0
+
+while getopts "hp:r" opt; do
+    case $opt in
+        h)
+            show_help
+            exit 0
+            ;;
+        p)  
+            CUSTOM_PORT=$OPTARG
+            echo "Using custom port $CUSTOM_PORT..."
+            ;;
+        r)
+            FORCE_REBUILD=1
+            echo "Will force rebuild the app container..."
+            ;;
+        *)
+            CUSTOM_PORT=8000
+            echo "Using port 8000..."
+            ;;
+    esac
+done
+
+# Remove mounted temp directories
+# rm -rf .parcel-cache __pycache__
+
+# Create extended docker-compose definition
+# cp docker-compose.extend.yml docker-compose.extend-custom.yml
+# sed -i -r -e "s/CUSTOM_PORT/$CUSTOM_PORT/" docker-compose.extend-custom.yml
+# cd ..
+
+
+# Build / Rebuild Containers
+if [ $FORCE_REBUILD ==  1 ]; then
+    docker compose -f compose-sandbox.yml down
+    docker compose -f compose-sandbox.yml rm -f
+    docker compose -f compose-sandbox.yml build --no-cache --pull
+    docker compose -f compose-sandbox.yml up -d --force-recreate
+else
+    docker compose -f compose-sandbox.yml build 
+    docker compose -f compose-sandbox.yml up -d
+fi
+
+# Output database port
+# echo "Database exposed on port:"
+# docker compose port db 5432
+
+echo "To stop: docker compose -f compose-sandbox.yml stop"

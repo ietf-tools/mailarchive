@@ -36,30 +36,46 @@ while getopts "hp:r" opt; do
 done
 
 # Remove mounted temp directories
-# rm -rf .parcel-cache __pycache__
+rm -rf .parcel-cache __pycache__
 
 # Create extended docker-compose definition
-# cp docker-compose.extend.yml docker-compose.extend-custom.yml
-# sed -i -r -e "s/CUSTOM_PORT/$CUSTOM_PORT/" docker-compose.extend-custom.yml
-# cd ..
+cp docker-compose.extend.yml docker-compose.extend-custom.yml
+sed -i -r -e "s/CUSTOM_PORT/$CUSTOM_PORT/" docker-compose.extend-custom.yml
+cd ..
 
+# Set UID/GID mappings
+NEW_UID=$(id -u)
+NEW_GID=$(id -g)
+if [ $NEW_UID -gt 0 ]; then
+    echo "Will use the following user/group mapping:"
+    echo "USER ID: $NEW_UID"
+    echo "GROUP ID: $NEW_GID"
+else
+    echo "Running as root, will use default user/group mapping..."
+    echo "NOT RECOMMENDED - You may experience permission issues."
+    NEW_UID=1000
+    NEW_GID=1000
+fi
 
 # Build / Rebuild Containers
 if [ $FORCE_REBUILD ==  1 ]; then
-    docker compose -f compose-dev.yml down
-    docker compose -f compose-dev.yml rm -f
-    docker compose -f compose-dev.yml build --no-cache --pull
-    docker compose -f compose-dev.yml up -d --force-recreate
+    docker compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml down
+    docker compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml rm -f
+    docker compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml build --no-cache --pull --build-arg USER_UID=$NEW_UID --build-arg USER_GID=$NEW_GID
+    docker compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml up -d --force-recreate
 else
-    docker compose -f compose-dev.yml build 
-    docker compose -f compose-dev.yml up -d
+    docker compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml build --build-arg USER_UID=$NEW_UID --build-arg USER_GID=$NEW_GID
+    docker compose -f docker-compose.yml -f docker/docker-compose.extend-custom.yml up -d
 fi
 
 # Output database port
-# echo "Database exposed on port:"
-# docker compose port db 5432
+echo "Database exposed on port:"
+docker compose port db 5432
 
 # Start init script
-# docker compose exec -d -u dev app /bin/bash /docker-init.sh
+docker compose exec app /bin/zsh /docker-init.sh
 
-echo "To stop: docker compose -f compose-dev.yml stop"
+# Exit scripts
+docker compose stop
+cd docker
+rm -f docker-compose.extend-custom.yml

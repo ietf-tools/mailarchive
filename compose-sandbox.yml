@@ -62,6 +62,8 @@ services:
       UPDATE_REQUIREMENTS_FROM: requirements.txt
       DEV_MODE: "yes"
       BROKER_URL: amqp://guest:guest@rabbit:5672//
+    command:
+      - '--loglevel=INFO'
     # depends on /data subdirectories
     depends_on:
         - app

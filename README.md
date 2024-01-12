@@ -19,39 +19,38 @@
 - [Development](#development)
   - [Prerequisites](#prerequisites)
   - [Running Tests](#running-tests)
-- [Notes on Infrastructures](#notes-on-infrastructure)
+- [Notes on Infrastructure](#notes-on-infrastructure)
 - [CDN Integration](#cdn-integration)
 
 ---
 
-### Development
+### Development (VScode)
 
-What follows are instructions for setting up a development environment on macOS. These instructions were tested on a MacBook Pro running macOS 10.13.6 (High Sierra).
+This project supports VSCode Dev Containers. Open the project in VSCode and choose restart in container. To run tests: Terminal -> Run Task -> Run All Tests
 
-#### Prerequisites
+### Sandbox Server
 
-- PostgreSQL 14.6
-- Node.js 16.x
-- Python 3.9
-
-#### Running Tests
-
-From the root of the project working directory:
-
-```sh
-export PYTHONPATH=$PWD
-cd backend/mlarchive
-py.test tests
-py.test --flakes archive
-py.test --pep8 archive
-```
-
-### Test Server
-
-Follow these instructions to deploy a containerized version of the system on a test server.
+Follow these instructions to deploy a containerized version of the system on a staging server.
 
 - Download release tarbal from GitHub and extract
-- run ./docker/run-dev
+```sh
+mkdir 2.20.12
+cd 2.20.12
+wget https://github.com/ietf-tools/mailarchive/releases/download/2.20.12/release.tar.gz
+tar xvzf release.tar.gz
+```
+- Run compose
+```sh
+docker compose -f compose-sandbox.yml up -d
+``` 
+
+#### Load sample data
+
+To load some sample data (messages for a few small lists), from within the app container:
+```sh
+cd backend/mlarchive/bin
+./load_sample_data.sh
+```
 
 ### Notes on Infrastructure
 

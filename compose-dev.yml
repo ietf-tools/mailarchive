@@ -43,7 +43,7 @@ services:
     # (Adding the "ports" property to this file will not forward from a Codespace.)
 
   rabbit:
-    image: rabbitmq:3.10
+    image: rabbitmq:3.12-alpine
     restart: always
     # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
     # (Adding the "ports" property to this file will not forward from a Codespace.)

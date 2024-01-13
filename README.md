@@ -17,14 +17,12 @@
 - [Changelog](https://github.com/ietf-tools/mailarch/releases)
 - [Contributing](https://github.com/ietf-tools/.github/blob/main/CONTRIBUTING.md)
 - [Development](#development)
-  - [Prerequisites](#prerequisites)
-  - [Running Tests](#running-tests)
-- [Notes on Infrastructure](#notes-on-infrastructure)
-- [CDN Integration](#cdn-integration)
+- [Sandbox Server](#sandbox-server)
+
 
 ---
 
-### Development (VScode)
+### Development
 
 This project supports VSCode Dev Containers. Open the project in VSCode and choose restart in container. To run tests: Terminal -> Run Task -> Run All Tests
 
@@ -51,19 +49,3 @@ To load some sample data (messages for a few small lists), from within the app c
 cd backend/mlarchive/bin
 ./load_sample_data.sh
 ```
-
-### Notes on Infrastructure
-
-This section describes some of the parts of the system that aren't obvious.
-
-1) How are records added to the index?
-
-When a Message object is saved, the system uses Django Signals to enqueue a Celery task to update the Elasticsearch index. See mlarchive/archive/signals.py, CelerySignalProcessor.  Initialized in archive/apps.py via settings.ELASTICSEARCH_SIGNAL_PROCESSOR.
-
-`CelerySignalProcessor`: when objects are save checks to see if an index exists for them. If so calls task to update index.
-
-### CDN Integration *(Cloudflare)*
-
-As of `v1.12.4`, mail archive supports a "Static Mode" which resembles the MHonArc interface.
-When enabled, from the Settings menu, the user is directed to `/arch/browse/static/` pages.
-Cloudflare has been configured to cache these pages for `CACHE_CONTROL_MAX_AGE`.

@@ -14,7 +14,8 @@ from django.contrib.auth.models import AnonymousUser
 from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     lookup_user, process_members, get_membership, check_inactive, EmailList,
     create_mbox_file, _get_lists_as_xml, get_subscribers, Subscriber,
-    get_known_mailman_lists, get_subscriber_count)
+    get_known_mailman_lists, get_subscriber_count, get_subscribers_3,
+    get_mailman_lists, get_membership_3)
 from mlarchive.archive.models import User
 from factories import EmailListFactory
 
@@ -153,6 +154,42 @@ def test_get_membership(mock_post, mock_output):
     assert os.path.exists(path)
 
 
+@patch('requests.get')
+@patch('requests.post')
+@pytest.mark.django_db(transaction=True)
+def test_get_membership_3(mock_post, mock_get):
+    # setup
+    path = os.path.join(settings.EXPORT_DIR, 'email_lists.xml')
+    if os.path.exists(path):
+        os.remove(path)
+
+    private = EmailListFactory.create(name='bee', private=True)
+    
+    # prep mock
+    response_lists = requests.Response()
+    response_lists.status_code = 200
+    response_lists._content = b'{"start": 0, "total_size": 1, "entries": [{"advertised": true, "display_name": "Bee", "fqdn_listname": "bee@lists.example.com", "list_id": "bee.lists.example.com", "list_name": "bee", "mail_host": "lists.example.com", "member_count": 1, "volume": 1, "description": "", "self_link": "http://172.19.199.3:8001/3.1/lists/bee.lists.example.com", "http_etag": "fb6d81b0f573936532b0b02d4d2116023a9e56a8"}], "http_etag": "ef59c8ea7baa670940fd87f99fce83ba5013381f"}'
+    response_subscribers = requests.Response()
+    response_subscribers.status_code = 200
+    response_subscribers._content = b'{"start": 0, "total_size": 1, "entries": [{"email": "bperson@example.com", "http_etag": "\\"9baeb8580e60c8f5d3f0bab8d369ec8bff31a4b6\\""}], "http_etag": "\\"36668874b31dc412bf586dcdb7009f6524be1035\\""}'
+    response_lookup = requests.Response()
+    response_lookup.status_code = 200
+    response_lookup._content = b'{"person.person": {"1": {"user": {"username": "bperson@example.com"}}}}'
+    
+    # handle multiple calls to mock_get
+    mock_get.side_effect = [
+        response_lists,
+        response_subscribers]
+    mock_post.return_value = response_lookup
+    assert private.members.count() == 0
+    options = DummyOptions()
+    options.quiet = True
+    get_membership_3(quiet=True)
+    assert private.members.count() == 1
+    assert private.members.first().username == 'bperson@example.com'
+    assert os.path.exists(path)
+
+
 class DummyOptions(object):
     pass
 
@@ -254,6 +291,32 @@ def test_get_known_mailman_lists(mock_output):
     public = EmailListFactory.create(name='public')
     private = EmailListFactory.create(name='private', private=True)
     mock_output.return_value = b'    public - Public Email List\n   private - Private Email List'
-    mlists = get_known_mailman_lists(private=False)
+    mlists = get_known_mailman_lists(private=True)
     assert len(mlists) == 1
-    assert list(mlists) == [public]
+    assert list(mlists) == [private]
+
+
+@patch('requests.get')
+@pytest.mark.django_db(transaction=True)
+def test_get_mailman_lists(mock_get):
+    ant = EmailListFactory.create(name='ant')
+    bee = EmailListFactory.create(name='bee', private=True)
+    response = requests.Response()
+    response.status_code = 200
+    response._content = b'{"start": 0, "total_size": 2, "entries": [{"advertised": true, "display_name": "Ant", "fqdn_listname": "ant@lists.example.com", "list_id": "ant.lists.example.com", "list_name": "ant", "mail_host": "lists.example.com", "member_count": 0, "volume": 1, "description": "", "self_link": "http://172.19.199.3:8001/3.1/lists/ant.lists.example.com", "http_etag": "cb67744198a68efb427c24fab35d9fc593186d6c"}, {"advertised": true, "display_name": "Bee", "fqdn_listname": "bee@lists.example.com", "list_id": "bee.lists.example.com", "list_name": "bee", "mail_host": "lists.example.com", "member_count": 1, "volume": 1, "description": "", "self_link": "http://172.19.199.3:8001/3.1/lists/bee.lists.example.com", "http_etag": "fb6d81b0f573936532b0b02d4d2116023a9e56a8"}], "http_etag": "ef59c8ea7baa670940fd87f99fce83ba5013381f"}'
+    mock_get.return_value = response
+    mlists = get_mailman_lists(private=True)
+    assert len(mlists) == 1
+    assert list(mlists) == [bee]
+
+
+@patch('requests.get')
+@pytest.mark.django_db(transaction=True)
+def test_get_subscribers_3(mock_get):
+    response = requests.Response()
+    response.status_code = 200
+    response._content = b'{"start": 0, "total_size": 1, "entries": [{"email": "bperson@example.com", "http_etag": "\\"9baeb8580e60c8f5d3f0bab8d369ec8bff31a4b6\\""}], "http_etag": "\\"36668874b31dc412bf586dcdb7009f6524be1035\\""}'
+    mock_get.return_value = response
+    public = EmailListFactory.create(name='public')
+    subs = get_subscribers_3('public')
+    assert subs == ['bperson@example.com']

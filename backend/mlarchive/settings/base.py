@@ -41,6 +41,9 @@ env = environ.Env(
     SCOUT_MONITOR=(bool, False),
     SCOUT_KEY=(str, ''),
     CELERY_BROKER_URL=(str, 'amqp://'),
+    MAILMAN_API_ORIGIN=(str, 'http://localhost:8001'),
+    MAILMAN_API_USER=(str, ''),
+    MAILMAN_API_PASSWORD=(str, ''),
 )
 
 # reading .env file
@@ -237,7 +240,17 @@ FILTER_CUTOFF = 5000            # maximum results for which we'll provide filter
 
 LOG_DIR = env('LOG_DIR')
 LOG_FILE = os.path.join(LOG_DIR, 'mlarchive.log')
+
+# MAILMAN SETTINGS
 MAILMAN_DIR = '/usr/lib/mailman'
+MAILMAN_API_ORIGIN = env('MAILMAN_API_ORIGIN')
+MAILMAN_API_LISTS = MAILMAN_API_ORIGIN + '/3.1/lists'
+MAILMAN_API_MEMBER = MAILMAN_API_ORIGIN + '/3.1/lists/{listname}/roster/member?fields=email'
+MAILMAN_API_USER = env('MAILMAN_API_USER')
+MAILMAN_API_PASSWORD = env('MAILMAN_API_PASSWORD')
+
+# Default timeout for HTTP requests via the requests library
+DEFAULT_REQUESTS_TIMEOUT = 20  # seconds
 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_COOKIE_SECURE = True

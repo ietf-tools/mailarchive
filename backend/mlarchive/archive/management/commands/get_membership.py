@@ -12,4 +12,4 @@ class Command(BaseCommand):
             help="Don't print lists as they are processed")
 
     def handle(self, *args, **options):
-        get_membership_3(quiet=quiet)
+        get_membership_3(quiet=options['quiet'])

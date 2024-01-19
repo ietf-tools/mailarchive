@@ -38,6 +38,7 @@ def _export_lists():
     # Dump XML
     data = _get_lists_as_xml()
     path = os.path.join(settings.EXPORT_DIR, 'email_lists.xml')
+    logger.info(f'Creating email list export file: {path}')
     try:
         if not os.path.exists(settings.EXPORT_DIR):
             os.mkdir(settings.EXPORT_DIR)

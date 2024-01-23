@@ -15,7 +15,7 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     lookup_user, process_members, get_membership, check_inactive, EmailList,
     create_mbox_file, _get_lists_as_xml, get_subscribers, Subscriber,
     get_known_mailman_lists, get_subscriber_count, get_subscribers_3,
-    get_mailman_lists, get_membership_3)
+    get_mailman_lists, get_membership_3, get_subscriber_counts)
 from mlarchive.archive.models import User
 from factories import EmailListFactory
 
@@ -283,6 +283,28 @@ def test_get_subscriber_count(mock_output):
     assert subscriber.email_list == public
     assert subscriber.date == datetime.date.today()
     assert subscriber.count == 3
+
+
+@patch('requests.get')
+@pytest.mark.django_db(transaction=True)
+def test_get_subscriber_counts(mock_get):
+    response_lists = requests.Response()
+    response_lists.status_code = 200
+    response_lists._content = b'{"start": 0, "total_size": 1, "entries": [{"advertised": true, "display_name": "Bee", "fqdn_listname": "bee@lists.example.com", "list_id": "bee.lists.example.com", "list_name": "bee", "mail_host": "lists.example.com", "member_count": 1, "volume": 1, "description": "", "self_link": "http://172.19.199.3:8001/3.1/lists/bee.lists.example.com", "http_etag": "fb6d81b0f573936532b0b02d4d2116023a9e56a8"}], "http_etag": "ef59c8ea7baa670940fd87f99fce83ba5013381f"}'
+    response_subscribers = requests.Response()
+    response_subscribers.status_code = 200
+    response_subscribers._content = b'{"start": 0, "total_size": 1, "entries": [{"email": "bperson@example.com", "http_etag": "\\"9baeb8580e60c8f5d3f0bab8d369ec8bff31a4b6\\""}], "http_etag": "\\"36668874b31dc412bf586dcdb7009f6524be1035\\""}'
+    # handle multiple calls to mock_get
+    mock_get.side_effect = [
+        response_lists,
+        response_subscribers]
+    public = EmailListFactory.create(name='bee')
+    assert Subscriber.objects.count() == 0
+    get_subscriber_counts()
+    subscriber = Subscriber.objects.first()
+    assert subscriber.email_list == public
+    assert subscriber.date == datetime.date.today()
+    assert subscriber.count == 1
 
 
 @patch('subprocess.check_output')

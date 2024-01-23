@@ -257,6 +257,17 @@ def get_subscriber_count():
         Subscriber.objects.create(email_list=mlist, count=len(get_subscribers(mlist.name)))
 
 
+def get_subscriber_counts():
+    '''Populates Subscriber table with subscriber counts from mailman 3 API'''
+    for mlist in get_mailman_lists():
+        try:
+            subscribers = get_subscribers_3(mlist.name)
+            Subscriber.objects.create(email_list=mlist, count=len(subscribers))
+        except requests.RequestException as e:
+            logger.error(f'get_subscribers_3 failed. listname={mlist.name}. {e}')
+            continue
+
+
 def get_membership(options, args):
     # disconnect the EmailList post_save signal, we don't want to call it multiple
     # times if many lists memberships have changed

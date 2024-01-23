@@ -215,19 +215,13 @@ def get_known_mailman_lists(private=None):
 def get_mailman_lists(private=None):
     '''Returns EmailLists that are managed by mailman 3.
     Specify list.private value or leave out to retrieve all lists.
+    Raises requests.RequestException if request fails.
     '''
-    url = settings.MAILMAN_API_LISTS
-    try:
-        response = requests.get(
-            url,
-            auth=(settings.MAILMAN_API_USER, settings.MAILMAN_API_PASSWORD),
-            timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
-    except requests.Timeout as exc:
-        logger.error(f'GET request timed out for [{url}]: {exc}')
-        return []
-    if response.status_code != 200:
-        logger.error(f'Error retrieving mailman lists [{url}]: (status_code={response.status_code})')
-        return []
+    response = requests.get(
+        settings.MAILMAN_API_LISTS,
+        auth=(settings.MAILMAN_API_USER, settings.MAILMAN_API_PASSWORD),
+        timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
+    response.raise_for_status()
     data = response.json()
     mailman_lists = [e['list_name'] for e in data['entries']]
     mlists = EmailList.objects.filter(name__in=mailman_lists)
@@ -248,18 +242,11 @@ def get_subscribers(listname):
 
 def get_subscribers_3(listname):
     '''Gets list of subscribers for listname from mailman 3 API'''
-    url = settings.MAILMAN_API_MEMBER.format(listname=listname)
-    try:
-        response = requests.get(
-            url,
-            auth=(settings.MAILMAN_API_USER, settings.MAILMAN_API_PASSWORD),
-            timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
-    except requests.Timeout as exc:
-        logger.error(f'GET request timed out for [{url}]: {exc}')
-        return []
-    if response.status_code != 200:
-        logger.error(f'Error retrieving mailman list subscribers [{url}]: (status_code={response.status_code})')
-        return []
+    response = requests.get(
+        settings.MAILMAN_API_MEMBER.format(listname=listname),
+        auth=(settings.MAILMAN_API_USER, settings.MAILMAN_API_PASSWORD),
+        timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
+    response.raise_for_status()
     data = response.json()
     return [e['email'] for e in data['entries']]
 
@@ -300,7 +287,13 @@ def get_membership_3(quiet=False):
         if not quiet:
             print("Processing: %s" % mlist.name)
 
-        subscribers = get_subscribers_3(mlist.name)
+        # handle these exceptions locally because calls for
+        # other lists may succeed
+        try:
+            subscribers = get_subscribers_3(mlist.name)
+        except requests.RequestException as e:
+            logger.error(f'get_subscribers failed. listname={mlist.name}. {e}')
+            continue
         sha = hashlib.sha1(smart_bytes(subscribers))
         digest = base64.urlsafe_b64encode(sha.digest())
         if mlist.members_digest != digest:

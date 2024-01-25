@@ -1,10 +1,12 @@
 import datetime
+import json
 import pytest
+import os
 from datetime import timezone 
 
 from django.urls import reverse
 from factories import EmailListFactory, MessageFactory
-from mlarchive.archive.models import Subscriber
+from mlarchive.archive.models import Subscriber, Message, EmailList
 
 
 @pytest.mark.django_db(transaction=True)
@@ -189,3 +191,148 @@ def test_subscriber_counts_not_exist(client, subscribers):
     response = client.get(url)
     assert response.status_code == 200
     assert response.json() == {}
+
+
+def get_error_message(response):
+    content = response.content.decode('utf-8')
+    data_as_dict = json.loads(content)
+    return data_as_dict['error']
+
+
+@pytest.mark.django_db(transaction=True)
+def test_import_message(client, settings):
+    settings.API_KEYS = {'abcdefg': '/api/v1/message/'}
+    url = reverse('api_import_message', kwargs={'list_name': 'apple', 'list_type': 'public'})
+    print(url)
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
+    with open(path, 'rb') as f:
+        message = f.read()
+    data = message
+
+    # test setup
+    assert Message.objects.count() == 0
+    assert EmailList.objects.filter(name='apple').exists() is False
+    print(settings.INCOMING_DIR)
+    incoming_dir = settings.INCOMING_DIR
+    assert os.path.isdir(incoming_dir)
+    for file in os.listdir(incoming_dir):
+        file_path = os.path.join(incoming_dir, file)
+        os.remove(file_path)
+    assert len(os.listdir(incoming_dir)) == 0
+
+    # no api key
+    response = client.post(
+        url,
+        data=data,
+        headers={},
+        content_type='application/octet-stream')
+    assert response.status_code == 400
+    assert get_error_message(response) == 'Missing apikey parameter'
+
+    # invalid api key
+    response = client.post(
+        url,
+        data=data,
+        headers={'Authorization': 'Bearer bogus'},
+        content_type='application/octet-stream')
+    assert response.status_code == 403
+    assert get_error_message(response) == 'Invalid apikey'
+
+    # valid request
+    response = client.post(
+        url,
+        data=data,
+        headers={'Authorization': 'Bearer abcdefg'},
+        content_type='application/octet-stream')
+    print(response, response.content)
+    assert response.status_code == 201
+
+    # assert file exists in incoming
+    assert len(os.listdir(incoming_dir)) == 1
+    assert os.listdir(incoming_dir)[0].startswith('apple.public.')
+
+    # assert list exists
+    assert EmailList.objects.filter(name='apple', private=False).exists()
+
+    # assert message exists, message-id
+    msg = Message.objects.get(email_list__name='apple', msgid='0000000001@amsl.com')
+    assert msg.subject == 'This is a test'
+
+    # assert file exists in archive
+    assert os.path.exists(msg.get_file_path())
+
+
+@pytest.mark.django_db(transaction=True)
+def test_import_message_private(client, settings):
+    '''Ensure list_type variable is respected'''
+    settings.API_KEYS = {'abcdefg': '/api/v1/message/'}
+    url = reverse('api_import_message', kwargs={'list_name': 'apple', 'list_type': 'private'})
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
+    with open(path, 'rb') as f:
+        message = f.read()
+    data = message
+
+    # test setup
+    assert Message.objects.count() == 0
+    assert EmailList.objects.filter(name='apple').exists() is False
+    incoming_dir = settings.INCOMING_DIR
+    assert os.path.isdir(incoming_dir)
+    for file in os.listdir(incoming_dir):
+        file_path = os.path.join(incoming_dir, file)
+        os.remove(file_path)
+    assert len(os.listdir(incoming_dir)) == 0
+
+    # valid request
+    response = client.post(
+        url,
+        data=data,
+        headers={'Authorization': 'Bearer abcdefg'},
+        content_type='application/octet-stream')
+    print(response, response.content)
+    assert response.status_code == 201
+
+    # assert file exists in incoming
+    assert len(os.listdir(incoming_dir)) == 1
+    assert os.listdir(incoming_dir)[0].startswith('apple.private.')
+
+    # assert list exists
+    assert EmailList.objects.filter(name='apple', private=True).exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_import_message_failure(client, settings):
+    '''Test various failure scenarios.
+    Bogus message,
+    '''
+    settings.API_KEYS = {'abcdefg': '/api/v1/message/'}
+    url = reverse('api_import_message', kwargs={'list_name': 'apple', 'list_type': 'public'})
+    # path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
+    # with open(path, 'rb') as f:
+    #    message = f.read()
+    data = b'This is not an email'
+
+    # test setup
+    assert Message.objects.count() == 0
+    assert EmailList.objects.filter(name='apple').exists() is False
+    incoming_dir = settings.INCOMING_DIR
+    assert os.path.isdir(incoming_dir)
+    for file in os.listdir(incoming_dir):
+        file_path = os.path.join(incoming_dir, file)
+        os.remove(file_path)
+    assert len(os.listdir(incoming_dir)) == 0
+
+    # valid request
+    response = client.post(
+        url,
+        data=data,
+        headers={'Authorization': 'Bearer abcdefg'},
+        content_type='application/octet-stream')
+    print(response, response.content)
+    assert response.status_code == 400
+
+    # assert file exists in incoming
+    assert len(os.listdir(incoming_dir)) == 1
+    assert os.listdir(incoming_dir)[0].startswith('apple.public.')
+
+    # assert list does not exist
+    assert not EmailList.objects.filter(name='apple', private=False).exists()

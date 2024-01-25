@@ -44,6 +44,7 @@ env = environ.Env(
     MAILMAN_API_ORIGIN=(str, 'http://localhost:8001'),
     MAILMAN_API_USER=(str, ''),
     MAILMAN_API_PASSWORD=(str, ''),
+    IMPORT_MESSAGE_APIKEY=(str, ''),
 )
 
 # reading .env file
@@ -231,6 +232,7 @@ REFERRER_POLICY = 'strict-origin-when-cross-origin'
 ARCHIVE_HOST_URL = 'https://mailarchive.ietf.org'
 DATA_ROOT = env('DATA_ROOT')
 ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
+INCOMING_DIR = os.path.join(DATA_ROOT, 'incoming')
 ARCHIVE_MBOX_DIR = os.path.join(DATA_ROOT, 'archive_mbox')
 CONSOLE_STATS_FILE = os.path.join(DATA_ROOT, 'log', 'console.json')
 
@@ -248,6 +250,12 @@ MAILMAN_API_LISTS = MAILMAN_API_ORIGIN + '/3.1/lists'
 MAILMAN_API_MEMBER = MAILMAN_API_ORIGIN + '/3.1/lists/{listname}/roster/member?fields=email'
 MAILMAN_API_USER = env('MAILMAN_API_USER')
 MAILMAN_API_PASSWORD = env('MAILMAN_API_PASSWORD')
+IMPORT_MESSAGE_APIKEY = env('IMPORT_MESSAGE_APIKEY')
+
+# API KEYS: key=apikey, value=endpoint
+API_KEYS = {
+    IMPORT_MESSAGE_APIKEY: '/api/v1/message/',
+}
 
 # Default timeout for HTTP requests via the requests library
 DEFAULT_REQUESTS_TIMEOUT = 20  # seconds
@@ -320,6 +328,7 @@ CELERY_HAYSTACK_TRANSACTION_SAFE = False
 
 # IMAP Interface
 EXPORT_DIR = os.path.join(DATA_ROOT, 'export')
+IMPORT_DIR = os.path.join(DATA_ROOT, 'incoming')
 # NOTIFY_LIST_CHANGE_COMMAND = '/a/mailarch/scripts/call_imap_import.sh'
 
 

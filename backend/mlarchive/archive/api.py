@@ -3,13 +3,21 @@ import datetime
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
 import re
+import os
+import tempfile
 
+from django.conf import settings
 from django.views import View
 from django.http import JsonResponse
+from django.utils.decorators import method_decorator
 
 from mlarchive.exceptions import HttpJson400, HttpJson404
 from mlarchive.archive.models import Message, EmailList, Subscriber
+from mlarchive.archive.mail import archive_message
+from mlarchive.utils.decorators import require_api_key
 
+import logging
+logger = logging.getLogger(__name__)
 
 duration_pattern = re.compile(r'(?P<num>\d+)(?P<unit>years|months|weeks|days|hours|minutes)')
 
@@ -170,3 +178,40 @@ class SubscriberCountsView(View):
                 return JsonResponse({})
         self.data['subscriber_counts'] = subscribers
         return JsonResponse(self.data)
+
+
+@method_decorator(require_api_key, name='dispatch')
+class ImportMessageView(View):
+    '''An API to import a message. Expect a POST request with message in request.body
+    and bearer token in headers: Authorization: Bearer [apikey]
+    '''
+    http_method_names = ['post']
+
+    def post(self, request, **kwargs):
+        list_name = kwargs['list_name']
+        list_type = kwargs['list_type']
+        if not list_name:
+            return JsonResponse({'error': 'missing or empty list_name'}, status=400)
+        if list_type not in ('public', 'private'):
+            return JsonResponse({'error': 'invalid list_type'}, status=400)
+        message = request.body
+        if not message:
+            return JsonResponse({'error': 'missing or empty message'}, status=400)
+
+        # write message to disk
+        prefix = f'{list_name}.{list_type}.'
+        fd, filepath = tempfile.mkstemp(prefix=prefix, dir=settings.IMPORT_DIR)
+        with os.fdopen(fd, 'wb') as f:
+            f.write(message)
+        logger.info(f'Received message: {filepath}')
+
+        # process message
+        status = archive_message(message, list_name, private=bool(list_type == 'private'))
+        logger.info(f'Archive message status: {filepath} {status}')
+        if status == 0:
+            context = {'success': True}
+            status_code = 201
+        else:
+            context = {'success': False, 'error': status}
+            status_code = 400
+        return JsonResponse(context, status=status_code)

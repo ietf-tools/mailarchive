@@ -191,18 +191,21 @@ class ImportMessageView(View):
         list_name = kwargs['list_name']
         list_type = kwargs['list_type']
         if not list_name:
-            return JsonResponse({'error': 'missing or empty list_name'}, status=400)
+            return JsonResponse({'error': 'missing list_name'}, status=400)
         if list_type not in ('public', 'private'):
             return JsonResponse({'error': 'invalid list_type'}, status=400)
         message = request.body
         if not message:
-            return JsonResponse({'error': 'missing or empty message'}, status=400)
+            return JsonResponse({'error': 'no email message in request body'}, status=400)
 
-        # write message to disk
+        # stash message on disk
         prefix = f'{list_name}.{list_type}.'
-        fd, filepath = tempfile.mkstemp(prefix=prefix, dir=settings.IMPORT_DIR)
-        with os.fdopen(fd, 'wb') as f:
-            f.write(message)
+        try:
+            fd, filepath = tempfile.mkstemp(prefix=prefix, dir=settings.IMPORT_DIR)
+            with os.fdopen(fd, 'wb') as f:
+                f.write(message)
+        except (FileNotFoundError, PermissionError, OSError) as e:
+            return JsonResponse({'error': str(e)}, status=400)
         logger.info(f'Received message: {filepath}')
 
         # process message

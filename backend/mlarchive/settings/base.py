@@ -98,6 +98,7 @@ INSTALLED_APPS = [
     'django.contrib.sitemaps',
     'mozilla_django_oidc',
     'django_bootstrap5',
+    'django_celery_beat',
     'mlarchive.archive.apps.ArchiveConfig',
     'widget_tweaks',
 ]

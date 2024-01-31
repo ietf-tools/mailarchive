@@ -73,6 +73,28 @@ services:
         - app-data:/data
         - app-assets:/assets
 
+  beat:
+    build:
+      context: .
+      dockerfile: docker/celery.Dockerfile
+    init: true
+    environment:
+      CELERY_APP: mlarchive.celeryapp:app
+      CELERY_ROLE: beat
+      UPDATE_REQUIREMENTS_FROM: requirements.txt
+      DEV_MODE: "yes"
+      BROKER_URL: amqp://guest:guest@rabbit:5672//
+    command:
+      - '--loglevel=INFO'
+    # depends on /data subdirectories
+    depends_on:
+        - app
+    restart: unless-stopped
+    stop_grace_period: 1m
+    volumes:
+        - app-data:/data
+        - app-assets:/assets
+
 volumes:
     app-assets:
     app-data:

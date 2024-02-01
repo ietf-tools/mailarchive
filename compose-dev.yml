@@ -91,6 +91,7 @@ services:
       BROKER_URL: amqp://guest:guest@rabbit:5672//
     command:
       - '--loglevel=INFO'
+      - '--scheduler=django_celery_beat.schedulers:DatabaseScheduler'
     # depends on /data subdirectories
     depends_on:
         - app

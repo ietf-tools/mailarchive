@@ -152,7 +152,7 @@ def lookup_user(address):
     data = {'apikey': apikey, '_expand': 'user', 'email': address}
 
     try:
-        response = requests.post(url, data)
+        response = requests.post(url, data, timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
     except requests.exceptions.RequestException as error:
         logger.error(str(error))
         return None
@@ -212,10 +212,27 @@ def get_known_mailman_lists(private=None):
     return mlists
 
 
+def get_mailman_lists(private=None):
+    '''Returns EmailLists that are managed by mailman 3.
+    Specify list.private value or leave out to retrieve all lists.
+    Raises requests.RequestException if request fails.
+    '''
+    response = requests.get(
+        settings.MAILMAN_API_LISTS,
+        auth=(settings.MAILMAN_API_USER, settings.MAILMAN_API_PASSWORD),
+        timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
+    response.raise_for_status()
+    data = response.json()
+    mailman_lists = [e['list_name'] for e in data['entries']]
+    mlists = EmailList.objects.filter(name__in=mailman_lists)
+    if isinstance(private, bool):
+        mlists = mlists.filter(private=private)
+    return mlists
+
+
 def get_subscribers(listname):
     '''Gets list of subscribers for listname from mailman'''
     list_members_cmd = os.path.join(settings.MAILMAN_DIR, 'bin/list_members')
-    subscribers = []
     try:
         output = subprocess.check_output([list_members_cmd, listname]).decode('latin1')
     except subprocess.CalledProcessError:
@@ -223,10 +240,32 @@ def get_subscribers(listname):
     return output.split()
 
 
+def get_subscribers_3(listname):
+    '''Gets list of subscribers for listname from mailman 3 API'''
+    response = requests.get(
+        settings.MAILMAN_API_MEMBER.format(listname=listname),
+        auth=(settings.MAILMAN_API_USER, settings.MAILMAN_API_PASSWORD),
+        timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
+    response.raise_for_status()
+    data = response.json()
+    return [e['email'] for e in data['entries']]
+
+
 def get_subscriber_count():
     '''Populates Subscriber table with subscriber counts from mailman'''
     for mlist in get_known_mailman_lists():
         Subscriber.objects.create(email_list=mlist, count=len(get_subscribers(mlist.name)))
+
+
+def get_subscriber_counts():
+    '''Populates Subscriber table with subscriber counts from mailman 3 API'''
+    for mlist in get_mailman_lists():
+        try:
+            subscribers = get_subscribers_3(mlist.name)
+            Subscriber.objects.create(email_list=mlist, count=len(subscribers))
+        except requests.RequestException as e:
+            logger.error(f'get_subscribers_3 failed. listname={mlist.name}. {e}')
+            continue
 
 
 def get_membership(options, args):
@@ -250,6 +289,28 @@ def get_membership(options, args):
 
     if has_changed:
         _export_lists()
+
+
+def get_membership_3(quiet=False):
+    '''For all private lists, get membership from mailman 3 API and update
+    list membership as needed'''
+    for mlist in get_mailman_lists(private=True):
+        if not quiet:
+            print("Processing: %s" % mlist.name)
+
+        # handle these exceptions locally because calls for
+        # other lists may succeed
+        try:
+            subscribers = get_subscribers_3(mlist.name)
+        except requests.RequestException as e:
+            logger.error(f'get_subscribers failed. listname={mlist.name}. {e}')
+            continue
+        sha = hashlib.sha1(smart_bytes(subscribers))
+        digest = base64.urlsafe_b64encode(sha.digest())
+        if mlist.members_digest != digest:
+            process_members(mlist, subscribers)
+            mlist.members_digest = digest
+            mlist.save()
 
 
 def check_inactive(prompt=True):

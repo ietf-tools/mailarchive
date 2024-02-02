@@ -139,3 +139,49 @@ paths:
                   error:
                     type: string
                     description: Error description
+
+  /api/v1/message/{listType}/{listName}/:
+    post:
+      summary: Create email message
+      parameters:
+        - in: path
+          name: listType
+          schema:
+            type: string
+            enum:
+              - public
+              - private
+          required: true
+          description: list type
+          example: public
+        - in: path
+          name: listName
+          schema:
+            type: string
+          required: true
+          description: name of list
+          example: quic
+      security:
+        - bearerAuth: []
+      requestBody:
+        description: raw email messasge
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: byte
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Bad Request
+
+security:
+  - bearerAuth:
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

@@ -46,6 +46,10 @@ cp $WORKSPACEDIR/docker/configs/settings_docker.py $WORKSPACEDIR/backend/mlarchi
 echo "Creating data directories..."
 for sub in \
     /data/archive \
+    /data/incoming \
+    /data/import \
+    /data/export \
+    /data/archive_mbox \
     /data/log/mail-archive \
     ; do
     if [ ! -d "$sub"  ]; then

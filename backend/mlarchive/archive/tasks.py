@@ -1,9 +1,10 @@
 import logging
 
-from celery import Task
+from celery import Task, shared_task
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
+from django.core.management import call_command
 
 from mlarchive.archive.backends.elasticsearch import ESBackend
 from mlarchive.celeryapp import app
@@ -129,3 +130,13 @@ def update_mbox(files):
 
 CelerySignalHandler = app.register_task(CelerySignalHandler())
 # CeleryHaystackUpdateIndex = app.register_task(CeleryHaystackUpdateIndex())
+
+
+@shared_task
+def get_subscribers():
+    '''Get subscriber counts from mailman 2'''
+
+    try:
+        call_command('get_subscribers')
+    except RuntimeError as err:
+        logger.info(f"Error in get_subscribers: {err}")

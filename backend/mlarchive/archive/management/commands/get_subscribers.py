@@ -9,4 +9,3 @@ class Command(BaseCommand):
 
     def handle(self, **options):
         get_subscriber_count()
-

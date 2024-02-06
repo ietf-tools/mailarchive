@@ -281,6 +281,7 @@ def get_membership(options, args):
         subscribers = get_subscribers(mlist.name)
         sha = hashlib.sha1(smart_bytes(subscribers))
         digest = base64.urlsafe_b64encode(sha.digest())
+        digest = digest.decode()
         if mlist.members_digest != digest:
             has_changed = True
             process_members(mlist, subscribers)
@@ -307,6 +308,7 @@ def get_membership_3(quiet=False):
             continue
         sha = hashlib.sha1(smart_bytes(subscribers))
         digest = base64.urlsafe_b64encode(sha.digest())
+        digest = digest.decode()
         if mlist.members_digest != digest:
             process_members(mlist, subscribers)
             mlist.members_digest = digest

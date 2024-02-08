@@ -180,15 +180,14 @@ def require_api_key(f):
         if request.method == 'POST':
             if 'apikey' in request.POST:
                 apikey = request.POST.get('apikey')
-            elif 'Authorization' in request.headers:
-                value = request.headers.get('Authorization')
-                _, apikey = value.split(' ', 1)
+            elif 'X-API-Key' in request.headers:
+                apikey = request.headers.get('X-API-Key')
         elif request.method == 'GET':
             apikey = request.GET.get('apikey')
         else:
             return err(405, "Method not allowed")
         if not apikey:
-            return err(400, "Missing apikey parameter")
+            return err(400, "Missing apikey")
 
         # Check apikey
         if apikey not in settings.API_KEYS:

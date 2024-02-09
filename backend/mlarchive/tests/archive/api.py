@@ -227,13 +227,13 @@ def test_import_message(client, settings):
         headers={},
         content_type='application/octet-stream')
     assert response.status_code == 400
-    assert get_error_message(response) == 'Missing apikey parameter'
+    assert get_error_message(response) == 'Missing apikey'
 
     # invalid api key
     response = client.post(
         url,
         data=data,
-        headers={'Authorization': 'Bearer bogus'},
+        headers={'X-API-Key': 'bogus'},
         content_type='application/octet-stream')
     assert response.status_code == 403
     assert get_error_message(response) == 'Invalid apikey'
@@ -242,7 +242,7 @@ def test_import_message(client, settings):
     response = client.post(
         url,
         data=data,
-        headers={'Authorization': 'Bearer abcdefg'},
+        headers={'X-API-Key': 'abcdefg'},
         content_type='application/octet-stream')
     print(response, response.content)
     assert response.status_code == 201
@@ -286,7 +286,7 @@ def test_import_message_private(client, settings):
     response = client.post(
         url,
         data=data,
-        headers={'Authorization': 'Bearer abcdefg'},
+        headers={'X-API-Key': 'abcdefg'},
         content_type='application/octet-stream')
     print(response, response.content)
     assert response.status_code == 201
@@ -325,7 +325,7 @@ def test_import_message_failure(client, settings):
     response = client.post(
         url,
         data=data,
-        headers={'Authorization': 'Bearer abcdefg'},
+        headers={'X-API-Key': 'abcdefg'},
         content_type='application/octet-stream')
     print(response, response.content)
     assert response.status_code == 400

@@ -56,7 +56,7 @@ def test_require_api_key(settings):
     response = decorated_func(arequest)
     print(response, response.content)
     assert response.status_code == 400
-    assert get_error_message(response) == 'Missing apikey parameter'
+    assert get_error_message(response) == 'Missing apikey'
     # bad api key
     brequest = get_request(url + '?apikey=bogus')
     response = decorated_func(brequest)
@@ -74,12 +74,12 @@ def test_require_api_key(settings):
     print(response, response.content)
     assert response.status_code == 200
     # api key post header
-    erequest = rf.post(url, headers={'Authorization': 'Bearer abcdefg'})
+    erequest = rf.post(url, headers={'X-API-Key': 'abcdefg'})
     response = decorated_func(erequest)
     print(response, response.content)
     assert response.status_code == 200
     # api key post header, endpoint mismatch
-    frequest = rf.post('/api/v1/stats/', headers={'Authorization': 'Bearer abcdefg'})
+    frequest = rf.post('/api/v1/stats/', headers={'X-API-Key': 'abcdefg'})
     response = decorated_func(frequest)
     print(response, response.content)
     assert response.status_code == 400

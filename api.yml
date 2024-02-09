@@ -162,7 +162,7 @@ paths:
           description: name of list
           example: quic
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
       requestBody:
         description: raw email messasge
         required: true
@@ -177,11 +177,9 @@ paths:
         '400':
           description: Bad Request
 
-security:
-  - bearerAuth:
-
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY

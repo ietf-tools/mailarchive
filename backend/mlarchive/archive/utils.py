@@ -11,13 +11,15 @@ import os
 import re
 import requests
 import subprocess
+from collections import defaultdict
 
-
+import mailmanclient
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.http import HttpResponse
 from django.utils.encoding import smart_bytes
+
 from mlarchive.archive.models import EmailList, Subscriber
 # from mlarchive.archive.signals import _export_lists, _list_save_handler
 
@@ -25,7 +27,7 @@ from mlarchive.archive.models import EmailList, Subscriber
 logger = logging.getLogger(__name__)
 THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
 LIST_LISTS_PATTERN = re.compile(r'\s*([\w\-]*) - (.*)$')
-
+MAILMAN_LISTID_PATTERN = re.compile(r'(.*)\.(ietf|irtf|iab|iesg|rfc-editor)\.org')
 
 # --------------------------------------------------
 # Helper Functions
@@ -217,13 +219,11 @@ def get_mailman_lists(private=None):
     Specify list.private value or leave out to retrieve all lists.
     Raises requests.RequestException if request fails.
     '''
-    response = requests.get(
-        settings.MAILMAN_API_LISTS,
-        auth=(settings.MAILMAN_API_USER, settings.MAILMAN_API_PASSWORD),
-        timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
-    response.raise_for_status()
-    data = response.json()
-    mailman_lists = [e['list_name'] for e in data['entries']]
+    client = mailmanclient.Client(
+        settings.MAILMAN_API_URL,
+        settings.MAILMAN_API_USER,
+        settings.MAILMAN_API_PASSWORD)
+    mailman_lists = [x.list_name for x in client.lists]
     mlists = EmailList.objects.filter(name__in=mailman_lists)
     if isinstance(private, bool):
         mlists = mlists.filter(private=private)
@@ -240,17 +240,6 @@ def get_subscribers(listname):
     return output.split()
 
 
-def get_subscribers_3(listname):
-    '''Gets list of subscribers for listname from mailman 3 API'''
-    response = requests.get(
-        settings.MAILMAN_API_MEMBER.format(listname=listname),
-        auth=(settings.MAILMAN_API_USER, settings.MAILMAN_API_PASSWORD),
-        timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
-    response.raise_for_status()
-    data = response.json()
-    return [e['email'] for e in data['entries']]
-
-
 def get_subscriber_count():
     '''Populates Subscriber table with subscriber counts from mailman'''
     for mlist in get_known_mailman_lists():
@@ -259,13 +248,16 @@ def get_subscriber_count():
 
 def get_subscriber_counts():
     '''Populates Subscriber table with subscriber counts from mailman 3 API'''
-    for mlist in get_mailman_lists():
-        try:
-            subscribers = get_subscribers_3(mlist.name)
-            Subscriber.objects.create(email_list=mlist, count=len(subscribers))
-        except requests.RequestException as e:
-            logger.error(f'get_subscribers_3 failed. listname={mlist.name}. {e}')
-            continue
+    client = mailmanclient.Client(
+        settings.MAILMAN_API_URL,
+        settings.MAILMAN_API_USER,
+        settings.MAILMAN_API_PASSWORD)
+    counts = {x.list_name: x.member_count for x in client.lists}
+    subscribers = []
+    for elist in EmailList.objects.all():
+        if elist.name in counts:
+            subscribers.append(Subscriber(email_list=elist, count=counts[elist.name]))
+    Subscriber.objects.bulk_create(subscribers)
 
 
 def get_membership(options, args):
@@ -294,29 +286,45 @@ def get_membership(options, args):
 
 def get_membership_3(quiet=False):
     '''For all private lists, get membership from mailman 3 API and update
-    list membership as needed'''
-    for mlist in get_mailman_lists(private=True):
+    list membership as needed.
+
+    Use client.members to get all list memberships rather than hitting the API for
+    every private list
+    '''
+    client = mailmanclient.Client(
+        settings.MAILMAN_API_URL,
+        settings.MAILMAN_API_USER,
+        settings.MAILMAN_API_PASSWORD)
+
+    # build dictionary of all list memberships
+    members = defaultdict(list)
+    no_match = set()
+    for member in client.members:
+        # list_name = member.list_id.split('.')[:-2]
+        match = MAILMAN_LISTID_PATTERN.match(member.list_id)
+        if match:
+            list_name = match.groups()[0]
+            members[list_name].append(member.email)
+        else:
+            no_match.add(member.list_id)
+    if no_match:
+        logger.error('Could not parse mailman list_ids: {}'.format(','.join(no_match)))
+
+    for mlist in EmailList.objects.filter(name__in=members.keys(), private=True):
         if not quiet:
             print("Processing: %s" % mlist.name)
-
-        # handle these exceptions locally because calls for
-        # other lists may succeed
-        try:
-            subscribers = get_subscribers_3(mlist.name)
-        except requests.RequestException as e:
-            logger.error(f'get_subscribers failed. listname={mlist.name}. {e}')
-            continue
-        sha = hashlib.sha1(smart_bytes(subscribers))
+        sha = hashlib.sha1(smart_bytes(members[mlist.name]))
         digest = base64.urlsafe_b64encode(sha.digest())
         digest = digest.decode()
         if mlist.members_digest != digest:
-            process_members(mlist, subscribers)
+            process_members(mlist, members[mlist.name])
             mlist.members_digest = digest
             mlist.save()
 
 
 def check_inactive(prompt=True):
     '''Check for inactive lists and mark them as inactive'''
+    # this won't work for mailman 3 or when postfix is moved
     active = []
     to_inactive = []
 

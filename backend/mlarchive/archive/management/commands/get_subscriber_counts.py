@@ -1,7 +1,5 @@
 # encoding: utf-8
 
-import requests
-
 from django.config import settings
 from django.core.management.base import BaseCommand, CommandError
 from mlarchive.archive.utils import get_subscriber_counts
@@ -25,11 +23,9 @@ class Command(BaseCommand):
         confirm_settings([
             'MAILMAN_API_USER',
             'MAILMAN_API_PASSWORD',
-            'MAILMAN_API_ORIGIN',
-            'MAILMAN_API_LISTS',
-            'MAILMAN_API_MEMBER'])
+            'MAILMAN_API_URL'])
         try:
             get_subscriber_counts()
-        except requests.RequestException as e:
+        except Exception as e:
             logger.error(f'command get_subscriber_counts failed: {e}')
             raise CommandError(f'Command failed. {e}')

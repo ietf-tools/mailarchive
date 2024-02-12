@@ -41,7 +41,7 @@ env = environ.Env(
     SCOUT_MONITOR=(bool, False),
     SCOUT_KEY=(str, ''),
     CELERY_BROKER_URL=(str, 'amqp://'),
-    MAILMAN_API_ORIGIN=(str, 'http://localhost:8001'),
+    MAILMAN_API_URL=(str, 'http://localhost:8001/3.1'),
     MAILMAN_API_USER=(str, ''),
     MAILMAN_API_PASSWORD=(str, ''),
     IMPORT_MESSAGE_APIKEY=(str, ''),
@@ -246,9 +246,7 @@ LOG_FILE = os.path.join(LOG_DIR, 'mlarchive.log')
 
 # MAILMAN SETTINGS
 MAILMAN_DIR = '/usr/lib/mailman'
-MAILMAN_API_ORIGIN = env('MAILMAN_API_ORIGIN')
-MAILMAN_API_LISTS = MAILMAN_API_ORIGIN + '/3.1/lists'
-MAILMAN_API_MEMBER = MAILMAN_API_ORIGIN + '/3.1/lists/{listname}/roster/member?fields=email'
+MAILMAN_API_URL = env('MAILMAN_API_URL')
 MAILMAN_API_USER = env('MAILMAN_API_USER')
 MAILMAN_API_PASSWORD = env('MAILMAN_API_PASSWORD')
 IMPORT_MESSAGE_APIKEY = env('IMPORT_MESSAGE_APIKEY')

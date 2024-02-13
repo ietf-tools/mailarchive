@@ -9,7 +9,7 @@
   <form id="id_search_form" name="search-form" action="search" method="get"{% if lists %} data-lists="{{ lists|join:',' }}"{% endif %}>
       <div>
         <div class="input-group">
-          <input id="id_q" name="q" type="search" class="form-control typeahead" placeholder="Enter list name or search query..." {% if query %}value="{{ query }}"{% endif %}>
+          <input id="id_q" name="q" type="search" class="form-control typeahead" placeholder="Enter list name or search query..." spellcheck="false" {% if query %}value="{{ query }}"{% endif %}>
           <div class="input-group-append">
               <button class="btn btn-secondary" type="submit">
                 <span class="fa fa-search" aria-hidden="true"></span>

@@ -107,9 +107,9 @@
                         <form name="search-form" id="id_search_form" class="ms-3 my-auto flex-grow-1" method="get">
                             <div class="input-group input-group-sm w-100">
                                 {% if browse_list_placeholder %}
-                                    {% render_field form.q class="form-control" type="search" placeholder=browse_list_placeholder %}
+                                    {% render_field form.q class="form-control" type="search" placeholder=browse_list_placeholder spellcheck="false" %}
                                 {% else %}
-                                    {% render_field form.q class="form-control" type="search" %}
+                                    {% render_field form.q class="form-control" type="search" spellcheck="false" %}
                                 {% endif %}
                                 <div class="input-group-append">
                                     <button class="btn btn-secondary" type="submit">

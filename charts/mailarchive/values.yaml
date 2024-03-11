@@ -105,3 +105,13 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+postgresql:
+  enabled: true
+  postgresqlUsername: django
+  postgresqlDatabase: mailarchive
+  postgresqlPassword: franticmarble
+  auth:
+    username: django
+    database: mailarchive
+    password: franticmarble

@@ -15,6 +15,7 @@
 .*.swp
 .DS_store
 # Simulated Subversion default ignores end here
+/charts/mailarchive/charts
 /docker/docker-compose.extend-custom.yml
 /env
 /.env

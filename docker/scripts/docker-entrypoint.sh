@@ -53,6 +53,6 @@ echo "Starting memcached..."
 echo "Running initial checks..."
 /usr/local/bin/python $WORKSPACEDIR/backend/manage.py check
 /usr/local/bin/python $WORKSPACEDIR/backend/manage.py migrate
-
+/usr/local/bin/python $WORKSPACEDIR/backend/manage.py init_index
 
 exec "$@"

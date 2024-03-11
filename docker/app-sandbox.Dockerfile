@@ -55,7 +55,7 @@ COPY docker/configs/settings_docker.py  \
 ENTRYPOINT ["docker-entrypoint.sh"]
 
 # runserver
-CMD ["./backend/manage.py", "runserver", "0.0.0.0:80"]
+CMD ["./backend/manage.py", "runserver", "0.0.0.0:8000"]
 
 # gunicorn
 # CMD ["gunicorn", "-c", "/gunicorn.conf.py", "backend.mlarchive.wsgi:application"]

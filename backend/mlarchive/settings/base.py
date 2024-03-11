@@ -26,7 +26,7 @@ ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))
 env = environ.Env(
     # set casting, default value
     ADMINS=(list, []),
-    ALLOWED_HOSTS=(list, []),
+    ALLOWED_HOSTS=(list, ['*']),
     CELERY_BROKER_URL=(str, 'amqp://'),
     CLOUDFLARE_AUTH_EMAIL=(str, ''),
     CLOUDFLARE_AUTH_KEY=(str, ''),
@@ -62,8 +62,7 @@ DEBUG = env('DEBUG')
 SERVER_MODE = env('SERVER_MODE')
 SECRET_KEY = env('SECRET_KEY')
 ADMINS = getaddresses(env('ADMINS'))
-#ALLOWED_HOSTS = env('ALLOWED_HOSTS')
-ALLOWED_HOSTS = ['.ietf.org', '.amsl.com', '127.0.0.1']
+ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 
 DATABASES = {
     'default': {

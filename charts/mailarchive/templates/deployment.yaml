@@ -38,6 +38,8 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             {{- include "mailarchive.db.env" . | nindent 12 }}
+            - name: ELASTICSEARCH_HOST
+              value: elasticsearch-master
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}

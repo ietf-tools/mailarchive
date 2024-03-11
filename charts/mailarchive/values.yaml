@@ -115,3 +115,7 @@ postgresql:
     username: django
     database: mailarchive
     password: franticmarble
+
+elasticsearch:
+  antiAffinity: "soft"
+  minimumMasterNodes: 1

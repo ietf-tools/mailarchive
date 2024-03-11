@@ -4,9 +4,10 @@
 
 Using the template Helm charts assumes the following pre-requisites are complete:
 
-1. Install bitnami helm repo
+1. Install helm dependency repos
 ```sh
 helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add elastic https://helm.elastic.co
 ```
 
 2. Build dependencies

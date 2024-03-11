@@ -8,6 +8,14 @@ maintainers:
   - name: IETF Tools Team
     email: tools-discuss@ietf.org
     url: https://github.com/ietf-tools
+dependencies:
+  - name: postgresql
+    version: 14.3.1
+    repository: "@bitnami"
+    condition: postgresql.enabled
+  - name: elasticsearch
+    version: 7.17.3
+    repository: "@elastic"
 
 # A chart can be either an 'application' or a 'library' chart.
 #

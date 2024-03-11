@@ -8,6 +8,7 @@ import tempfile
 
 from django.conf import settings
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 
@@ -181,6 +182,7 @@ class SubscriberCountsView(View):
 
 
 @method_decorator(require_api_key, name='dispatch')
+@method_decorator(csrf_exempt, name='dispatch')
 class ImportMessageView(View):
     '''An API to import a message. Expect a POST request with message in request.body
     and bearer token in headers: Authorization: Bearer [apikey]

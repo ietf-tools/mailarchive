@@ -16,6 +16,9 @@ dependencies:
   - name: elasticsearch
     version: 7.17.3
     repository: "@elastic"
+  - name: rabbitmq
+    version: 12.15.0
+    repository: "@bitnami"
 
 # A chart can be either an 'application' or a 'library' chart.
 #

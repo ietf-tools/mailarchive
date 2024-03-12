@@ -5,5 +5,8 @@ dependencies:
 - name: elasticsearch
   repository: https://helm.elastic.co
   version: 7.17.3
-digest: sha256:15f73bbd2882b710651fe82f63eecb0bcaf46a07502c21b711a4c68505ca9bc9
-generated: "2024-03-11T18:22:38.242861+10:00"
+- name: rabbitmq
+  repository: https://charts.bitnami.com/bitnami
+  version: 12.15.0
+digest: sha256:56a8265fa36a287a4863dbc57410ec96376fafd37025225e990517d6029fa23e
+generated: "2024-03-12T11:00:26.797736+10:00"

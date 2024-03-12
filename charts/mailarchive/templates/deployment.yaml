@@ -40,6 +40,10 @@ spec:
             {{- include "mailarchive.db.env" . | nindent 12 }}
             - name: ELASTICSEARCH_HOST
               value: elasticsearch-master
+            - name: IMPORT_MESSAGE_APIKEY
+              value: dummykey
+            - name: CELERY_BROKER_URL
+              value: amqp://guest:guest@mailarchive-rabbitmq:5672//
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}

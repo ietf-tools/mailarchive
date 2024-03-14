@@ -88,14 +88,19 @@ autoscaling:
   # targetMemoryUtilizationPercentage: 80
 
 # Additional volumes on the output Deployment definition.
-volumes: []
+volumes:
+  - name: ma-persistent-storage
+    persistentVolumeClaim:
+      claimName: ma-data-pvc
 # - name: foo
 #   secret:
 #     secretName: mysecret
 #     optional: false
 
 # Additional volumeMounts on the output Deployment definition.
-volumeMounts: []
+volumeMounts:
+  - name: ma-persistent-storage
+    mountPath: "/data"
 # - name: foo
 #   mountPath: "/etc/foo"
 #   readOnly: true
@@ -119,3 +124,43 @@ postgresql:
 elasticsearch:
   antiAffinity: "soft"
   minimumMasterNodes: 1
+
+rabbitmq:
+  auth:
+    username: user
+    password: bugsbunny
+    securePassword: false
+
+celeryWorker:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 90
+    # targetMemoryUtilizationPercentage: 80
+  image:
+    repository: "ghcr.io/ietf-tools/mailarchive-celery"
+    tag: latest
+  tage:
+  livenessProbe: {}
+    # initialDelaySeconds: 10
+    # periodSeconds: 60
+    # timeoutSeconds: 30
+    # exec:
+    #   command:
+    #     - "bash"
+    #     - "-c"
+    #     - "celery -A django inspect ping -d celery@$HOSTNAME | grep -q OK"
+  resources:
+    # limits:
+    #   cpu: 900m
+    #   memory: 768Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+  nodeSelector: {}
+  tolerations: []
+  podAnnotations: {}
+  affinity: {}

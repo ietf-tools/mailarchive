@@ -43,7 +43,7 @@ spec:
             - name: IMPORT_MESSAGE_APIKEY
               value: dummykey
             - name: CELERY_BROKER_URL
-              value: amqp://guest:guest@mailarchive-rabbitmq:5672//
+              value: amqp://user:bugsbunny@mailarchive-rabbitmq:5672//
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}

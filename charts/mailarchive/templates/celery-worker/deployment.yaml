@@ -1,0 +1,75 @@
+{{- if .Values.celeryWorker.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mailarchive.fullname" . }}-worker
+  labels:
+    {{- include "mailarchive.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ include "mailarchive.fullname" . }}-worker
+spec:
+  replicas: {{ .replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "mailarchive.labels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ include "mailarchive.fullname" . }}-worker
+  template:
+    metadata:
+      labels:
+        {{- include "mailarchive.labels" $ | nindent 8 }}
+        app.kubernetes.io/component: {{ include "mailarchive.fullname" . }}-worker
+      {{- with .Values.celeryWorker.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with $.Values.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ $.Chart.Name }}
+          {{- if .Values.celeryWorker.args }}
+          args: {{- toYaml .Values.celeryWorker.args | nindent 10}}
+          {{- end }}
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          image: "{{ $.Values.celeryWorker.image.repository }}:{{ $.Values.celeryWorker.image.tag }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          {{- with .command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            {{- include "mailarchive.db.env" . | nindent 12 }}
+            - name: ELASTICSEARCH_HOST
+              value: elasticsearch-master
+            - name: SERVER_ROLE
+              value: "worker"
+            - name: CELERY_BROKER_URL
+              value: amqp://user:bugsbunny@mailarchive-rabbitmq:5672//
+          resources:
+            {{- toYaml .resources | nindent 12 }}
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+{{- end -}}

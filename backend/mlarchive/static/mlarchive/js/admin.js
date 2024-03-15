@@ -53,13 +53,13 @@ var mailarchAdmin = {
     },
 
     focusInSearchFormOn: function() {
-        focusInSearchForm = true;
-        console.log("focusInSearchForm:" + focusInSearchForm);
+        mailarchAdmin.focusInSearchForm = true;
+        console.log("focusInSearchForm:" + mailarchAdmin.focusInSearchForm);
     },
 
     focusInSearchFormOff: function() {
-        focusInSearchForm = false;
-        console.log("focusInSearchForm:" + focusInSearchForm);
+        mailarchAdmin.focusInSearchForm = false;
+        console.log("focusInSearchForm:" + mailarchAdmin.focusInSearchForm);
     },
 
     doAction: function(row) {
@@ -93,7 +93,7 @@ var mailarchAdmin = {
             arrow = {up: 38, down: 40, left: 37, right: 39};
             enter = 13;
             space = 32;
-        if (focusInSearchForm==true) {
+        if (mailarchAdmin.focusInSearchForm==true) {
             return true;
         }
         switch (keyCode) {

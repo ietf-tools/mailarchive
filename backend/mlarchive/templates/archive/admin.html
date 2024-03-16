@@ -25,8 +25,11 @@
                     </div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-md-4 offset-md-2">
+                    <div class="col-md-2 offset-md-2">
                         {% render_field form.frm class="form-control" placeholder="From" %}
+                    </div>
+                    <div class="col-md-2">
+                        {% render_field form.spam_score class="form-control" placeholder="Spam Score" %}
                     </div>
                     <div class="col-md-4">
                         {% render_field form.email_list class="form-control" placeholder="Email List Name (one or more separated by spaces)" %}

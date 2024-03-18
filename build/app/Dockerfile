@@ -5,9 +5,6 @@ LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 COPY requirements.txt .
 RUN pip3 --disable-pip-version-check --no-cache-dir install -r requirements.txt
 
-# Switch to local dev user
-USER dev:dev
-
 COPY . .
 COPY ./build/app/start.sh ./start.sh
 COPY ./build/app/mailarchive-start.sh ./mailarchive-start.sh
@@ -23,5 +20,8 @@ RUN chmod +x start.sh && \
 
 # document the port the container listens on
 # EXPOSE 8000
+
+# Switch to local dev user
+USER dev:dev
 
 CMD ["./start.sh"]

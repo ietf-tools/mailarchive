@@ -127,7 +127,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: docker/app-sandbox.Dockerfile
+        file: build/app/Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
         tags: ghcr.io/ietf-tools/mailarchive:${{ env.PKG_VERSION }}

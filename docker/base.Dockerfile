@@ -1,6 +1,7 @@
 FROM python:3.9-bullseye
 LABEL maintainer="Ryan Cross <rcross@amsl.com>"
 
+# Ensure apt is in non-interactive to avoid prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Update system packages
@@ -36,7 +37,11 @@ RUN sed -i 's/\r$//' /tmp/app-install-chromedriver.sh && \
     chmod +x /tmp/app-install-chromedriver.sh
 RUN /tmp/app-install-chromedriver.sh
 
+# purge because of vulnerability (see https://www.cvedetails.com/)
+RUN apt-get purge -y imagemagick imagemagick-6-common
+
 # Get rid of installation files we don't need in the image, to reduce size
+# this should be included in install layer above if chromedriver layer removed
 RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
 
 # "fake" dbus address to prevent errors
@@ -55,6 +60,10 @@ ENV LC_ALL en_US.UTF-8
 # Fetch wait-for utility
 ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/
 RUN chmod +rx /usr/local/bin/wait-for
+
+# Create a dev user and group with a specific UID/GID
+RUN groupadd --gid 1000 dev \
+    && useradd --uid 1000 --gid dev --shell /bin/bash --create-home dev
 
 # Create data directory
 RUN mkdir -p /data

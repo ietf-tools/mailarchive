@@ -1,0 +1,27 @@
+FROM ghcr.io/ietf-tools/mailarchive-app-base:latest
+LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
+
+# install dependencies first for image layer reuse
+COPY requirements.txt .
+RUN pip3 --disable-pip-version-check --no-cache-dir install -r requirements.txt
+
+# Switch to local dev user
+USER dev:dev
+
+COPY . .
+COPY ./build/app/start.sh ./start.sh
+COPY ./build/app/mailarchive-start.sh ./mailarchive-start.sh
+COPY ./build/app/celery-start.sh ./celery-start.sh
+
+RUN chmod +x start.sh && \
+    chmod +x mailarchive-start.sh && \
+    chmod +x celery-start.sh && \
+    chmod +x docker/scripts/app-create-dirs.sh && \
+    sh ./docker/scripts/app-create-dirs.sh
+
+# VOLUME
+
+# document the port the container listens on
+# EXPOSE 8000
+
+CMD ["./start.sh"]

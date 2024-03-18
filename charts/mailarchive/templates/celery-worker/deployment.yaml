@@ -35,7 +35,7 @@ spec:
           {{- end }}
           securityContext:
             {{- toYaml .securityContext | nindent 12 }}
-          image: "{{ $.Values.celeryWorker.image.repository }}:{{ $.Values.celeryWorker.image.tag }}"
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
           imagePullPolicy: {{ $.Values.image.pullPolicy }}
           {{- with .command }}
           command:
@@ -43,6 +43,8 @@ spec:
           {{- end }}
           env:
             {{- include "mailarchive.db.env" . | nindent 12 }}
+            - name: CONTAINER_ROLE
+              value: celery
             - name: ELASTICSEARCH_HOST
               value: elasticsearch-master
             - name: SERVER_ROLE

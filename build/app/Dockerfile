@@ -1,6 +1,10 @@
 FROM ghcr.io/ietf-tools/mailarchive-app-base:latest
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
+# set python path
+ENV PYTHONPATH "${PYTHONPATH}:/workspace/backend"
+ENV DJANGO_SETTINGS_MODULE="mlarchive.settings.settings"
+
 # install dependencies first for image layer reuse
 COPY requirements.txt .
 RUN pip3 --disable-pip-version-check --no-cache-dir install -r requirements.txt
@@ -27,6 +31,6 @@ RUN chmod +x start.sh && \
 # EXPOSE 8000
 
 # Switch to local dev user
-USER dev:dev
+# USER dev:dev
 
 CMD ["./start.sh"]

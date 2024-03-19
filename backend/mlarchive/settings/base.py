@@ -42,6 +42,8 @@ env = environ.Env(
     MAILMAN_API_PASSWORD=(str, ''),
     MAILMAN_API_URL=(str, 'http://localhost:8001/3.1'),
     MAILMAN_API_USER=(str, ''),
+    MEMCACHED_SERVICE_HOST=(str, '127.0.0.1'),
+    MEMCACHED_SERVICE_PORT=(str, '11211'),
     OIDC_RP_CLIENT_ID=(str, ''),
     OIDC_RP_CLIENT_SECRET=(str, ''),
     SCOUT_MONITOR=(bool, False),
@@ -311,7 +313,7 @@ HTAUTH_PASSWD_FILENAME = env("HTAUTH_PASSWD_FILENAME")
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
-        'LOCATION': '127.0.0.1:11211',
+        'LOCATION': '{}:{}'.format(env('MEMCACHED_SERVICE_HOST'), env('MEMCACHED_SERVICE_PORT')),
         'TIMEOUT': 300,
     }
 }

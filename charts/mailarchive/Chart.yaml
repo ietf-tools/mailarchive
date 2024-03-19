@@ -19,6 +19,9 @@ dependencies:
   - name: rabbitmq
     version: 12.15.0
     repository: "@bitnami"
+  - name: memcached
+    version: 7.0.1
+    repository: "@bitnami"
 
 # A chart can be either an 'application' or a 'library' chart.
 #

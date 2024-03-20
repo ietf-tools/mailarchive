@@ -95,6 +95,20 @@ jobs:
         mkdir -p /home/runner/work/release
         tar -czf /home/runner/work/release/release.tar.gz -X dev/deploy/exclude-patterns.txt .
 
+    - name: Collect + Push Statics
+      env:
+        DEBIAN_FRONTEND: noninteractive
+        AWS_ACCESS_KEY_ID: ${{ secrets.CF_R2_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_KEY_SECRET }}
+        AWS_DEFAULT_REGION: auto
+        AWS_ENDPOINT_URL: ${{ secrets.CF_R2_ENDPOINT }}
+      run: |
+        echo "Collecting statics..."
+        docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/mailarchive-app-base:latest sh build/app/collectstatics.sh
+        echo "Pushing statics..."
+        cd static
+        aws s3 sync . s3://static/mailarchive/$PKG_VERSION --only-show-errors
+
     - name: Augment dockerignore for docker image build
       env:
         DEBIAN_FRONTEND: noninteractive

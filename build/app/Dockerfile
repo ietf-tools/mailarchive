@@ -15,9 +15,9 @@ COPY . .
 COPY ./build/app/start.sh ./start.sh
 COPY ./build/app/mailarchive-start.sh ./mailarchive-start.sh
 COPY ./build/app/celery-start.sh ./celery-start.sh
-COPY ./docker/configs/docker_env /workspace/.env
-COPY ./docker/configs/settings_docker.py  \
-  /workspace/backend/mlarchive/settings/settings_docker.py
+COPY ./docker/configs/staging_env /workspace/.env
+COPY ./docker/configs/settings_staging.py  \
+  /workspace/backend/mlarchive/settings/settings_staging.py
 
 RUN chmod +x start.sh && \
     chmod +x mailarchive-start.sh && \

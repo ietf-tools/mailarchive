@@ -58,6 +58,10 @@ spec:
               value: amqp://user:bugsbunny@mailarchive-rabbitmq:5672//
             - name: MEMCACHED_SERVICE_HOST
               value: mailarchive-memcached
+            - name: DJANGO_SETTINGS_MODULE
+              value: mlarchive.settings.settings_staging
+            - name: SCOUT_NAME
+              value: Mailarchive
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}

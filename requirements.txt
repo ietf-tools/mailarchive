@@ -26,7 +26,7 @@ flower>=1.0.0
 gunicorn==20.1.0
 html5lib
 jedi==0.17.2              # 0.18 has bug with ipython
-lxml>=3.3.5
+lxml==5.1.0               # 5.2.0 lxml.html.clean module now separate
 mailmanclient==3.3.5
 mock>=2.0.0
 mozilla-django-oidc==2.0.0

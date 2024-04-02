@@ -63,11 +63,11 @@ Create the name of the service account to use
 
 {{- define "mailarchive.db.env" -}}
 - name: DATABASES_HOST
-  value: mailarchive-postgresql
+  value: {{ .Values.database.host }}
 - name: DATABASES_NAME
-  value: {{ .Values.postgresql.postgresqlDatabase }}
+  value: {{ .Values.database.name }}
 - name: DATABASES_USER
-  value: {{ .Values.postgresql.postgresqlUsername }}
+  value: {{ .Values.database.user }}
 - name: DATABASES_PASSWORD
-  value: {{ .Values.postgresql.postgresqlPassword }}
+  value: {{ .Values.database.password }}
 {{- end }}

@@ -9,13 +9,14 @@ The following subcharts are included:
 * postgresql (dev only)
 
 ## Production install command
-```helm install \
+```
+helm install \
 --set database.host=mailarchive-postgresql,database.name=mailarchive \
 --set database.user=some_user,database.password=some_password \
 mailarchive chartmuseum/mailarchive
 ```
 
-## Dev Install command
-```sh
+## Dev install command
+```
 helm install -f helm/values_dev.yaml mailarchive chartmuseum/mailarchive 
 ```

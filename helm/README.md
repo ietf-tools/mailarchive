@@ -1,21 +1,21 @@
 # Helm Chart Templates for IETF Mail Archive in Kubernetes
 
-## Prerequisites
+## Dependencies
 
-Using the template Helm charts assumes the following pre-requisites are complete:
+The following subcharts are included:
+* elasticsearch
+* memcached
+* rabbitmq
+* postgresql (dev only)
 
-1. Install helm dependency repos
-```sh
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm repo add elastic https://helm.elastic.co
+## Production install command
+```helm install \
+--set database.host=mailarchive-postgresql,database.name=mailarchive \
+--set database.user=some_user,database.password=some_password \
+mailarchive chartmuseum/mailarchive
 ```
 
-2. Build dependencies
+## Dev Install command
 ```sh
-helm dependency build
-```
-
-## Running (use latest tag)
-```sh
-helm install --set image.tag=2.22.0 mailarchive charts/mailarchive
+helm install -f helm/values_dev.yaml mailarchive chartmuseum/mailarchive 
 ```

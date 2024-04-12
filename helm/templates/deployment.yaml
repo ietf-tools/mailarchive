@@ -49,19 +49,19 @@ spec:
           env:
             {{- include "mailarchive.db.env" . | nindent 12 }}
             - name: CONTAINER_ROLE
-              value: mailarchive
+              value: {{ .Values.env.CONTAINER_ROLE | quote }}
             - name: ELASTICSEARCH_HOST
-              value: elasticsearch-master
+              value: {{ .Values.env.ELASTICSEARCH_HOST | quote }}
             - name: IMPORT_MESSAGE_APIKEY
-              value: dummykey
+              value: {{ .Values.env.IMPORT_MESSAGE_APIKEY | quote }}
             - name: CELERY_BROKER_URL
-              value: amqp://user:bugsbunny@mailarchive-rabbitmq:5672//
+              value: {{ .Values.env.CELERY_BROKER_URL | quote }}
             - name: MEMCACHED_SERVICE_HOST
-              value: mailarchive-memcached
+              value: {{ .Values.env.MEMCACHED_SERVICE_HOST | quote }}
             - name: DJANGO_SETTINGS_MODULE
-              value: mlarchive.settings.settings_staging
+              value: {{ .Values.env.DJANGO_SETTINGS_MODULE | quote }}
             - name: SCOUT_NAME
-              value: Mailarchive
+              value: {{ .Values.env.SCOUT_NAME | quote }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}

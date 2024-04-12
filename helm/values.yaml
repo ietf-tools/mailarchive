@@ -111,6 +111,15 @@ tolerations: []
 
 affinity: {}
 
+env:
+  CONTAINER_ROLE: mailarchive
+  ELASTICSEARCH_HOST: elasticsearch-master
+  IMPORT_MESSAGE_APIKEY: dummykey
+  CELERY_BROKER_URL: amqp://user:bugsbunny@mailarchive-rabbitmq:5672//
+  MEMCACHED_SERVICE_HOST: mailarchive-memcached
+  DJANGO_SETTINGS_MODULE: mlarchive.settings.settings_staging
+  SCOUT_NAME: Mailarchive
+
 # -------------------------------------------------------------
 # DB
 # -------------------------------------------------------------
@@ -126,7 +135,7 @@ database:
   host: mailarchive-postgresql
   name: mailarchive
   user: django
-  passsword: franticmarble
+  password: franticmarble
 
 # -------------------------------------------------------------
 # ELASTICSEARCH
@@ -191,3 +200,12 @@ celeryWorker:
   tolerations: []
   podAnnotations: {}
   affinity: {}
+  env:
+    CONTAINER_ROLE: celery
+    ELASTICSEARCH_HOST: elasticsearch-master
+    SERVER_ROLE: worker
+    CELERY_BROKER_URL: amqp://user:bugsbunny@mailarchive-rabbitmq:5672//
+
+# -------------------------------------------------------------
+# COMMON
+# -------------------------------------------------------------

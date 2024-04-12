@@ -44,13 +44,13 @@ spec:
           env:
             {{- include "mailarchive.db.env" . | nindent 12 }}
             - name: CONTAINER_ROLE
-              value: celery
+              value: {{ .Values.celeryWorker.env.CONTAINER_ROLE | quote }}
             - name: ELASTICSEARCH_HOST
-              value: elasticsearch-master
+              value: {{ .Values.celeryWorker.env.ELASTICSEARCH_HOST | quote }}
             - name: SERVER_ROLE
-              value: "worker"
+              value: {{ .Values.celeryWorker.env.SERVER_ROLE | quote }}
             - name: CELERY_BROKER_URL
-              value: amqp://user:bugsbunny@mailarchive-rabbitmq:5672//
+              value: {{ .Values.celeryWorker.env.CELERY_BROKER_URL | quote }}
           resources:
             {{- toYaml .resources | nindent 12 }}
           {{- with .Values.volumeMounts }}

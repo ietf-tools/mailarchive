@@ -59,16 +59,17 @@ services:
   celery:
     build:
       context: .
-      dockerfile: docker/celery.Dockerfile
+      dockerfile: build/app/Dockerfile
     init: true
     environment:
       CELERY_APP: mlarchive.celeryapp:app
       CELERY_ROLE: worker
+      CONTAINER_ROLE: celery
       UPDATE_REQUIREMENTS_FROM: requirements.txt
       DEV_MODE: "yes"
       BROKER_URL: amqp://guest:guest@rabbit:5672//
-    command:
-      - '--loglevel=INFO'
+    # command:
+    #   - '--loglevel=INFO'
     # depends on /data subdirectories
     depends_on:
         - app
@@ -81,11 +82,12 @@ services:
   beat:
     build:
       context: .
-      dockerfile: docker/celery.Dockerfile
+      dockerfile: build/app/Dockerfile
     init: true
     environment:
       CELERY_APP: mlarchive.celeryapp:app
       CELERY_ROLE: beat
+      CONTAINER_ROLE: beat
       UPDATE_REQUIREMENTS_FROM: requirements.txt
       DEV_MODE: "yes"
       BROKER_URL: amqp://guest:guest@rabbit:5672//

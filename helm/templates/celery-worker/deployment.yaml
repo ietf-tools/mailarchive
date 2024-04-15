@@ -53,7 +53,7 @@ spec:
               value: {{ .Values.celeryWorker.env.CELERY_BROKER_URL | quote }}
           resources:
             {{- toYaml .resources | nindent 12 }}
-          {{- with .Values.volumeMounts }}
+          {{- with .Values.celeryWorker.volumeMounts }}
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}

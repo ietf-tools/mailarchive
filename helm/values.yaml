@@ -89,9 +89,9 @@ autoscaling:
 
 # Additional volumes on the output Deployment definition.
 volumes:
-  - name: ma-persistent-storage
+  - name: mailarchive-persistent-storage
     persistentVolumeClaim:
-      claimName: ma-data-pvc
+      claimName: mailarchive-data-pvc
 # - name: foo
 #   secret:
 #     secretName: mysecret
@@ -99,11 +99,8 @@ volumes:
 
 # Additional volumeMounts on the output Deployment definition.
 volumeMounts:
-  - name: ma-persistent-storage
+  - name: mailarchive-persistent-storage
     mountPath: "/data"
-# - name: foo
-#   mountPath: "/etc/foo"
-#   readOnly: true
 
 nodeSelector: {}
 
@@ -206,6 +203,10 @@ celeryWorker:
     SERVER_ROLE: worker
     CELERY_BROKER_URL: amqp://user:bugsbunny@mailarchive-rabbitmq:5672//
 
+  volumeMounts:
+    - name: mailarchive-persistent-storage
+      mountPath: "/data"
+      readOnly: true
 # -------------------------------------------------------------
 # COMMON
 # -------------------------------------------------------------

@@ -89,9 +89,9 @@ autoscaling:
 
 # Additional volumes on the output Deployment definition.
 volumes:
-  - name: ma-persistent-storage
+  - name: mailarchive-persistent-storage
     persistentVolumeClaim:
-      claimName: ma-data-pvc
+      claimName: mailarchive-data-pvc
 # - name: foo
 #   secret:
 #     secretName: mysecret
@@ -99,7 +99,7 @@ volumes:
 
 # Additional volumeMounts on the output Deployment definition.
 volumeMounts:
-  - name: ma-persistent-storage
+  - name: mailarchive-persistent-storage
     mountPath: "/data"
 # - name: foo
 #   mountPath: "/etc/foo"

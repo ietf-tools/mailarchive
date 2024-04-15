@@ -8,6 +8,6 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 200Gi
+      storage: 127Gi
   storageClassName: ""
   volumeName: mailarchive-data-volume

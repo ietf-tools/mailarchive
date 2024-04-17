@@ -24,7 +24,27 @@
 
 ### Development
 
+#### VSCode
+
 This project supports VSCode Dev Containers. Open the project in VSCode and choose restart in container. To run tests: Terminal -> Run Task -> Run All Tests
+
+#### Others
+
+Run `(cd docker && ./run-dev)` from the command line. You will be prompted with the following message.
+
+```text
+You can execute arbitrary commands now, e.g.,
+
+    backend/manage.py check && backend/manage.py runserver 0.0.0.0:8000
+
+to start a development instance of the Mail Archive.
+
+    cd backend/mlarchive && pytest tests
+
+to run all the tests.
+```
+
+Run `cd backend/mlarchive && pytest tests` to run all tests.
 
 ### Sandbox Server
 

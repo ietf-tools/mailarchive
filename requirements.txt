@@ -23,7 +23,7 @@ elasticsearch>=7.0.0,<8.0.0
 elasticsearch-dsl>=7.0.0,<8.0.0
 factory-boy>=2.6.0
 flower>=1.0.0
-gunicorn==20.1.0
+gunicorn==22.0.0
 html5lib
 jedi==0.17.2              # 0.18 has bug with ipython
 lxml==5.1.0               # 5.2.0 lxml.html.clean module now separate

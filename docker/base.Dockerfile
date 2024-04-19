@@ -31,22 +31,12 @@ RUN apt-get update --fix-missing && apt-get install -qy \
     wget \
     zsh
 
-# Install chromedriver
-COPY docker/scripts/app-install-chromedriver.sh /tmp/app-install-chromedriver.sh
-RUN sed -i 's/\r$//' /tmp/app-install-chromedriver.sh && \
-    chmod +x /tmp/app-install-chromedriver.sh
-RUN /tmp/app-install-chromedriver.sh
-
 # purge because of vulnerability (see https://www.cvedetails.com/)
 RUN apt-get purge -y imagemagick imagemagick-6-common
 
 # Get rid of installation files we don't need in the image, to reduce size
 # this should be included in install layer above if chromedriver layer removed
 RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
-
-# "fake" dbus address to prevent errors
-# https://github.com/SeleniumHQ/docker-selenium/issues/87
-ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
 
 # Set locale to en_US.UTF-8
 RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment && \

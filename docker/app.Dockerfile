@@ -1,7 +1,11 @@
-FROM ghcr.io/ietf-tools/mailarchive-app-base:latest
+FROM --platform=linux/amd64 ghcr.io/ietf-tools/mailarchive-app-base:latest
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
+
+# "fake" dbus address to prevent errors
+# https://github.com/SeleniumHQ/docker-selenium/issues/87
+ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
 
 # Copy library scripts to execute
 ADD https://raw.githubusercontent.com/microsoft/vscode-dev-containers/v0.236.0/containers/python-3/.devcontainer/library-scripts/common-debian.sh /tmp/library-scripts/

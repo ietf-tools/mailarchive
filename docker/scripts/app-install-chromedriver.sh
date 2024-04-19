@@ -2,17 +2,19 @@
 
 HOSTARCH=$(arch)
 if [ $HOSTARCH == "x86_64" ]; then
-    echo "Installing chrome driver..."
-    wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
-    echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list
-    apt-get update -y
-    apt-get install -y google-chrome-stable
-    CHROMEVER=$(google-chrome --product-version | grep -o "[^\.]*\.[^\.]*\.[^\.]*")
-    DRIVERVER=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROMEVER")
-    wget -q --continue -P /chromedriver "http://chromedriver.storage.googleapis.com/$DRIVERVER/chromedriver_linux64.zip"
-    unzip /chromedriver/chromedriver* -d /chromedriver
-    ln -s /chromedriver/chromedriver /usr/local/bin/chromedriver
-    ln -s /chromedriver/chromedriver /usr/bin/chromedriver
+    DRIVERPATH=linux64/chromedriver-linux64.zip
+    DRIVERSUBDIR=chromedriver-linux64
+elif [ $HOSTARCH == "arm64" ] || [ $HOSTARCH == "aarch64" ]; then
+    DRIVERPATH=mac-arm64/chromedriver-mac-arm64.zip
+    DRIVERSUBDIR=chromedriver-mac-arm64
 else
+    echo $HOSTARCH
     echo "This architecture doesn't support chromedriver. Skipping installation..."
+    exit 1
 fi
+
+echo "Installing chrome driver..."
+wget -q --continue -P /chromedriver "https://storage.googleapis.com/chrome-for-testing-public/$CHROMEDRIVER_VERSION/$DRIVERPATH"
+unzip /chromedriver/chromedriver* -d /chromedriver
+ln -s /chromedriver/$DRIVERSUBDIR/chromedriver /usr/local/bin/chromedriver
+ln -s /chromedriver/$DRIVERSUBDIR/chromedriver /usr/bin/chromedriver

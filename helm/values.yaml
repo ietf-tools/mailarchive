@@ -173,10 +173,6 @@ celeryWorker:
     maxReplicas: 100
     targetCPUUtilizationPercentage: 90
     # targetMemoryUtilizationPercentage: 80
-  image:
-    repository: "ghcr.io/ietf-tools/mailarchive-celery"
-    tag: latest
-  tage:
   livenessProbe: {}
     # initialDelaySeconds: 10
     # periodSeconds: 60
@@ -207,6 +203,54 @@ celeryWorker:
     - name: mailarchive-persistent-storage
       mountPath: "/data"
       readOnly: true
+
+celeryBeat:
+  enabled: true
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 90
+    # targetMemoryUtilizationPercentage: 80
+  livenessProbe: {}
+    # initialDelaySeconds: 10
+    # periodSeconds: 60
+    # timeoutSeconds: 30
+    # exec:
+    #   command:
+    #     - "bash"
+    #     - "-c"
+    #     - "celery -A django inspect ping -d celery@$HOSTNAME | grep -q OK"
+  resources:
+    # limits:
+    #   cpu: 900m
+    #   memory: 768Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+  nodeSelector: {}
+  tolerations: []
+  podAnnotations: {}
+  affinity: {}
+  env:
+    CONTAINER_ROLE: beat
+    ELASTICSEARCH_HOST: elasticsearch-master
+    SERVER_ROLE: beat
+    CELERY_BROKER_URL: amqp://user:bugsbunny@mailarchive-rabbitmq:5672//
+
+  volumeMounts:
+    - name: mailarchive-persistent-storage
+      mountPath: "/data"
+      readOnly: true
 # -------------------------------------------------------------
 # COMMON
 # -------------------------------------------------------------
+
+pvc:
+  name: mailarchive-data-pvc
+  storageClassName: ""
+  accessMode: ReadWriteOnce
+  storage: 127Gi
+  volumeName: mailarchive-data-volume
+  

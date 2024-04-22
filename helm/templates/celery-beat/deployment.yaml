@@ -1,0 +1,77 @@
+{{- if .Values.celeryBeat.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "mailarchive.fullname" . }}-beat
+  labels:
+    {{- include "mailarchive.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ include "mailarchive.fullname" . }}-beat
+spec:
+  replicas: {{ .replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "mailarchive.labels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ include "mailarchive.fullname" . }}-beat
+  template:
+    metadata:
+      labels:
+        {{- include "mailarchive.labels" $ | nindent 8 }}
+        app.kubernetes.io/component: {{ include "mailarchive.fullname" . }}-beat
+      {{- with .Values.celeryBeat.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with $.Values.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ $.Chart.Name }}
+          {{- if .Values.celeryBeat.args }}
+          args: {{- toYaml .Values.celeryBeat.args | nindent 10}}
+          {{- end }}
+          securityContext:
+            {{- toYaml .securityContext | nindent 12 }}
+          image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag | default $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          {{- with .command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            {{- include "mailarchive.db.env" . | nindent 12 }}
+            - name: CONTAINER_ROLE
+              value: {{ .Values.celeryBeat.env.CONTAINER_ROLE | quote }}
+            - name: ELASTICSEARCH_HOST
+              value: {{ .Values.celeryBeat.env.ELASTICSEARCH_HOST | quote }}
+            - name: SERVER_ROLE
+              value: {{ .Values.celeryBeat.env.SERVER_ROLE | quote }}
+            - name: CELERY_BROKER_URL
+              value: {{ .Values.celeryBeat.env.CELERY_BROKER_URL | quote }}
+          resources:
+            {{- toYaml .resources | nindent 12 }}
+          {{- with .Values.celeryBeat.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+{{- end -}}

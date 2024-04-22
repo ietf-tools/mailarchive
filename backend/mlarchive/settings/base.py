@@ -14,6 +14,7 @@ https://github.com/joke2k/django-environ
 """
 
 import os
+import sys
 import environ
 from email.utils import getaddresses
 
@@ -38,6 +39,7 @@ env = environ.Env(
     IMPORT_MESSAGE_APIKEY=(str, ''),
     INTERNAL_IPS=(list, []),
     LOG_DIR=(str, '/var/log/mail-archive'),
+    LOG_HANDLERS=(list, ['mlarchive']),
     LOG_LEVEL=(str, 'INFO'),
     MAILMAN_API_PASSWORD=(str, ''),
     MAILMAN_API_URL=(str, 'http://localhost:8001/3.1'),
@@ -403,12 +405,17 @@ LOGGING = {
             'formatter': 'simple',
             'class': 'logging.handlers.WatchedFileHandler',
             'filename': LOG_FILE,
-        }
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'stream': sys.stdout,
+        },
     },
     'loggers': {
         # Top level logger
         'mlarchive': {
-            'handlers': ['mlarchive'],
+            'handlers': env('LOG_HANDLERS'),
             'level': env('LOG_LEVEL'),
             'propagate': False,
         },

@@ -12,6 +12,7 @@ INTERNAL_IPS=
 
 DEBUG_TOOLBAR_ON=True
 DATA_ROOT="/data"
+LOG_HANDLERS="console"
 LOG_LEVEL=DEBUG
 LOG_DIR="/data/log/mail-archive"
 

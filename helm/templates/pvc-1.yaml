@@ -2,12 +2,12 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: mailarchive-data-pvc
+  name: {{ .Values.pvc.name }}
 spec:
   accessModes:
-    - ReadWriteOnce
+    - {{ .Values.pvc.accessMode }}
   resources:
     requests:
-      storage: 127Gi
-  storageClassName: ""
-  volumeName: mailarchive-data-volume
+      storage: {{ .Values.pvc.storage }}
+  storageClassName: {{ .Values.pvc.storageClassName }}
+  volumeName: {{ .Values.pvc.volumeName }}

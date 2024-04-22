@@ -7,6 +7,16 @@ ENV DEBIAN_FRONTEND=noninteractive
 # https://github.com/SeleniumHQ/docker-selenium/issues/87
 ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
 
+# Install packages required for chrome / selenium testing
+RUN apt-get update --fix-missing && apt-get install -qy \
+    libgtk-3-0 \
+    libgbm-dev \
+    libasound2
+
+# Get rid of installation files we don't need in the image, to reduce size
+# this should be included in install layer above if chromedriver layer removed
+RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
+
 # Copy library scripts to execute
 ADD https://raw.githubusercontent.com/microsoft/vscode-dev-containers/v0.236.0/containers/python-3/.devcontainer/library-scripts/common-debian.sh /tmp/library-scripts/
 ADD https://raw.githubusercontent.com/microsoft/vscode-dev-containers/v0.236.0/containers/python-3/.devcontainer/library-scripts/python-debian.sh /tmp/library-scripts/

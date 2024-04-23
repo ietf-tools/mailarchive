@@ -14,7 +14,7 @@ DEBUG_TOOLBAR_ON=True
 DATA_ROOT="/data"
 LOG_HANDLERS="console"
 LOG_LEVEL=DEBUG
-LOG_DIR="/tmp"      # not used but needs to be accessible
+LOG_DIR=/tmp
 
 # ELASTICSEARCH SETTINGS
 ELASTICSEARCH_HOST='es'

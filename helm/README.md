@@ -18,5 +18,5 @@ mailarchive chartmuseum/mailarchive
 
 ## Dev install command
 ```
-helm install -f helm/values_dev.yaml mailarchive chartmuseum/mailarchive 
+helm install --set image.tag=2.23.19 -f helm/values_dev.yaml mailarchive helm 
 ```

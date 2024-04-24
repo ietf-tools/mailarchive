@@ -36,10 +36,10 @@ elasticsearch:
   # Request smaller persistent volumes.
   volumeClaimTemplate:
     accessModes: [ "ReadWriteOnce" ]
-    storageClassName: "hostpath"
+    storageClassName: standard
     resources:
       requests:
-        storage: 100M
+        storage: 1Gi
 
 # -------------------------------------------------------------
 # PVC

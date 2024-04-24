@@ -142,14 +142,6 @@ elasticsearch:
   antiAffinity: "soft"
   minimumMasterNodes: 1
 
-  # Request smaller persistent volumes.
-  volumeClaimTemplate:
-    accessModes: [ "ReadWriteOnce" ]
-    storageClassName: "hostpath"
-    resources:
-      requests:
-        storage: 100M
-
 # -------------------------------------------------------------
 # RABBITMQ
 # -------------------------------------------------------------

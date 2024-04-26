@@ -201,6 +201,8 @@ class ImportMessageView(View):
             return JsonResponse({'error': 'no email message in request body'}, status=400)
 
         # stash message on disk
+        if not os.path.exists(settings.IMPORT_DIR):
+            os.makedirs(settings.IMPORT_DIR)
         prefix = f'{list_name}.{list_type}.'
         try:
             fd, filepath = tempfile.mkstemp(prefix=prefix, dir=settings.IMPORT_DIR)

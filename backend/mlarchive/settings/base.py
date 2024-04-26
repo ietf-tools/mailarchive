@@ -51,6 +51,8 @@ env = environ.Env(
     SCOUT_MONITOR=(bool, False),
     SCOUT_KEY=(str, ''),
     SERVER_MODE=(str, 'development'),
+    STATIC_URL=(str, '/static/{}/'),
+    STATIC_FRAG=(str, '/../static/{}/'),
     USING_CDN=(bool, False),
 )
 
@@ -158,8 +160,13 @@ MEDIA_URL = ''
 
 ROOT_URLCONF = 'mlarchive.urls'
 
-STATIC_URL = '/static/%s/' % __version__
-STATIC_ROOT = os.path.abspath(BASE_DIR + "/../static/%s/" % __version__)
+STATIC_URL = env('STATIC_URL').format(__version__)
+if '{}' in env('STATIC_FRAG'):
+    STATIC_FRAG = env('STATIC_FRAG').format(__version__)
+else:
+    STATIC_FRAG = env('STATIC_FRAG')
+
+STATIC_ROOT = os.path.abspath(BASE_DIR + STATIC_FRAG)
 
 # Additional locations of static files (in addition to each app's static/ dir)
 STATICFILES_DIRS = (

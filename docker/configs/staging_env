@@ -31,5 +31,5 @@ OIDC_RP_CLIENT_SECRET=''
 CELERY_BROKER_URL="amqp://guest:guest@rabbit:5672//"
 
 # STATIC FILES
-STATIC_URL = "https://static.ietf.org/mailarchive/%s/"%__version__
-STATIC_ROOT = os.path.abspath(BASE_DIR + "/../../static/")
+STATIC_URL="https://static.ietf.org/mailarchive/{}/"
+STATIC_FRAG="/../../static/"

@@ -37,6 +37,7 @@ elasticsearch:
   volumeClaimTemplate:
     accessModes: [ "ReadWriteOnce" ]
     storageClassName: standard
+    volumeName: ""
     resources:
       requests:
         storage: 1Gi

@@ -31,6 +31,6 @@ RUN chmod +x start.sh && \
 # EXPOSE 8000
 
 # Switch to local dev user
-# USER dev:dev
+USER dev:dev
 
 CMD ["./start.sh"]

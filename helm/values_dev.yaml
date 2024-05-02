@@ -46,9 +46,4 @@ elasticsearch:
 # PVC
 # -------------------------------------------------------------
 
-pvc:
-  name: mailarchive-data-pvc
-  storageClassName: standard
-  accessMode: ReadWriteOnce
-  storage: 8Gi
-  volumeName: ""
+createPersistentVolume: true

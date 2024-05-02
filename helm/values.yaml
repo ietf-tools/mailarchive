@@ -28,8 +28,8 @@ serviceAccount:
 podAnnotations: {}
 podLabels: {}
 
-podSecurityContext:
-  runAsNonRoot: true
+# podSecurityContext:
+#   runAsNonRoot: true
 
 securityContext:
   allowPrivilegeEscalation: false
@@ -39,6 +39,7 @@ securityContext:
   readOnlyRootFilesystem: true
   runAsUser: 1000
   runAsGroup: 1000
+  fsGroup: 1000
 
 service:
   type: ClusterIP
@@ -93,6 +94,9 @@ volumes:
   - name: mailarchive-persistent-storage
     persistentVolumeClaim:
       claimName: mailarchive-data-pvc
+  - name: mailarchive-tmp
+    emptyDir:
+      sizeLimit: "2Gi"
 # - name: foo
 #   secret:
 #     secretName: mysecret
@@ -102,6 +106,8 @@ volumes:
 volumeMounts:
   - name: mailarchive-persistent-storage
     mountPath: "/data"
+  - name: mailarchive-tmp
+    mountPath: /tmp
 
 nodeSelector: {}
 
@@ -245,13 +251,14 @@ celeryBeat:
       mountPath: "/data"
       readOnly: true
 # -------------------------------------------------------------
-# COMMON
+# Persistent Volumes
 # -------------------------------------------------------------
 
 pvc:
   name: mailarchive-data-pvc
-  storageClassName: ""
+  storageClassName: '""'
+  volumeName: mailarchive-data-volume
   accessMode: ReadWriteOnce
   storage: 127Gi
-  volumeName: mailarchive-data-volume
-  
+
+createPersistentVolume: false

@@ -1,0 +1,15 @@
+{{- if eq .Values.createPersistentVolume true }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mailarchive-data-volume
+spec:
+  capacity:
+    storage: 127Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  hostPath:
+    path: /tmp/mailarchive-data-volume
+{{- end }}

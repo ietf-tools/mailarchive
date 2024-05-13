@@ -40,6 +40,28 @@ spec:
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+        - name: wait-for-db
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              # Wait for the database to be ready
+              while ! nc -z -w 1 mailarchive-postgresql 5432; do
+                echo "Waiting for database to be ready..."
+                sleep 1
+              done
+        - name: wait-for-elasticsearch
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              # Wait for the index to be ready
+              while ! nc -z -w 1 elasticsearch-master 9200; do
+                echo "Waiting for elasticsearch index to be ready..."
+                sleep 1
+              done
       containers:
         - name: {{ .Chart.Name }}
           securityContext:

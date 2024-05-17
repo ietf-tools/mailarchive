@@ -463,6 +463,20 @@ This is the message.
     assert mw.get_cc() == 'ancp@ietf.org'
 
 
+def test_MessageWrapper_normalize():
+    msg = message_from_file('mail_multipart.1')
+    mw = MessageWrapper.from_message(msg, 'public')
+    # leading space
+    assert mw.normalize(' <LEADING@example.com>') == '<LEADING@example.com>'
+    # trailing space
+    assert mw.normalize('<LEADING@example.com> ') == '<LEADING@example.com>'
+    # compress space
+    assert mw.normalize('Hello    there') == 'Hello there'
+    # decode
+    text = '=?utf-8?q?ngs=29_to_Proposed_Standard?='
+    assert mw.normalize(text) == 'ngs) to Proposed Standard'
+
+
 @pytest.mark.django_db(transaction=True)
 def test_MessageWrapper_process_attachments():
     msg = message_from_file('mail_multipart.1')

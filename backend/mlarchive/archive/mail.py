@@ -850,7 +850,7 @@ class MessageWrapper(object):
         # encode as UTF8 and compress whitespace
         # normal = normal.encode('utf8')        # this is unnecessary
         normal = clean_spaces(normal)
-        return normal.rstrip()
+        return normal.strip()
 
     def process(self):
         """Perform the rest of the parsing and construct the Message object.  Note,

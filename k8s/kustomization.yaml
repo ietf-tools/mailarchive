@@ -1,0 +1,10 @@
+namespace: mailarch
+namePrefix: ml-
+resources:
+  - beat.yaml
+  - celery.yaml
+  - django-config.yaml
+  - elasticsearch.yaml
+  - mailarchive.yaml
+  - memcached.yaml
+  - rabbitmq.yaml

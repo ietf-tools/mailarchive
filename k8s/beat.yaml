@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: beat
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: beat
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: beat
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: beat
+          image: "ghcr.io/ietf-tools/mailarchive:$APP_IMAGE_TAG"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+              protocol: TCP
+          volumeMounts:
+            - name: ml-vol
+              mountPath: /data
+              readOnly: true
+            - name: ml-tmp
+              mountPath: /tmp
+          env:
+            - name: "CONTAINER_ROLE"
+              value: "beat"
+          envFrom:
+            - configMapRef:
+                name: django-config
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
+      volumes:
+        # To be overriden with the actual shared volume
+        - name: ml-vol
+        - name: ml-tmp
+          emptyDir:
+            sizeLimit: "2Gi"
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30

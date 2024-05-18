@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: django-config
+data:
+  # n.b., these are debug values / non-secret secrets
+  ELASTICSEARCH_HOST: "elasticsearch-master"
+  IMPORT_MESSAGE_APIKEY: "dummykey"
+  CELERY_BROKER_URL: "amqp://user:bugsbunny@mailarchive-rabbitmq:5672//"
+  MEMCACHED_SERVICE_HOST: "mailarchive-memcached"
+  DJANGO_SETTINGS_MODULE: "mlarchive.settings.settings_staging"
+  SCOUT_NAME: "Mailarchive"

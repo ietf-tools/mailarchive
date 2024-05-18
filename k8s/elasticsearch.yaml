@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - image: "docker.elastic.co/elasticsearch/elasticsearch:8.13.4"
+          imagePullPolicy: IfNotPresent
+          name: elasticsearch
+          ports:
+            - name: elasticsearch
+              containerPort: 9200
+              protocol: TCP
+          volumeMounts:
+            - name: es-data
+              mountPath: /usr/share/elasticsearch/data
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            # elasticsearch image sets up uid/gid 1000:0
+            runAsUser: 1000
+            runAsGroup: 1000
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+  volumeClaimTemplates:
+  - metadata:
+      name: es-data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 25Gi
+      # storageClassName: ""
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9200
+      targetPort: elasticsearch
+      protocol: TCP
+      name: elasticsearch
+  selector:
+    app: elasticsearch

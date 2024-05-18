@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailarchive
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: mailarchive
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mailarchive
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: mailarchive
+          image: "ghcr.io/ietf-tools/mailarchive:$APP_IMAGE_TAG"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+              protocol: TCP
+          volumeMounts:
+            - name: ml-vol
+              mountPath: /data
+            - name: ml-tmp
+              mountPath: /tmp
+          env:
+            - name: "CONTAINER_ROLE"
+              value: "mailarchive"
+          envFrom:
+            - configMapRef:
+                name: django-config
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+      volumes:
+        # To be overriden with the actual shared volume
+        - name: ml-vol
+        - name: ml-tmp
+          emptyDir:
+            sizeLimit: "2Gi"
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailarchive
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: mailarchive

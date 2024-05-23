@@ -149,6 +149,11 @@ def lookup_user(address):
     Datatracker account name.  Returns None if the email is not found or if there is no
     associated User account.
     '''
+    # check cache
+    username_map = cache.get('username_map')
+    if username_map and address in username_map:
+        return username_map[address]
+
     apikey = settings.DATATRACKER_PERSON_ENDPOINT_API_KEY
     url = settings.DATATRACKER_PERSON_ENDPOINT
     data = {'apikey': apikey, '_expand': 'user', 'email': address}
@@ -171,6 +176,12 @@ def lookup_user(address):
         logger.error(str(error))
         return None
 
+    if username_map is None:
+        username_map = {}
+
+    username_map[address] = username
+    cache.set('username_map', username_map, timeout=None)
+
     return username
 
 
@@ -192,26 +203,9 @@ def process_members(email_list, emails):
             try:
                 user = User.objects.get(username__iexact=name)
             except User.DoesNotExist:
-                user = User.objects.create(username=name)
+                user = User.objects.create(username=name, email=name)
             if user not in members:
                 email_list.members.add(user)
-
-
-def get_known_mailman_lists(private=None):
-    '''Returns EmailLists that are managed by mailman'''
-    list_lists_cmd = os.path.join(settings.MAILMAN_DIR, 'bin/list_lists')
-    known_lists = []
-    data = subprocess.check_output([list_lists_cmd])
-    output = data.decode('ascii').splitlines()
-    for line in output:
-        match = LIST_LISTS_PATTERN.match(line)
-        if match:
-            known_lists.append(match.groups()[0].lower())
-    
-    mlists = EmailList.objects.filter(name__in=known_lists)
-    if isinstance(private, bool):
-        mlists = mlists.filter(private=private)
-    return mlists
 
 
 def get_mailman_lists(private=None):
@@ -224,26 +218,45 @@ def get_mailman_lists(private=None):
         settings.MAILMAN_API_USER,
         settings.MAILMAN_API_PASSWORD)
     mailman_lists = [x.list_name for x in client.lists]
-    mlists = EmailList.objects.filter(name__in=mailman_lists)
+    email_lists = EmailList.objects.filter(name__in=mailman_lists)
     if isinstance(private, bool):
-        mlists = mlists.filter(private=private)
-    return mlists
+        email_lists = email_lists.filter(private=private)
+    return email_lists
+
+
+
+def get_fqdn_map():
+    fqdn_map = cache.get('fqdn_map')
+    if fqdn_map is None:
+        fqdn_map = defaultdict(lambda: 'ietf.org')
+        client = mailmanclient.Client(
+        settings.MAILMAN_API_URL,
+        settings.MAILMAN_API_USER,
+        settings.MAILMAN_API_PASSWORD)
+        for mailman_list in client.lists:
+            fqdn_map[mailman_list.list_name] = mailman_list.mail_host
+        cache.set('fqdn_map', fqdn_map, timeout=86400)
+    return fqdn_map
+
+
+def get_fqdn(listname):
+    '''Returns fully qualified domain name by querying mailman.
+    Not in use as of 2024-05-22 but leaving in place for future use.
+    '''
+    fqdn_map = get_fqdn_map()
+    return listname + '@' + fqdn_map[listname]
 
 
 def get_subscribers(listname):
     '''Gets list of subscribers for listname from mailman'''
-    list_members_cmd = os.path.join(settings.MAILMAN_DIR, 'bin/list_members')
-    try:
-        output = subprocess.check_output([list_members_cmd, listname]).decode('latin1')
-    except subprocess.CalledProcessError:
-        return []
-    return output.split()
-
-
-def get_subscriber_count():
-    '''Populates Subscriber table with subscriber counts from mailman'''
-    for mlist in get_known_mailman_lists():
-        Subscriber.objects.create(email_list=mlist, count=len(get_subscribers(mlist.name)))
+    client = mailmanclient.Client(
+        settings.MAILMAN_API_URL,
+        settings.MAILMAN_API_USER,
+        settings.MAILMAN_API_PASSWORD)
+    fqdn = get_fqdn(listname)
+    mailman_list = client.get_list(fqdn)
+    members = mailman_list.members
+    return [m.email for m in members]
 
 
 def get_subscriber_counts():
@@ -260,66 +273,44 @@ def get_subscriber_counts():
     Subscriber.objects.bulk_create(subscribers)
 
 
-def get_membership(options, args):
-    # disconnect the EmailList post_save signal, we don't want to call it multiple
-    # times if many lists memberships have changed
-    # signals.post_save.disconnect(_list_save_handler, sender=EmailList)
-    has_changed = False
-
-    for mlist in get_known_mailman_lists(private=True):
-        if not options.quiet:
-            print("Processing: %s" % mlist.name)
-
-        subscribers = get_subscribers(mlist.name)
-        sha = hashlib.sha1(smart_bytes(subscribers))
-        digest = base64.urlsafe_b64encode(sha.digest())
-        digest = digest.decode()
-        if mlist.members_digest != digest:
-            has_changed = True
-            process_members(mlist, subscribers)
-            mlist.members_digest = digest
-            mlist.save()
-
-    if has_changed:
-        _export_lists()
-
-
 def get_membership_3(quiet=False):
     '''For all private lists, get membership from mailman 3 API and update
     list membership as needed.
 
-    Use client.members to get all list memberships rather than hitting the API for
-    every private list
+    Initial plan was to use client.members to get all list memberships rather
+    than hitting the API for every private list, but this request fails
+    trying to retrieve millions of records.
     '''
+    has_changed = False
+
     client = mailmanclient.Client(
         settings.MAILMAN_API_URL,
         settings.MAILMAN_API_USER,
         settings.MAILMAN_API_PASSWORD)
 
-    # build dictionary of all list memberships
-    members = defaultdict(list)
-    no_match = set()
-    for member in client.members:
-        # list_name = member.list_id.split('.')[:-2]
-        match = MAILMAN_LISTID_PATTERN.match(member.list_id)
-        if match:
-            list_name = match.groups()[0]
-            members[list_name].append(member.email)
-        else:
-            no_match.add(member.list_id)
-    if no_match:
-        logger.error('Could not parse mailman list_ids: {}'.format(','.join(no_match)))
-
-    for mlist in EmailList.objects.filter(name__in=members.keys(), private=True):
+    private_lists = get_mailman_lists(private=True)
+    fqdn_map = get_fqdn_map()
+    for plist in private_lists:
         if not quiet:
-            print("Processing: %s" % mlist.name)
-        sha = hashlib.sha1(smart_bytes(members[mlist.name]))
+            print("Processing: %s" % plist)
+        if plist.name not in fqdn_map:
+            logger.warning("Can't find fqdn for list: {}".format(plist.name))
+            continue
+        fqdn = plist.name + '@' + fqdn_map[plist.name]
+        mailman_list = client.get_list(fqdn)
+        mailman_members = mailman_list.members
+        members = [m.email for m in mailman_members]
+        sha = hashlib.sha1(smart_bytes(members))
         digest = base64.urlsafe_b64encode(sha.digest())
         digest = digest.decode()
-        if mlist.members_digest != digest:
-            process_members(mlist, members[mlist.name])
-            mlist.members_digest = digest
-            mlist.save()
+        if plist.members_digest != digest:
+            has_changed = True
+            process_members(plist, members)
+            plist.members_digest = digest
+            plist.save()
+
+    if has_changed:
+        _export_lists()
 
 
 def check_inactive(prompt=True):

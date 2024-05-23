@@ -240,9 +240,7 @@ def get_fqdn_map():
 
 
 def get_fqdn(listname):
-    '''Returns fully qualified domain name by querying mailman.
-    Not in use as of 2024-05-22 but leaving in place for future use.
-    '''
+    '''Returns fully qualified domain name by querying mailman'''
     fqdn_map = get_fqdn_map()
     return listname + '@' + fqdn_map[listname]
 

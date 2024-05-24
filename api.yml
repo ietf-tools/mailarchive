@@ -7,7 +7,7 @@ servers:
   - url: https://mailarchive.ietf.org
     description: server
 paths:
-  /api/v1/stats/msg_counts:
+  /api/v1/stats/msg_counts/:
     get:
       summary: Number of messages for given list(s), date range 
       parameters:
@@ -86,7 +86,7 @@ paths:
                     type: string
                     description: Error description
         
-  /api/v1/stats/subscriber_counts:
+  /api/v1/stats/subscriber_counts/:
     get:
       summary: Number of subscribers for given list(s), for date
       parameters:

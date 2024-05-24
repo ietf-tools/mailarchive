@@ -185,7 +185,7 @@ class SubscriberCountsView(View):
 @method_decorator(csrf_exempt, name='dispatch')
 class ImportMessageView(View):
     '''An API to import a message. Expect a POST request with message in request.body
-    and bearer token in headers: Authorization: Bearer [apikey]
+    and X-API-Key header
     '''
     http_method_names = ['post']
 

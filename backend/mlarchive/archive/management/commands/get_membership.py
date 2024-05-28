@@ -29,9 +29,7 @@ class Command(BaseCommand):
         confirm_settings([
             'MAILMAN_API_USER',
             'MAILMAN_API_PASSWORD',
-            'MAILMAN_API_ORIGIN',
-            'MAILMAN_API_LISTS',
-            'MAILMAN_API_MEMBER'])
+            'MAILMAN_API_URL'])
         try:
             get_membership_3(quiet=options['quiet'])
         except requests.RequestException as e:

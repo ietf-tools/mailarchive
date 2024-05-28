@@ -1,4 +1,5 @@
 import datetime
+import json
 import mailbox
 import pytest
 import requests
@@ -12,12 +13,70 @@ from django.conf import settings
 from django.core.cache import cache
 from django.contrib.auth.models import AnonymousUser
 from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
-    lookup_user, process_members, get_membership, check_inactive, EmailList,
+    lookup_user, process_members, check_inactive, EmailList,
     create_mbox_file, _get_lists_as_xml, get_subscribers, Subscriber,
-    get_known_mailman_lists, get_subscriber_count,
-    get_mailman_lists, get_membership_3, get_subscriber_counts)
+    get_mailman_lists, get_membership_3, get_subscriber_counts, get_fqdn)
 from mlarchive.archive.models import User
 from factories import EmailListFactory
+
+
+MAILMAN_LIST_PUBLIC = {
+    "advertised": True,
+    "display_name": "public",
+    "fqdn_listname": "public@example.com",
+    "list_id": "public.example.com",
+    "list_name": "public",
+    "mail_host": "example.com",
+    "member_count": 25,
+    "volume": 1,
+    "description": "",
+    "self_link": "http://localhost:9001/3.1/lists/public.example.com",
+    "http_etag": "6jopcm1cq9kej328qeg3i766jw6v2gsu06mwo8fs",
+}
+
+MAILMAN_LIST_PRIVATE = {
+    "advertised": False,
+    "display_name": "private",
+    "fqdn_listname": "private@example.com",
+    "list_id": "private.example.com",
+    "list_name": "private",
+    "mail_host": "example.com",
+    "member_count": 25,
+    "volume": 1,
+    "description": "",
+    "self_link": "http://localhost:9001/3.1/lists/private.example.com",
+    "http_etag": "6jopcm1cq9kej328qeg3i766jw6v2gsu06mwo8fs",
+}
+
+MAILMAN_LISTS = {
+    'start': 0,
+    'total_size': 2,
+    'entries': [MAILMAN_LIST_PUBLIC, MAILMAN_LIST_PRIVATE],
+}
+
+MAILMAN_MEMBER = {
+    'address': 'http://localhost:9001/3.1/addresses/holden.ford@example.com',
+    'bounce_score': 0,
+    'last_warning_sent': '0001-01-01T00:00:00',
+    'total_warnings_sent': 0,
+    'delivery_mode': 'regular',
+    'email': 'holden.ford@example.com',
+    'list_id': 'public.example.com',
+    'subscription_mode': 'as_address',
+    'role': 'member',
+    'user': 'http://localhost:9001/3.1/users/ze5kwk6dgty03g6dtc3j27t6x0dlntlm',
+    'moderation_action': 'defer',
+    'display_name': 'Holden Ford',
+    'self_link': 'http://localhost:9001/3.1/members/ze5kwk6dgty03g6dtc3j27t6x0dlntlm',
+    'member_id': 'ze5kwk6dgty03g6dtc3j27t6x0dlntlm',
+    'http_etag': '6jopcm1cq9kej328qeg3i766jw6v2gsu06mwo8fs',
+}
+
+MAILMAN_MEMBERS = {
+    'start': 0,
+    'total_size': 1,
+    'entries': [MAILMAN_MEMBER],
+}
 
 # --------------------------------------------------
 # Helper Classes
@@ -25,9 +84,10 @@ from factories import EmailListFactory
 
 
 class MailmanList:
-    def __init__(self, list_name, member_count):
+    def __init__(self, list_name, member_count, mail_host='example.com'):
         self.list_name = list_name
         self.member_count = member_count
+        self.mail_host = mail_host
 
 
 class ListResponse:
@@ -153,31 +213,6 @@ def test_process_members_case_insensitive(mock_post):
     assert email_list.members.get(username='joe@example.com')
 
 
-@patch('subprocess.check_output')
-@patch('requests.post')
-@pytest.mark.django_db(transaction=True)
-def test_get_membership(mock_post, mock_output):
-    # setup
-    path = os.path.join(settings.EXPORT_DIR, 'email_lists.xml')
-    if os.path.exists(path):
-        os.remove(path)
-
-    private = EmailListFactory.create(name='private', private=True)
-    # handle multiple calls to check_output
-    mock_output.side_effect = [b'private - Private Email List', b'joe@example.com']
-    response = requests.Response()
-    mock_post.return_value = response
-    response.status_code = 200
-    response._content = b'{"person.person": {"1": {"user": {"username": "joe@example.com"}}}}'
-    assert private.members.count() == 0
-    options = DummyOptions()
-    options.quiet = True
-    get_membership(options, None)
-    assert private.members.count() == 1
-    assert private.members.first().username == 'joe@example.com'
-    assert os.path.exists(path)
-
-
 @patch('mailmanclient.restbase.connection.Connection.call')
 @patch('requests.post')
 @pytest.mark.django_db(transaction=True)
@@ -187,24 +222,43 @@ def test_get_membership_3(mock_post, mock_client):
     if os.path.exists(path):
         os.remove(path)
 
-    private = EmailListFactory.create(name='bee', private=True)
+    private = EmailListFactory.create(name='private', private=True)
     
     # prep mock
+    response_lists = requests.Response()
+    response_lists.status_code = 200
+    response_lists._content = json.dumps(MAILMAN_LISTS).encode('ascii')
+    response_list = requests.Response()
+    response_list.status_code = 200
+    response_list._content = json.dumps(MAILMAN_LIST_PRIVATE).encode('ascii')
     response_members = requests.Response()
     response_members.status_code = 200
-    response_members._content = b'{"start": 0, "total_size": 1, "entries": [{"address": "http://172.19.199.3:8001/3.1/addresses/bperson@example.com", "bounce_score": 0, "last_warning_sent": "0001-01-01T00:00:00", "total_warnings_sent": 0, "delivery_mode": "regular", "email": "bperson@example.com", "list_id": "bee.ietf.org", "subscription_mode": "as_address", "role": "member", "user": "http://172.19.199.3:8001/3.1/users/bb94f3e8ee504f788aaee97d0b76c3d1", "display_name": "Bart Person", "self_link": "http://172.19.199.3:8001/3.1/members/a963ef52752e4f679ee3fe8253208690", "member_id": "a963ef52752e4f679ee3fe8253208690", "http_etag": "\\"36b75489a29b268a1cf7a08c1c6d9a54f72b1c1e\\""}], "http_etag": "\\"a613273c96620e5eea18627b9c7dd4b50a23be8d\\""}'
-
+    response_members._content = json.dumps(MAILMAN_MEMBERS).encode('ascii')
     response_lookup = requests.Response()
     response_lookup.status_code = 200
     response_lookup._content = b'{"person.person": {"1": {"user": {"username": "bperson@example.com"}}}}'
-        
-    mock_client.return_value = response_members, response_members.json()
+    mock_client.side_effect = [
+        (response_lists, response_lists.json()),
+        (response_lists, response_lists.json()),
+        (response_list, response_list.json()),
+        (response_members, response_members.json())]
     mock_post.return_value = response_lookup
     assert private.members.count() == 0
     get_membership_3(quiet=True)
+    print(EmailList.objects.all())
+    print(User.objects.all())
     assert private.members.count() == 1
     assert private.members.first().username == 'bperson@example.com'
     assert os.path.exists(path)
+
+
+@patch('mailmanclient.client.Client.get_lists')
+def test_get_fqdn(mock_client):
+    mock_client.return_value = [MailmanList(
+        list_name='public',
+        member_count=1,
+        mail_host='example.com')]
+    assert get_fqdn('public') == 'public@example.com'
 
 
 class DummyOptions(object):
@@ -274,34 +328,6 @@ def test_get_lists_as_xml(client):
     assert private_test.attrib['access'] == 'read,write'
 
 
-@patch('subprocess.check_output')
-@pytest.mark.django_db(transaction=True)
-def test_get_subscribers(mock_output):
-    public = EmailListFactory.create(name='public')
-    # handle multiple calls to check_output
-    mock_output.return_value = b'joe@example.com\nfred@example.com\n'
-    subs = get_subscribers('public')
-    assert subs == ['joe@example.com', 'fred@example.com']
-
-
-@patch('subprocess.check_output')
-@pytest.mark.django_db(transaction=True)
-def test_get_subscriber_count(mock_output):
-    public = EmailListFactory.create(name='public')
-
-    # handle multiple calls to check_output
-    mock_output.side_effect = [
-        b'     public - Public List\n     private - Private List',
-        b'joe@example.com\nfred@example.com\nmary@example.com\n',
-    ]
-    assert Subscriber.objects.count() == 0
-    get_subscriber_count()
-    subscriber = Subscriber.objects.first()
-    assert subscriber.email_list == public
-    assert subscriber.date == datetime.date.today()
-    assert subscriber.count == 3
-
-
 @patch('mailmanclient.client.Client.get_lists')
 @pytest.mark.django_db(transaction=True)
 def test_get_subscriber_counts(mock_client):
@@ -315,26 +341,37 @@ def test_get_subscriber_counts(mock_client):
     assert subscriber.count == 1
 
 
-@patch('subprocess.check_output')
+@patch('mailmanclient.restbase.connection.Connection.call')
 @pytest.mark.django_db(transaction=True)
-def test_get_known_mailman_lists(mock_output):
+def test_get_mailman_lists(mock_client):
     public = EmailListFactory.create(name='public')
     private = EmailListFactory.create(name='private', private=True)
-    mock_output.return_value = b'    public - Public Email List\n   private - Private Email List'
-    mlists = get_known_mailman_lists(private=True)
+    response = requests.Response()
+    response.status_code = 200
+    response._content = json.dumps(MAILMAN_LISTS).encode('ascii')
+    mock_client.return_value = response, response.json()
+    mlists = get_mailman_lists(private=True)
     assert len(mlists) == 1
     assert list(mlists) == [private]
 
 
+
 @patch('mailmanclient.restbase.connection.Connection.call')
 @pytest.mark.django_db(transaction=True)
-def test_get_mailman_lists(mock_client):
-    ant = EmailListFactory.create(name='ant')
-    bee = EmailListFactory.create(name='bee', private=True)
-    response = requests.Response()
-    response.status_code = 200
-    response._content = b'{"start": 0, "total_size": 2, "entries": [{"advertised": true, "display_name": "Ant", "fqdn_listname": "ant@lists.example.com", "list_id": "ant.lists.example.com", "list_name": "ant", "mail_host": "lists.example.com", "member_count": 0, "volume": 1, "description": "", "self_link": "http://172.19.199.3:8001/3.1/lists/ant.lists.example.com", "http_etag": "cb67744198a68efb427c24fab35d9fc593186d6c"}, {"advertised": true, "display_name": "Bee", "fqdn_listname": "bee@lists.example.com", "list_id": "bee.lists.example.com", "list_name": "bee", "mail_host": "lists.example.com", "member_count": 1, "volume": 1, "description": "", "self_link": "http://172.19.199.3:8001/3.1/lists/bee.lists.example.com", "http_etag": "fb6d81b0f573936532b0b02d4d2116023a9e56a8"}], "http_etag": "ef59c8ea7baa670940fd87f99fce83ba5013381f"}'
-    mock_client.return_value = response, response.json()
-    mlists = get_mailman_lists(private=True)
-    assert len(mlists) == 1
-    assert list(mlists) == [bee]
+def test_get_subscribers(mock_client):
+    public = EmailListFactory.create(name='public')
+    response_fqdn = requests.Response()
+    response_fqdn.status_code = 200
+    response_fqdn._content = json.dumps(MAILMAN_LISTS).encode('ascii')
+    response_a = requests.Response()
+    response_a.status_code = 200
+    response_a._content = json.dumps(MAILMAN_LIST_PUBLIC).encode('ascii')
+    response_b = requests.Response()
+    response_b.status_code = 200
+    response_b._content = json.dumps(MAILMAN_MEMBERS).encode('ascii')
+    mock_client.side_effect = [
+        (response_fqdn, response_fqdn.json()),
+        (response_a, response_a.json()),
+        (response_b, response_b.json())]
+    subs = get_subscribers('public')
+    assert subs == ['holden.ford@example.com']

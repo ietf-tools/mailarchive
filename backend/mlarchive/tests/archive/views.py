@@ -715,6 +715,16 @@ def test_export_limit(admin_client, messages, settings):
     assert response.status_code == 302
 
 
+@pytest.mark.django_db(transaction=True)
+def test_export_bad_query(admin_client, messages, settings):
+    settings.EXPORT_LIMIT = 0
+    url = reverse('archive_export', kwargs={'type': 'mbox'}) + '?q=%22pg59b2'
+    response = admin_client.get(url, follow=True)
+    print(type(response.content))
+    assert response.status_code == 200
+    assert 'Invalid search expression' in smart_str(response.content)
+
+
 def test_help(client):
     url = reverse('archive_help')
     response = client.get(url)

@@ -851,7 +851,12 @@ def export(request, type):
     data['sso'] = 'date'
     form = AdvancedSearchForm(data, request=request)
     search = search_from_form(form, skip_facets=True)
-    response = get_export(search, type, request)
+    try:
+        response = get_export(search, type, request)
+    except RequestError as error:
+        logger.info(error)
+        messages.error(request, 'Invalid search expression')
+        return redirect('archive')
     if data.get('token'):
         response.set_cookie('downloadToken', data.get('token'))
     return response

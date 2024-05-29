@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-from django.config import settings
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from mlarchive.archive.utils import get_subscriber_counts
 

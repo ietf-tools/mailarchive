@@ -224,11 +224,14 @@ def get_mailman_lists(private=None):
     return email_lists
 
 
+def fqdn_default():
+    return 'ietf.org'
+
 
 def get_fqdn_map():
     fqdn_map = cache.get('fqdn_map')
     if fqdn_map is None:
-        fqdn_map = defaultdict(lambda: 'ietf.org')
+        fqdn_map = defaultdict(fqdn_default)
         client = mailmanclient.Client(
         settings.MAILMAN_API_URL,
         settings.MAILMAN_API_USER,

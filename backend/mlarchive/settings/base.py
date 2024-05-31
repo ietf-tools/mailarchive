@@ -265,9 +265,9 @@ MAILMAN_API_USER = env('MAILMAN_API_USER')
 MAILMAN_API_PASSWORD = env('MAILMAN_API_PASSWORD')
 IMPORT_MESSAGE_APIKEY = env('IMPORT_MESSAGE_APIKEY')
 
-# API KEYS: key=apikey, value=endpoint
+# API KEYS: key=endpoint, value=[api-key,]
 API_KEYS = {
-    IMPORT_MESSAGE_APIKEY: '/api/v1/message/',
+    '/api/v1/message/': [IMPORT_MESSAGE_APIKEY],
 }
 
 # Default timeout for HTTP requests via the requests library

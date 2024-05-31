@@ -1,7 +1,11 @@
+import base64
+import binascii
 from collections import OrderedDict
 import datetime
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
+import json
+import jsonschema
 import re
 import os
 import tempfile
@@ -9,7 +13,7 @@ import tempfile
 from django.conf import settings
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.utils.decorators import method_decorator
 
 from mlarchive.exceptions import HttpJson400, HttpJson404
@@ -181,24 +185,59 @@ class SubscriberCountsView(View):
         return JsonResponse(self.data)
 
 
+_import_message_json_validator = jsonschema.Draft202012Validator(
+    schema={
+        "type": "object",
+        "properties": {
+            "message": {
+                "type": "string",  # base64-encoded mail message
+            },
+        },
+        "required": ["message"],
+    }
+)
+
 @method_decorator(require_api_key, name='dispatch')
 @method_decorator(csrf_exempt, name='dispatch')
 class ImportMessageView(View):
-    '''An API to import a message. Expect a POST request with message in request.body
+    '''An API to import a message. 
+    Expect a POST request with JSON payload
+    message: base64 encoded email message
     and X-API-Key header
     '''
     http_method_names = ['post']
 
+    def _err(self, code, text):
+        return HttpResponse(text, status=code, content_type="text/plain")
+
     def post(self, request, **kwargs):
+
+        if request.content_type != "application/json":
+            return self._err(415, "Content-Type must be application/json")
+
+        # Validate path
         list_name = kwargs['list_name']
         list_type = kwargs['list_type']
         if not list_name:
-            return JsonResponse({'error': 'missing list_name'}, status=400)
+            return self._err(400, 'Missing list name')        
         if list_type not in ('public', 'private'):
-            return JsonResponse({'error': 'invalid list_type'}, status=400)
-        message = request.body
-        if not message:
-            return JsonResponse({'error': 'no email message in request body'}, status=400)
+            return self._err(400, 'Invalid list type')
+
+        # Validate
+        try:
+            payload = json.loads(request.body)
+            _import_message_json_validator.validate(payload)
+        except json.decoder.JSONDecodeError as err:
+            return self._err(400, f"JSON parse error at line {err.lineno} col {err.colno}: {err.msg}")
+        except jsonschema.exceptions.ValidationError as err:
+            return self._err(400, f"JSON schema error at {err.json_path}: {err.message}")
+        except Exception:
+            return self._err(400, "Invalid request format")
+
+        try:
+            message = base64.b64decode(payload["message"], validate=True)
+        except binascii.Error:
+            return self._err(400, "Invalid message: bad base64 encoding")
 
         # stash message on disk
         if not os.path.exists(settings.IMPORT_DIR):
@@ -209,16 +248,13 @@ class ImportMessageView(View):
             with os.fdopen(fd, 'wb') as f:
                 f.write(message)
         except (FileNotFoundError, PermissionError, OSError) as e:
-            return JsonResponse({'error': str(e)}, status=400)
+            return self._err(400, str(e))
         logger.info(f'Received message: {filepath}')
 
         # process message
         status = archive_message(message, list_name, private=bool(list_type == 'private'))
         logger.info(f'Archive message status: {filepath} {status}')
         if status == 0:
-            context = {'success': True}
-            status_code = 201
+            return HttpResponse(status=201)
         else:
-            context = {'success': False, 'error': status}
-            status_code = 400
-        return JsonResponse(context, status=status_code)
+            return self._err(400, 'archive_message error')

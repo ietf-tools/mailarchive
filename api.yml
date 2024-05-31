@@ -164,13 +164,18 @@ paths:
       security:
         - ApiKeyAuth: []
       requestBody:
-        description: raw email messasge
+        description: base64 encoded email message
         required: true
         content:
-          application/octet-stream:
+          application/json:
             schema:
-              type: string
-              format: byte
+              type: object
+              properties:
+                message:
+                  type: string
+                  description: base64 encoded message
+              required:
+                - message
       responses:
         '201':
           description: Created

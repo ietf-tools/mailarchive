@@ -64,13 +64,44 @@ class Command(BaseCommand):
     def create_default_tasks(self):
         PeriodicTask.objects.get_or_create(
             name="Get list subscriber counts",
-            task="mlarchive.archive.tasks.get_subscribers",
+            task="mlarchive.archive.tasks.get_subscriber_counts_task",
             defaults=dict(
                 enabled=False,
                 crontab=self.crontabs["daily"],
                 description="Get list subscriber counts from mailman"
             ),
         )
+
+        PeriodicTask.objects.get_or_create(
+            name="Get list membership",
+            task="mlarchive.archive.tasks.get_membership_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["daily"],
+                description="Get list membership from mailman"
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Purge incoming",
+            task="mlarchive.archive.tasks.purge_incoming_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["daily"],
+                description="Purge old messages from incoming directory"
+            ),
+        )
+
+        PeriodicTask.objects.get_or_create(
+            name="Update MBOX",
+            task="mlarchive.archive.tasks.update_mbox_files_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["daily"],
+                description="Update archive MBOX files"
+            ),
+        )
+
 
     def show_tasks(self):
         for label, crontab in self.crontabs.items():

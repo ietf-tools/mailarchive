@@ -7,13 +7,14 @@ from factories import EmailListFactory, UserFactory
 from mock import patch
 import os
 import subprocess   # noqa
+import time
 import xml.etree.ElementTree as ET
 
 from django.conf import settings
 from django.core.cache import cache
 from django.contrib.auth.models import AnonymousUser
 from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
-    lookup_user, process_members, check_inactive, EmailList,
+    lookup_user, process_members, check_inactive, EmailList, purge_incoming,
     create_mbox_file, _get_lists_as_xml, get_subscribers, Subscriber,
     get_mailman_lists, get_membership_3, get_subscriber_counts, get_fqdn)
 from mlarchive.archive.models import User
@@ -375,3 +376,25 @@ def test_get_subscribers(mock_client):
         (response_b, response_b.json())]
     subs = get_subscribers('public')
     assert subs == ['holden.ford@example.com']
+
+
+def test_purge_incoming(tmpdir, settings):
+    print('tmpdir: {}'.format(tmpdir))
+    path = str(tmpdir)
+    settings.INCOMING_DIR = path
+    # create new file
+    new_file_path = os.path.join(path, 'new.txt')
+    with open(new_file_path, 'w') as f:
+        f.write("This is a test file.")
+
+    old_file_path = os.path.join(path, 'old.txt') 
+    with open(old_file_path, 'w') as f:
+        f.write("This is a test file.")
+    desired_mtime = time.time() - (86400 * 91)  # 91 days ago
+    os.utime(old_file_path, (desired_mtime, desired_mtime))
+
+    assert len(os.listdir(path)) == 2
+    purge_incoming()
+    assert len(os.listdir(path)) == 1
+    assert os.path.exists(new_file_path)
+    assert not os.path.exists(old_file_path)

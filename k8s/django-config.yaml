@@ -3,10 +3,108 @@ kind: ConfigMap
 metadata:
   name: django-config
 data:
-  # n.b., these are debug values / non-secret secrets
-  ELASTICSEARCH_HOST: "elasticsearch-master"
-  IMPORT_MESSAGE_APIKEY: "dummykey"
+  # --------------------------------
+  # DJANGO SETTINGS ----------------
+  # --------------------------------
+
+  # SECURITY WARNING: keep the secret key used in production secret!
+  SECRET_KEY: ""
+
+  # Django Database name
+  DATABASES_NAME: "mailarch"
+
+  # Django Database user
+  DATABASES_USER: "mailarch"
+
+  # Django Database password
+  DATABASES_PASSWORD: ""
+
+  # Django Database host
+  DATABASES_HOST: ""
+
+  # Django Database port
+  DATABASES_PORT: "5432"
+
+  # Django Database options
+  DATABASES_OPTS_JSON: |-
+    {
+      "sslmode": "prefer",
+      "options": "-c search_path=mailarch,django,public"
+    }
+
+  # A list of strings representing the host/domain names that this Django site can serve.
+  ALLOWED_HOSTS: ".ietf.org"
+
+  # A list of all the people who get code error notifications
+  ADMINS: |-
+    Robert Sparks <rjsparks@nostrum.com>
+    Ryan Cross <rcross@amsl.com>
+
+  # ----------------------------------
+  # CUSTOM SETTINGS ------------------
+  # ----------------------------------
+
+  # Server Mode. One of development, production
+  SERVER_MODE: "development"
+
+  # Root directory for data
+  DATA_ROOT: "/data"
+
+  # Default Log Handlers. mlarchive for disk, console for stdout
+  LOG_HANDLERS: "console"
+
+  # Logger log level. DEBUG, INFO, WARNING, ERROR, CRITICAL
+  LOG_LEVEL: "INFO"
+
+  # Log directory
+  LOG_DIR: '/var/log/mail-archive'
+
+  # API Key for importing messages
+  IMPORT_MESSAGE_APIKEY: ""
+
+  # Celery Broker URL
   CELERY_BROKER_URL: "amqp://user:bugsbunny@mailarchive-rabbitmq:5672//"
+
+  # Datatracker Key for looking up related emails
+  DATATRACKER_PERSON_ENDPOINT_API_KEY: ""
+
+  # OIDC Relying Party Client ID
+  OIDC_RP_CLIENT_ID: ""
+
+  # OIDC Relying Party Client Secret
+  OIDC_RP_CLIENT_SECRET: ""
+
+  # Memcached Host
   MEMCACHED_SERVICE_HOST: "mailarchive-memcached"
-  DJANGO_SETTINGS_MODULE: "mlarchive.settings.settings_staging"
+
+  # Use Scout Monitor 
+  SCOUT_MONITOR: "False"
+
+  # Scout Key
+  SCOUT_KEY: ""
+
+  # Scout Name
   SCOUT_NAME: "Mailarchive"
+
+  # Elasticsearch settings -----------
+
+  # Elasticsearch host
+  ELASTICSEARCH_HOST: ""
+
+  # Index update method, queued or realtime (use queued for production)
+  # ELASTICSEARCH_SIGNAL_PROCESSOR: "mlarchive.archive.signals.CelerySignalProcessor"
+  ELASTICSEARCH_SIGNAL_PROCESSOR: "mlarchive.archive.signals.RealtimeSignalProcessor"
+
+  # CDN SETTINGS ---------------------
+
+  # Using a CDN. True only for production
+  USING_CDN: "False"
+
+  # Cloudflare Auth Email
+  CLOUDFLARE_AUTH_EMAIL: ""
+
+  # Cloudflare Auth Key
+  CLOUDFLARE_AUTH_KEY: ""
+
+  # Cloudflare Zone ID
+  CLOUDFLARE_ZONE_ID: ""

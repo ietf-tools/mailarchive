@@ -13,6 +13,7 @@ Using django-environ
 https://github.com/joke2k/django-environ
 """
 
+import json
 import os
 import sys
 import environ
@@ -32,6 +33,12 @@ env = environ.Env(
     CLOUDFLARE_AUTH_EMAIL=(str, ''),
     CLOUDFLARE_AUTH_KEY=(str, ''),
     CLOUDFLARE_ZONE_ID=(str, ''),
+    DATABASES_NAME=(str, 'mailarch'),
+    DATABASES_USER=(str, 'mailarch'),
+    DATABASES_PASSWORD=(str, ''),
+    DATABASES_HOST=(str, ''),
+    DATABASES_PORT=(str, ''),
+    DATABASES_OPTS_JSON=(str, '{}'),
     DATATRACKER_PERSON_ENDPOINT_API_KEY=(str, ''),
     DEBUG=(bool, False),
     DEBUG_TOOLBAR_ON=(bool, False),
@@ -75,12 +82,12 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': env("DATABASES_NAME"),
         'USER': env("DATABASES_USER"),
-        'PASSWORD': env("DATABASES_PASSWORD")
+        'PASSWORD': env("DATABASES_PASSWORD"),
+        'HOST': env("DATABASES_HOST"),
+        'PORT': env("DATABASES_PORT"),
+        'OPTIONS': json.loads(env("DATABASES_OPTS_JSON")),
     }
 }
-
-if env("DATABASES_HOST"):
-    DATABASES['default']['HOST'] = env("DATABASES_HOST")
 
 SITE_ID = 1
 

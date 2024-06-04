@@ -189,6 +189,15 @@ _import_message_json_validator = jsonschema.Draft202012Validator(
     schema={
         "type": "object",
         "properties": {
+            "list_name": {
+                "type": "string",  # email list name
+                "minLength": 1,
+            },
+            "list_visibility": {
+                "type": "string",
+                "enum": ["public", "private"],
+                "description": "Visibility setting for the email list",
+            },
             "message": {
                 "type": "string",  # base64-encoded mail message
             },
@@ -196,6 +205,7 @@ _import_message_json_validator = jsonschema.Draft202012Validator(
         "required": ["message"],
     }
 )
+
 
 @method_decorator(require_api_key, name='dispatch')
 @method_decorator(csrf_exempt, name='dispatch')
@@ -215,14 +225,6 @@ class ImportMessageView(View):
         if request.content_type != "application/json":
             return self._err(415, "Content-Type must be application/json")
 
-        # Validate path
-        list_name = kwargs['list_name']
-        list_type = kwargs['list_type']
-        if not list_name:
-            return self._err(400, 'Missing list name')        
-        if list_type not in ('public', 'private'):
-            return self._err(400, 'Invalid list type')
-
         # Validate
         try:
             payload = json.loads(request.body)
@@ -239,10 +241,13 @@ class ImportMessageView(View):
         except binascii.Error:
             return self._err(400, "Invalid message: bad base64 encoding")
 
+        list_name = payload["list_name"]
+        list_visibility = payload["list_visibility"]
+
         # stash message on disk
         if not os.path.exists(settings.IMPORT_DIR):
             os.makedirs(settings.IMPORT_DIR)
-        prefix = f'{list_name}.{list_type}.'
+        prefix = f'{list_name}.{list_visibility}.'
         try:
             fd, filepath = tempfile.mkstemp(prefix=prefix, dir=settings.IMPORT_DIR)
             with os.fdopen(fd, 'wb') as f:
@@ -252,7 +257,7 @@ class ImportMessageView(View):
         logger.info(f'Received message: {filepath}')
 
         # process message
-        status = archive_message(message, list_name, private=bool(list_type == 'private'))
+        status = archive_message(message, list_name, private=bool(list_visibility == 'private'))
         logger.info(f'Archive message status: {filepath} {status}')
         if status == 0:
             return HttpResponse(status=201)

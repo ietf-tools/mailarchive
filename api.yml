@@ -140,27 +140,9 @@ paths:
                     type: string
                     description: Error description
 
-  /api/v1/message/{listType}/{listName}/:
+  /api/v1/message/import/:
     post:
-      summary: Create email message
-      parameters:
-        - in: path
-          name: listType
-          schema:
-            type: string
-            enum:
-              - public
-              - private
-          required: true
-          description: list type
-          example: public
-        - in: path
-          name: listName
-          schema:
-            type: string
-          required: true
-          description: name of list
-          example: quic
+      summary: Import email message
       security:
         - ApiKeyAuth: []
       requestBody:
@@ -171,16 +153,29 @@ paths:
             schema:
               type: object
               properties:
+                list_name:
+                  type: string
+                  minLength: 1
+                  description: email list name (no domain)
+                list_visibility:
+                  type: string
+                  enum: [public, private]
+                  description: email list visibility
                 message:
                   type: string
                   description: base64 encoded message
               required:
+                - list_name
+                - list_visibility
                 - message
+
       responses:
         '201':
           description: Created
         '400':
           description: Bad Request
+        '403':
+          description: Forbidden
 
 components:
   securitySchemes:

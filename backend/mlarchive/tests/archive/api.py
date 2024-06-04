@@ -203,7 +203,7 @@ def get_error_message(response):
 @pytest.mark.django_db(transaction=True)
 def test_import_message(client, settings):
     settings.API_KEYS = {'/api/v1/message/': 'abcdefg'}
-    url = reverse('api_import_message', kwargs={'list_name': 'apple', 'list_type': 'public'})
+    url = reverse('api_import_message')
     print(url)
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
     with open(path, 'rb') as f:
@@ -224,7 +224,7 @@ def test_import_message(client, settings):
     # no api key
     response = client.post(
         url,
-        {'message': message_b64},
+        {'list_name': 'apple', 'list_visibility': 'public', 'message': message_b64},
         headers={},
         content_type='application/json')
     assert response.status_code == 403
@@ -232,15 +232,33 @@ def test_import_message(client, settings):
     # invalid api key
     response = client.post(
         url,
-        {'message': message_b64},
+        {'list_name': 'apple', 'list_visibility': 'public', 'message': message_b64},
         headers={'X-API-Key': 'bogus'},
         content_type='application/json')
     assert response.status_code == 403
 
+    # invalid visibility
+    response = client.post(
+        url,
+        {'list_name': 'apple', 'list_visibility': 'opaque', 'message': message_b64},
+        headers={'X-API-Key': 'abcdefg'},
+        content_type='application/json')
+    print(response, response.content)
+    assert response.status_code == 400
+
+    # empty listname
+    response = client.post(
+        url,
+        {'list_name': '', 'list_visibility': 'public', 'message': message_b64},
+        headers={'X-API-Key': 'abcdefg'},
+        content_type='application/json')
+    print(response, response.content)
+    assert response.status_code == 400
+
     # valid request
     response = client.post(
         url,
-        {'message': message_b64},
+        {'list_name': 'apple', 'list_visibility': 'public', 'message': message_b64},
         headers={'X-API-Key': 'abcdefg'},
         content_type='application/json')
     print(response, response.content)
@@ -265,7 +283,7 @@ def test_import_message(client, settings):
 def test_import_message_private(client, settings):
     '''Ensure list_type variable is respected'''
     settings.API_KEYS = {'/api/v1/message/': 'abcdefg'}
-    url = reverse('api_import_message', kwargs={'list_name': 'apple', 'list_type': 'private'})
+    url = reverse('api_import_message')
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
     with open(path, 'rb') as f:
         message = f.read()
@@ -284,7 +302,7 @@ def test_import_message_private(client, settings):
     # valid request
     response = client.post(
         url,
-        {'message': message_b64},
+        {'list_name': 'apple', 'list_visibility': 'private', 'message': message_b64},
         headers={'X-API-Key': 'abcdefg'},
         content_type='application/json')
     print(response, response.content)
@@ -304,7 +322,7 @@ def test_import_message_failure(client, settings):
     Bogus message,
     '''
     settings.API_KEYS = {'/api/v1/message/': 'abcdefg'}
-    url = reverse('api_import_message', kwargs={'list_name': 'apple', 'list_type': 'public'})
+    url = reverse('api_import_message')
     message = b'This is not an email'
     message_b64 = base64.b64encode(message).decode()
 
@@ -321,7 +339,7 @@ def test_import_message_failure(client, settings):
     # valid request
     response = client.post(
         url,
-        {'message': message_b64},
+        {'list_name': 'apple', 'list_visibility': 'public', 'message': message_b64},
         headers={'X-API-Key': 'abcdefg'},
         content_type='application/json')
     print(response, response.content)
@@ -333,3 +351,6 @@ def test_import_message_failure(client, settings):
 
     # assert list does not exist
     assert not EmailList.objects.filter(name='apple', private=False).exists()
+
+    # assert message does not exist
+    assert Message.objects.all().count() == 0

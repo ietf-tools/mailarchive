@@ -202,9 +202,8 @@ def get_error_message(response):
 
 @pytest.mark.django_db(transaction=True)
 def test_import_message(client, settings):
-    settings.API_KEYS = {'/api/v1/message/': 'abcdefg'}
     url = reverse('api_import_message')
-    print(url)
+    settings.API_KEYS = {url: 'valid_token'}
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
     with open(path, 'rb') as f:
         message = f.read()
@@ -213,7 +212,6 @@ def test_import_message(client, settings):
     # test setup
     assert Message.objects.count() == 0
     assert EmailList.objects.filter(name='apple').exists() is False
-    print(settings.INCOMING_DIR)
     incoming_dir = settings.INCOMING_DIR
     assert os.path.isdir(incoming_dir)
     for file in os.listdir(incoming_dir):
@@ -233,7 +231,7 @@ def test_import_message(client, settings):
     response = client.post(
         url,
         {'list_name': 'apple', 'list_visibility': 'public', 'message': message_b64},
-        headers={'X-API-Key': 'bogus'},
+        headers={'X-API-Key': 'invalid_token'},
         content_type='application/json')
     assert response.status_code == 403
 
@@ -241,27 +239,24 @@ def test_import_message(client, settings):
     response = client.post(
         url,
         {'list_name': 'apple', 'list_visibility': 'opaque', 'message': message_b64},
-        headers={'X-API-Key': 'abcdefg'},
+        headers={'X-API-Key': 'valid_token'},
         content_type='application/json')
-    print(response, response.content)
     assert response.status_code == 400
 
     # empty listname
     response = client.post(
         url,
         {'list_name': '', 'list_visibility': 'public', 'message': message_b64},
-        headers={'X-API-Key': 'abcdefg'},
+        headers={'X-API-Key': 'valid_token'},
         content_type='application/json')
-    print(response, response.content)
     assert response.status_code == 400
 
     # valid request
     response = client.post(
         url,
         {'list_name': 'apple', 'list_visibility': 'public', 'message': message_b64},
-        headers={'X-API-Key': 'abcdefg'},
+        headers={'X-API-Key': 'valid_token'},
         content_type='application/json')
-    print(response, response.content)
     assert response.status_code == 201
 
     # assert file exists in incoming
@@ -282,8 +277,8 @@ def test_import_message(client, settings):
 @pytest.mark.django_db(transaction=True)
 def test_import_message_private(client, settings):
     '''Ensure list_type variable is respected'''
-    settings.API_KEYS = {'/api/v1/message/': 'abcdefg'}
     url = reverse('api_import_message')
+    settings.API_KEYS = {url: 'valid_token'}
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
     with open(path, 'rb') as f:
         message = f.read()
@@ -303,9 +298,8 @@ def test_import_message_private(client, settings):
     response = client.post(
         url,
         {'list_name': 'apple', 'list_visibility': 'private', 'message': message_b64},
-        headers={'X-API-Key': 'abcdefg'},
+        headers={'X-API-Key': 'valid_token'},
         content_type='application/json')
-    print(response, response.content)
     assert response.status_code == 201
 
     # assert file exists in incoming
@@ -318,11 +312,9 @@ def test_import_message_private(client, settings):
 
 @pytest.mark.django_db(transaction=True)
 def test_import_message_failure(client, settings):
-    '''Test various failure scenarios.
-    Bogus message,
-    '''
-    settings.API_KEYS = {'/api/v1/message/': 'abcdefg'}
+    '''Test various failure scenarios.'''
     url = reverse('api_import_message')
+    settings.API_KEYS = {url: 'valid_token'}
     message = b'This is not an email'
     message_b64 = base64.b64encode(message).decode()
 
@@ -340,9 +332,8 @@ def test_import_message_failure(client, settings):
     response = client.post(
         url,
         {'list_name': 'apple', 'list_visibility': 'public', 'message': message_b64},
-        headers={'X-API-Key': 'abcdefg'},
+        headers={'X-API-Key': 'valid_token'},
         content_type='application/json')
-    print(response, response.content)
     assert response.status_code == 400
 
     # assert file exists in incoming

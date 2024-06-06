@@ -262,4 +262,4 @@ class ImportMessageView(View):
         if status == 0:
             return HttpResponse(status=201)
         else:
-            return self._err(400, 'archive_message error')
+            return self._err(500, 'archive_message error')

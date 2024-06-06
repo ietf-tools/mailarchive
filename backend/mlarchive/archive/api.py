@@ -29,7 +29,7 @@ duration_pattern = re.compile(r'(?P<num>\d+)(?P<unit>years|months|weeks|days|hou
 
 class MsgCountView(View):
     '''An API to get message counts for given lists.
-    
+
     Parameters:
     list:   the email list name. Multiple can be provided
     start:  start date in ISO form
@@ -97,7 +97,7 @@ class MsgCountView(View):
                 filters['date__gte'] = start
             self.data['duration'] = duration
         return filters
-    
+
     def get_lists(self):
         assert self.request
         if 'list' in self.request.GET:
@@ -118,14 +118,14 @@ class MsgCountView(View):
 
         for list_name in list_names:
             msg_counts[list_name] = Message.objects.filter(email_list__name=list_name, **filters).count()
-        
+
         self.data['msg_counts'] = msg_counts
         return JsonResponse(self.data)
-        
+
 
 class SubscriberCountsView(View):
     '''An API to get subscriber counts for given lists.
-    
+
     Parameters:
     list:   the email list name. Multiple can be provided
     date:   date in ISO form
@@ -133,7 +133,7 @@ class SubscriberCountsView(View):
     def setup(self, request, *args, **kwargs):
         self.data = OrderedDict()
         return super().setup(request, *args, **kwargs)
-    
+
     def get_filters(self):
         '''Build Message query filters from GET parameters'''
         filters = {}
@@ -154,7 +154,7 @@ class SubscriberCountsView(View):
             filters['date'] = date
 
         return filters
-    
+
     def get_lists(self):
         assert self.request
         if 'list' in self.request.GET:
@@ -210,7 +210,7 @@ _import_message_json_validator = jsonschema.Draft202012Validator(
 @method_decorator(require_api_key, name='dispatch')
 @method_decorator(csrf_exempt, name='dispatch')
 class ImportMessageView(View):
-    '''An API to import a message. 
+    '''An API to import a message.
     Expect a POST request with JSON payload
     message: base64 encoded email message
     and X-API-Key header
@@ -253,7 +253,7 @@ class ImportMessageView(View):
             with os.fdopen(fd, 'wb') as f:
                 f.write(message)
         except (FileNotFoundError, PermissionError, OSError) as e:
-            return self._err(400, str(e))
+            return self._err(500, str(e))
         logger.info(f'Received message: {filepath}')
 
         # process message

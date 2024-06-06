@@ -171,7 +171,6 @@ def staff_only(function):
     return _inner
 
 
-'''
 def is_valid_token(endpoint, token):
     if hasattr(settings, "API_KEYS"):
         token_store = settings.API_KEYS
@@ -182,20 +181,6 @@ def is_valid_token(endpoint, token):
                 endpoint_tokens = [endpoint_tokens]
             if token in endpoint_tokens:
                 return True
-    return False
-'''
-
-def is_valid_token(endpoint, token):
-    if hasattr(settings, "API_KEYS"):
-        token_store = settings.API_KEYS
-        for url in token_store:
-            if endpoint.startswith(url):
-                endpoint_tokens = token_store[url]
-                # Be sure endpoints is a list or tuple so we don't accidentally use substring matching!
-                if not isinstance(endpoint_tokens, (list, tuple)):
-                    endpoint_tokens = [endpoint_tokens]
-                if token in endpoint_tokens:
-                    return True
     return False
 
 

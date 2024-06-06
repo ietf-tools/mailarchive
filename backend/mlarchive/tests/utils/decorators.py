@@ -5,7 +5,8 @@ from mock import Mock
 
 from django.http import HttpResponse
 from django.test import RequestFactory
-from mlarchive.utils.decorators import check_list_access, require_api_key
+from mlarchive.utils.decorators import (check_list_access, require_api_key,
+    is_valid_token)
 from mlarchive.utils.test_utils import get_request
 
 '''
@@ -37,14 +38,21 @@ def test_check_list_access_ok():
 '''
 
 
+def test_is_valid_token(settings):
+    settings.API_KEYS = {'/api/v1/message/import/': 'valid_token'}
+    assert is_valid_token('/api/v1/message/import/', 'valid_token') is True
+    assert is_valid_token('/api/v1/message/import/', 'invvalid_token') is False
+    assert is_valid_token('/api/v1/different/endpoint/', 'valid_token') is False
+
+
 def test_require_api_key(settings):
-    settings.API_KEYS = {'/api/v1/message/': 'abcdefg'}
+    settings.API_KEYS = {'/api/v1/message/import/': 'abcdefg'}
     rf = RequestFactory()
     func = Mock()
     rsp = HttpResponse()
     func.side_effect = [rsp, rsp, rsp, rsp, rsp, rsp]
     decorated_func = require_api_key(func)
-    url = '/api/v1/message/'
+    url = '/api/v1/message/import/'
     # no api key
     arequest = rf.post(url, data={})
     response = decorated_func(arequest)

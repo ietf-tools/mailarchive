@@ -376,13 +376,12 @@ def create_mbox_file(month, year, elist):
 
 def update_mbox_files():
     '''Update archive mbox files'''
-    yesterday = datetime.datetime.now() - timedelta(days=1)
+    yesterday = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
     month = yesterday.month
     year = yesterday.year
     for elist in EmailList.objects.filter(active=True, private=False):
-        if elist.message_set.filter(date__month=month, date__year=year).count() == 0:
-            continue
-        create_mbox_file(month=month, year=year, elist=elist)
+        if elist.message_set.filter(date__month=month, date__year=year).count() > 0:
+            create_mbox_file(month=month, year=year, elist=elist)
 
 
 def purge_incoming():

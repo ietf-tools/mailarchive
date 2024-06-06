@@ -133,7 +133,11 @@ def update_mbox(files):
 
 
 CelerySignalHandler = app.register_task(CelerySignalHandler())
-# CeleryHaystackUpdateIndex = app.register_task(CeleryHaystackUpdateIndex())
+
+
+# --------------------------------------------------
+# Celery Beat Tasks
+# --------------------------------------------------
 
 
 @shared_task

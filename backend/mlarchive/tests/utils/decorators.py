@@ -5,7 +5,8 @@ from mock import Mock
 
 from django.http import HttpResponse
 from django.test import RequestFactory
-from mlarchive.utils.decorators import check_list_access, require_api_key
+from mlarchive.utils.decorators import (check_list_access, require_api_key,
+    is_valid_token)
 from mlarchive.utils.test_utils import get_request
 
 '''
@@ -37,55 +38,39 @@ def test_check_list_access_ok():
 '''
 
 
-def get_error_message(response):
-    content = response.content.decode('utf-8')
-    data_as_dict = json.loads(content)
-    return data_as_dict['error']
+def test_is_valid_token(settings):
+    settings.API_KEYS = {'/api/v1/message/import/': 'valid_token'}
+    assert is_valid_token('/api/v1/message/import/', 'valid_token') is True
+    assert is_valid_token('/api/v1/message/import/', 'invvalid_token') is False
+    assert is_valid_token('/api/v1/different/endpoint/', 'valid_token') is False
 
 
 def test_require_api_key(settings):
-    settings.API_KEYS = {'abcdefg': '/api/v1/message/'}
+    settings.API_KEYS = {'/api/v1/message/import/': 'abcdefg'}
     rf = RequestFactory()
     func = Mock()
     rsp = HttpResponse()
     func.side_effect = [rsp, rsp, rsp, rsp, rsp, rsp]
     decorated_func = require_api_key(func)
-    url = '/api/v1/message/'
+    url = '/api/v1/message/import/'
     # no api key
-    arequest = get_request()
+    arequest = rf.post(url, data={})
     response = decorated_func(arequest)
-    print(response, response.content)
-    assert response.status_code == 400
-    assert get_error_message(response) == 'Missing apikey'
-    # bad api key
-    brequest = get_request(url + '?apikey=bogus')
-    response = decorated_func(brequest)
-    print(response, response.content)
     assert response.status_code == 403
-    assert get_error_message(response) == 'Invalid apikey'
-    # api key in get
-    crequest = get_request(url + '?apikey=abcdefg')
+    # bad api key
+    brequest = rf.post(url, headers={'X-API-Key': 'bogus'})
+    response = decorated_func(brequest)
+    assert response.status_code == 403
+    # good api key
+    crequest = rf.post(url, headers={'X-API-Key': 'abcdefg'})
     response = decorated_func(crequest)
     print(response, response.content)
     assert response.status_code == 200
-    # api key post form
-    drequest = rf.post(url, data={'apikey': 'abcdefg'})
+    # api key post header, endpoint mismatch
+    drequest = rf.post('/api/v1/stats/', headers={'X-API-Key': 'abcdefg'})
     response = decorated_func(drequest)
     print(response, response.content)
-    assert response.status_code == 200
-    # api key post header
-    erequest = rf.post(url, headers={'X-API-Key': 'abcdefg'})
-    response = decorated_func(erequest)
-    print(response, response.content)
-    assert response.status_code == 200
-    # api key post header, endpoint mismatch
-    frequest = rf.post('/api/v1/stats/', headers={'X-API-Key': 'abcdefg'})
-    response = decorated_func(frequest)
-    print(response, response.content)
-    assert response.status_code == 400
-    assert get_error_message(response) == 'Apikey endpoint mismatch'
+    assert response.status_code == 403
     # assert func only called when apikey provided
-    assert func.call_count == 3
+    assert func.call_count == 1
     func.assert_any_call(crequest)
-    func.assert_any_call(drequest)
-    func.assert_any_call(erequest)

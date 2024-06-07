@@ -4,7 +4,8 @@ import time
 
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from django.http import Http404, HttpResponse, JsonResponse
+from django.http import (Http404, HttpResponse, JsonResponse,
+    HttpResponseForbidden)
 from django.shortcuts import get_object_or_404, redirect, render
 from functools import wraps
 from mlarchive.archive.models import Message, EmailList, Redirect
@@ -170,39 +171,26 @@ def staff_only(function):
     return _inner
 
 
+def is_valid_token(endpoint, token):
+    if hasattr(settings, "API_KEYS"):
+        token_store = settings.API_KEYS
+        if endpoint in token_store:
+            endpoint_tokens = token_store[endpoint]
+            # Be sure endpoints is a list or tuple so we don't accidentally use substring matching!
+            if not isinstance(endpoint_tokens, (list, tuple)):
+                endpoint_tokens = [endpoint_tokens]
+            if token in endpoint_tokens:
+                return True
+    return False
+
+
 def require_api_key(f):
     @wraps(f)
     def _wrapper(request, *args, **kwargs):
-        def err(code, text):
-            return JsonResponse({'error': text}, status=code)
-        apikey = None
-        # Check method and get hash
-        if request.method == 'POST':
-            if 'apikey' in request.POST:
-                apikey = request.POST.get('apikey')
-            elif 'X-API-Key' in request.headers:
-                apikey = request.headers.get('X-API-Key')
-        elif request.method == 'GET':
-            apikey = request.GET.get('apikey')
-        else:
-            return err(405, "Method not allowed")
-        if not apikey:
-            return err(400, "Missing apikey")
+        authtoken = request.META.get("HTTP_X_API_KEY", None)
+        endpoint = request.META.get('PATH_INFO')
+        if authtoken is None or not is_valid_token(endpoint, authtoken):
+            return HttpResponseForbidden()
+        return f(request, *args, **kwargs)
 
-        # Check apikey
-        if apikey not in settings.API_KEYS:
-            return err(403, "Invalid apikey")
-
-        # Check endpoint
-        urlpath = request.META.get('PATH_INFO')
-        if not (urlpath.startswith(settings.API_KEYS[apikey])):
-            return err(400, "Apikey endpoint mismatch")
-
-        # Execute decorated function
-        try:
-            ret = f(request, *args, **kwargs)
-        except AttributeError as e:
-            logger.error("Bad API call: args: %s, kwargs: %s, exception: %s" % (args, kwargs, e))
-            return err(400, "Bad or missing parameters")
-        return ret
     return _wrapper

@@ -372,3 +372,24 @@ def create_mbox_file(month, year, elist):
             msg = email.message_from_binary_file(f)
         mbox.add(msg)
     mbox.close()
+
+
+def update_mbox_files():
+    '''Update archive mbox files'''
+    yesterday = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
+    month = yesterday.month
+    year = yesterday.year
+    for elist in EmailList.objects.filter(active=True, private=False):
+        if elist.message_set.filter(date__month=month, date__year=year).count() > 0:
+            create_mbox_file(month=month, year=year, elist=elist)
+
+
+def purge_incoming():
+    '''Purge messages older than 90 days from incoming directory'''
+    path = settings.INCOMING_DIR
+    cutoff_date = datetime.datetime.now() - datetime.timedelta(days=90)
+    for file in os.listdir(path):
+        file_path = os.path.join(path, file)
+        file_mtime = datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
+        if file_mtime < cutoff_date:
+            os.remove(file_path)

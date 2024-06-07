@@ -9,6 +9,10 @@ from django.core.management import call_command
 from mlarchive.archive.backends.elasticsearch import ESBackend
 from mlarchive.celeryapp import app
 from mlarchive.archive.utils import create_mbox_file
+from mlarchive.archive.utils import get_membership_3
+from mlarchive.archive.utils import get_subscriber_counts
+from mlarchive.archive.utils import purge_incoming
+from mlarchive.archive.utils import update_mbox_files
 from mlarchive.archive.models import EmailList
 
 logger = logging.getLogger(__name__)
@@ -129,14 +133,44 @@ def update_mbox(files):
 
 
 CelerySignalHandler = app.register_task(CelerySignalHandler())
-# CeleryHaystackUpdateIndex = app.register_task(CeleryHaystackUpdateIndex())
+
+
+# --------------------------------------------------
+# Celery Beat Tasks
+# --------------------------------------------------
 
 
 @shared_task
-def get_subscribers():
-    '''Get subscriber counts from mailman 2'''
-
+def get_membership_task():
+    '''Get list membership from mailman'''
     try:
-        call_command('get_subscribers')
-    except RuntimeError as err:
-        logger.info(f"Error in get_subscribers: {err}")
+        get_membership_3(quiet=True)
+    except Exception as err:
+        logger.error(f"Error in get_membership_task: {err}")
+
+
+@shared_task
+def get_subscriber_counts_task():
+    '''Get subscriber counts for each list from mailman'''
+    try:
+        get_subscriber_counts()
+    except Exception as err:
+        logger.error(f"Error in get_subscriber_counts_task: {err}")
+
+
+@shared_task
+def purge_incoming_task():
+    '''Purge messages older than 90 days from incoming dir'''
+    try:
+        purge_incoming()
+    except Exception as err:
+        logger.error(f"Error in purge_incoming_task: {err}")
+
+
+@shared_task
+def update_mbox_files_task():
+    '''Update archive mbox files'''
+    try:
+        update_mbox_files()
+    except Exception as err:
+        logger.error(f"Error in update_mbox_files_task: {err}")

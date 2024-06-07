@@ -7,16 +7,18 @@ from factories import EmailListFactory, UserFactory
 from mock import patch
 import os
 import subprocess   # noqa
+import time
 import xml.etree.ElementTree as ET
 
 from django.conf import settings
 from django.core.cache import cache
 from django.contrib.auth.models import AnonymousUser
 from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
-    lookup_user, process_members, check_inactive, EmailList,
+    lookup_user, process_members, check_inactive, EmailList, purge_incoming,
     create_mbox_file, _get_lists_as_xml, get_subscribers, Subscriber,
-    get_mailman_lists, get_membership_3, get_subscriber_counts, get_fqdn)
-from mlarchive.archive.models import User
+    get_mailman_lists, get_membership_3, get_subscriber_counts, get_fqdn,
+    update_mbox_files)
+from mlarchive.archive.models import User, Message
 from factories import EmailListFactory
 
 
@@ -223,7 +225,7 @@ def test_get_membership_3(mock_post, mock_client):
         os.remove(path)
 
     private = EmailListFactory.create(name='private', private=True)
-    
+
     # prep mock
     response_lists = requests.Response()
     response_lists.status_code = 200
@@ -293,9 +295,8 @@ def test_check_inactive(mock_output, mock_input):
 
 @pytest.mark.django_db(transaction=True)
 def test_create_mbox_file(tmpdir, settings, latin1_messages):
-    print('tmpdir: {}'.format(tmpdir))
     settings.ARCHIVE_MBOX_DIR = str(tmpdir)
-    elist = EmailList.objects.get(name='acme')    
+    elist = EmailList.objects.get(name='acme')
     first_message = elist.message_set.first()
     month = first_message.date.month
     year = first_message.date.year
@@ -305,6 +306,27 @@ def test_create_mbox_file(tmpdir, settings, latin1_messages):
     mbox = mailbox.mbox(path)
     assert len(mbox) == 1
     mbox.close()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_update_mbox_files(tmpdir, settings, latin1_messages):
+    settings.ARCHIVE_MBOX_DIR = str(tmpdir)
+    yesterday = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
+    msg = Message.objects.last()
+    assert msg.email_list.active is True
+    assert msg.email_list.private is False
+    msg.date = yesterday
+    msg.save()
+    assert len(os.listdir(tmpdir)) == 0
+    update_mbox_files()
+    print(str(tmpdir))
+    path = os.path.join(tmpdir, 'public', msg.email_list.name)
+    filename = '{}-{:02}.mail'.format(yesterday.year, yesterday.month)
+    assert os.listdir(path) == [filename]
+    mbox = mailbox.mbox(os.path.join(path, filename))
+    assert len(mbox) == 1
+    mbox_msg = mbox[0]
+    assert mbox_msg['Message-Id'].strip('<>') == msg.msgid
 
 
 @pytest.mark.django_db(transaction=True)
@@ -355,7 +377,6 @@ def test_get_mailman_lists(mock_client):
     assert list(mlists) == [private]
 
 
-
 @patch('mailmanclient.restbase.connection.Connection.call')
 @pytest.mark.django_db(transaction=True)
 def test_get_subscribers(mock_client):
@@ -375,3 +396,24 @@ def test_get_subscribers(mock_client):
         (response_b, response_b.json())]
     subs = get_subscribers('public')
     assert subs == ['holden.ford@example.com']
+
+
+def test_purge_incoming(tmpdir, settings):
+    path = str(tmpdir)
+    settings.INCOMING_DIR = path
+    # create new file
+    new_file_path = os.path.join(path, 'new.txt')
+    with open(new_file_path, 'w') as f:
+        f.write("This is a test file.")
+
+    old_file_path = os.path.join(path, 'old.txt') 
+    with open(old_file_path, 'w') as f:
+        f.write("This is a test file.")
+    desired_mtime = time.time() - (86400 * 91)  # 91 days ago
+    os.utime(old_file_path, (desired_mtime, desired_mtime))
+
+    assert len(os.listdir(path)) == 2
+    purge_incoming()
+    assert len(os.listdir(path)) == 1
+    assert os.path.exists(new_file_path)
+    assert not os.path.exists(old_file_path)

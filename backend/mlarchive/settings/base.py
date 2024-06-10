@@ -340,6 +340,7 @@ CELERY_BROKER_URL = env('CELERY_BROKER_URL')
 CELERY_TIMEZONE = 'America/Los_Angeles'
 CELERY_ENABLE_UTC = True
 CELERY_DEFAULT_TASK = 'mlarchive.archive.tasks.CelerySignalHandler'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_HAYSTACK_DEFAULT_ALIAS = 'default'
 CELERY_HAYSTACK_MAX_RETRIES = 1
 CELERY_HAYSTACK_RETRY_DELAY = 300

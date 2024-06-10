@@ -15,29 +15,12 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
-      initContainers:
-        # -----------------------------------------------------
-        # Init RabbitMQ data
-        # -----------------------------------------------------
-        - name: init-rabbitmq
-          image: busybox:stable
-          command:
-            - "sh"
-            - "-c"
-            - "mkdir -p -m700 /mnt/rabbitmq && chown 100:101 /mnt/rabbitmq"
-          securityContext:
-            runAsNonRoot: false
-            runAsUser: 0
-            readOnlyRootFilesystem: true
-          volumeMounts:
-            - name: "rabbitmq-data"
-              mountPath: "/mnt"
       containers:
         # -----------------------------------------------------
         # RabbitMQ Container
         # -----------------------------------------------------
-        - image: "ghcr.io/ietf-tools/datatracker-mq:3.12-alpine"
-          imagePullPolicy: Always
+        - image: "rabbitmq:3"
+          imagePullPolicy: IfNotPresent
           name: rabbitmq
           ports:
             - name: amqp
@@ -46,14 +29,13 @@ spec:
           volumeMounts:
             - name: rabbitmq-data
               mountPath: /var/lib/rabbitmq
-              subPath: "rabbitmq"
             - name: rabbitmq-tmp
               mountPath: /tmp
-            - name: rabbitmq-config
-              mountPath: "/etc/rabbitmq"
           env:
-            - name: "CELERY_PASSWORD"
-              value: "this-is-a-secret"
+            - name: RABBITMQ_DEFAULT_USER
+              value: mailarch
+            - name: RABBITMQ_DEFAULT_PASS
+              value: bugsbunny
           livenessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "-q", "ping"]
@@ -80,9 +62,6 @@ spec:
         - name: rabbitmq-tmp
           emptyDir:
             sizeLimit: "50Mi"
-        - name: rabbitmq-config
-          configMap:
-            name: "rabbitmq-configmap"
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
@@ -96,68 +75,6 @@ spec:
         requests:
           storage: 8Gi
       # storageClassName: ""
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: rabbitmq-configmap
-data:
-  definitions.json: |-
-    {
-      "permissions": [
-        {
-          "configure": ".*",
-          "read": ".*",
-          "user": "mailarchive",
-          "vhost": "ml",
-          "write": ".*"
-        }
-      ],
-      "users": [
-        {
-          "hashing_algorithm": "rabbit_password_hashing_sha256",
-          "limits": {},
-          "name": "mailarchive",
-          "password_hash": "HJxcItcpXtBN+R/CH7dUelfKBOvdUs3AWo82SBw2yLMSguzb",
-          "tags": []
-        }
-      ],
-      "vhosts": [
-        {
-          "limits": [],
-          "metadata": {
-            "description": "",
-            "tags": []
-          },
-          "name": "ml"
-        }
-      ]
-    }
-  rabbitmq.conf: |-
-    # prevent guest from logging in over tcp
-    loopback_users.guest = true
-    
-    # load saved definitions
-    load_definitions = /etc/rabbitmq/definitions.json
-    
-    # Ensure that enough disk is available to flush to disk. To do this, need to limit the
-    # memory available to the container to something reasonable. See
-    # https://www.rabbitmq.com/production-checklist.html#monitoring-and-resource-usage
-    # for recommendations.
-    
-    # 1-1.5 times the memory available to the container is adequate for disk limit
-    disk_free_limit.absolute = 6000MB
-    
-    # This should be ~40% of the memory available to the container. Use an
-    # absolute number because relative will be proprtional to the full machine
-    # memory.
-    vm_memory_high_watermark.absolute = 1600MB
-    
-    # Logging
-    log.file = false
-    log.console = true
-    log.console.level = info
-    log.console.formatter = json
 ---
 apiVersion: v1
 kind: Service

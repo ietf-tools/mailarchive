@@ -31,7 +31,6 @@ spec:
             capabilities:
               drop:
                 - ALL
-            readOnlyRootFilesystem: true
             # elasticsearch image sets up uid/gid 1000:0
             runAsUser: 1000
             runAsGroup: 1000

@@ -55,9 +55,8 @@ spec:
               drop:
                 - ALL
             readOnlyRootFilesystem: true
-            # rabbitmq image sets up uid/gid 100/101
-            runAsUser: 100
-            runAsGroup: 101
+            runAsUser: 999
+            runAsGroup: 999
       volumes:
         - name: rabbitmq-tmp
           emptyDir:

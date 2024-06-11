@@ -91,10 +91,6 @@ data:
   # Elasticsearch host
   ELASTICSEARCH_HOST: ""
 
-  # Index update method, queued or realtime (use queued for production)
-  # ELASTICSEARCH_SIGNAL_PROCESSOR: "mlarchive.archive.signals.CelerySignalProcessor"
-  ELASTICSEARCH_SIGNAL_PROCESSOR: "mlarchive.archive.signals.RealtimeSignalProcessor"
-
   # CDN SETTINGS ---------------------
 
   # Using a CDN. True only for production

@@ -14,10 +14,7 @@ spec:
         app: elasticsearch
     spec:
       securityContext:
-        runAsNonRoot: true
         fsGroup: 1000
-        runAsUser: 1000
-        runAsGroup: 1000
       initContainers:
         - name: sysctl
           image: busybox
@@ -45,6 +42,7 @@ spec:
             capabilities:
               drop:
                 - ALL
+            runAsNonRoot: true
             # elasticsearch image sets up uid/gid 1000:0
             runAsUser: 1000
             runAsGroup: 1000

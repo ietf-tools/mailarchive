@@ -47,7 +47,6 @@ spec:
           volumeMounts:
             - name: ml-vol
               mountPath: /mnt/mailarchive
-              readOnly: true
             - name: ml-tmp
               mountPath: /tmp
           env:

@@ -34,11 +34,13 @@ spec:
           volumeMounts:
             - name: es-data
               mountPath: /usr/share/elasticsearch/data
-            - name: es-dumps
-              mountPath: /mnt/dumps
+            - name: es-snapshots
+              mountPath: /mnt/snapshots
           env:
             - name: discovery.type
               value: single-node
+            - name: path.repo
+              value: /mnt/snapshots
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -53,7 +55,7 @@ spec:
       terminationGracePeriodSeconds: 30
       volumes:
         # To be overriden with the actual shared volume
-        - name: es-dumps
+        - name: es-snapshots
   volumeClaimTemplates:
   - metadata:
       name: es-data

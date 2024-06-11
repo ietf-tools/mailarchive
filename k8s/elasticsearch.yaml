@@ -34,6 +34,8 @@ spec:
           volumeMounts:
             - name: es-data
               mountPath: /usr/share/elasticsearch/data
+            - name: es-dumps
+              mountPath: /mnt/dumps
           env:
             - name: discovery.type
               value: single-node
@@ -49,6 +51,9 @@ spec:
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
+      volumes:
+        # To be overriden with the actual shared volume
+        - name: es-dumps
   volumeClaimTemplates:
   - metadata:
       name: es-data

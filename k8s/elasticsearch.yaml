@@ -18,6 +18,12 @@ spec:
         fsGroup: 1000
         runAsUser: 1000
         runAsGroup: 1000
+      initContainers:
+        - name: sysctl
+          securityContext:
+            privileged: true
+            runAsUser: 0
+          command: ['sh', '-c', 'sysctl -w vm.max_map_count=262144']
       containers:
         - image: "docker.elastic.co/elasticsearch/elasticsearch:7.17.21"
           imagePullPolicy: IfNotPresent
@@ -29,6 +35,9 @@ spec:
           volumeMounts:
             - name: es-data
               mountPath: /usr/share/elasticsearch/data
+          env:
+            - name: discovery.type
+              value: single-node
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

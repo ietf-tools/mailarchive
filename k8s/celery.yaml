@@ -46,7 +46,7 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: ml-vol
-              mountPath: /data
+              mountPath: /mnt/mailarchive
               readOnly: true
             - name: ml-tmp
               mountPath: /tmp

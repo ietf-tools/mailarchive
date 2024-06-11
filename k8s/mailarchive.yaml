@@ -17,6 +17,7 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
+        fsGroup: 1000
       containers:
         - name: mailarchive
           image: "ghcr.io/ietf-tools/mailarchive:$APP_IMAGE_TAG"
@@ -27,7 +28,9 @@ spec:
               protocol: TCP
           volumeMounts:
             - name: ml-vol
-              mountPath: /data
+              mountPath: /mnt/mailarchive
+            - name: dt-vol
+              mountPath: /mnt/datatracker
             - name: ml-tmp
               mountPath: /tmp
           env:
@@ -47,6 +50,7 @@ spec:
       volumes:
         # To be overriden with the actual shared volume
         - name: ml-vol
+        - name: dt-vol
         - name: ml-tmp
           emptyDir:
             sizeLimit: "2Gi"

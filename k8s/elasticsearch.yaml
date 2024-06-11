@@ -20,6 +20,8 @@ spec:
         runAsGroup: 1000
       initContainers:
         - name: sysctl
+          image: busybox,
+          imagePullPolicy: IfNotPresent
           securityContext:
             privileged: true
             runAsUser: 0

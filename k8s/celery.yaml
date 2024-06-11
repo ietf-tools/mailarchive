@@ -17,6 +17,7 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
+        fsGroup: 1000
       containers:
         # -----------------------------------------------------
         # ScoutAPM Container

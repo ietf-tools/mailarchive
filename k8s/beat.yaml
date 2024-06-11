@@ -17,6 +17,7 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
+        fsGroup: 1000
       containers:
         - name: beat
           image: "ghcr.io/ietf-tools/mailarchive:$APP_IMAGE_TAG"

@@ -274,7 +274,7 @@ IMPORT_MESSAGE_APIKEY = env('IMPORT_MESSAGE_APIKEY')
 
 # API KEYS: key=endpoint, value=[api-key,]
 API_KEYS = {
-    '/api/v1/message/': [IMPORT_MESSAGE_APIKEY],
+    '/api/v1/message/import/': [IMPORT_MESSAGE_APIKEY],
 }
 
 # Default timeout for HTTP requests via the requests library

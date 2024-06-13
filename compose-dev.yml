@@ -2,8 +2,13 @@ version: '3.8'
 
 services:
   app:
-    # environment: 
-        # - DJANGO_SETTINGS_MODULE=mlarchive.settings.settings_docker
+    environment: 
+      DJANGO_SETTINGS_MODULE: mlarchive.settings.settings
+      SECRET_KEY: 2y&2u=%@di1tnc3gt82e9p@$7cq7nbctll41d02@e$#=9jrzj$
+      DATABASES_PASSWORD: franticmarble
+      DATABASES_HOST: db
+      ELASTICSEARCH_HOST: es
+
     build:
       context: .
       dockerfile: docker/app.Dockerfile
@@ -41,7 +46,7 @@ services:
     restart: always
     environment:
       POSTGRES_DB: mailarch
-      POSTGRES_USER: django
+      POSTGRES_USER: mailarch
       POSTGRES_PASSWORD: franticmarble
       POSTGRES_HOST_AUTH_METHOD: trust
     # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
@@ -63,11 +68,14 @@ services:
     init: true
     environment:
       CELERY_APP: mlarchive.celeryapp:app
-      CELERY_ROLE: worker
       CONTAINER_ROLE: celery
       UPDATE_REQUIREMENTS_FROM: requirements.txt
-      DEV_MODE: "yes"
       BROKER_URL: amqp://guest:guest@rabbit:5672//
+      DJANGO_SETTINGS_MODULE: mlarchive.settings.settings
+      SECRET_KEY: 2y&2u=%@di1tnc3gt82e9p@$7cq7nbctll41d02@e$#=9jrzj$
+      DATABASES_PASSWORD: franticmarble
+      DATABASES_HOST: db
+      ELASTICSEARCH_HOST: es
     # command:
     #   - '--loglevel=INFO'
     # depends on /data subdirectories
@@ -86,11 +94,14 @@ services:
     init: true
     environment:
       CELERY_APP: mlarchive.celeryapp:app
-      CELERY_ROLE: beat
       CONTAINER_ROLE: beat
       UPDATE_REQUIREMENTS_FROM: requirements.txt
-      DEV_MODE: "yes"
       BROKER_URL: amqp://guest:guest@rabbit:5672//
+      DJANGO_SETTINGS_MODULE: mlarchive.settings.settings
+      SECRET_KEY: 2y&2u=%@di1tnc3gt82e9p@$7cq7nbctll41d02@e$#=9jrzj$
+      DATABASES_PASSWORD: franticmarble
+      DATABASES_HOST: db
+      ELASTICSEARCH_HOST: es
     command:
       - '--loglevel=INFO'
       - '--scheduler=django_celery_beat.schedulers:DatabaseScheduler'

@@ -16,7 +16,7 @@ services:
             - '9200'
         environment:
             - discovery.type=single-node
-            - xpack.security.enabled=false
+            - xpack.security.enabled=true
     rabbit:
         ports:
             - '5672'

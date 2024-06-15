@@ -27,7 +27,11 @@ def test_clean_queryid():
 
 
 def test_get_cached_query():
-    client = Elasticsearch()
+    connection_options = settings.ELASTICSEARCH_CONNECTION
+    client = Elasticsearch(
+        connection_options['URL'],
+        index=connection_options['INDEX_NAME'],
+        http_auth=connection_options['http_auth'])
     search = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
     queryid = generate_queryid()
     cache.set(queryid, search.to_dict())
@@ -104,7 +108,8 @@ def test_get_count(messages):
     connection_options = settings.ELASTICSEARCH_CONNECTION
     client = Elasticsearch(
         connection_options['URL'],
-        index=connection_options['INDEX_NAME'])
+        index=connection_options['INDEX_NAME'],
+        http_auth=connection_options['http_auth'])
     base = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
     # good query
     s = base.query('query_string', query='message', default_field='text')
@@ -120,7 +125,8 @@ def test_CustomPaginator(messages):
     connection_options = settings.ELASTICSEARCH_CONNECTION
     client = Elasticsearch(
         connection_options['URL'],
-        index=connection_options['INDEX_NAME'])
+        index=connection_options['INDEX_NAME'],
+        http_auth=connection_options['http_auth'])
     base = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
     s = base.query('match', email_list='pubthree')
     assert s.count() == 21

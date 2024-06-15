@@ -13,6 +13,7 @@ ES_URL = 'http://{}:9200/'.format(env('ELASTICSEARCH_HOST'))
 ELASTICSEARCH_CONNECTION = {
     'URL': ES_URL,
     'INDEX_NAME': 'test-mail-archive',
+    'http_auth': ('elastic', 'changeme'),
 }
 ELASTICSEARCH_SIGNAL_PROCESSOR = 'mlarchive.archive.signals.RealtimeSignalProcessor'
 

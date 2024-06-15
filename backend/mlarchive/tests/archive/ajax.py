@@ -231,7 +231,8 @@ def test_get_query_results(client, messages, settings):
     connection_options = settings.ELASTICSEARCH_CONNECTION
     client = Elasticsearch(
         connection_options['URL'],
-        index=connection_options['INDEX_NAME'])
+        index=connection_options['INDEX_NAME'],
+        http_auth=connection_options['http_auth'])
     query = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
     # query = query.extra(size=settings.SEARCH_RESULTS_PER_PAGE)
     query = query.update_from_dict(query_dict)

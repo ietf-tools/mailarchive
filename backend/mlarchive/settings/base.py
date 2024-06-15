@@ -44,6 +44,7 @@ env = environ.Env(
     DEBUG=(bool, False),
     DEBUG_TOOLBAR_ON=(bool, False),
     ELASTICSEARCH_HOST=(str, '127.0.0.1'),
+    ELASTICSEARCH_PASSWORD=(str, 'changeme'),
     ELASTICSEARCH_SIGNAL_PROCESSOR=(str, 'mlarchive.archive.signals.CelerySignalProcessor'),
     HTAUTH_PASSWD_FILENAME=(str, ''),
     IMPORT_MESSAGE_APIKEY=(str, ''),
@@ -200,6 +201,7 @@ ES_URL = 'http://{}:9200/'.format(env('ELASTICSEARCH_HOST'))
 ELASTICSEARCH_CONNECTION = {
     'URL': ES_URL,
     'INDEX_NAME': 'mail-archive',
+    'http_auth': ('elastic', env('ELASTICSEARCH_PASSWORD')),
 }
 ELASTICSEARCH_DEFAULT_OPERATOR = 'AND'
 ELASTICSEARCH_RESULTS_PER_PAGE = 40

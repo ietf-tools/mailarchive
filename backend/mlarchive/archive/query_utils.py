@@ -62,6 +62,7 @@ def get_cached_query(request):
         client = Elasticsearch(
             connection_options['URL'],
             index=connection_options['INDEX_NAME'],
+            http_auth=connection_options['http_auth'],
             **connection_options.get('KWARGS', {}))
         search = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
         search = search.update_from_dict(search_dict)
@@ -267,6 +268,7 @@ def get_empty_response():
     client = Elasticsearch(
         connection_options['URL'],
         index=connection_options['INDEX_NAME'],
+        http_auth=connection_options['http_auth'],
         **connection_options.get('KWARGS', {}))
     s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
     s = s.query('term', dummy='')

@@ -40,7 +40,7 @@ spec:
             - name: discovery.type
               value: single-node
             - name: xpack.security.enabled
-              value: true
+              value: "true"
             - name: ELASTIC_PASSWORD
               value: $ELASTICSEARCH_PASSWORD
             - name: path.repo

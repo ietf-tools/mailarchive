@@ -42,7 +42,7 @@ spec:
             - name: xpack.security.enabled
               value: true
             - name: ELASTIC_PASSWORD
-              value: changeme
+              value: $ELASTICSEARCH_PASSWORD
             - name: path.repo
               value: /mnt/snapshots
           securityContext:

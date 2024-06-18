@@ -32,7 +32,7 @@ spec:
             - "-c"
             - >-
               trap './core-agent shutdown --tcp 0.0.0.0:6590' TERM;
-              ./core-agent start --daemonize false --log-level notice --tcp 0.0.0.0:6590 &
+              ./core-agent start --daemonize false --log-level warn --tcp 0.0.0.0:6590 &
               wait $!
           livenessProbe:
             exec:

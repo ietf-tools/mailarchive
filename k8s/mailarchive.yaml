@@ -18,6 +18,10 @@ spec:
       securityContext:
         runAsNonRoot: true
         fsGroup: 1000
+      initContainers:
+        - name: wait-for-elasticsearch
+          image: busybox
+          command: ['sh', '-c', 'until nc -z $ELASTICSEARCH_HOST 9200; do echo "Waiting for Elasticsearch..."; sleep 5; done; echo "Elasticsearch is up!"']
       containers:
         # -----------------------------------------------------
         # ScoutAPM Container

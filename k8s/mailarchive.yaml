@@ -22,6 +22,10 @@ spec:
         - name: wait-for-elasticsearch
           image: busybox
           command: ['sh', '-c', 'until nc -z $ELASTICSEARCH_HOST 9200; do echo "Waiting for Elasticsearch..."; sleep 5; done; echo "Elasticsearch is up!"']
+          securityContext:
+            runAsUser: 1000  # Non-root user ID
+            runAsGroup: 1000  # Non-root group ID
+            allowPrivilegeEscalation: false
       containers:
         # -----------------------------------------------------
         # ScoutAPM Container

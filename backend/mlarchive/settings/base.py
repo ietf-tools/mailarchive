@@ -61,6 +61,7 @@ env = environ.Env(
     OIDC_RP_CLIENT_SECRET=(str, ''),
     SCOUT_MONITOR=(bool, False),
     SCOUT_KEY=(str, ''),
+    SCOUT_NAME=(str, 'Mailarchive'),
     SECRET_KEY=(str, ''),
     SERVER_MODE=(str, 'development'),
     STATIC_URL=(str, '/static/{}/'),
@@ -394,14 +395,14 @@ if env('DEBUG_TOOLBAR_ON'):
 
 # SCOUTAPM
 if SERVER_MODE == 'production':
-    INSTALLED_APPS.insert(0,'scout_apm.django')
+    INSTALLED_APPS.insert(0, 'scout_apm.django')
 
 SCOUT_MONITOR = env('SCOUT_MONITOR')
 SCOUT_KEY = env('SCOUT_KEY')
-SCOUT_NAME = 'Mailarchive'
+SCOUT_NAME = env('SCOUT_NAME')
 SCOUT_ERRORS_ENABLED = True
 SCOUT_SHUTDOWN_MESSAGE_ENABLED = False
-SCOUT_REVISION_SHA=__release_hash__[:7]
+SCOUT_REVISION_SHA = __release_hash__[:7]
 SCOUT_CORE_AGENT_DIR = '/a/core-agent/1.4.0'
 SCOUT_CORE_AGENT_FULL_NAME = 'scout_apm_core-v1.4.0-x86_64-unknown-linux-musl'
 SCOUT_CORE_AGENT_DOWNLOAD = False

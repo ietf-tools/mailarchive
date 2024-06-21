@@ -79,8 +79,6 @@ spec:
           volumeMounts:
             - name: ml-vol
               mountPath: /mnt/mailarchive
-            - name: dt-vol
-              mountPath: /mnt/datatracker
             - name: ml-tmp
               mountPath: /tmp
           env:
@@ -103,7 +101,6 @@ spec:
       volumes:
         # To be overriden with the actual shared volume
         - name: ml-vol
-        - name: dt-vol
         - name: ml-tmp
           emptyDir:
             sizeLimit: "2Gi"

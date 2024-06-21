@@ -26,6 +26,20 @@ spec:
             runAsUser: 1000  # Non-root user ID
             runAsGroup: 1000  # Non-root group ID
             allowPrivilegeEscalation: false
+        - name: wait-for-rabbitmq
+          image: busybox
+          command: ['sh', '-c', 'until nc -z ml-rabbitmq 5672; do echo "Waiting for Rabbitmq..."; sleep 5; done; echo "Rabbitmq is up!"']
+          securityContext:
+            runAsUser: 1000  # Non-root user ID
+            runAsGroup: 1000  # Non-root group ID
+            allowPrivilegeEscalation: false
+        - name: wait-for-memcached
+          image: busybox
+          command: ['sh', '-c', 'until nc -z ml-memcached 11211; do echo "Waiting for Memcached..."; sleep 5; done; echo "Memcached is up!"']
+          securityContext:
+            runAsUser: 1000  # Non-root user ID
+            runAsGroup: 1000  # Non-root group ID
+            allowPrivilegeEscalation: false
       containers:
         # -----------------------------------------------------
         # ScoutAPM Container

@@ -45,6 +45,8 @@ spec:
               value: $ELASTICSEARCH_PASSWORD
             - name: path.repo
               value: /mnt/snapshots
+            - name: ES_JAVA_OPTS
+              value: "-Xms1g -Xmx1g"
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -54,6 +56,13 @@ spec:
             # elasticsearch image sets up uid/gid 1000:0
             runAsUser: 1000
             runAsGroup: 1000
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "2"
+            limits:
+              memory: "4Gi"
+              cpu: "2"
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 30

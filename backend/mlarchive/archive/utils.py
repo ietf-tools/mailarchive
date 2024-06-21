@@ -35,28 +35,23 @@ MAILMAN_LISTID_PATTERN = re.compile(r'(.*)\.(ietf|irtf|iab|iesg|rfc-editor)\.org
 
 
 def _export_lists():
-    """Write XML dump of list / memberships and call external program"""
+    """Write XML dump of list membership for IMAP"""
 
-    # Dump XML
+    today_utc = datetime.datetime.now(datetime.timezone.utc).date()
+    date_string = today_utc.strftime('%Y%m%d')
     data = _get_lists_as_xml()
-    path = os.path.join(settings.EXPORT_DIR, 'email_lists.xml')
+    path = os.path.join(settings.EXPORT_DIR, 'email_lists.{}.xml'.format(date_string))
+    tmp_path = path + '.tmp'
     try:
         if not os.path.exists(settings.EXPORT_DIR):
             os.mkdir(settings.EXPORT_DIR)
-        with open(path, 'w') as file:
+        with open(tmp_path, 'w') as file:
             file.write(data)
-            os.chmod(path, 0o666)
+        os.chmod(path, 0o666)
+        os.rename(tmp_path, path)
     except Exception as error:
         logger.error('Error creating export file: {}'.format(error))
         return
-
-    # Call external script
-    if hasattr(settings, 'NOTIFY_LIST_CHANGE_COMMAND'):
-        command = settings.NOTIFY_LIST_CHANGE_COMMAND
-        try:
-            subprocess.check_call([command, path])
-        except (OSError, subprocess.CalledProcessError) as error:
-            logger.error('Error calling external command: {} ({})'.format(command, error))
 
 
 def _get_lists_as_xml():

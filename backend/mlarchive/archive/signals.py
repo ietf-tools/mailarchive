@@ -80,12 +80,6 @@ def _purge_cache(sender, instance, created, **kwargs):
         purge_files_from_cache(instance)
 
 
-@receiver(post_save, sender=EmailList)
-def _list_save_handler(sender, instance, **kwargs):
-    # _flush_noauth_cache(instance)
-    _export_lists()
-
-
 # --------------------------------------------------
 # Helpers
 # --------------------------------------------------

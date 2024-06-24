@@ -18,6 +18,17 @@ spec:
         fsGroup: 999
         runAsUser: 999
         runAsGroup: 999
+      initContainers:
+        - name: setup-erlang-cookie
+          image: busybox
+          command: ['sh', '-c', 'echo "lorem-ipsum-dolor-sit-amet" > /var/lib/rabbitmq/.erlang.cookie; chmod 0600 /var/lib/rabbitmq/.erlang.cookie;']
+          volumeMounts:
+            - name: rabbitmq-data
+              mountPath: /var/lib/rabbitmq
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+            allowPrivilegeEscalation: false
       containers:
         # -----------------------------------------------------
         # RabbitMQ Container
@@ -39,8 +50,6 @@ spec:
               value: mailarch
             - name: RABBITMQ_DEFAULT_PASS
               value: bugsbunny
-            - name: RABBITMQ_ERLANG_COOKIE
-              value: lorem-ipsum-dolor-sit-amet
           livenessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "-q", "ping"]

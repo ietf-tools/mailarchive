@@ -47,8 +47,6 @@ spec:
               value: /mnt/snapshots
             - name: ES_JAVA_OPTS
               value: "-Xms1g -Xmx1g"
-            - name: RABBITMQ_ERLANG_COOKIE
-              value: lorem-ipsum-dolor-sit-amet
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

@@ -39,6 +39,8 @@ spec:
               value: mailarch
             - name: RABBITMQ_DEFAULT_PASS
               value: bugsbunny
+            - name: RABBITMQ_ERLANG_COOKIE
+              value: lorem-ipsum-dolor-sit-amet
           livenessProbe:
             exec:
               command: ["rabbitmq-diagnostics", "-q", "ping"]

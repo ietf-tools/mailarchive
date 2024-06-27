@@ -107,3 +107,14 @@ data:
 
   # Cloudflare Zone ID
   CLOUDFLARE_ZONE_ID: ""  #secret
+
+  # MAILMAN API SETTINGS -----------------
+
+  # Mailman API URL
+  MAILMAN_API_URL: ""
+
+  # Mailman API User
+  MAILMAN_API_USER: ""  # secret
+
+  # Mailman API Password
+  MAILMAN_API_PASSWORD: ""  # secret

@@ -42,7 +42,9 @@ def test_message_save(client):
 def test_notify_new_list(client, tmpdir, settings):
     settings.EXPORT_DIR = str(tmpdir)
     EmailList.objects.create(name='dummy')
-    path = os.path.join(settings.EXPORT_DIR, 'email_lists.xml')
+    today_utc = datetime.datetime.now(datetime.timezone.utc).date()
+    date_string = today_utc.strftime('%Y%m%d')
+    path = os.path.join(settings.EXPORT_DIR, 'email_lists.{}.xml'.format(date_string))
     assert os.path.exists(path)
     with open(path) as file:
         assert 'dummy' in file.read()

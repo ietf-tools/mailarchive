@@ -47,7 +47,9 @@ def _export_lists():
             os.mkdir(settings.EXPORT_DIR)
         with open(tmp_path, 'w') as file:
             file.write(data)
-        os.chmod(path, 0o666)
+        os.chmod(tmp_path, 0o666)
+        if os.path.exists(path):
+            os.remove(path)
         os.rename(tmp_path, path)
     except Exception as error:
         logger.error('Error creating export file: {}'.format(error))

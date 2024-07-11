@@ -17,7 +17,7 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     lookup_user, process_members, check_inactive, EmailList, purge_incoming,
     create_mbox_file, _get_lists_as_xml, get_subscribers, Subscriber,
     get_mailman_lists, get_membership_3, get_subscriber_counts, get_fqdn,
-    update_mbox_files)
+    update_mbox_files, _export_lists)
 from mlarchive.archive.models import User, Message
 from factories import EmailListFactory
 
@@ -100,6 +100,17 @@ class ListResponse:
 # --------------------------------------------------
 # Tests
 # --------------------------------------------------
+
+@pytest.mark.django_db(transaction=True)
+def test_export_lists():
+    today_utc = datetime.datetime.now(datetime.timezone.utc).date()
+    date_string = today_utc.strftime('%Y%m%d')
+    path = os.path.join(settings.EXPORT_DIR, 'email_lists.{}.xml'.format(date_string))
+    if os.path.exists(path):
+        os.remove(path)
+    assert not os.path.exists(path)
+    _export_lists()
+    assert os.path.exists(path)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -220,10 +231,11 @@ def test_process_members_case_insensitive(mock_post):
 @pytest.mark.django_db(transaction=True)
 def test_get_membership_3(mock_post, mock_client):
     # setup
-    path = os.path.join(settings.EXPORT_DIR, 'email_lists.xml')
+    today_utc = datetime.datetime.now(datetime.timezone.utc).date()
+    date_string = today_utc.strftime('%Y%m%d')
+    path = os.path.join(settings.EXPORT_DIR, 'email_lists.{}.xml'.format(date_string))
     if os.path.exists(path):
         os.remove(path)
-
     private = EmailListFactory.create(name='private', private=True)
 
     # prep mock

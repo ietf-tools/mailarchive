@@ -446,6 +446,10 @@ LOGGING = {
             'handlers': ['mlarchive'],
             'level': 'DEBUG',
             'propagate': False,
-        }
+        },
+        'celery': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
     }
 }

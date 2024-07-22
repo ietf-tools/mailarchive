@@ -418,6 +418,11 @@ LOGGING = {
     'formatters': {
         'simple': {
             'format': "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        },
+        'json': {
+            "class": "mlarchive.utils.jsonlogger.MailArchiveJsonFormatter",
+            "style": "{",
+            "format": "{asctime}{levelname}{message}{name}{pathname}{lineno}{funcName}{process}",
         }
     },
     'handlers': {
@@ -446,6 +451,10 @@ LOGGING = {
             'handlers': ['mlarchive'],
             'level': 'DEBUG',
             'propagate': False,
-        }
+        },
+        'celery': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
     }
 }

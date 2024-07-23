@@ -36,12 +36,12 @@ logconfig_dict = {
     },
     "formatters": {
         "json": {
-            "class": "ietf.utils.jsonlogger.DatatrackerJsonFormatter",
+            "class": "mlarchive.utils.jsonlogger.MailArchiveJsonFormatter",
             "style": "{",
             "format": "{asctime}{levelname}{message}{name}{process}",
         },
         "access_json": {
-            "class": "ietf.utils.jsonlogger.GunicornRequestJsonFormatter",
+            "class": "mlarchive.utils.jsonlogger.GunicornRequestJsonFormatter",
             "style": "{",
             "format": "{asctime}{levelname}{message}{name}{process}",
         }

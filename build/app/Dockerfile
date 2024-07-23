@@ -15,6 +15,7 @@ COPY . .
 COPY ./build/app/start.sh ./start.sh
 COPY ./build/app/mailarchive-start.sh ./mailarchive-start.sh
 COPY ./build/app/celery-start.sh ./celery-start.sh
+COPY ./build/app/gunicorn.conf.py ./gunicorn.conf.py
 COPY ./docker/configs/docker_env /workspace/.env
 
 RUN chmod +x start.sh && \

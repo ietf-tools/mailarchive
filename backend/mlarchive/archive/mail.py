@@ -946,6 +946,7 @@ class MessageWrapper(object):
         if not test:
             self.write_msg()
         self.archive_message.save()
+        logger.info('Message archived list:{} from:{}'.format(self.listname, self.frm))
 
         # update thread information
         if self.archive_message.thread.message_set.count() > 1:

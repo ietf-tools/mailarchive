@@ -108,7 +108,7 @@ data:
   # Cloudflare Zone ID
   CLOUDFLARE_ZONE_ID: ""  #secret
 
-  # MAILMAN API SETTINGS -----------------
+  # MAILMAN SETTINGS -----------------
 
   # Mailman API URL
   MAILMAN_API_URL: ""
@@ -118,3 +118,9 @@ data:
 
   # Mailman API Password
   MAILMAN_API_PASSWORD: ""  # secret
+
+  # Mailman Cloudflare Client ID
+  MAILMAN_CF_ACCESS_CLIENT_ID: ""  # secret
+
+  # Mailman Cloudflare Client Secret
+  MAILMAN_CF_ACCESS_CLIENT_SECRET: ""  # secret

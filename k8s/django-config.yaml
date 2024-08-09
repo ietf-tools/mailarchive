@@ -110,9 +110,6 @@ data:
 
   # MAILMAN SETTINGS -----------------
 
-  # Mailman API URL
-  MAILMAN_API_URL: ""
-
   # Mailman API User
   MAILMAN_API_USER: ""  # secret
 

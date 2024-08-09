@@ -205,6 +205,12 @@ def process_members(email_list, emails):
                 email_list.members.add(user)
 
 
+def add_cloudflare_credentials(params):
+    params['headers']['CF-Access-Client-Id'] = settings.MAILMAN_CF_ACCESS_CLIENT_ID
+    params['headers']['CF-Access-Client-Secret'] = settings.MAILMAN_CF_ACCESS_CLIENT_SECRET
+    return params
+
+
 def get_mailman_lists(private=None):
     '''Returns EmailLists that are managed by mailman 3.
     Specify list.private value or leave out to retrieve all lists.
@@ -213,7 +219,8 @@ def get_mailman_lists(private=None):
     client = mailmanclient.Client(
         settings.MAILMAN_API_URL,
         settings.MAILMAN_API_USER,
-        settings.MAILMAN_API_PASSWORD)
+        settings.MAILMAN_API_PASSWORD,
+        request_hooks=[add_cloudflare_credentials])
     mailman_lists = [x.list_name for x in client.lists]
     email_lists = EmailList.objects.filter(name__in=mailman_lists)
     if isinstance(private, bool):
@@ -232,7 +239,8 @@ def get_fqdn_map():
         client = mailmanclient.Client(
         settings.MAILMAN_API_URL,
         settings.MAILMAN_API_USER,
-        settings.MAILMAN_API_PASSWORD)
+        settings.MAILMAN_API_PASSWORD,
+        request_hooks=[add_cloudflare_credentials])
         for mailman_list in client.lists:
             fqdn_map[mailman_list.list_name] = mailman_list.mail_host
         cache.set('fqdn_map', fqdn_map, timeout=86400)
@@ -250,7 +258,8 @@ def get_subscribers(listname):
     client = mailmanclient.Client(
         settings.MAILMAN_API_URL,
         settings.MAILMAN_API_USER,
-        settings.MAILMAN_API_PASSWORD)
+        settings.MAILMAN_API_PASSWORD,
+        request_hooks=[add_cloudflare_credentials])
     fqdn = get_fqdn(listname)
     mailman_list = client.get_list(fqdn)
     members = mailman_list.members
@@ -262,7 +271,8 @@ def get_subscriber_counts():
     client = mailmanclient.Client(
         settings.MAILMAN_API_URL,
         settings.MAILMAN_API_USER,
-        settings.MAILMAN_API_PASSWORD)
+        settings.MAILMAN_API_PASSWORD,
+        request_hooks=[add_cloudflare_credentials])
     counts = {x.list_name: x.member_count for x in client.lists}
     subscribers = []
     for elist in EmailList.objects.all():
@@ -284,7 +294,8 @@ def get_membership_3(quiet=False):
     client = mailmanclient.Client(
         settings.MAILMAN_API_URL,
         settings.MAILMAN_API_USER,
-        settings.MAILMAN_API_PASSWORD)
+        settings.MAILMAN_API_PASSWORD,
+        request_hooks=[add_cloudflare_credentials])
 
     private_lists = get_mailman_lists(private=True)
     fqdn_map = get_fqdn_map()

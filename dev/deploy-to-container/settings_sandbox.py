@@ -6,10 +6,10 @@ DATABASES = {
     'default': {
         'HOST': '__DBHOST__',
         'PORT': 5432,
-        'NAME': 'datatracker',
+        'NAME': 'mailarch',
         'ENGINE': 'django.db.backends.postgresql',
-        'USER': 'django',
-        'PASSWORD': 'RkTkDPFnKpko',
+        'USER': 'mailarch',
+        'PASSWORD': 'franticmarble',
     },
 }
 

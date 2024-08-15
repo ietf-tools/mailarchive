@@ -75,12 +75,12 @@ async function main () {
   console.info('Updated configuration files.')
 
   // Pull latest DB image
-  console.info('Pulling latest DB docker image...')
-  const dbImagePullStream = await dock.pull('ghcr.io/ietf-tools/mailarchive-db:latest')
+  console.info('Pulling DB docker image...')
+  const dbImagePullStream = await dock.pull('postgres:14.6')
   await new Promise((resolve, reject) => {
     dock.modem.followProgress(dbImagePullStream, (err, res) => err ? reject(err) : resolve(res))
   })
-  console.info('Pulled latest DB docker image successfully.')
+  console.info('Pulled DB docker image successfully.')
   
   // Pull latest Mail Archive Base image
   console.info('Pulling latest Mail Archive base docker image...')
@@ -131,18 +131,18 @@ async function main () {
   console.info('Existing containers with same name have been terminated.')
 
   // Get shared docker network
-  console.info('Querying shared docker network...')
-  const networks = await dock.listNetworks()
-  if (!networks.some(n => n.Name === 'shared')) {
-    console.info('No shared docker network found, creating a new one...')
-    await dock.createNetwork({
-      Name: 'shared',
-      CheckDuplicate: true
-    })
-    console.info('Created shared docker network successfully.')
-  } else {
-    console.info('Existing shared docker network found.')
-  }
+  // console.info('Querying shared docker network...')
+  // const networks = await dock.listNetworks()
+  // if (!networks.some(n => n.Name === 'shared')) {
+  //   console.info('No shared docker network found, creating a new one...')
+  //   await dock.createNetwork({
+  //     Name: 'shared',
+  //     CheckDuplicate: true
+  //   })
+  //   console.info('Created shared docker network successfully.')
+  // } else {
+  //   console.info('Existing shared docker network found.')
+  // }
 
   // Get assets docker volume
   console.info('Querying assets docker volume...')
@@ -173,9 +173,15 @@ async function main () {
   // Create DB container
   console.info(`Creating DB docker container... [ma-db-${branch}]`)
   const dbContainer = await dock.createContainer({
-    Image: 'ghcr.io/ietf-tools/mailarchive-db:latest',
+    Image: 'postgres:14.6',
     name: `ma-db-${branch}`,
     Hostname: `ma-db-${branch}`,
+    Env: [
+      'POSTGRES_DB=mailarch',
+      'POSTGRES_USER=mailarch',
+      'POSTGRES_PASSWORD=franticmarble',
+      'POSTGRES_HOST_AUTH_METHOD=trust'
+    ]
     Labels: {
       ...argv.nodbrefresh === 'true' && { nodbrefresh: '1' }
     },
@@ -215,18 +221,18 @@ async function main () {
   // Create Celery containers
   console.info(`Creating Celery docker containers... [ma-celery-${branch}, ma-beat-${branch}]`)
   const conConfs = [
-    { name: 'celery', role: 'worker' },
+    { name: 'celery', role: 'celery' },
     { name: 'beat', role: 'beat' }
   ]
   const celeryContainers = {}
   for (const conConf of conConfs) {
     celeryContainers[conConf.name] = await dock.createContainer({
-      Image: 'ghcr.io/ietf-tools/mailarchive-app:latest',
+      Image: 'ghcr.io/ietf-tools/mailarchive:latest',
       name: `ma-${conConf.name}-${branch}`,
       Hostname: `ma-${conConf.name}-${branch}`,
       Env: [
-        'CELERY_APP=ietf',
-        `CELERY_ROLE=${conConf.role}`,
+        'CELERY_APP=mlarchive.celeryapp:app',
+        `CONTAINER_ROLE=${conConf.role}`,
         'UPDATE_REQUIREMENTS_FROM=requirements.txt'
       ],
       Labels: {
@@ -248,7 +254,7 @@ async function main () {
   }
   console.info('Created Celery docker containers successfully.')
 
-  // Create Datatracker container
+  // Create Mail Archive container
   console.info(`Creating Mail Archive docker container... [ma-app-${branch}]`)
   const appContainer = await dock.createContainer({
     Image: 'ghcr.io/ietf-tools/mailarchive-app-base:latest',

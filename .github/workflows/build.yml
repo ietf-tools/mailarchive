@@ -20,6 +20,16 @@ on:
           - Skip
           - Staging Only
           - Staging + Prod
+      sandbox:
+        description: 'Deploy to Sandbox'
+        default: false
+        required: true
+        type: boolean
+      sandboxNoDbRefresh:
+        description: 'Sandbox Disable Daily DB Refresh'
+        default: false
+        required: true
+        type: boolean
 
 jobs:
   publish:
@@ -241,3 +251,43 @@ jobs:
           wait-for-completion: true
           wait-for-completion-timeout: 10m
           display-workflow-run-url: false
+
+  # -----------------------------------------------------------------
+  # SANDBOX
+  # -----------------------------------------------------------------
+  sandbox:
+    name: Deploy to Sandbox
+    if: ${{ !failure() && !cancelled() && github.event.inputs.sandbox == 'true' }}
+    needs: [prepare, release]
+    runs-on: [self-hosted, dev-server]
+    environment:
+      name: sandbox
+    env:
+      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+      
+    steps:
+    - uses: actions/checkout@v4
+        
+    - name: Download a Release Artifact
+      uses: actions/download-artifact@v4.1.8
+      with:
+        name: release-${{ env.PKG_VERSION }}
+        
+    - name: Deploy to containers
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        # echo "Reset production flags in settings.py..."
+        # sed -i -r -e 's/^DEBUG *= *.*$/DEBUG = True/' -e "s/^SERVER_MODE *= *.*\$/SERVER_MODE = 'development'/" backend/mlarchive/settings/base.py
+        echo "Install Deploy to Container CLI dependencies..."
+        cd dev/deploy-to-container
+        npm ci
+        cd ../..
+        echo "Start Deploy..."
+        node ./dev/deploy-to-container/cli.js --branch ${{ github.ref_name }} --domain dev.ietf.org --appversion ${{ env.PKG_VERSION }} --commit ${{ github.sha }} --ghrunid ${{ github.run_id }} --nodbrefresh ${{ github.event.inputs.sandboxNoDbRefresh }}
+        
+    - name: Cleanup old docker resources
+      env:
+        DEBIAN_FRONTEND: noninteractive
+      run: |
+        docker image prune -a -f

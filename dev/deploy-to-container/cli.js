@@ -76,7 +76,7 @@ async function main () {
 
   // Pull latest DB image
   console.info('Pulling DB docker image...')
-  const dbImagePullStream = await dock.pull('postgres:14.6')
+  const dbImagePullStream = await dock.pull('postgres:16')
   await new Promise((resolve, reject) => {
     dock.modem.followProgress(dbImagePullStream, (err, res) => err ? reject(err) : resolve(res))
   })
@@ -84,7 +84,7 @@ async function main () {
   
   // Pull latest Mail Archive Base image
   console.info('Pulling latest Mail Archive base docker image...')
-  const appImagePullStream = await dock.pull('ghcr.io/ietf-tools/mailarchive-app-base:latest')
+  const appImagePullStream = await dock.pull(`ghcr.io/ietf-tools/mailarchive:${argv.appversion}`)
   await new Promise((resolve, reject) => {
     dock.modem.followProgress(appImagePullStream, (err, res) => err ? reject(err) : resolve(res))
   })
@@ -131,18 +131,18 @@ async function main () {
   console.info('Existing containers with same name have been terminated.')
 
   // Get shared docker network
-  // console.info('Querying shared docker network...')
-  // const networks = await dock.listNetworks()
-  // if (!networks.some(n => n.Name === 'shared')) {
-  //   console.info('No shared docker network found, creating a new one...')
-  //   await dock.createNetwork({
-  //     Name: 'shared',
-  //     CheckDuplicate: true
-  //   })
-  //   console.info('Created shared docker network successfully.')
-  // } else {
-  //   console.info('Existing shared docker network found.')
-  // }
+  console.info('Querying shared docker network...')
+  const networks = await dock.listNetworks()
+  if (!networks.some(n => n.Name === 'shared')) {
+    console.info('No shared docker network found, creating a new one...')
+    await dock.createNetwork({
+      Name: 'shared',
+      CheckDuplicate: true
+    })
+    console.info('Created shared docker network successfully.')
+  } else {
+    console.info('Existing shared docker network found.')
+  }
 
   // Get assets docker volume
   console.info('Querying assets docker volume...')
@@ -173,7 +173,7 @@ async function main () {
   // Create DB container
   console.info(`Creating DB docker container... [ma-db-${branch}]`)
   const dbContainer = await dock.createContainer({
-    Image: 'postgres:14.6',
+    Image: 'postgres:16',
     name: `ma-db-${branch}`,
     Hostname: `ma-db-${branch}`,
     Env: [
@@ -227,7 +227,7 @@ async function main () {
   const celeryContainers = {}
   for (const conConf of conConfs) {
     celeryContainers[conConf.name] = await dock.createContainer({
-      Image: 'ghcr.io/ietf-tools/mailarchive:latest',
+      Image: `ghcr.io/ietf-tools/mailarchive:${argv.appversion}`,
       name: `ma-${conConf.name}-${branch}`,
       Hostname: `ma-${conConf.name}-${branch}`,
       Env: [
@@ -257,7 +257,7 @@ async function main () {
   // Create Mail Archive container
   console.info(`Creating Mail Archive docker container... [ma-app-${branch}]`)
   const appContainer = await dock.createContainer({
-    Image: 'ghcr.io/ietf-tools/mailarchive-app-base:latest',
+    Image: `ghcr.io/ietf-tools/mailarchive:${argv.appversion}`,
     name: `ma-app-${branch}`,
     Hostname: `ma-app-${branch}`,
     Env: [

@@ -36,7 +36,7 @@ echo "Running Mail Archive checks..."
 # Migrate, adjusting to what the current state of the underlying database might be:
 
 echo "Running Mail Archive migrations..."
-/usr/local/bin/python ./backend/manage.py migrate --settings=settings_local
+/usr/local/bin/python ./backend/manage.py migrate --settings=mlarchive.settings.settings_sandbox
 
 echo "Starting Mail Archive..."
-./backend/manage.py runserver 0.0.0.0:8000 --settings=settings_local
+./backend/manage.py runserver 0.0.0.0:8000 --settings=mlarchive.settings.settings_sandbox

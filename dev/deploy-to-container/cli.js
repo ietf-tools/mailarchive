@@ -71,7 +71,7 @@ async function main () {
   )
   await fs.copy(path.join(basePath, 'docker/scripts/app-create-dirs.sh'), path.join(releasePath, 'app-create-dirs.sh'))
   await fs.copy(path.join(basePath, 'dev/deploy-to-container/start.sh'), path.join(releasePath, 'start.sh'))
-  await fs.copy(path.join(basePath, 'test/data'), path.join(releasePath, 'test/data'))
+  // await fs.copy(path.join(basePath, 'test/data'), path.join(releasePath, 'test/data'))
   console.info('Updated configuration files.')
 
   // Pull latest DB image

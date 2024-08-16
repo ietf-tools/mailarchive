@@ -181,7 +181,7 @@ async function main () {
       'POSTGRES_USER=mailarch',
       'POSTGRES_PASSWORD=franticmarble',
       'POSTGRES_HOST_AUTH_METHOD=trust'
-    ]
+    ],
     Labels: {
       ...argv.nodbrefresh === 'true' && { nodbrefresh: '1' }
     },

@@ -32,16 +32,21 @@ on:
         type: boolean
 
 jobs:
-  publish:
-    name: Publish
+  # -----------------------------------------------------------------
+  # PREPARE
+  # -----------------------------------------------------------------
+  prepare:
+    name: Prepare Release
     runs-on: ubuntu-latest
     outputs:
+      should_deploy: ${{ steps.buildvars.outputs.should_deploy }}
       pkg_version: ${{ steps.buildvars.outputs.pkg_version }}
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        fetch-depth: 1
+        fetch-tags: false
         
     - name: Get Next Version
       if: ${{ github.event.inputs.publish == 'true' }}
@@ -54,7 +59,7 @@ jobs:
     - name: Set Next Version Env Var
       if: ${{ github.event.inputs.publish == 'true' }}
       run: |
-        echo "NEXT_VERSION=$nextStrict" >> $GITHUB_ENV
+        echo "NEXT_VERSION=$nextStrict" >> "$GITHUB_ENV"
         
     - name: Create Draft Release
       uses: ncipollo/release-action@v1
@@ -73,31 +78,49 @@ jobs:
       run: |
         if [[ $NEXT_VERSION ]]; then
           echo "Using AUTO SEMVER mode: $NEXT_VERSION"
-          echo "SHOULD_DEPLOY=true" >> $GITHUB_ENV
-          echo "PKG_VERSION=$NEXT_VERSION" >> $GITHUB_ENV
-          echo "pkg_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+          echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          echo "pkg_version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
           echo "::notice::Release created using branch $GITHUB_REF_NAME"
         elif [[ "$GITHUB_REF" =~ ^refs/tags/* ]]; then
           echo "Using TAG mode: $GITHUB_REF_NAME"
-          echo "SHOULD_DEPLOY=true" >> $GITHUB_ENV
-          echo "PKG_VERSION=$GITHUB_REF_NAME" >> $GITHUB_ENV
-          echo "pkg_version=$GITHUB_REF_NAME" >> $GITHUB_OUTPUT
+          echo "should_deploy=true" >> "$GITHUB_OUTPUT"
+          echo "pkg_version=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
           echo "::notice::Release created using tag $GITHUB_REF_NAME"
         else
           echo "Using TEST mode: v2.0.0-dev.$GITHUB_RUN_NUMBER"
-          echo "SHOULD_DEPLOY=false" >> $GITHUB_ENV
-          echo "PKG_VERSION=2.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
-          echo "pkg_version=2.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
+          echo "should_deploy=false" >> "$GITHUB_OUTPUT"
+          echo "pkg_version=2.0.0-dev.$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
           echo "::notice::Non-production build created using branch $GITHUB_REF_NAME"
         fi
-        
+
+  # -----------------------------------------------------------------
+  # RELEASE
+  # -----------------------------------------------------------------
+  release:
+    name: Make Release
+    if: ${{ !failure() && !cancelled() }}
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    env:
+      SHOULD_DEPLOY: ${{needs.prepare.outputs.should_deploy}}
+      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+        fetch-tags: false
+
     - name: Setup Node.js
       uses: actions/setup-node@v3.0.0
       with:
         node-version: 16.x
     
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: '3.x'
         
@@ -175,15 +198,15 @@ jobs:
     - name: Update CHANGELOG
       id: changelog
       uses: Requarks/changelog-action@v1
-      if: env.SHOULD_DEPLOY == 'true'
+      if: ${{ env.SHOULD_DEPLOY == 'true' }}
       with:
         token: ${{ github.token }}
         tag: ${{ env.PKG_VERSION }}
         writeToFile: false
         
     - name: Create Release
-      uses: ncipollo/release-action@v1
-      if: env.SHOULD_DEPLOY == 'true'
+      uses: ncipollo/release-action@v1.14.0
+      if: ${{ env.SHOULD_DEPLOY == 'true' }}
       with:
         allowUpdates: true
         draft: false
@@ -194,10 +217,9 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v2.3.1
-      if: env.SHOULD_DEPLOY == 'false'
+      uses: actions/upload-artifact@v4
       with:
-        name: release
+        name: release-${{ env.PKG_VERSION }}
         path: /home/runner/work/release/release.tar.gz
 
   # -----------------------------------------------------------------
@@ -206,7 +228,7 @@ jobs:
   staging:
     name: Deploy to Staging
     if: ${{ !failure() && !cancelled() && (github.event.inputs.deploy == 'Staging Only' || github.event.inputs.deploy == 'Staging + Prod') }}
-    needs: [publish]
+    needs: [prepare, release]
     runs-on: ubuntu-latest
     environment:
       name: staging
@@ -237,7 +259,7 @@ jobs:
     environment:
       name: production
     env:
-      PKG_VERSION: ${{needs.publish.outputs.pkg_version}}
+      PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
 
     steps:
       - name: Deploy to production

@@ -212,7 +212,7 @@ async function main () {
     Hostname: `ma-es-${branch}`,
     Env: [
       'discovery.type=single-node',
-      'xpack.security.eanbled=false',
+      'xpack.security.enabled=false',
       'ES_JAVA_OPTS=-Xms1g -Xmx1g'
     ],
     Labels: {

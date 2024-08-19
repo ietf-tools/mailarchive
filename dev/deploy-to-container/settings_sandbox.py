@@ -2,6 +2,7 @@
 import os
 from .base import *
 
+
 DATABASES = {
     'default': {
         'HOST': '__DBHOST__',

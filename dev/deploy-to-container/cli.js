@@ -92,9 +92,9 @@ async function main () {
 
   // Pull Elasticsearch image
   console.info('Pulling Elasticsearch docker image...')
-  const dbImagePullStream = await dock.pull('elasticsearch:7.17.21')
+  const esImagePullStream = await dock.pull('elasticsearch:7.17.21')
   await new Promise((resolve, reject) => {
-    dock.modem.followProgress(dbImagePullStream, (err, res) => err ? reject(err) : resolve(res))
+    dock.modem.followProgress(esImagePullStream, (err, res) => err ? reject(err) : resolve(res))
   })
   console.info('Pulled Elasticsearch docker image successfully.')
 

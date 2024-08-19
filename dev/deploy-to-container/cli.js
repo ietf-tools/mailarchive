@@ -57,7 +57,7 @@ async function main () {
   })
   console.info('Extracted release artifact successfully.')
 
-  // Update the settings_local.py file
+  // Update the settings file
   console.info('Setting configuration files...')
   const mqKey = nanoidAlphaNum()
   const settingsPath = path.join(releasePath, 'backend/mlarchive/settings/settings_sandbox.py')
@@ -90,6 +90,14 @@ async function main () {
   })
   console.info('Pulled latest Mail Archive base docker image.')
 
+  // Pull Elasticsearch image
+  console.info('Pulling Elasticsearch docker image...')
+  const dbImagePullStream = await dock.pull('elasticsearch:7.17.21')
+  await new Promise((resolve, reject) => {
+    dock.modem.followProgress(dbImagePullStream, (err, res) => err ? reject(err) : resolve(res))
+  })
+  console.info('Pulled Elasticsearch docker image successfully.')
+
   // Pull latest MQ image
   console.info('Pulling latest MQ docker image...')
   const mqImagePullStream = await dock.pull('rabbitmq:3')
@@ -114,6 +122,7 @@ async function main () {
       container.Names.includes(`/ma-db-${branch}`) ||
       container.Names.includes(`/ma-app-${branch}`) ||
       container.Names.includes(`/ma-mq-${branch}`) ||
+      container.Names.includes(`/ma-es-${branch}`) ||
       container.Names.includes(`/ma-celery-${branch}`) ||
       container.Names.includes(`/ma-beat-${branch}`)
       ) {
@@ -195,6 +204,30 @@ async function main () {
   await dbContainer.start()
   console.info('Created and started DB docker container successfully.')
 
+  // Create Elasticsearch container
+  console.info(`Creating Elasticsearch docker container... [ma-es-${branch}]`)
+  const esContainer = await dock.createContainer({
+    Image: 'elasticsearch:7.17.21',
+    name: `ma-es-${branch}`,
+    Hostname: `ma-es-${branch}`,
+    Env: [
+      'discovery.type=single-node',
+      'xpack.security.eanbled=false',
+      'ES_JAVA_OPTS=-Xms1g -Xmx1g'
+    ],
+    Labels: {
+      ...argv.nodbrefresh === 'true' && { nodbrefresh: '1' }
+    },
+    HostConfig: {
+      NetworkMode: 'shared',
+      RestartPolicy: {
+        Name: 'unless-stopped'
+      }
+    }
+  })
+  await esContainer.start()
+  console.info('Created and started Elasticsearch docker container successfully.')
+
   // Create MQ container
   console.info(`Creating MQ docker container... [ma-mq-${branch}]`)
   const mqContainer = await dock.createContainer({
@@ -264,7 +297,10 @@ async function main () {
       // `LETSENCRYPT_HOST=${hostname}`,
       `VIRTUAL_HOST=${hostname}`,
       `VIRTUAL_PORT=8000`,
-      `PGHOST=ma-db-${branch}`
+      `PGHOST=ma-db-${branch}`,
+      `DEBUG=True`,
+      `ELASTICSEARCH_HOST=ma-es-${branch}`,
+      `ELASTICSEARCH_SIGNAL_PROCESSOR=mlarchive.archive.signals.RealtimeSignalProcessor`
     ],
     Labels: {
       appversion: `${argv.appversion}` ?? '0.0.0',

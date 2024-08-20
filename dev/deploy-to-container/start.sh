@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Creating /test directories..."
+echo "Creating /data directories..."
 for sub in \
     /data/archive \
     /data/incoming \
@@ -41,8 +41,11 @@ until nc -z -w 5 "$ELASTICSEARCH_HOST" 9200; do
   sleep 5
 done
 
-echo "Running Initializing index..."
+echo "Initializing index..."
 ./backend/manage.py init_index
+
+echo "Loading sample data..."
+./load_messages.sh
 
 echo "Starting Mail Archive..."
 ./backend/manage.py runserver 0.0.0.0:8000 --settings=mlarchive.settings.settings_sandbox

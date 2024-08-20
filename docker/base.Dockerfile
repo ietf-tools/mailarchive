@@ -23,6 +23,7 @@ RUN apt-get update --fix-missing && apt-get install -qy \
     locales \
     postgresql-client-14 \
     memcached \
+    netcat \
     nodejs \
     rsyslog \
     sudo \

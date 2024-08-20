@@ -33,10 +33,11 @@ echo "Starting memcached..."
 echo "Running Mail Archive checks..."
 ./backend/manage.py check
 
-# Migrate, adjusting to what the current state of the underlying database might be:
-
 echo "Running Mail Archive migrations..."
-/usr/local/bin/python ./backend/manage.py migrate --settings=mlarchive.settings.settings_sandbox
+ ./backend/manage.py migrate --settings=mlarchive.settings.settings_sandbox
+
+echo "Running Initializing index..."
+./backend/manage.py init_index
 
 echo "Starting Mail Archive..."
 ./backend/manage.py runserver 0.0.0.0:8000 --settings=mlarchive.settings.settings_sandbox

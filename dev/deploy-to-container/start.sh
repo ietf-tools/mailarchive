@@ -36,6 +36,11 @@ echo "Running Mail Archive checks..."
 echo "Running Mail Archive migrations..."
  ./backend/manage.py migrate --settings=mlarchive.settings.settings_sandbox
 
+until nc -z -w 5 "$ELASTICSEARCH_HOST" 9200; do
+  echo "Waiting for Elasticsearch..."
+  sleep 5
+done
+
 echo "Running Initializing index..."
 ./backend/manage.py init_index
 

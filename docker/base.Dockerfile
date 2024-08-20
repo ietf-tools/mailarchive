@@ -25,12 +25,16 @@ RUN apt-get update --fix-missing && apt-get install -qy \
     memcached \
     netcat \
     nodejs \
+    rsync \
     rsyslog \
     sudo \
     telnet \
     unzip \
     wget \
     zsh
+
+# netcat: for deploy-to-container wait for elasticsearch
+# rsync: for deploy-to-container load_messages
 
 # purge because of vulnerability (see https://www.cvedetails.com/)
 RUN apt-get purge -y imagemagick imagemagick-6-common

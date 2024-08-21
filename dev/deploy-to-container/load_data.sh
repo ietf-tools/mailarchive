@@ -16,8 +16,12 @@ EOL
 # sync
 rsync -a --include-from="$INCLUDE_FILE" --exclude='*' rsync.ietf.org::mailman-archive/ ./
 
-# load data
+# load messages
 cd /workspace/backend
-./manage.py load /tmp/yang-doctors/2018-10.mail -l yang-doctors
-./manage.py load /tmp/curdle/2017-05.mail -l curdle
-./manage.py load /tmp/mtgvenue/2016-07.mail -l mtgvenue
+./manage.py load /tmp/yang-doctors/2024-05.mail -l yang-doctors
+./manage.py load /tmp/curdle/2024-05.mail -l curdle
+./manage.py load /tmp/mtgvenue/2024-05.mail -l mtgvenue
+
+# load subscribers
+cd /workspace
+python load_subscribers.py

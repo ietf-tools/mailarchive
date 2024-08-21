@@ -45,7 +45,7 @@ echo "Initializing index..."
 ./backend/manage.py init_index
 
 echo "Loading sample data..."
-./load_messages.sh
+./load_data.sh
 
 echo "Starting Mail Archive..."
 ./backend/manage.py runserver 0.0.0.0:8000 --settings=mlarchive.settings.settings_sandbox

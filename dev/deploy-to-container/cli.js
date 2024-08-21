@@ -71,7 +71,8 @@ async function main () {
   )
   await fs.copy(path.join(basePath, 'docker/scripts/app-create-dirs.sh'), path.join(releasePath, 'app-create-dirs.sh'))
   await fs.copy(path.join(basePath, 'dev/deploy-to-container/start.sh'), path.join(releasePath, 'start.sh'))
-  await fs.copy(path.join(basePath, 'dev/deploy-to-container/load_messages.sh'), path.join(releasePath, 'load_messages.sh'))
+  await fs.copy(path.join(basePath, 'dev/deploy-to-container/load_data.sh'), path.join(releasePath, 'load_data.sh'))
+  await fs.copy(path.join(basePath, 'dev/deploy-to-container/load_subscribers.py'), path.join(releasePath, 'load_subscribers.py'))
   // await fs.copy(path.join(basePath, 'test/data'), path.join(releasePath, 'test/data'))
   console.info('Updated configuration files.')
 

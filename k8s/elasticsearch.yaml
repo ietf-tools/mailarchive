@@ -41,12 +41,15 @@ spec:
               value: single-node
             - name: xpack.security.enabled
               value: "true"
-            - name: ELASTIC_PASSWORD
-              value: $ELASTICSEARCH_PASSWORD
             - name: path.repo
               value: /mnt/snapshots
             - name: ES_JAVA_OPTS
               value: "-Xms1g -Xmx1g"
+            - name: ELASTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ml-secrets-env
+                  key: ELASTICSEARCH_PASSWORD
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

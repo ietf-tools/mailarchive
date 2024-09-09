@@ -42,6 +42,31 @@ spec:
             allowPrivilegeEscalation: false
       containers:
         # -----------------------------------------------------
+        # Nginx Container
+        # -----------------------------------------------------
+        - name: nginx
+          image: "ghcr.io/nginxinc/nginx-unprivileged:1.27"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              port: 8080
+              path: /health/nginx
+          securityContext:
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: nginx-tmp
+              mountPath: /tmp
+            - name: ml-cfg
+              mountPath: /etc/nginx/conf.d/00logging.conf
+              subPath: nginx-logging.conf
+            - name: ml-cfg
+              mountPath: /etc/nginx/conf.d/mailarchive.conf
+              subPath: nginx-mailarchive.conf
+        # -----------------------------------------------------
         # ScoutAPM Container
         # -----------------------------------------------------
         - name: scoutapm
@@ -104,6 +129,12 @@ spec:
         - name: ml-tmp
           emptyDir:
             sizeLimit: "2Gi"
+        - name: ml-cfg
+          configMap:
+            name: files-cfgmap
+        - name: nginx-tmp
+          emptyDir:
+            sizeLimit: "500Mi"
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 30

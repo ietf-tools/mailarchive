@@ -230,16 +230,24 @@ class ImportMessageView(View):
             payload = json.loads(request.body)
             _import_message_json_validator.validate(payload)
         except json.decoder.JSONDecodeError as err:
-            return self._err(400, f"JSON parse error at line {err.lineno} col {err.colno}: {err.msg}")
+            msg = f'JSON parse error at line {err.lineno} col {err.colno}: {err.msg}'
+            logger.error(msg)
+            return self._err(400, msg)
         except jsonschema.exceptions.ValidationError as err:
-            return self._err(400, f"JSON schema error at {err.json_path}: {err.message}")
+            msg = f'JSON schema error at {err.json_path}: {err.message}'
+            logger.error(msg)
+            return self._err(400, msg)
         except Exception:
-            return self._err(400, "Invalid request format")
+            msg = 'Invalid request format'
+            logger.error(msg)
+            return self._err(400, msg)
 
         try:
             message = base64.b64decode(payload["message"], validate=True)
         except binascii.Error:
-            return self._err(400, "Invalid message: bad base64 encoding")
+            msg = 'Invalid message: bad base64 encoding'
+            logger.error(msg)
+            return self._err(400, msg)
 
         list_name = payload["list_name"]
         list_visibility = payload["list_visibility"]
@@ -253,7 +261,9 @@ class ImportMessageView(View):
             with os.fdopen(fd, 'wb') as f:
                 f.write(message)
         except (FileNotFoundError, PermissionError, OSError) as e:
-            return self._err(500, str(e))
+            msg = str(e)
+            logger.error(msg)
+            return self._err(500, msg)
         logger.info(f'Received message: {filepath}')
 
         # process message

@@ -42,31 +42,6 @@ spec:
             allowPrivilegeEscalation: false
       containers:
         # -----------------------------------------------------
-        # ScoutAPM Container
-        # -----------------------------------------------------
-        - name: scoutapm
-          image: "scoutapp/scoutapm:version-1.4.0"
-          imagePullPolicy: IfNotPresent
-          # Replace command with one that will shut down on a TERM signal
-          # The ./core-agent start command line is from the scoutapm docker image
-          command:
-            - "sh"
-            - "-c"
-            - >-
-              trap './core-agent shutdown --tcp 0.0.0.0:6590' TERM;
-              ./core-agent start --daemonize false --log-level warn --tcp 0.0.0.0:6590 &
-              wait $!
-          livenessProbe:
-            exec:
-              command:
-                - "sh"
-                - "-c"
-                - "./core-agent probe --tcp 0.0.0.0:6590 | grep -q 'Agent found'"
-          securityContext:
-            readOnlyRootFilesystem: true
-            runAsUser: 65534 # "nobody" user by default
-            runAsGroup: 65534  # "nogroup" group by default
-        # -----------------------------------------------------
         # Mail Archive Container
         # -----------------------------------------------------
         - name: mailarchive
@@ -98,12 +73,68 @@ spec:
             readOnlyRootFilesystem: true
             runAsUser: 1000
             runAsGroup: 1000
+        # -----------------------------------------------------
+        # Nginx Container
+        # -----------------------------------------------------
+        - name: nginx
+          image: "ghcr.io/nginxinc/nginx-unprivileged:1.27"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              port: 8080
+              path: /health/nginx
+          securityContext:
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: nginx-tmp
+              mountPath: /tmp
+            - name: ml-cfg
+              mountPath: /etc/nginx/conf.d/00logging.conf
+              subPath: nginx-logging.conf
+            - name: ml-cfg
+              mountPath: /etc/nginx/conf.d/mailarchive.conf
+              subPath: nginx-mailarchive.conf
+        # -----------------------------------------------------
+        # ScoutAPM Container
+        # -----------------------------------------------------
+        - name: scoutapm
+          image: "scoutapp/scoutapm:version-1.4.0"
+          imagePullPolicy: IfNotPresent
+          # Replace command with one that will shut down on a TERM signal
+          # The ./core-agent start command line is from the scoutapm docker image
+          command:
+            - "sh"
+            - "-c"
+            - >-
+              trap './core-agent shutdown --tcp 0.0.0.0:6590' TERM;
+              ./core-agent start --daemonize false --log-level warn --tcp 0.0.0.0:6590 &
+              wait $!
+          livenessProbe:
+            exec:
+              command:
+                - "sh"
+                - "-c"
+                - "./core-agent probe --tcp 0.0.0.0:6590 | grep -q 'Agent found'"
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsUser: 65534 # "nobody" user by default
+            runAsGroup: 65534  # "nogroup" group by default
       volumes:
         # To be overriden with the actual shared volume
         - name: ml-vol
         - name: ml-tmp
           emptyDir:
             sizeLimit: "2Gi"
+        - name: ml-cfg
+          configMap:
+            name: files-cfgmap
+        - name: nginx-tmp
+          emptyDir:
+            sizeLimit: "500Mi"
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 30

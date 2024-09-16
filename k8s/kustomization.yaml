@@ -1,5 +1,10 @@
 namespace: mailarch
 namePrefix: ml-
+configMapGenerator:
+  - name: files-cfgmap
+    files:
+      - nginx-logging.conf
+      - nginx-mailarchive.conf
 resources:
   - beat.yaml
   - celery.yaml

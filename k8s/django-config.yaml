@@ -8,29 +8,29 @@ data:
   # --------------------------------
 
   # SECURITY WARNING: keep the secret key used in production secret!
-  SECRET_KEY: ""  # secret
+  # SECRET_KEY: ""  # secret
 
   # Django Database name
-  DATABASES_NAME: "mailarch"
+  # DATABASES_NAME: "mailarch"
 
   # Django Database user
-  DATABASES_USER: "mailarch"
+  # DATABASES_USER: "mailarch"
 
   # Django Database password
-  DATABASES_PASSWORD: ""  # secret
+  # DATABASES_PASSWORD: ""  # secret
 
   # Django Database host
-  DATABASES_HOST: ""
+  # DATABASES_HOST: ""
 
   # Django Database port
-  DATABASES_PORT: "5432"
+  # DATABASES_PORT: "5432"
 
   # Django Database options
-  DATABASES_OPTS_JSON: |-
-    {
-      "sslmode": "prefer",
-      "options": "-c search_path=mailarch,django,public"
-    }
+  # DATABASES_OPTS_JSON: |-
+    # {
+    #   "sslmode": "prefer",
+    #   "options": "-c search_path=mailarch,django,public"
+    # }
 
   # A list of strings representing the host/domain names that this Django site can serve.
   ALLOWED_HOSTS: ".ietf.org"
@@ -60,19 +60,19 @@ data:
   LOG_DIR: '/var/log/mail-archive'
 
   # API Key for importing messages
-  IMPORT_MESSAGE_APIKEY: ""  # secret
+  # IMPORT_MESSAGE_APIKEY: ""  # secret
 
   # Celery Broker URL
   CELERY_BROKER_URL: "amqp://user:bugsbunny@mailarchive-rabbitmq:5672//"
 
   # Datatracker Key for looking up related emails
-  DATATRACKER_PERSON_ENDPOINT_API_KEY: ""  # secret
+  # DATATRACKER_PERSON_ENDPOINT_API_KEY: ""  # secret
 
   # OIDC Relying Party Client ID
-  OIDC_RP_CLIENT_ID: ""  # secret
+  # OIDC_RP_CLIENT_ID: ""  # secret
 
   # OIDC Relying Party Client Secret
-  OIDC_RP_CLIENT_SECRET: ""  # secret
+  # OIDC_RP_CLIENT_SECRET: ""  # secret
 
   # Memcached Host
   MEMCACHED_SERVICE_HOST: "mailarchive-memcached"
@@ -81,7 +81,7 @@ data:
   SCOUT_MONITOR: "False"
 
   # Scout Key
-  SCOUT_KEY: ""  # secret
+  # SCOUT_KEY: ""  # secret
 
   # Scout Name
   SCOUT_NAME: "Mailarchive"
@@ -92,7 +92,7 @@ data:
   ELASTICSEARCH_HOST: ""
 
   # Elasticsearch password
-  ELASTICSEARCH_PASSWORD: "this-is-a-secret"  # secret
+  # ELASTICSEARCH_PASSWORD: "this-is-a-secret"  # secret
 
   # CDN SETTINGS ---------------------
 
@@ -100,24 +100,27 @@ data:
   USING_CDN: "False"
 
   # Cloudflare Auth Email
-  CLOUDFLARE_AUTH_EMAIL: ""  # secret
+  # CLOUDFLARE_AUTH_EMAIL: ""  # secret
 
   # Cloudflare Auth Key
-  CLOUDFLARE_AUTH_KEY: ""  # secret
+  # CLOUDFLARE_AUTH_KEY: ""  # secret
 
   # Cloudflare Zone ID
-  CLOUDFLARE_ZONE_ID: ""  #secret
+  # CLOUDFLARE_ZONE_ID: ""  #secret
 
   # MAILMAN SETTINGS -----------------
 
   # Mailman API User
-  MAILMAN_API_USER: ""  # secret
+  # MAILMAN_API_USER: ""  # secret
 
   # Mailman API Password
-  MAILMAN_API_PASSWORD: ""  # secret
+  # MAILMAN_API_PASSWORD: ""  # secret
+
+  # Mailman API URL
+  # MAILMAN_API_URL: "" # secret
 
   # Mailman Cloudflare Client ID
-  MAILMAN_CF_ACCESS_CLIENT_ID: ""  # secret
+  # MAILMAN_CF_ACCESS_CLIENT_ID: ""  # secret
 
   # Mailman Cloudflare Client Secret
-  MAILMAN_CF_ACCESS_CLIENT_SECRET: ""  # secret
+  # MAILMAN_CF_ACCESS_CLIENT_SECRET: ""  # secret

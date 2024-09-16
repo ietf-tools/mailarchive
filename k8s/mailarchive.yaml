@@ -42,6 +42,38 @@ spec:
             allowPrivilegeEscalation: false
       containers:
         # -----------------------------------------------------
+        # Mail Archive Container
+        # -----------------------------------------------------
+        - name: mailarchive
+          image: "ghcr.io/ietf-tools/mailarchive:$APP_IMAGE_TAG"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+              protocol: TCP
+          volumeMounts:
+            - name: ml-vol
+              mountPath: /mnt/mailarchive
+            - name: ml-tmp
+              mountPath: /tmp
+          env:
+            - name: "CONTAINER_ROLE"
+              value: "mailarchive"
+            # ensures the pod gets recreated on every deploy:
+            - name: "DEPLOY_UID"
+              value: "$DEPLOY_UID"
+          envFrom:
+            - configMapRef:
+                name: django-config
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
+        # -----------------------------------------------------
         # Nginx Container
         # -----------------------------------------------------
         - name: nginx
@@ -91,38 +123,6 @@ spec:
             readOnlyRootFilesystem: true
             runAsUser: 65534 # "nobody" user by default
             runAsGroup: 65534  # "nogroup" group by default
-        # -----------------------------------------------------
-        # Mail Archive Container
-        # -----------------------------------------------------
-        - name: mailarchive
-          image: "ghcr.io/ietf-tools/mailarchive:$APP_IMAGE_TAG"
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 8000
-              name: http
-              protocol: TCP
-          volumeMounts:
-            - name: ml-vol
-              mountPath: /mnt/mailarchive
-            - name: ml-tmp
-              mountPath: /tmp
-          env:
-            - name: "CONTAINER_ROLE"
-              value: "mailarchive"
-            # ensures the pod gets recreated on every deploy:
-            - name: "DEPLOY_UID"
-              value: "$DEPLOY_UID"
-          envFrom:
-            - configMapRef:
-                name: django-config
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-              - ALL
-            readOnlyRootFilesystem: true
-            runAsUser: 1000
-            runAsGroup: 1000
       volumes:
         # To be overriden with the actual shared volume
         - name: ml-vol

@@ -47,10 +47,6 @@ spec:
         - name: mailarchive
           image: "ghcr.io/ietf-tools/mailarchive:$APP_IMAGE_TAG"
           imagePullPolicy: Always
-          ports:
-            - containerPort: 8000
-              name: http
-              protocol: TCP
           volumeMounts:
             - name: ml-vol
               mountPath: /mnt/mailarchive

@@ -37,6 +37,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: django-config
+            - secretRef:
+                name: ml-secrets-env
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

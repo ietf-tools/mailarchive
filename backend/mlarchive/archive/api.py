@@ -8,6 +8,7 @@ import json
 import jsonschema
 import re
 import os
+import sys
 import tempfile
 
 from django.conf import settings
@@ -238,15 +239,17 @@ class ImportMessageView(View):
             logger.error(msg)
             return self._err(400, msg)
         except Exception:
-            msg = 'Invalid request format'
-            logger.error(msg)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            logger.error(f"Exception type: {exc_type}, Exception message: {exc_value}", exc_info=True)
+            msg = f'Error processing request. ({exc_value})'
             return self._err(400, msg)
 
         try:
             message = base64.b64decode(payload["message"], validate=True)
         except binascii.Error:
-            msg = 'Invalid message: bad base64 encoding'
-            logger.error(msg)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            logger.error(f"Exception type: {exc_type}, Exception message: {exc_value}", exc_info=True)
+            msg = f'Invalid message: bad base64 encoding ({exc_value})'
             return self._err(400, msg)
 
         list_name = payload["list_name"]

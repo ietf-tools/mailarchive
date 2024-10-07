@@ -33,6 +33,7 @@ env = environ.Env(
     CLOUDFLARE_AUTH_EMAIL=(str, ''),
     CLOUDFLARE_AUTH_KEY=(str, ''),
     CLOUDFLARE_ZONE_ID=(str, ''),
+    DATA_UPLOAD_MAX_MEMORY_SIZE=(int, 90000000),
     DATA_ROOT=(str, '/data'),
     DATABASES_NAME=(str, 'mailarch'),
     DATABASES_USER=(str, 'mailarch'),
@@ -84,6 +85,7 @@ SERVER_MODE = env('SERVER_MODE')
 SECRET_KEY = env('SECRET_KEY')
 ADMINS = getaddresses(env('ADMINS'))
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
+DATA_UPLOAD_MAX_MEMORY_SIZE = env('DATA_UPLOAD_MAX_MEMORY_SIZE')
 
 DATABASES = {
     'default': {

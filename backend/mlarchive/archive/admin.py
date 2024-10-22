@@ -1,5 +1,5 @@
 from django.contrib import admin
-from mlarchive.archive.models import Message, EmailList, Attachment, Thread
+from mlarchive.archive.models import Message, EmailList, Attachment, Thread, Redirect
 
 
 class MessageAdmin(admin.ModelAdmin):
@@ -15,3 +15,4 @@ admin.site.register(Message, MessageAdmin)
 admin.site.register(EmailList, EmailListAdmin)
 admin.site.register(Attachment)
 admin.site.register(Thread)
+admin.site.register(Redirect)

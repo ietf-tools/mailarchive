@@ -167,8 +167,11 @@ def lookup_user(address):
 
     try:
         output = response.json()
-        person_id = list(output['person.person'])[0]
-        username = output['person.person'][person_id]['user']['username']
+        person_ids = list(output['person.person'])
+        if not person_ids:
+            logger.warning(f'lookup_user failed for {address}')
+            return None
+        username = output['person.person'][person_ids[0]]['user']['username']
     except (TypeError, LookupError) as error:
         logger.error(str(error))
         return None

@@ -1,0 +1,15 @@
+name: PR - Run All Tests
+
+on:
+  pull_request:
+    branches:
+      - 'main'
+    paths:
+      - 'backend/**'
+      - 'frontend/scss/**'
+      - 'frontend/package.json'
+      - 'requirements.txt'
+
+jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml

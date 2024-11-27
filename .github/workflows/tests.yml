@@ -45,13 +45,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-
-    - name: Wait for Elasticsearch to be ready
-      run: |
-        until curl -s http://localhost:9200/_cat/health > /dev/null; do
-          echo "Waiting for Elasticsearch...";
-          sleep 5;
-        done
           
     - name: Prepare for tests
       run: |

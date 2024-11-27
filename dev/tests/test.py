@@ -4,12 +4,12 @@ from .base import *
 
 DATA_ROOT = '/data'
 
-DATABASES = {
-    'test': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
-    },
+DATABASES['test'] = {
+    'ENGINE': 'django.db.backends.sqlite3',
+    'NAME': ':memory:',
 }
+
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
 

@@ -25,9 +25,34 @@ jobs:
     runs-on: ubuntu-latest
     container: ghcr.io/ietf-tools/mailarchive-app-base:${{ inputs.targetBaseVersion }}
         
+    services:
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.17.21
+        ports:
+          - 9200:9200
+          - 9300:9300
+        options: >-
+          --health-cmd="curl -s http://localhost:9200/_cat/health > /dev/null"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+          --name elasticsearch-service
+        env:
+          discovery.type: single-node
+          bootstrap.memory_lock: "true"
+          ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+          xpack.security.enabled: "false"
+
     steps:
     - uses: actions/checkout@v4
-    
+
+    - name: Wait for Elasticsearch to be ready
+      run: |
+        until curl -s http://localhost:9200/_cat/health > /dev/null; do
+          echo "Waiting for Elasticsearch...";
+          sleep 5;
+        done
+          
     - name: Prepare for tests
       run: |
         chmod +x ./dev/tests/prepare.sh

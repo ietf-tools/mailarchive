@@ -1,0 +1,24 @@
+name: Manual - Run All Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      ignoreLowerCoverage:
+        description: 'Ignore Lower Coverage'
+        default: false
+        required: true
+        type: boolean
+      skipSelenium:
+        description: 'Skip Selenium Tests'
+        default: false
+        required: false
+        type: boolean
+      targetBaseVersion:
+        description: 'Target Base Image Version'
+        default: latest
+        required: false
+        type: string
+
+jobs:
+  trigger-workflow:
+    uses: ./.github/workflows/tests.yml

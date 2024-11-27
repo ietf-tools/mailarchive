@@ -69,8 +69,8 @@ jobs:
       shell: bash
       run: |
         echo "Running checks..."
-        ./ietf/manage.py check
-        ./ietf/manage.py migrate
+        ./backend/manage.py check
+        ./backend/manage.py migrate
         echo "Running tests..."
         cd backend/mlarchive
         pytest tests -v

@@ -43,9 +43,30 @@ jobs:
           ES_JAVA_OPTS: "-Xms512m -Xmx512m"
           xpack.security.enabled: "false"
 
+      db:
+        image: postgres:14
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+        env:
+          POSTGRES_USER: mailarchive
+          POSTGRES_PASSWORD: RkTkDPFnKpko
+          POSTGRES_DB: test_mailarchive
+
     steps:
     - uses: actions/checkout@v4
           
+    - name: Wait for Database
+      run: |
+        until pg_isready -h localhost -p 5432; do
+          echo "Waiting for database...";
+          sleep 2;
+        done
+
     - name: Prepare for tests
       run: |
         chmod +x ./dev/tests/prepare.sh
@@ -54,6 +75,9 @@ jobs:
     - name: Run all tests
       shell: bash
       run: |
+        echo "Running checks..."
+        ./ietf/manage.py check
+        ./ietf/manage.py migrate
         echo "Running tests..."
         cd backend/mlarchive
         pytest tests -v

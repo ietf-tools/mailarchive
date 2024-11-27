@@ -23,6 +23,6 @@ jobs:
   trigger-workflow:
     uses: ./.github/workflows/tests.yml
     with:
-      ignoreLowerCoverage: ${{ github.event.inputs.ignoreLowerCoverage }}
-      skipSelenium: ${{ github.event.inputs.skipSelenium }}
-      targetBaseVersion: ${{ github.event.inputs.targetBaseVersion }}
+      ignoreLowerCoverage: "${{ github.event.inputs.ignoreLowerCoverage }}"
+      skipSelenium: "${{ github.event.inputs.skipSelenium }}"
+      targetBaseVersion: "${{ github.event.inputs.targetBaseVersion }}"

@@ -3,10 +3,17 @@ import os
 from .base import *
 
 DATA_ROOT = '/data'
+SECRET_KEY = 'fake-key'
 
-DATABASES['test'] = {
-    'ENGINE': 'django.db.backends.sqlite3',
-    'NAME': ':memory:',
+DATABASES = {
+    'default': {
+        'HOST': 'db',
+        'PORT': 5432,
+        'NAME': 'mailarchive',
+        'ENGINE': 'django.db.backends.postgresql',
+        'USER': 'django',
+        'PASSWORD': 'RkTkDPFnKpko',
+    },
 }
 
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'

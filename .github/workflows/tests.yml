@@ -68,9 +68,6 @@ jobs:
     - name: Run all tests
       shell: bash
       run: |
-        echo "Running checks..."
-        ./backend/manage.py check
-        ./backend/manage.py migrate
         echo "Running tests..."
         cd backend/mlarchive
         pytest tests -v

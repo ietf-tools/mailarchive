@@ -36,11 +36,12 @@ SEARCH_SCROLL_BUFFER_SIZE = SEARCH_RESULTS_PER_PAGE
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
 STATIC_INDEX_DIR = os.path.join(DATA_ROOT, 'static')
-LOG_FILE = os.path.join(BASE_DIR, 'tests/tmp', 'mlarchive.log')
+# LOG_FILE = os.path.join(BASE_DIR, 'tests/tmp', 'mlarchive.log')
 
 SERVER_MODE = 'development'
 
-LOGGING['handlers']['mlarchive']['filename'] = LOG_FILE
+# log to console
+LOGGING['loggers']['mlarchive']['handlers'] = ['console']
 
 CACHES = {
     'default': {

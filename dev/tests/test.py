@@ -40,8 +40,10 @@ STATIC_INDEX_DIR = os.path.join(DATA_ROOT, 'static')
 
 SERVER_MODE = 'development'
 
-# log to console
+# log to console not file, no writable filesystem in test container
 LOGGING['loggers']['mlarchive']['handlers'] = ['console']
+del(LOGGING['loggers']['mlarchive.custom'])
+del(LOGGING['handlers']['mlarchive'])
 
 CACHES = {
     'default': {

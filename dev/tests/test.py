@@ -11,7 +11,7 @@ DATABASES = {
         'PORT': 5432,
         'NAME': 'mailarchive',
         'ENGINE': 'django.db.backends.postgresql',
-        'USER': 'django',
+        'USER': 'mailarchive',
         'PASSWORD': 'RkTkDPFnKpko',
     },
 }

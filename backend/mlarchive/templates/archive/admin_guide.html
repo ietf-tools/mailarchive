@@ -75,13 +75,17 @@ cd backend
     <span id="subpoena"></span>
     <h2>How do I collect messages for response to a subpoena?</h2>
     <p>If the subpoena calls for messages from a specific list containing a search term, use the
-    standard search interface to export messages from the archive.  In addition you can collect
-    messages that aren't in the index (spam, dupes, etc.) in this way:
+    standard search interface to export messages from the archive. For example, if the request is
+    for messages from acme employees about an RFC the request could look like this (export the
+    messages for further processing):</p>
+    <pre>from:acme.com AND (RFC1000 OR "RFC 1000" OR "draft-ietf-name-of-id")</pre>
+    <p>In addition you can collect
+    messages that aren't in the index (spam, dupes, etc.) in this way:</p>
     <pre>mkdir /tmp/sub012214
 cd /a/mailarch/data/archive/[listname]/
 for fil in `find . -path "./_*/*" ! -path "./_attachments/*" -exec grep -l searchterm {} \;`; do cp $fil /tmp/sub012214/; done;
 cd /tmp
-tar cvf sub012214.tar ./sub012214</pre></p>
+tar cvf sub012214.tar ./sub012214</pre>
 
     <span id="rebuild_index_in_place"></span>
     <h2>How do I rebuild the index in place?</h2>

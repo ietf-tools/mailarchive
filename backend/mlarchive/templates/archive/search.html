@@ -197,7 +197,7 @@
             
             <div class="export-text">
               {% if user.is_authenticated %}
-                {% if count > export_limit %}
+                {% if count > export_limit and not user.is_superuser %}
                   <p>Export is limited to {{ export_limit }} messages.</p>
                 {% else %}
                   <p>Exporting {{ count|intcomma }} messages.  Select an export type.</p>
@@ -211,9 +211,9 @@
             </div>
           </div> <!-- modal-body -->
           <div class="modal-footer">
-              <a class="btn btn-secondary export-link{% if not user.is_authenticated or count > export_limit %} disabled{% endif %}" href="{{ export_mbox }}">Mbox</a>
-              <a class="btn btn-secondary export-link{% if not user.is_authenticated or count > export_limit %} disabled{% endif %}" href="{{ export_maildir }}">Maildir</a>
-              <a class="btn btn-secondary export-link{% if not user.is_authenticated or count > export_limit %} disabled{% endif %}" href="{{ export_url }}">URLs</a>
+              <a class="btn btn-secondary export-link{% if not user.is_authenticated or count > export_limit and not user.is_superuser %} disabled{% endif %}" href="{{ export_mbox }}">Mbox</a>
+              <a class="btn btn-secondary export-link{% if not user.is_authenticated or count > export_limit and not user.is_superuser %} disabled{% endif %}" href="{{ export_maildir }}">Maildir</a>
+              <a class="btn btn-secondary export-link{% if not user.is_authenticated or count > export_limit and not user.is_superuser %} disabled{% endif %}" href="{{ export_url }}">URLs</a>
           </div>
         </div>
       </div>

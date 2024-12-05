@@ -156,13 +156,17 @@ def get_export(search, export_type, request):
     # don't allow export of huge querysets and skip empty querysets
     count = search.count()
     redirect_url = '%s?%s' % (reverse('archive_search'), request.META['QUERY_STRING'])
-    if (count > settings.EXPORT_LIMIT) or (count > settings.ANONYMOUS_EXPORT_LIMIT and not request.user.is_authenticated):  # noqa
-        messages.error(request, 'Too many messages to export.')
-        return redirect(redirect_url)
-    elif count == 0:
+    if count == 0:
         messages.error(request, 'No messages to export.')
         return redirect(redirect_url)
-
+    elif request.user.is_superuser:
+        pass
+    elif not request.user.is_authenticated and count > settings.ANONYMOUS_EXPORT_LIMIT:
+        messages.error(request, f'Export exceeds message limit of {settings.ANONYMOUS_EXPORT_LIMIT}')
+        return redirect(redirect_url)
+    elif count > settings.EXPORT_LIMIT:  # noqa
+        messages.error(request, f'Export exceeds message limit of {settings.EXPORT_LIMIT}')
+        return redirect(redirect_url)
     search = search.params(preserve_order=True)
     results = list(search.scan())
     apply_objects(results)

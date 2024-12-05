@@ -115,6 +115,16 @@ def test_get_export_anonymous_limit(client, admin_client, thread_messages, setti
 
 
 @pytest.mark.django_db(transaction=True)
+def test_get_export_superuser_limit(client, admin_client, thread_messages, settings):
+    settings.EXPORT_LIMIT = 1
+    url = '%s?%s' % (reverse('archive_export', kwargs={'type': 'mbox'}), 'q=anvil')
+    response = client.get(url)
+    assert response.status_code == 302
+    response = admin_client.get(url)
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db(transaction=True)
 def test_get_export_mbox(client, thread_messages, tmpdir):
     url = '%s?%s' % (reverse('archive_export', kwargs={'type': 'mbox'}), 'q=anvil')
     request = get_request(url=url)

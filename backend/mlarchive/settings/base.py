@@ -29,6 +29,7 @@ env = environ.Env(
     # set casting, default value
     ADMINS=(list, []),
     ALLOWED_HOSTS=(list, ['*']),
+    ANONYMOUS_EXPORT_LIMIT=(int, 100),
     CELERY_BROKER_URL=(str, 'amqp://'),
     CLOUDFLARE_AUTH_EMAIL=(str, ''),
     CLOUDFLARE_AUTH_KEY=(str, ''),
@@ -47,6 +48,7 @@ env = environ.Env(
     ELASTICSEARCH_HOST=(str, '127.0.0.1'),
     ELASTICSEARCH_PASSWORD=(str, 'changeme'),
     ELASTICSEARCH_SIGNAL_PROCESSOR=(str, 'mlarchive.archive.signals.CelerySignalProcessor'),
+    EXPORT_LIMIT=(int, 5000),
     HTAUTH_PASSWD_FILENAME=(str, ''),
     IMPORT_MESSAGE_APIKEY=(str, ''),
     INTERNAL_IPS=(list, []),
@@ -269,9 +271,12 @@ INCOMING_DIR = os.path.join(DATA_ROOT, 'incoming')
 ARCHIVE_MBOX_DIR = os.path.join(DATA_ROOT, 'archive_mbox')
 CONSOLE_STATS_FILE = os.path.join(DATA_ROOT, 'log', 'console.json')
 
-EXPORT_LIMIT = 5000             # maximum number of messages we will export
-ANONYMOUS_EXPORT_LIMIT = 100    # maximum number of messages a non-logged in user can export
-FILTER_CUTOFF = 5000            # maximum results for which we'll provide filter options
+# maximum number of messages a non-superuser can export
+EXPORT_LIMIT = env('EXPORT_LIMIT')
+# maximum number of messages a non-authenticated user can export
+ANONYMOUS_EXPORT_LIMIT = env('ANONYMOUS_EXPORT_LIMIT')
+# maximum results for which we'll provide filter options
+FILTER_CUTOFF = 5000
 
 LOG_DIR = env('LOG_DIR')
 LOG_FILE = os.path.join(LOG_DIR, 'mlarchive.log')

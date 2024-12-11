@@ -69,8 +69,8 @@ env = environ.Env(
     SCOUT_NAME=(str, 'Mailarchive'),
     SECRET_KEY=(str, ''),
     SERVER_MODE=(str, 'development'),
-    STATIC_URL=(str, '/static/{}/'),
-    STATIC_FRAG=(str, '/../static/{}/'),
+    STATIC_URL=(str, '/static/'),
+    STATIC_FRAG=(str, '/../../static/'),
     USING_CDN=(bool, False),
 )
 

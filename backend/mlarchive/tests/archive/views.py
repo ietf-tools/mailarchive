@@ -166,7 +166,7 @@ def test_admin_search_from(client, messages):
     assert response.status_code == 200
     results = response.context['results']
     assert str(msg.pk) in [r.django_id for r in results]
-    
+
 
 @pytest.mark.django_db(transaction=True)
 def test_admin_menu(client, admin_client):
@@ -700,10 +700,11 @@ def test_export_not_logged_in(client, messages):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_export_limit(admin_client, messages, settings):
+def test_export_limit(client, admin_client, messages, settings, users):
     settings.EXPORT_LIMIT = 0
     url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'})
-    response = admin_client.get(url)
+    assert client.login(username='unprivileged@example.com', password='password')
+    response = client.get(url)
     # print(response.content)
     print(type(response.content))
     assert response.status_code == 200
@@ -711,8 +712,24 @@ def test_export_limit(admin_client, messages, settings):
     q = PyQuery(response.content)
     assert len(q('.export-link.disabled')) == 3
     url = reverse('archive_export', kwargs={'type': 'mbox'}) + '?email_list=pubone'
-    response = admin_client.get(url)
+    response = client.get(url)
     assert response.status_code == 302
+
+
+@pytest.mark.django_db(transaction=True)
+def test_export_limit_admin(admin_client, export_messages, settings, users):
+    '''Limits do not apply to superuser'''
+    settings.EXPORT_LIMIT = 0
+    url = reverse('archive_browse_list', kwargs={'list_name': 'acme'})
+    response = admin_client.get(url)
+    print(type(response.content))
+    assert response.status_code == 200
+    assert 'Export is limited to 0 messages.' not in smart_str(response.content)
+    q = PyQuery(response.content)
+    assert len(q('.export-link.disabled')) == 0
+    url = reverse('archive_export', kwargs={'type': 'mbox'}) + '?email_list=acme'
+    response = admin_client.get(url)
+    assert response.status_code == 200
 
 
 @pytest.mark.django_db(transaction=True)

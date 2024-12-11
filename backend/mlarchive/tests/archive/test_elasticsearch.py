@@ -30,7 +30,7 @@ def test_rebuild_index(db_only):
     client = ESBackend().client
     s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
     assert s.count() == 3
-    info = client.cat.indices(settings.ELASTICSEARCH_INDEX_NAME)
+    info = client.cat.indices(index=settings.ELASTICSEARCH_INDEX_NAME)
     uuid = info.split()[3]
     # delete a record
     Message.objects.get(msgid='x001').delete()
@@ -47,7 +47,7 @@ def test_rebuild_index(db_only):
     assert 'Indexing 2 Messages' in out.getvalue()
     s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
     assert s.count() == 2
-    info = client.cat.indices(settings.ELASTICSEARCH_INDEX_NAME)
+    info = client.cat.indices(index=settings.ELASTICSEARCH_INDEX_NAME)
     new_uuid = info.split()[3]
     assert new_uuid != uuid
     s = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)

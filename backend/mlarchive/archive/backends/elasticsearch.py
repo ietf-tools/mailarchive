@@ -56,7 +56,7 @@ def full_prepare(message):
 
 class ESBackend():
     """Elasticsearch Backend"""
-    
+
     # Characters reserved by Elasticsearch for special use.
     # The '\\' must come first, so as not to overwrite the other slash replacements.
     RESERVED_CHARACTERS = (
@@ -67,44 +67,42 @@ class ESBackend():
     # Settings to add an n-gram & edge n-gram analyzers
     # for use in autocomplete feature
     DEFAULT_SETTINGS = {
-        'settings': {
-            "analysis": {
-                "analyzer": {
-                    "ngram_analyzer": {
-                        "type": "custom",
-                        "tokenizer": "standard",
-                        "filter": ["ngram_filter", "lowercase"]
-                    },
-                    "edgengram_analyzer": {
-                        "type": "custom",
-                        "tokenizer": "standard",
-                        "filter": ["edgengram_filter", "lowercase"]
-                    }
+        "analysis": {
+            "analyzer": {
+                "ngram_analyzer": {
+                    "type": "custom",
+                    "tokenizer": "standard",
+                    "filter": ["ngram_filter", "lowercase"]
                 },
-                "tokenizer": {
-                    "custom_ngram_tokenizer": {
-                        "type": "ngram",
-                        "min_gram": 4,
-                        "max_gram": 4,
-                    },
-                    "custom_edgengram_tokenizer": {
-                        "type": "edge_ngram",
-                        "min_gram": 4,
-                        "max_gram": 4,
-                        "side": "front"
-                    }
+                "edgengram_analyzer": {
+                    "type": "custom",
+                    "tokenizer": "standard",
+                    "filter": ["edgengram_filter", "lowercase"]
+                }
+            },
+            "tokenizer": {
+                "custom_ngram_tokenizer": {
+                    "type": "ngram",
+                    "min_gram": 4,
+                    "max_gram": 4,
                 },
-                "filter": {
-                    "ngram_filter": {
-                        "type": "ngram",
-                        "min_gram": 4,
-                        "max_gram": 4
-                    },
-                    "edgengram_filter": {
-                        "type": "edge_ngram",
-                        "min_gram": 4,
-                        "max_gram": 4
-                    }
+                "custom_edgengram_tokenizer": {
+                    "type": "edge_ngram",
+                    "min_gram": 4,
+                    "max_gram": 4,
+                    "side": "front"
+                }
+            },
+            "filter": {
+                "ngram_filter": {
+                    "type": "ngram",
+                    "min_gram": 4,
+                    "max_gram": 4
+                },
+                "edgengram_filter": {
+                    "type": "edge_ngram",
+                    "min_gram": 4,
+                    "max_gram": 4
                 }
             }
         }
@@ -134,16 +132,16 @@ class ESBackend():
         If the index doesn't exist, create it and set mappings. You can't
         change mappings of existing indexes.
         """
-        if not self.client.indices.exists(self.index_name):
+        if not self.client.indices.exists(index=self.index_name):
             self.client.indices.create(index=self.index_name,
-                                       body=self.DEFAULT_SETTINGS)
+                                       settings=self.DEFAULT_SETTINGS)
             self.client.indices.put_mapping(index=self.index_name,
                                             body=self.mapping)
 
         self.setup_complete = True
 
     def clear(self, commit=True):
-        '''Clears index of all data, and runs setup, leaving 
+        '''Clears index of all data, and runs setup, leaving
         an empty index.'''
         logger.debug('ESBackend.clear() called.')
         self.client.indices.delete(index=self.index_name, ignore=404)
@@ -153,7 +151,7 @@ class ESBackend():
         '''Update index records using iterable of instances'''
         logger.debug('ESBackend.update() called. iterable={}, iterable_length={}, last_message={}, commit={}, setup_complete={}'.format(
             type(iterable), len(iterable), iterable[-1].django_id, commit, self.setup_complete))
-        
+
         if not self.setup_complete:
             try:
                 self.setup()

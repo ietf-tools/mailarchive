@@ -50,8 +50,11 @@
                 "-v"
             ],
             "options": {
-                "cwd": "${workspaceFolder}/backend/mlarchive"
-            }
+                "cwd": "${workspaceFolder}/backend/mlarchive",
+                "env": {
+                    "DJANGO_SETTINGS_MODULE": "mlarchive.settings.test"
+                }
+            },
             "group": "test",
             "presentation": {
                 "echo": true,

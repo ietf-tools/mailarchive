@@ -57,10 +57,19 @@ class AttachmentFactory(factory.django.DjangoModelFactory):
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = User
+        skip_postgeneration_save = True
 
     email = 'admin@admin.com'
     username = 'admin'
     password = factory.PostGenerationMethodCall('set_password', 'admin')
+
+    @factory.post_generation
+    def finalize_instance(self, create, extracted, **kwargs):
+        """
+        Custom post-generation hook to save the instance after any modifications.
+        """
+        if create:  # Only save if the instance was created
+            self.save()
 
 
 class SubscriberFactory(factory.django.DjangoModelFactory):

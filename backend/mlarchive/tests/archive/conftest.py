@@ -58,6 +58,8 @@ def data_dir(tmp_dir, settings):
     """Use temporary directory"""
     DATA_ROOT = tmp_dir
     settings.ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
+    if not os.path.exists(settings.ARCHIVE_DIR):
+        os.mkdir(settings.ARCHIVE_DIR)
     settings.EXPORT_DIR = os.path.join(DATA_ROOT, 'export')
     yield
 

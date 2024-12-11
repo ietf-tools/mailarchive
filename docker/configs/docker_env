@@ -8,7 +8,3 @@ ELASTICSEARCH_HOST='es'
 
 # CELERY SETTINGS
 CELERY_BROKER_URL="amqp://guest:guest@rabbit:5672//"
-
-# STATIC FILES
-STATIC_URL="https://static.ietf.org/mailarchive/{}/"
-STATIC_FRAG="/../../static/"

@@ -1,0 +1,77 @@
+name: Reusable Tests Workflow
+
+on:
+  workflow_call:
+    inputs:
+      ignoreLowerCoverage:
+        description: 'Ignore Lower Coverage'
+        default: false
+        required: true
+        type: boolean
+      skipSelenium:
+        description: 'Skip Selenium Tests'
+        default: false
+        required: false
+        type: boolean
+      targetBaseVersion:
+        description: 'Target Base Image Version'
+        default: latest
+        required: false
+        type: string
+
+jobs:
+  tests-python:
+    name: Python Tests
+    runs-on: ubuntu-latest
+    container: ghcr.io/ietf-tools/mailarchive-app-base:${{ inputs.targetBaseVersion }}
+        
+    services:
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.17.21
+        ports:
+          - 9200:9200
+          - 9300:9300
+        options: >-
+          --health-cmd="curl -s http://localhost:9200/_cat/health > /dev/null"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+          --name elasticsearch-service
+        env:
+          discovery.type: single-node
+          bootstrap.memory_lock: "true"
+          ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+          xpack.security.enabled: "false"
+
+      db:
+        image: postgres:14
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+        env:
+          POSTGRES_USER: mailarchive
+          POSTGRES_PASSWORD: RkTkDPFnKpko
+          POSTGRES_DB: test_mailarchive
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Prepare for tests
+      run: |
+        chmod +x ./dev/tests/prepare.sh
+        sh ./dev/tests/prepare.sh
+        
+    - name: Test ChromeDriver Execution
+      run: |
+        /github/home/.cache/selenium/chromedriver/linux64/131.0.6778.108/chromedriver --version
+
+    - name: Run all tests
+      shell: bash
+      run: |
+        echo "Running tests..."
+        cd backend/mlarchive
+        pytest tests -v

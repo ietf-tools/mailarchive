@@ -84,10 +84,6 @@ jobs:
           driver.quit()
           "
 
-      - name: Test ChromeDriver Execution
-        run: |
-          /github/home/.cache/selenium/chromedriver/linux64/131.0.6778.108/chromedriver --version
-
       - name: Run all tests
         shell: bash
         run: |

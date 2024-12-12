@@ -65,6 +65,9 @@ jobs:
           chmod +x ./dev/tests/prepare.sh
           sh ./dev/tests/prepare.sh
 
+      - name: Setup ChromeDriver
+        uses: browser-actions/setup-chrome@v1
+
       - name: Run a simple Selenium test
         run: |
           python3 -m pip install selenium

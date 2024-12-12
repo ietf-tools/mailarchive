@@ -21,7 +21,7 @@ on:
 
 jobs:
   trigger-workflow:
-    uses: ./.github/workflows/tests.yml
+    uses: ./.github/workflows/tests_debug.yml
     with:
       ignoreLowerCoverage: ${{ inputs.ignoreLowerCoverage }}
       skipSelenium: ${{ inputs.skipSelenium }}

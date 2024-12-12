@@ -23,6 +23,8 @@ RUN apt-get update --fix-missing && apt-get install -qy \
     libgtk-3-0 \
     libgbm-dev \
     libasound2 \
+    libnss3 \
+    libxss1 \
     locales \
     postgresql-client-14 \
     memcached \

@@ -1,4 +1,4 @@
-name: Reusable Tests Workflow
+name: Debug Reusable Tests Workflow
 
 on:
   workflow_call:

@@ -3,20 +3,6 @@ LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# "fake" dbus address to prevent errors
-# https://github.com/SeleniumHQ/docker-selenium/issues/87
-ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
-
-# Install packages required for chrome / selenium testing
-RUN apt-get update --fix-missing && apt-get install -qy \
-    libgtk-3-0 \
-    libgbm-dev \
-    libasound2
-
-# Get rid of installation files we don't need in the image, to reduce size
-# this should be included in install layer above if chromedriver layer removed
-RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
-
 # Copy library scripts to execute
 ADD https://raw.githubusercontent.com/microsoft/vscode-dev-containers/v0.236.0/containers/python-3/.devcontainer/library-scripts/common-debian.sh /tmp/library-scripts/
 ADD https://raw.githubusercontent.com/microsoft/vscode-dev-containers/v0.236.0/containers/python-3/.devcontainer/library-scripts/python-debian.sh /tmp/library-scripts/
@@ -57,7 +43,7 @@ RUN groupmod --gid $USER_GID $USERNAME \
 # Switch to local dev user
 USER dev:dev
 
-# Install current datatracker python dependencies
+# Install current mail archive python dependencies
 COPY requirements.txt /tmp/pip-tmp/
 RUN pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location -r /tmp/pip-tmp/requirements.txt
 RUN pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location pylint pylint-common pylint-django

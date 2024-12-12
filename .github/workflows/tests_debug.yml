@@ -24,7 +24,7 @@ jobs:
     name: Python Tests
     runs-on: ubuntu-latest
     container: ghcr.io/ietf-tools/mailarchive-app-base:${{ inputs.targetBaseVersion }}
-        
+
     services:
       elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:7.17.21
@@ -58,37 +58,37 @@ jobs:
           POSTGRES_DB: test_mailarchive
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Prepare for tests
-      run: |
-        chmod +x ./dev/tests/prepare.sh
-        sh ./dev/tests/prepare.sh
+      - name: Prepare for tests
+        run: |
+          chmod +x ./dev/tests/prepare.sh
+          sh ./dev/tests/prepare.sh
 
-    - name: Run a simple Selenium test
-      run: |
-        python3 -m pip install selenium
-        python3 -c "
-    from selenium import webdriver
-    from selenium.webdriver.chrome.service import Service
-    options = webdriver.ChromeOptions()
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-dev-shm-usage')
-    service = Service('/github/home/.cache/selenium/chromedriver/linux64/131.0.6778.108/chromedriver')
-    driver = webdriver.Chrome(service=service, options=options)
-    driver.get('https://www.google.com')
-    print(driver.title)
-    driver.quit()
-        "
+      - name: Run a simple Selenium test
+        run: |
+          python3 -m pip install selenium
+          python3 -c "
+          from selenium import webdriver
+          from selenium.webdriver.chrome.service import Service
+          options = webdriver.ChromeOptions()
+          options.add_argument('--headless')
+          options.add_argument('--no-sandbox')
+          options.add_argument('--disable-dev-shm-usage')
+          service = Service('/github/home/.cache/selenium/chromedriver/linux64/131.0.6778.108/chromedriver')
+          driver = webdriver.Chrome(service=service, options=options)
+          driver.get('https://www.google.com')
+          print(driver.title)
+          driver.quit()
+          "
 
-    - name: Test ChromeDriver Execution
-      run: |
-        /github/home/.cache/selenium/chromedriver/linux64/131.0.6778.108/chromedriver --version
+      - name: Test ChromeDriver Execution
+        run: |
+          /github/home/.cache/selenium/chromedriver/linux64/131.0.6778.108/chromedriver --version
 
-    - name: Run all tests
-      shell: bash
-      run: |
-        echo "Running tests..."
-        cd backend/mlarchive
-        pytest tests -v
+      - name: Run all tests
+        shell: bash
+        run: |
+          echo "Running tests..."
+          cd backend/mlarchive
+          pytest tests -v

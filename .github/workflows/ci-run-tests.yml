@@ -13,3 +13,7 @@ on:
 jobs:
   tests:
     uses: ./.github/workflows/tests.yml
+    with:
+      ignoreLowerCoverage: ${{ inputs.ignoreLowerCoverage }}
+      skipSelenium: ${{ inputs.skipSelenium }}
+      targetBaseVersion: ${{ inputs.targetBaseVersion }}

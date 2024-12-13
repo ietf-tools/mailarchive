@@ -24,7 +24,7 @@ jobs:
     name: Python Tests
     runs-on: ubuntu-latest
     container: ghcr.io/ietf-tools/mailarchive-app-base:${{ inputs.targetBaseVersion }}
-        
+
     services:
       elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:7.17.21
@@ -58,16 +58,19 @@ jobs:
           POSTGRES_DB: test_mailarchive
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Prepare for tests
-      run: |
-        chmod +x ./dev/tests/prepare.sh
-        sh ./dev/tests/prepare.sh
-        
-    - name: Run all tests
-      shell: bash
-      run: |
-        echo "Running tests..."
-        cd backend/mlarchive
-        pytest tests -v
+      - name: Setup ChromeDriver
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Prepare for tests
+        run: |
+          chmod +x ./dev/tests/prepare.sh
+          sh ./dev/tests/prepare.sh
+
+      - name: Run all tests
+        shell: bash
+        run: |
+          echo "Running tests..."
+          cd backend/mlarchive
+          pytest tests -v

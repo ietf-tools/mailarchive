@@ -240,10 +240,10 @@ def get_fqdn_map():
     if fqdn_map is None:
         fqdn_map = defaultdict(fqdn_default)
         client = mailmanclient.Client(
-        settings.MAILMAN_API_URL,
-        settings.MAILMAN_API_USER,
-        settings.MAILMAN_API_PASSWORD,
-        request_hooks=[add_cloudflare_credentials])
+            settings.MAILMAN_API_URL,
+            settings.MAILMAN_API_USER,
+            settings.MAILMAN_API_PASSWORD,
+            request_hooks=[add_cloudflare_credentials])
         for mailman_list in client.lists:
             fqdn_map[mailman_list.list_name] = mailman_list.mail_host
         cache.set('fqdn_map', fqdn_map, timeout=86400)

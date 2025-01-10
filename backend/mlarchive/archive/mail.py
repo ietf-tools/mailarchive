@@ -495,7 +495,7 @@ class CustomMbox(mailbox.mbox):
     argument which is a compiled regex object representing the new message indicator.
 
     A standard mbox will match this expression
-    '^From .* (Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+'
+    '^From .* (Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\\s.+'
 
     NOTE: we exclude false matches to lines like:
     From your message Mon, 9 Nov 1998 06:09:48 -0000:

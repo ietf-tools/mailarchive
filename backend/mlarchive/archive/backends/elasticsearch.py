@@ -16,11 +16,11 @@ from mlarchive.archive.query_utils import (queries_from_params,
 from mlarchive.archive.utils import get_noauth
 
 logger = logging.getLogger(__name__)
-IDENTIFIER_REGEX = re.compile('^[\w\d_]+\.[\w\d_]+\.[\w\d-]+$')
+IDENTIFIER_REGEX = re.compile(r'^[\w\d_]+\.[\w\d_]+\.[\w\d-]+$')
 
 
 def prep_text(message):
-    '''Prepare the "text" field that is used as the default field for 
+    '''Prepare the "text" field that is used as the default field for
     search queries, ie. no field designator'''
     return '\n'.join([message.frm, message.subject, message.get_body()])
 

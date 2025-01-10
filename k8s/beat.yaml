@@ -15,6 +15,16 @@ spec:
       labels:
         app: beat
     spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - mailarchive
+              topologyKey: "kubernetes.io/hostname"
       securityContext:
         runAsNonRoot: true
         fsGroup: 1000

@@ -18,8 +18,7 @@ from django.utils.encoding import smart_str
 from factories import EmailListFactory, MessageFactory, UserFactory, SubscriberFactory
 from mlarchive.archive.models import Message, Attachment, Redirect
 from mlarchive.archive.views import (TimePeriod, add_nav_urls, is_small_year,
-    add_one_month, get_this_next_periods, get_date_endpoints, get_thread_endpoints,
-    DateStaticIndexView)
+    get_this_next_periods, get_date_endpoints, get_thread_endpoints, DateStaticIndexView)
 from mlarchive.utils.test_utils import login_testing_unauthorized
 from mlarchive.utils.test_utils import load_message
 
@@ -82,14 +81,11 @@ def test_get_this_next_periods(static_list):
     assert get_this_next_periods(time_period) == (
         datetime.datetime(2017, 1, 1, tzinfo=timezone.utc),
         datetime.datetime(2018, 1, 1, tzinfo=timezone.utc))
-
-
-@pytest.mark.django_db(transaction=True)
-def test_add_one_month():
-    date = datetime.datetime(2018, 1, 1, tzinfo=timezone.utc)
-    assert add_one_month(date) == datetime.datetime(2018, 2, 1, tzinfo=timezone.utc)
-    date = datetime.datetime(2018, 12, 1, tzinfo=timezone.utc)
-    assert add_one_month(date) == datetime.datetime(2019, 1, 1, tzinfo=timezone.utc)
+    # test leap year
+    time_period = TimePeriod(year=2024, month=None)
+    assert get_this_next_periods(time_period) == (
+        datetime.datetime(2024, 1, 1, tzinfo=timezone.utc),
+        datetime.datetime(2025, 1, 1, tzinfo=timezone.utc))
 
 
 # --------------------------------------------------

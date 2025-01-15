@@ -435,6 +435,10 @@ def test_purge_incoming(tmpdir, settings):
     assert not os.path.exists(old_file_path)
 
 
+def list_only_files(directory):
+    return [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+
+
 @pytest.mark.django_db(transaction=True)
 def test_move_list(rf, search_api_messages):
     source = 'acme'
@@ -446,7 +450,7 @@ def test_move_list(rf, search_api_messages):
     new_list_dir = os.path.join(os.path.dirname(list_dir), target)
     # assert pre-conditions
     assert os.path.exists(path)
-    assert len(os.listdir(list_dir)) == 4
+    assert len(list_only_files(list_dir)) == 4
     assert not os.path.exists(os.path.join(list_dir, target))
     assert Message.objects.filter(email_list__name=source).count() == 4
     assert Message.objects.filter(email_list__name=target).count() == 0
@@ -464,9 +468,9 @@ def test_move_list(rf, search_api_messages):
     move_list(source, target)
     # check files moved
     assert not os.path.exists(path)
-    assert len(os.listdir(list_dir)) == 0
+    assert len(list_only_files(list_dir)) == 0
     assert os.path.exists(new_list_dir)
-    assert len(os.listdir(new_list_dir)) == 4
+    assert len(list_only_files(new_list_dir)) == 4
     # check new hash
     new_hash = make_hash(msgid=msg.msgid, listname=target)
     msg.refresh_from_db()

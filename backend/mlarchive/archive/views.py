@@ -102,18 +102,11 @@ def get_this_next_periods(time_period):
     """
     if time_period.month:
         this_period = datetime.datetime(time_period.year, time_period.month, 1, tzinfo=timezone.utc)
-        next_period = add_one_month(this_period)
+        next_period = this_period + relativedelta(months=1)
     else:
         this_period = datetime.datetime(time_period.year, 1, 1, tzinfo=timezone.utc)
-        next_period = this_period + datetime.timedelta(days=365)
+        next_period = this_period + relativedelta(years=1)
     return (this_period, next_period)
-
-
-def add_one_month(dt0):
-    dt1 = dt0.replace(day=1)
-    dt2 = dt1 + datetime.timedelta(days=32)
-    dt3 = dt2.replace(day=1)
-    return dt3
 
 
 def is_small_year(email_list, year):

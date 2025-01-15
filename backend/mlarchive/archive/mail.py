@@ -467,6 +467,19 @@ def get_message_from_bytes(b, policy):
         return email.message_from_bytes(b, policy=email_policy.compat32)
 
 
+def make_hash(msgid, listname):
+    """
+    Returns the message hashcode, a SHA-1 digest of the Message-ID and listname.
+    Similar to the popular Web Email Archive, mail-archive.com
+    see: https://www.mail-archive.com/faq.html#msgid
+    """
+    msgid_bytes = msgid.encode('utf8')
+    listname_bytes = listname.encode('utf8')
+    sha = hashlib.sha1(msgid_bytes)
+    sha.update(listname_bytes)
+    b64 = base64.urlsafe_b64encode(sha.digest())
+    return b64.decode('utf8')
+
 # --------------------------------------------------
 # Classes
 # --------------------------------------------------
@@ -746,16 +759,8 @@ class MessageWrapper(object):
             raise DateError("%s, %s" % (self.msgid, self.email_message.get_unixfrom()))
 
     def get_hash(self):
-        """Returns the message hashcode, a SHA-1 digest of the Message-ID and listname.
-        Similar to the popular Web Email Archive, mail-archive.com
-        see: https://www.mail-archive.com/faq.html#msgid
-        """
-        msgid = self.msgid.encode('utf8')
-        listname = self.listname.encode('utf8')
-        sha = hashlib.sha1(msgid)
-        sha.update(listname)
-        b64 = base64.urlsafe_b64encode(sha.digest())
-        return b64.decode('utf8')
+        """Returns the message hashcode"""
+        return make_hash(msgid=self.msgid, listname=self.listname)
 
     def get_msgid(self):
         msgid = self.normalize(self.email_message.get('Message-ID', ''))

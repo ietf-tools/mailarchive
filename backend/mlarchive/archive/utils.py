@@ -10,6 +10,7 @@ import mailbox
 import os
 import re
 import requests
+import shutil
 import subprocess
 from collections import defaultdict
 
@@ -20,7 +21,8 @@ from django.core.cache import cache
 from django.http import HttpResponse
 from django.utils.encoding import smart_bytes
 
-from mlarchive.archive.models import EmailList, Subscriber
+from mlarchive.archive.models import EmailList, Subscriber, Redirect
+from mlarchive.archive.mail import MessageWrapper
 # from mlarchive.archive.signals import _export_lists, _list_save_handler
 
 
@@ -404,3 +406,45 @@ def purge_incoming():
         file_mtime = datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
         if file_mtime < cutoff_date:
             os.remove(file_path)
+
+
+def move_list(source, target):
+    '''Move messages from source list to target list. Includes:
+    - create the new list if it doesn't exist
+    - moving files on disk
+    - updating database and search index
+    - creating entries in the Redirect table to map original urls
+    to new urls
+    '''
+    try:
+        source_list = EmailList.objects.get(name=source)
+    except EmailList.DoesNotExist:
+        raise Exception(f'Email list does not exist: {source}')
+    target_list, created = EmailList.objects.get_or_create(
+        name=target,
+        defaults={'private': source_list.private})
+    if created and target_list.private:
+        for member in source_list.members.all():
+            target_list.members.add(member)
+    # create directory if needed
+    path = os.path.join(settings.ARCHIVE_DIR, target)
+    if not os.path.exists(path):
+        os.mkdir(path)
+        os.chmod(path, 0o2777)
+    # move message files
+    for msg in source_list.message_set.all():
+        _ = len(msg.pymsg)  # evaluate msg.pymsg
+        source_path = msg.get_file_path()
+        old_url = msg.get_absolute_url()
+        # get new hashcode
+        mw = MessageWrapper(message=msg.pymsg, listname=target)
+        hashcode = mw.get_hash()
+        msg.hashcode = hashcode
+        msg.email_list = target_list
+        msg.save()
+        # move file on disk
+        target_path = msg.get_file_path()
+        shutil.move(source_path, target_path)
+        # create redirect
+        new_url = msg.get_absolute_url()
+        Redirect.objects.create(old=old_url, new=new_url)

@@ -280,9 +280,19 @@ def latin1_messages():
     assert Message.objects.count() > 0
 
 
+def remove_all_files(directory):
+    for filename in os.listdir(directory):
+        file_path = os.path.join(directory, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+
 @pytest.fixture()
 def search_api_messages():
     """Load messages for search_api tests"""
+    # clear archive message directory
+    arch_path = os.path.join(settings.ARCHIVE_DIR, 'acme')
+    remove_all_files(arch_path)
     content = io.StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'search_api.mbox')
     call_command('clear_index', interactive=False, stdout=content)

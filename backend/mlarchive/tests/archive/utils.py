@@ -13,12 +13,16 @@ import xml.etree.ElementTree as ET
 from django.conf import settings
 from django.core.cache import cache
 from django.contrib.auth.models import AnonymousUser
+from django.http import QueryDict
 from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     lookup_user, process_members, check_inactive, EmailList, purge_incoming,
     create_mbox_file, _get_lists_as_xml, get_subscribers, Subscriber,
     get_mailman_lists, get_membership_3, get_subscriber_counts, get_fqdn,
-    update_mbox_files, _export_lists)
-from mlarchive.archive.models import User, Message
+    update_mbox_files, _export_lists, move_list)
+from mlarchive.archive.models import User, Message, Redirect
+from mlarchive.archive.mail import make_hash
+from mlarchive.archive.forms import AdvancedSearchForm
+from mlarchive.archive.backends.elasticsearch import search_from_form
 from factories import EmailListFactory
 
 
@@ -429,3 +433,72 @@ def test_purge_incoming(tmpdir, settings):
     assert len(os.listdir(path)) == 1
     assert os.path.exists(new_file_path)
     assert not os.path.exists(old_file_path)
+
+
+def list_only_files(directory):
+    return [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_move_list(rf, search_api_messages):
+    source = 'acme'
+    target = 'acme-archived'
+    msg = Message.objects.filter(email_list__name=source).last()
+    path = msg.get_file_path()
+    old_url = msg.get_absolute_url()
+    list_dir = os.path.dirname(path)
+    new_list_dir = os.path.join(os.path.dirname(list_dir), target)
+    # assert pre-conditions
+    assert os.path.exists(path)
+    assert len(list_only_files(list_dir)) == 4
+    assert not os.path.exists(os.path.join(list_dir, target))
+    assert Message.objects.filter(email_list__name=source).count() == 4
+    assert Message.objects.filter(email_list__name=target).count() == 0
+    # pre index state
+    data = QueryDict('email_list=acme')
+    request = rf.get('/arch/search/?' + data.urlencode())
+    request.user = AnonymousUser()
+    form = AdvancedSearchForm(data=data, request=request)
+    search = search_from_form(form)
+    results = search.execute()
+    assert len(results) == 4
+    ids = [h.msgid for h in results]
+    assert sorted(ids) == ['api001', 'api002', 'api003', 'api004']
+    # move messages
+    move_list(source, target)
+    # check files moved
+    assert not os.path.exists(path)
+    assert len(list_only_files(list_dir)) == 0
+    assert os.path.exists(new_list_dir)
+    assert len(list_only_files(new_list_dir)) == 4
+    # check new hash
+    new_hash = make_hash(msgid=msg.msgid, listname=target)
+    msg.refresh_from_db()
+    assert msg.hashcode == new_hash
+    new_path = msg.get_file_path()
+    assert new_hash in new_path
+    assert os.path.exists(new_path)
+    # check redirect table
+    new_url = msg.get_absolute_url()
+    assert new_url != old_url
+    assert Redirect.objects.filter(old=old_url, new=new_url).exists()
+    # check index updated
+    data = QueryDict('email_list=acme')
+    request = rf.get('/arch/search/?' + data.urlencode())
+    request.user = AnonymousUser()
+    form = AdvancedSearchForm(data=data, request=request)
+    search = search_from_form(form)
+    results = search.execute()
+    assert len(results) == 0
+    data = QueryDict('email_list=acme-archived')
+    request = rf.get('/arch/search/?' + data.urlencode())
+    request.user = AnonymousUser()
+    form = AdvancedSearchForm(data=data, request=request)
+    search = search_from_form(form)
+    results = search.execute()
+    assert len(results) == 4
+    ids = [h.msgid for h in results]
+    assert sorted(ids) == ['api001', 'api002', 'api003', 'api004']
+    # check db updated
+    assert Message.objects.filter(email_list__name=source).count() == 0
+    assert Message.objects.filter(email_list__name=target).count() == 4

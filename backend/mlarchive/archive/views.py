@@ -109,13 +109,6 @@ def get_this_next_periods(time_period):
     return (this_period, next_period)
 
 
-def add_one_month(dt0):
-    dt1 = dt0.replace(day=1)
-    dt2 = dt1 + datetime.timedelta(days=32)
-    dt3 = dt2.replace(day=1)
-    return dt3
-
-
 def is_small_year(email_list, year):
     count = Message.objects.filter(email_list=email_list, date__year=year).count()
     return count < settings.STATIC_INDEX_YEAR_MINIMUM

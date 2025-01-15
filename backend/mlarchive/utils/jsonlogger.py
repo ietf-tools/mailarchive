@@ -31,3 +31,4 @@ class GunicornRequestJsonFormatter(MailArchiveJsonFormatter):
         log_record.setdefault("cf_connecting_ip", record.args["{cf-connecting-ip}i"])
         log_record.setdefault("cf_connecting_ipv6", record.args["{cf-connecting-ipv6}i"])
         log_record.setdefault("cf_ray", record.args["{cf-ray}i"])
+        log_record.setdefault("asn", record.args["{x-ip-src-asnum}i"])

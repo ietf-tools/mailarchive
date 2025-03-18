@@ -3,7 +3,7 @@ import datetime
 import json
 import pytest
 import os
-from datetime import timezone 
+from datetime import timezone
 
 from django.urls import reverse
 from factories import EmailListFactory, MessageFactory
@@ -345,3 +345,38 @@ def test_import_message_failure(client, settings):
 
     # assert message does not exist
     assert Message.objects.all().count() == 0
+
+
+@pytest.mark.django_db(transaction=True)
+def test_msg_search(client, search_api_messages, settings):
+    # confirm messages in elasticsearch index
+    from elasticsearch_dsl import Search, connections
+    from elasticsearch import Elasticsearch
+    host = "es:9200"
+    username = "elastic"
+    password = "changeme"
+    eclient = Elasticsearch(hosts=[host],http_auth=(username, password))
+    s = Search(using=eclient, index='test-mail-archive')
+    print(s.count())
+    response = s.execute()
+    print(response)
+    print(dir(response))
+    print('indexed items: {}'.format(len(response.hits)))
+    # ---------------------------------------
+    base_url = reverse('api_search_message')
+    url = base_url + '?email_list=acme&start_date=2013-06-01&subject=bananas&qdr=c&as=1'
+    settings.API_KEYS = {base_url: 'valid_token'}
+    response = client.get(
+        url,
+        headers={'X-API-Key': 'valid_token'},
+        content_type='application/json')
+    data = response.json()
+    print(data)
+    assert 'results' in data
+    assert len(data['results']) == 2
+    assert data['results'][0]['from'] == 'Bilbo Baggins <baggins@example.com>'
+    assert data['results'][0]['subject'] == 'This is a apples and bananas test'
+    assert data['results'][0]['content'].startswith('Hello')
+    assert data['results'][0]['message_id'] == 'api003'
+    assert data['results'][0]['url'] == '/arch/msg/acme/mWYjgi7riu4XN3F1uqlzSGVMAqM/'
+    assert data['results'][0]['date'] == 'Sun, 01 Mar 2020 17:54:55 +0000'

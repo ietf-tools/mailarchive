@@ -19,8 +19,10 @@ from django.utils.decorators import method_decorator
 
 from mlarchive.exceptions import HttpJson400, HttpJson404
 from mlarchive.archive.models import Message, EmailList, Subscriber
+from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.mail import archive_message
 from mlarchive.utils.decorators import require_api_key
+from mlarchive.archive.backends.elasticsearch import search_from_form
 
 import logging
 logger = logging.getLogger(__name__)
@@ -276,3 +278,59 @@ class ImportMessageView(View):
             return HttpResponse(status=201)
         else:
             return self._err(400, 'archive_message error')
+
+
+# @method_decorator(require_api_key, name='dispatch')
+class SearchMessageView(View):
+    '''An API to search messages'''
+    http_method_names = ['get']
+
+    def _http_err(self, code, text):
+        return HttpResponse(text, status=code, content_type="text/plain")
+
+    def _api_response(self, result):
+        return JsonResponse(data={"results": result})
+
+    def get(self, request, **kwargs):
+        '''Use AdvancedSearchForm to build search query'''
+
+        # validate email_list
+        if 'email_list' not in request.GET:
+            self._http_err(400, 'Missing parameter: email_list')
+        email_list = request.GET.get('email_list')
+        try:
+            EmailList.objects.get(name=email_list)
+        except EmailList.DoesNotExist:
+            self._http_err(400, 'Invalid email list')
+
+        # validate start_date
+        if 'start_date' in request.GET:
+            start_date = request.GET.get('start_date')
+            try:
+                datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
+            except ValueError:
+                self._http_err(400, 'Invalid start date')
+
+        # build search
+        form = AdvancedSearchForm(request.GET, request=request)
+        if not form.is_valid():
+            print(form.errors)
+        assert form.is_valid()
+        search = search_from_form(form)
+        response = search.execute()
+        # build response
+        results = []
+        for hit in response:
+            try:
+                msg_obj = Message.objects.get(pk=hit.django_id)
+            except Message.DoesNotExist:
+                continue
+            message = {}
+            message['from'] = msg_obj.frm
+            message['subject'] = msg_obj.subject
+            message['content'] = msg_obj.get_body()
+            message['message_id'] = msg_obj.msgid
+            message['url'] = msg_obj.url
+            message['date'] = msg_obj.date.strftime('%a, %d %b %Y %H:%M:%S %z')
+            results.append(message)
+        return self._api_response(results)

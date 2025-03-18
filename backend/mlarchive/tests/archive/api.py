@@ -380,3 +380,19 @@ def test_msg_search(client, search_api_messages, settings):
     assert data['results'][0]['message_id'] == 'api003'
     assert data['results'][0]['url'] == '/arch/msg/acme/mWYjgi7riu4XN3F1uqlzSGVMAqM/'
     assert data['results'][0]['date'] == 'Sun, 01 Mar 2020 17:54:55 +0000'
+
+
+@pytest.mark.django_db(transaction=True)
+def test_msg_search_private(client, search_api_messages, settings):
+    base_url = reverse('api_search_message')
+    url = base_url + '?email_list=acme&start_date=2013-06-01&subject=bananas&qdr=c&as=1'
+    settings.API_KEYS = {base_url: 'valid_token'}
+    acme = EmailList.objects.get(name='acme')
+    acme.private = True
+    acme.save()
+    response = client.get(
+        url,
+        headers={'X-API-Key': 'valid_token'},
+        content_type='application/json')
+    data = response.json()
+    assert response.status_code == 404

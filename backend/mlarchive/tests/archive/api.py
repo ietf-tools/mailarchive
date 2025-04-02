@@ -349,14 +349,10 @@ def test_import_message_failure(client, settings):
 
 @pytest.mark.django_db(transaction=True)
 def test_msg_search(client, search_api_messages, settings):
-    # confirm messages in elasticsearch index
-    from elasticsearch_dsl import Search, connections
-    from elasticsearch import Elasticsearch
-    host = "es:9200"
-    username = "elastic"
-    password = "changeme"
-    eclient = Elasticsearch(hosts=[host], http_auth=(username, password))
-    s = Search(using=eclient, index='test-mail-archive')
+    # directly confirm messages in elasticsearch index
+    from mlarchive.archive.backends.elasticsearch import ElasticsearchSimpleQuery
+    esq = ElasticsearchSimpleQuery()
+    s = esq.search
     print(s.count())
     response = s.execute()
     print(response)

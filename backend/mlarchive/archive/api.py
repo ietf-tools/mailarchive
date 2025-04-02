@@ -19,10 +19,9 @@ from django.utils.decorators import method_decorator
 
 from mlarchive.exceptions import HttpJson400, HttpJson404
 from mlarchive.archive.models import Message, EmailList, Subscriber
-from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.mail import archive_message
 from mlarchive.utils.decorators import require_api_key
-from mlarchive.archive.backends.elasticsearch import search_from_form
+from mlarchive.archive.backends.elasticsearch import ElasticsearchSimpleQuery
 
 import logging
 logger = logging.getLogger(__name__)
@@ -280,43 +279,88 @@ class ImportMessageView(View):
             return self._err(400, 'archive_message error')
 
 
-# @method_decorator(require_api_key, name='dispatch')
+_search_message_json_validator = jsonschema.Draft202012Validator(
+    schema={
+        "type": "object",
+        "properties": {
+            "email_list": {
+                "type": "string",  # email list name
+                "minLength": 1,
+            },
+            "start_date": {
+                "type": "string",
+                "description": "ISO formatted date",
+            },
+            "query": {
+                "type": "string",  # query string
+            },
+        },
+        "required": ["email_list"],
+    }
+)
+
+
+@method_decorator(require_api_key, name='dispatch')
+@method_decorator(csrf_exempt, name='dispatch')
 class SearchMessageView(View):
     '''An API to search messages'''
-    http_method_names = ['get']
+    http_method_names = ['post']
 
-    def _api_response(self, result):
-        return JsonResponse(data={"results": result})
+    def post(self, request, **kwargs):
+        if request.content_type != "application/json":
+            return JsonResponse({'error': "Content-Type must be application/json"}, status=415)
 
-    def get(self, request, **kwargs):
-        '''Use AdvancedSearchForm to build search query'''
+        # Validate
+        try:
+            payload = json.loads(request.body)
+            _search_message_json_validator.validate(payload)
+        except json.decoder.JSONDecodeError as err:
+            msg = f'JSON parse error at line {err.lineno} col {err.colno}: {err.msg}'
+            logger.error(msg)
+            raise HttpJson400(msg)
+        except jsonschema.exceptions.ValidationError as err:
+            msg = f'JSON schema error at {err.json_path}: {err.message}'
+            logger.error(msg)
+            raise HttpJson400(msg)
+        except Exception:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            logger.error(f"Exception type: {exc_type}, Exception message: {exc_value}", exc_info=True)
+            msg = f'Error processing request. ({exc_value})'
+            raise HttpJson400(msg)
 
         # validate email_list
-        if 'email_list' not in request.GET:
+        if 'email_list' not in payload:
             raise HttpJson400('Missing parameter: email_list')
-        email_list = request.GET.get('email_list')
+        email_list = payload.get('email_list')
         try:
-            email_list_obj = EmailList.objects.get(name=email_list)
+            EmailList.objects.get(name=email_list, private=False)
         except EmailList.DoesNotExist:
-            raise HttpJson400('Invalid email list')
-        if email_list_obj.private is True:
-            raise HttpJson404('Not found')
+            raise HttpJson400(f'List not found: {email_list}')
 
         # validate start_date
-        if 'start_date' in request.GET:
-            start_date = request.GET.get('start_date')
+        start_date = payload.get('start_date')
+        if start_date:
             try:
                 datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
             except ValueError:
                 raise HttpJson400('Invalid start date')
 
-        # build search
-        form = AdvancedSearchForm(request.GET, request=request)
-        if not form.is_valid():
-            print(form.errors)
-        assert form.is_valid()
-        search = search_from_form(form)
-        response = search.execute()
+        # get query
+        query = payload.get('query')
+
+        # handle list
+        esq = ElasticsearchSimpleQuery()
+        s = esq.search
+        s = s.query('term', email_list=email_list)
+        # handle start date
+        if start_date:
+            s = s.query('range', date={'gte': start_date})
+        # handle query
+        if query:
+            s = s.query('query_string', query=query)
+        # execute query
+        response = s.execute()
+
         # build response
         results = []
         for hit in response:
@@ -332,4 +376,4 @@ class SearchMessageView(View):
             message['url'] = msg_obj.url
             message['date'] = msg_obj.date.strftime('%a, %d %b %Y %H:%M:%S %z')
             results.append(message)
-        return self._api_response(results)
+        return JsonResponse({'results': results})

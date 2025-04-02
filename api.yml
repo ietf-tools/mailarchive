@@ -177,6 +177,45 @@ paths:
         '403':
           description: Forbidden
 
+  /api/v1/message/search/:
+    post:
+      summary: Search public email messages
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        description: search parameters JSON format
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email_list:
+                  type: string
+                  minLength: 1
+                  description: email list name (no domain)
+                start_date:
+                  type: string
+                  format: date
+                  description: start date in YYYY-MM-DD format
+                query:
+                  type: string
+                  description: query string (Elasticsearch query_string query type)
+              required:
+                - email_list
+
+      responses:
+        '200':
+          description: valid search
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '405':
+          description: Method not allowed
+        '415':
+          description: Unsupported media type
+
 components:
   securitySchemes:
     ApiKeyAuth:

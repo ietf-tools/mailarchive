@@ -201,6 +201,9 @@ paths:
                 query:
                   type: string
                   description: query string (Elasticsearch query_string query type)
+                limit:
+                  type: string
+                  description: limit the results to this amount
               required:
                 - email_list
 

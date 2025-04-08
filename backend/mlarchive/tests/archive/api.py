@@ -385,17 +385,26 @@ def test_msg_search(client, search_api_messages, settings):
         data=data,
         headers={'X-API-Key': 'valid_token'},
         content_type='application/json')
-    data = response.json()
-    print(data)
-    assert 'results' in data
-    assert len(data['results']) == 2
-    sorted_data = sorted(data['results'], key=lambda x: x['from'])
+    rdata = response.json()
+    print(rdata)
+    assert 'results' in rdata
+    assert len(rdata['results']) == 2
+    sorted_data = sorted(rdata['results'], key=lambda x: x['from'])
     assert sorted_data[0]['from'] == 'Bilbo Baggins <baggins@example.com>'
     assert sorted_data[0]['subject'] == 'This is a apples and bananas test'
     assert sorted_data[0]['content'].startswith('Hello')
     assert sorted_data[0]['message_id'] == 'api003'
-    assert sorted_data[0]['url'] == '/arch/msg/acme/mWYjgi7riu4XN3F1uqlzSGVMAqM/'
-    assert sorted_data[0]['date'] == 'Sun, 01 Mar 2020 17:54:55 +0000'
+    assert sorted_data[0]['url'].endswith('/arch/msg/acme/mWYjgi7riu4XN3F1uqlzSGVMAqM/')
+    assert sorted_data[0]['date'] == '2020-03-01T17:54:55+00:00'
+    # test limit
+    data['limit'] = '1'
+    response = client.post(
+        url,
+        data=data,
+        headers={'X-API-Key': 'valid_token'},
+        content_type='application/json')
+    rdata = response.json()
+    assert len(rdata['results']) == 1
 
 
 @pytest.mark.django_db(transaction=True)

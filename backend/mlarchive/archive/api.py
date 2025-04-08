@@ -294,6 +294,9 @@ _search_message_json_validator = jsonschema.Draft202012Validator(
             "query": {
                 "type": "string",  # query string
             },
+            "limit": {
+                "type": "string",
+            }
         },
         "required": ["email_list"],
     }
@@ -345,6 +348,14 @@ class SearchMessageView(View):
             except ValueError:
                 raise HttpJson400('Invalid start date')
 
+        # validate limit
+        limit = payload.get('limit')
+        if limit:
+            try:
+                limit = int(limit)
+            except ValueError:
+                raise HttpJson400('limit parameter must be an integer')
+
         # get query
         query = payload.get('query')
 
@@ -363,7 +374,11 @@ class SearchMessageView(View):
 
         # build response
         results = []
+        count = 0
         for hit in response:
+            count = count + 1
+            if limit and count > limit:
+                break
             try:
                 msg_obj = Message.objects.get(pk=hit.django_id)
             except Message.DoesNotExist:
@@ -373,7 +388,7 @@ class SearchMessageView(View):
             message['subject'] = msg_obj.subject
             message['content'] = msg_obj.get_body()
             message['message_id'] = msg_obj.msgid
-            message['url'] = msg_obj.url
-            message['date'] = msg_obj.date.strftime('%a, %d %b %Y %H:%M:%S %z')
+            message['url'] = msg_obj.get_absolute_url_with_host()
+            message['date'] = msg_obj.date.isoformat()
             results.append(message)
         return JsonResponse({'results': results})

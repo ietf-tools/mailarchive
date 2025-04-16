@@ -227,6 +227,19 @@ class ESBackend():
             self.log.error("Failed to remove document '%s' from Elasticsearch: %s", doc_id, e, exc_info=True)
 
 
+class ElasticsearchSimpleQuery():
+    '''Class for creating custom Elasticsearch Search query objects'''
+
+    def __init__(self):
+        connection_options = settings.ELASTICSEARCH_CONNECTION
+        self.client = Elasticsearch(
+            connection_options['URL'],
+            index=connection_options['INDEX_NAME'],
+            http_auth=connection_options['http_auth'],
+            **connection_options.get('KWARGS', {}))
+        self.search = Search(using=self.client, index=settings.ELASTICSEARCH_INDEX_NAME)
+
+
 class ElasticsearchQuery():
     '''Class for creating Elasticsearch Search objects from input forms.
 

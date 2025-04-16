@@ -21,6 +21,7 @@ from mlarchive.exceptions import HttpJson400, HttpJson404
 from mlarchive.archive.models import Message, EmailList, Subscriber
 from mlarchive.archive.mail import archive_message
 from mlarchive.utils.decorators import require_api_key
+from mlarchive.archive.backends.elasticsearch import ElasticsearchSimpleQuery
 
 import logging
 logger = logging.getLogger(__name__)
@@ -276,3 +277,117 @@ class ImportMessageView(View):
             return HttpResponse(status=201)
         else:
             return self._err(400, 'archive_message error')
+
+
+_search_message_json_validator = jsonschema.Draft202012Validator(
+    schema={
+        "type": "object",
+        "properties": {
+            "email_list": {
+                "type": "string",  # email list name
+                "minLength": 1,
+            },
+            "start_date": {
+                "type": "string",
+                "description": "ISO formatted date",
+            },
+            "query": {
+                "type": "string",  # query string
+            },
+            "limit": {
+                "type": "string",
+            }
+        },
+        "required": ["email_list"],
+    }
+)
+
+
+@method_decorator(require_api_key, name='dispatch')
+@method_decorator(csrf_exempt, name='dispatch')
+class SearchMessageView(View):
+    '''An API to search messages'''
+    http_method_names = ['post']
+
+    def post(self, request, **kwargs):
+        if request.content_type != "application/json":
+            return JsonResponse({'error': "Content-Type must be application/json"}, status=415)
+
+        # Validate
+        try:
+            payload = json.loads(request.body)
+            _search_message_json_validator.validate(payload)
+        except json.decoder.JSONDecodeError as err:
+            msg = f'JSON parse error at line {err.lineno} col {err.colno}: {err.msg}'
+            logger.error(msg)
+            raise HttpJson400(msg)
+        except jsonschema.exceptions.ValidationError as err:
+            msg = f'JSON schema error at {err.json_path}: {err.message}'
+            logger.error(msg)
+            raise HttpJson400(msg)
+        except Exception:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            logger.error(f"Exception type: {exc_type}, Exception message: {exc_value}", exc_info=True)
+            msg = f'Error processing request. ({exc_value})'
+            raise HttpJson400(msg)
+
+        # validate email_list
+        if 'email_list' not in payload:
+            raise HttpJson400('Missing parameter: email_list')
+        email_list = payload.get('email_list')
+        try:
+            EmailList.objects.get(name=email_list, private=False)
+        except EmailList.DoesNotExist:
+            raise HttpJson400(f'List not found: {email_list}')
+
+        # validate start_date
+        start_date = payload.get('start_date')
+        if start_date:
+            try:
+                datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
+            except ValueError:
+                raise HttpJson400('Invalid start date')
+
+        # validate limit
+        limit = payload.get('limit')
+        if limit:
+            try:
+                limit = int(limit)
+            except ValueError:
+                raise HttpJson400('limit parameter must be an integer')
+
+        # get query
+        query = payload.get('query')
+
+        # handle list
+        esq = ElasticsearchSimpleQuery()
+        s = esq.search
+        s = s.query('term', email_list=email_list)
+        # handle start date
+        if start_date:
+            s = s.query('range', date={'gte': start_date})
+        # handle query
+        if query:
+            s = s.query('query_string', query=query)
+        # handle limit
+        if limit:
+            s = s.extra(size=limit)
+        # execute query
+        response = s.execute()
+
+        # build response
+        results = []
+        for hit in response:
+            try:
+                msg_obj = Message.objects.get(pk=hit.django_id)
+            except Message.DoesNotExist:
+                continue
+            message = {}
+            message['from'] = msg_obj.frm
+            message['subject'] = msg_obj.subject
+            message['content'] = msg_obj.get_body()
+            message['message_id'] = msg_obj.msgid
+            message['url'] = msg_obj.get_absolute_url_with_host()
+            message['date'] = msg_obj.date.isoformat()
+            results.append(message)
+        return JsonResponse({'results': results})

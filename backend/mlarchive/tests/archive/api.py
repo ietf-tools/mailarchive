@@ -3,7 +3,7 @@ import datetime
 import json
 import pytest
 import os
-from datetime import timezone 
+from datetime import timezone
 
 from django.urls import reverse
 from factories import EmailListFactory, MessageFactory
@@ -345,3 +345,159 @@ def test_import_message_failure(client, settings):
 
     # assert message does not exist
     assert Message.objects.all().count() == 0
+
+
+@pytest.mark.django_db(transaction=True)
+def test_msg_search(client, search_api_messages, settings):
+    # directly confirm messages in elasticsearch index
+    from mlarchive.archive.backends.elasticsearch import ElasticsearchSimpleQuery
+    esq = ElasticsearchSimpleQuery()
+    s = esq.search
+    print(s.count())
+    response = s.execute()
+    print(response)
+    print(dir(response))
+    print('indexed items: {}'.format(len(response.hits)))
+    # ---------------------------------------
+    url = reverse('api_search_message')
+    settings.API_KEYS = {url: 'valid_token'}
+    data = {
+        'email_list': 'acme',
+        'query': 'bananas'
+    }
+    # no token
+    response = client.post(
+        url,
+        data=data,
+        headers={},
+        content_type='application/json')
+    assert response.status_code == 403
+    # invalid token
+    response = client.post(
+        url,
+        data=data,
+        headers={'X-API-Key': 'invalid_token'},
+        content_type='application/json')
+    assert response.status_code == 403
+    # valid token
+    response = client.post(
+        url,
+        data=data,
+        headers={'X-API-Key': 'valid_token'},
+        content_type='application/json')
+    rdata = response.json()
+    print(rdata)
+    assert 'results' in rdata
+    assert len(rdata['results']) == 2
+    sorted_data = sorted(rdata['results'], key=lambda x: x['from'])
+    assert sorted_data[0]['from'] == 'Bilbo Baggins <baggins@example.com>'
+    assert sorted_data[0]['subject'] == 'This is a apples and bananas test'
+    assert sorted_data[0]['content'].startswith('Hello')
+    assert sorted_data[0]['message_id'] == 'api003'
+    assert sorted_data[0]['url'].endswith('/arch/msg/acme/mWYjgi7riu4XN3F1uqlzSGVMAqM/')
+    assert sorted_data[0]['date'] == '2020-03-01T17:54:55+00:00'
+    # test limit
+    data['limit'] = '1'
+    response = client.post(
+        url,
+        data=data,
+        headers={'X-API-Key': 'valid_token'},
+        content_type='application/json')
+    rdata = response.json()
+    assert len(rdata['results']) == 1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_msg_search_private(client, search_api_messages, settings):
+    url = reverse('api_search_message')
+    settings.API_KEYS = {url: 'valid_token'}
+    acme = EmailList.objects.get(name='acme')
+    acme.private = True
+    acme.save()
+    data = {
+        'email_list': 'acme',
+        'start_date': '2013-06-01',
+        'query': 'subject:(bananas)'
+    }
+    response = client.post(
+        url,
+        data=data,
+        headers={'X-API-Key': 'valid_token'},
+        content_type='application/json')
+    print(response.content)
+    response_data = response.json()
+    assert response.status_code == 400
+    assert response_data == {'error': 'List not found: acme'}
+
+
+@pytest.mark.django_db(transaction=True)
+def test_msg_search_start_date(client, search_api_messages, settings):
+    url = reverse('api_search_message')
+    settings.API_KEYS = {url: 'valid_token'}
+    data = {
+        'email_list': 'acme',
+        'start_date': '2013-06-01',
+        'query': 'bananas'
+    }
+    response = client.post(
+        url,
+        data=data,
+        headers={'X-API-Key': 'valid_token'},
+        content_type='application/json')
+    response_data = response.json()
+    assert 'results' in response_data
+    assert len(response_data['results']) == 2
+    sorted_data = sorted(response_data['results'], key=lambda x: x['from'])
+    assert sorted_data[0]['from'] == 'Bilbo Baggins <baggins@example.com>'
+    # later
+    data['start_date'] = '2020-02-01'
+    response = client.post(
+        url,
+        data=data,
+        headers={'X-API-Key': 'valid_token'},
+        content_type='application/json')
+    response_data = response.json()
+    assert 'results' in response_data
+    assert len(response_data['results']) == 1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_msg_search_query(client, search_api_messages, settings):
+    url = reverse('api_search_message')
+    settings.API_KEYS = {url: 'valid_token'}
+    # field query
+    data = {
+        'email_list': 'acme',
+        'start_date': '2013-06-01',
+        'query': 'subject:(bananas)'
+    }
+    response = client.post(
+        url,
+        data=data,
+        headers={'X-API-Key': 'valid_token'},
+        content_type='application/json')
+    response_data = response.json()
+    assert 'results' in response_data
+    assert len(response_data['results']) == 2
+    sorted_data = sorted(response_data['results'], key=lambda x: x['from'])
+    assert sorted_data[0]['from'] == 'Bilbo Baggins <baggins@example.com>'
+    # phrase match
+    data['query'] = 'subject:("This-is-a-bananas-test")'
+    response = client.post(
+        url,
+        data=data,
+        headers={'X-API-Key': 'valid_token'},
+        content_type='application/json')
+    response_data = response.json()
+    assert 'results' in response_data
+    assert len(response_data['results']) == 1
+    # phrase no match
+    data['query'] = 'subject:("This-does-not-match-bananas-test")'
+    response = client.post(
+        url,
+        data=data,
+        headers={'X-API-Key': 'valid_token'},
+        content_type='application/json')
+    response_data = response.json()
+    assert 'results' in response_data
+    assert len(response_data['results']) == 0

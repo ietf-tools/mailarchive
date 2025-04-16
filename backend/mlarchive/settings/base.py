@@ -43,6 +43,7 @@ env = environ.Env(
     EXPORT_LIMIT=(int, 5000),
     HTAUTH_PASSWD_FILENAME=(str, ''),
     IMPORT_MESSAGE_APIKEY=(str, ''),
+    SEARCH_MESSAGE_APIKEY=(str, 'changeme'),
     INTERNAL_IPS=(list, []),
     LOG_DIR=(str, '/var/log/mail-archive'),
     LOG_HANDLERS=(list, ['mlarchive']),
@@ -282,8 +283,10 @@ MAILMAN_CF_ACCESS_CLIENT_SECRET = env('MAILMAN_CF_ACCESS_CLIENT_SECRET')
 IMPORT_MESSAGE_APIKEY = env('IMPORT_MESSAGE_APIKEY')
 
 # API KEYS: key=endpoint, value=[api-key,]
+SEARCH_MESSAGE_APIKEY = env('SEARCH_MESSAGE_APIKEY')
 API_KEYS = {
     '/api/v1/message/import/': [IMPORT_MESSAGE_APIKEY],
+    '/api/v1/message/search/': [SEARCH_MESSAGE_APIKEY],
 }
 
 # Default timeout for HTTP requests via the requests library

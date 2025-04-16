@@ -292,7 +292,8 @@ def search_api_messages():
     """Load messages for search_api tests"""
     # clear archive message directory
     arch_path = os.path.join(settings.ARCHIVE_DIR, 'acme')
-    remove_all_files(arch_path)
+    if os.path.exists(arch_path):
+        remove_all_files(arch_path)
     content = io.StringIO()
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'search_api.mbox')
     call_command('clear_index', interactive=False, stdout=content)

@@ -234,10 +234,10 @@ class AdvancedSearchForm(forms.Form):
     def clean_email_list(self):
         '''A special clean function which can handle multiple email_list
         parameters in the query string, ie. from a multiselect widget,
-        or a space separated string of email list names, ie from a 
+        or a space separated string of email list names, ie from a
         text input. Returns a list of email list names (strings).
         '''
-        if len(self.data.getlist('email_list')) > 1:
+        if hasattr(self.data, 'getlist') and len(self.data.getlist('email_list')) > 1:
             return [n.lower() for n in self.data.getlist('email_list')]
         else:
             return [n.lower() for n in self.data.get('email_list', '').split()]

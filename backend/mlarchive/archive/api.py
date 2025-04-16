@@ -369,16 +369,15 @@ class SearchMessageView(View):
         # handle query
         if query:
             s = s.query('query_string', query=query)
+        # handle limit
+        if limit:
+            s = s.extra(size=limit)
         # execute query
         response = s.execute()
 
         # build response
         results = []
-        count = 0
         for hit in response:
-            count = count + 1
-            if limit and count > limit:
-                break
             try:
                 msg_obj = Message.objects.get(pk=hit.django_id)
             except Message.DoesNotExist:

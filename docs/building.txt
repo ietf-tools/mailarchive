@@ -1,4 +1,4 @@
-The Mail Archive uses Bootstrap 4, the Sass-based front-end
+The Mail Archive uses Bootstrap 5, the Sass-based front-end
 component library.  Use the instructions below to compile
 CSS if changes are required.
 

@@ -391,7 +391,7 @@ class SearchMessageView(View):
             # message date is stored as timezone aware UTC
             # for simplicity omit the +00:00 offset in the date field
             # by first converting to a naive datetime
-            dt = msg_obj.date
+            dt = msg_obj.date.astimezone(datetime.timezone.utc)
             dt_naive = dt.replace(tzinfo=None)
             message['date'] = dt_naive.isoformat()
             results.append(message)

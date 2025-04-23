@@ -395,7 +395,7 @@ def test_msg_search(client, search_api_messages, settings):
     assert sorted_data[0]['content'].startswith('Hello')
     assert sorted_data[0]['message_id'] == 'api003'
     assert sorted_data[0]['url'].endswith('/arch/msg/acme/mWYjgi7riu4XN3F1uqlzSGVMAqM/')
-    assert sorted_data[0]['date'] == '2020-03-01T17:54:55+00:00'
+    assert sorted_data[0]['date'] == '2020-03-01T17:54:55'
     # test limit
     data['limit'] = '1'
     response = client.post(

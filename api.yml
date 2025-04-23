@@ -209,7 +209,43 @@ paths:
 
       responses:
         '200':
-          description: valid search
+          description: Returns results of query
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        from:
+                          type: string
+                          description: message sender
+                        subject:
+                          type: string
+                          description: message subject
+                        content:
+                          type: string
+                          description: message content
+                        message_id:
+                          type: string
+                          description: message ID
+                        url:
+                          type: string
+                          description: message url
+                        date:
+                          type: string
+                          description: message date in isoformat (UTC)
+              example:
+                results:
+                - from: Joe Smith <joesmith@example.com>
+                  subject: Please read this document
+                  content: "Hello\nThis is an excellent document"
+                  message_id: "sdfhf9sdfhj239sdh@example.com"
+                  url: https://example.com/msg/sdfjsdfsdflk
+                  date: 20200101T12:00:00
         '400':
           description: Bad Request
         '403':

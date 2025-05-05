@@ -537,3 +537,18 @@ class Redirect(models.Model):
 
     def __str__(self):
         return '{} -> {}'.format(self.old, self.new)
+
+
+class UserEmail(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    address = models.EmailField()
+
+    def __str__(self):
+        return f'{self.user.name}:{self.address}'
+
+class MailmanMember(models.Model):
+    email_list = models.ForeignKey(EmailList, on_delete=models.CASCADE)
+    address = models.EmailField()
+
+    def __str__(self):
+        return f'{self.email_list.name}:{self.address}'

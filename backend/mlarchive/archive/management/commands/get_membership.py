@@ -4,7 +4,7 @@ import requests
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from mlarchive.archive.utils import get_membership_3
+from mlarchive.archive.utils import get_membership
 
 import logging
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class Command(BaseCommand):
             'MAILMAN_API_PASSWORD',
             'MAILMAN_API_URL'])
         try:
-            get_membership_3(quiet=options['quiet'])
+            get_membership(quiet=options['quiet'])
         except requests.RequestException as e:
             logger.error(f'command get_membership failed: {e}')
             raise CommandError(f'Command failed. {e}')

@@ -175,7 +175,11 @@ class Message(models.Model):
     # thread_index_page = models.CharField(max_length=64, default='')
 
     class Meta:
-        indexes = [models.Index(fields=['email_list', 'date'])]
+        indexes = [
+            models.Index(fields=['email_list', 'date']),
+            models.Index(fields=['email_list', 'frm']),
+            models.Index(fields=['email_list', 'base_subject']),
+        ]
 
     def __str__(self):
         return self.msgid

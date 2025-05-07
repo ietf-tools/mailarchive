@@ -35,6 +35,7 @@ env = environ.Env(
     DATABASES_PORT=(str, ''),
     DATABASES_OPTS_JSON=(str, '{}'),
     DATATRACKER_PERSON_ENDPOINT_API_KEY=(str, ''),
+    DATATRACKER_EMAIL_RELATED_API_KEY=(str, ''),
     DEBUG=(bool, False),
     DEBUG_TOOLBAR_ON=(bool, False),
     ELASTICSEARCH_HOST=(str, '127.0.0.1'),
@@ -49,7 +50,7 @@ env = environ.Env(
     LOG_HANDLERS=(list, ['mlarchive']),
     LOG_LEVEL=(str, 'INFO'),
     MAILMAN_API_PASSWORD=(str, ''),
-    MAILMAN_API_URL=(str, 'https://mailman.prod.ietf.org/3.1'),
+    MAILMAN_API_URL=(str, 'https://mailman-api.ietf.org/3.1'),
     MAILMAN_API_USER=(str, ''),
     MAILMAN_CF_ACCESS_CLIENT_ID=(str, ''),
     MAILMAN_CF_ACCESS_CLIENT_SECRET=(str, ''),
@@ -332,7 +333,7 @@ INSPECTORS = {
 LOGIN_REDIRECT_URL = '/arch/'
 LOGOUT_REDIRECT_URL = '/arch/'
 AUTHENTICATION_BACKENDS = (
-    'mozilla_django_oidc.auth.OIDCAuthenticationBackend',
+    'mlarchive.authbackend.oidc.CustomOIDCBackend',
     # 'mlarchive.archive.backends.authbackend.HtauthBackend',
 )
 
@@ -368,6 +369,8 @@ IMPORT_DIR = os.path.join(DATA_ROOT, 'incoming')
 # DATATRACKER API
 DATATRACKER_PERSON_ENDPOINT = 'https://datatracker.ietf.org/api/v2/person/person'
 DATATRACKER_PERSON_ENDPOINT_API_KEY = env('DATATRACKER_PERSON_ENDPOINT_API_KEY')
+DATATRACKER_EMAIL_RELATED_URL = 'https://datatracker.ietf.org/api/person/email/{email}/related/'
+DATATRACKER_EMAIL_RELATED_API_KEY = env('DATATRACKER_EMAIL_RELATED_API_KEY')
 
 # CLOUDFLARE  INTEGRATION
 USING_CDN = env('USING_CDN')

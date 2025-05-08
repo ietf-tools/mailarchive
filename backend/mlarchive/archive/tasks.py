@@ -174,3 +174,15 @@ def update_mbox_files_task():
         update_mbox_files()
     except Exception as err:
         logger.error(f"Error in update_mbox_files_task: {err}")
+
+
+@shared_task
+def populate_thread_date_task():
+    '''Populate new message.thread_date field from thread.date
+    and delete empty threads
+    '''
+    for thread in Thread.objects.all():
+        if thread.message_set.count() == 0:
+            thread.delete()
+            continue
+        thread.message_set.update(thread_date=thread.date)

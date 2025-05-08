@@ -167,6 +167,7 @@ class Message(models.Model):
     spam_score = models.IntegerField(default=0)             # > 0 = spam
     subject = models.CharField(max_length=512, blank=True)
     thread = models.ForeignKey(Thread, on_delete=models.PROTECT)
+    thread_date = models.DateTimeField(db_index=True, null=True, blank=True)
     thread_depth = models.IntegerField(default=0)
     thread_order = models.IntegerField(default=0)
     to = models.TextField(blank=True, default='')
@@ -470,13 +471,6 @@ class Message(models.Model):
             return previous_thread.message_set.order_by('thread_order').first()
         else:
             return None
-
-    @property
-    def thread_date(self):
-        """Returns the date of the first message in the associated thread.  Use for
-        grouping by Thread
-        """
-        return self.thread.date
 
     @property
     def to_and_cc(self):

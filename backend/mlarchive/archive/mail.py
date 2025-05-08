@@ -900,6 +900,7 @@ class MessageWrapper(object):
         info = self.thread_info[self.hashcode]
         self._archive_message.thread_depth = info.depth
         self._archive_message.thread_order = info.order
+        self._archive_message.thread_date = self.thread.date
 
     def process_attachments(self, test=False):
         """

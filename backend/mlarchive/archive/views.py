@@ -51,6 +51,7 @@ logger = logging.getLogger(__name__)
 
 THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
 DATE_PATTERN = re.compile(r'(?P<year>\d{4})(?:-(?P<month>\d{2}))?')
+BROWSE_GBT_PATTERN = re.compile(r'^/arch/browse/[^/]+/\?.*?\bgbt=1\b')
 TimePeriod = namedtuple('TimePeriod', 'year, month')
 
 # --------------------------------------------------
@@ -369,6 +370,20 @@ class CustomSearchView(View):
             page = paginator.page(page_no)
         except InvalidPage:
             raise Http404("No such page!")
+
+        # AVOID LOW LIMIT VALUES WHEN GROUPING BY THREAD
+        # the Django paginator will set LIMIT = message count if it is less
+        # than results_per_page. The problem is the low LIMIT value (<12)
+        # causes Postgres query planner to choose a very inefficient query plan
+        # for certain types of queries. So set query.high_mark, which is
+        # used to set limit, back to results_per_page.
+        if (
+            BROWSE_GBT_PATTERN.match(self.request.get_full_path())
+            and hasattr(page, 'object_list')
+            and hasattr(page.object_list, 'query')
+            and page.object_list.query.high_mark < self.results_per_page
+        ):
+            page.object_list.query.high_mark = self.results_per_page
 
         return (paginator, page)
 

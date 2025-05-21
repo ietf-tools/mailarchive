@@ -6,6 +6,8 @@ from django.conf import settings
 from mlarchive.archive.models import MailmanMember, UserEmail
 from mlarchive.archive.utils import get_known_emails
 
+logger = logging.getLogger(__name__)
+
 
 def generate_username(email):
     # Using Python 3 and Django 1.11+, usernames can contain alphanumeric
@@ -44,7 +46,11 @@ class CustomOIDCBackend(OIDCAuthenticationBackend):
         # get all emails from claims
         # not doing this initially, re-evaluate after new authenication system deployed
         # known_emails = claims.get('emails')
-        known_emails = get_known_emails(user.email)
+        try:
+            known_emails = get_known_emails(user.email)
+        except Exception as e:
+            logger.error(f'get_known_emails failed ({e})')
+            return
         new_emails = set(known_emails) - set(user.useremail_set.values_list('address', flat=True))
         for email in new_emails:
             UserEmail.objects.create(user=user, address=email)

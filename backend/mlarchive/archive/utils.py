@@ -250,12 +250,14 @@ def get_membership(quiet=False):
             MailmanMember.objects.create(email_list=plist, address=address)
             try:
                 user_email = UserEmail.objects.get(address=address)
-                plist.members.add(user_email.user)
-                has_changed = True
             except UserEmail.DoesNotExist:
                 continue
+            plist.members.add(user_email.user)
+            has_changed = True
         # handle deleted members
         for addresss in set(existing_members) - set(mailman_members):
+            # do not delete unsubscribed members
+            # one time subscribers retain access to the archives
             pass
 
     if has_changed:
@@ -388,10 +390,16 @@ def move_list(source, target):
 def get_known_emails(email):
     '''Calls Datatracker API to retrieve all known emails related to given email'''
     url = settings.DATATRACKER_EMAIL_RELATED_URL.format(email=email)
-    headers = {"X-API-KEY": settings.DATATRACKER_EMAIL_RELATED_API_KEY}
-    response = requests.get(url, headers=headers)
+    headers = {
+        "X-API-KEY": settings.DATATRACKER_EMAIL_RELATED_API_KEY,
+        "Accept": "application/json",
+    }
+    response = requests.get(url, headers=headers, timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
     if response.status_code == 200:
-        data = response.json()
+        try:
+            data = response.json()
+        except ValueError as e:
+            logger.error(f'get_known_emails(): cannot decode response {e}')
         if 'addresses' in data:
             return data['addresses']
         else:
@@ -451,17 +459,23 @@ def init_check_users():
     for user in User.objects.all():
         # check if user.username is a known datatracker email
         logger.info(f'checking {user.username}')
+        is_valid_email = True
         try:
             validate_email(user.username)
-            is_known_email = bool(lookup_user(user.username))
         except ValidationError:
-            is_known_email = False
+            is_valid_email = False
             logger.info(f'{user.username} is not a valid email. Not looking up.')
+
+        if is_valid_email:
+            is_known_email = lookup_user(user.username) is not None
+        else:
+            is_known_email = False
+
         if not is_known_email:
             count = count + 1
             email = username_to_email(username=user.username)
             if not email:
-                logger.warn(f'init_cheeck_users: no email found for {user.username}')
+                logger.warn(f'init_check_users: no email found for {user.username}')
                 # logger.info(f'deleting user {user.username}')
                 # user.delete()
                 continue
@@ -479,6 +493,10 @@ def init_check_users():
 def init_set_user_email():
     '''Old Users created by get_subscribers didn't get email set.'''
     for user in User.objects.filter(email=''):
+        try:
+            validate_email(user.username)
+        except ValidationError:
+            continue
         user.email = user.username
         user.save()
 
@@ -570,6 +588,11 @@ def username_to_email(username):
             # try active
             found_email = next(
                 (email for email, details in email_set.items() if details.get("active")), None
+            )
+        if not found_email:
+            # settle for inactive
+            found_email = next(
+                (email for email, details in email_set.items()), None
             )
 
     except (TypeError, LookupError) as error:

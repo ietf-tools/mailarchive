@@ -14,6 +14,7 @@ from csp.decorators import csp_exempt
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import InvalidPage
@@ -832,8 +833,7 @@ def detail(request, list_name, id, msg):
     return response
 
 
-# removed login requirement until API is created
-# @login_required
+@login_required
 def export(request, type):
     """Takes a search query string and builds a gzipped tar archive of the messages
     in the query results.

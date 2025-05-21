@@ -11,6 +11,7 @@ from urllib import parse
 from pyquery import PyQuery
 
 from django.contrib.auth import SESSION_KEY
+from django.contrib.auth.models import User
 from django.test import RequestFactory
 from django.urls import reverse
 from django.utils.http import urlencode
@@ -641,9 +642,10 @@ def test_attachment_message_rfc822(client, attachment_messages_no_index):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_export(admin_client, export_messages):
+def test_export(client, users, export_messages):
     url = reverse('archive_export', kwargs={'type': 'mbox'}) + '?email_list=acme'
-    response = admin_client.get(url)
+    login_testing_unauthorized(client, url, username='unprivileged@example.com')
+    response = client.get(url)
     print(url)
     print(response.headers)
     assert response.status_code == 200
@@ -660,39 +662,6 @@ def test_export(admin_client, export_messages):
             if line.startswith(b'From '):
                 count = count + 1
     assert count == 21
-
-
-@pytest.mark.django_db(transaction=True)
-def test_export_datatracker_api(client, thread_messages):
-    '''Datatracker uses this interface from the complete-a-review view.
-    Note: no login is required
-    '''
-    params = {'subject': 'anvil',
-              'email_list': 'acme',
-              'as': '1',
-              'qdr': 'c',
-              'start_date': '2010-01-01'}
-    url = reverse('archive_export', kwargs={'type': 'mbox'}) + '?' + urlencode(params)
-    response = client.get(url)
-    assert response.status_code == 200
-    assert response['Content-Disposition'].startswith('attachment;')
-    assert response['Content-Type'] == 'application/x-tar-gz'
-
-
-'''
-# Temporarily removed
-@pytest.mark.django_db(transaction=True)
-def test_export_not_logged_in(client, messages):
-    url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'})
-    response = client.get(url)
-    assert response.status_code == 200
-    assert 'You must be logged in to export messages.' in response.content
-    q = PyQuery(response.content)
-    assert len(q('.export-link.disabled')) == 3
-    url = reverse('archive_export', kwargs={'type': 'mbox'}) + '?email_list=pubone'
-    response = client.get(url)
-    assert response.status_code == 302
-'''
 
 
 @pytest.mark.django_db(transaction=True)

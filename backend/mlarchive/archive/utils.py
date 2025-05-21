@@ -418,7 +418,9 @@ def init_private_list_members():
     init_mailmanmember()
 
     # check / migrate users
-    init_check_users()
+    # per Robert, do not attempt to convert these, rely on
+    # user requests if needed to provide access to old lists
+    # init_check_users()
 
     # set missing emails
     init_set_user_email()
@@ -428,7 +430,8 @@ def init_private_list_members():
 
 
 def init_mailmanmember():
-    '''Create MailmanMember objects for members of all private lists managed by mailman'''
+    '''Get members for all private lists from mailman and
+    create MailmanMember objects'''
     client = mailmanclient.Client(
         settings.MAILMAN_API_URL,
         settings.MAILMAN_API_USER,
@@ -491,7 +494,8 @@ def init_check_users():
 
 
 def init_set_user_email():
-    '''Old Users created by get_subscribers didn't get email set.'''
+    '''Old Users created by get_subscribers didn't get email set. Set from
+    username if it is a valid email'''
     for user in User.objects.filter(email=''):
         try:
             validate_email(user.username)
@@ -502,6 +506,13 @@ def init_set_user_email():
 
 
 def init_derived_mailmanmember():
+    '''For private lists no longer managed by mailman (they have been closed / deleted)
+    create MailmanMember objects for all current member relations. This preserves the
+    list membership going forward in the archive with the new setup. This way if
+    someone had subscribed to an old list with an email Datatracker didn't know about,
+    now when they add that email to Datatracker the member relationship will be created
+    and access granted.
+    '''
     mailman_lists = get_mailman_lists(private=True)
     pks = [x.pk for x in mailman_lists]
     non_mailman_lists = EmailList.objects.filter(private=True).exclude(pk__in=pks)

@@ -6,6 +6,7 @@ from django.conf import settings
 from mlarchive.archive.models import MailmanMember, UserEmail
 from mlarchive.archive.utils import get_known_emails
 
+import logging
 logger = logging.getLogger(__name__)
 
 

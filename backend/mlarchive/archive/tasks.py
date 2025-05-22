@@ -9,10 +9,11 @@ from django.core.management import call_command
 from mlarchive.archive.backends.elasticsearch import ESBackend
 from mlarchive.celeryapp import app
 from mlarchive.archive.utils import create_mbox_file
-from mlarchive.archive.utils import get_membership_3
+from mlarchive.archive.utils import get_membership
 from mlarchive.archive.utils import get_subscriber_counts
 from mlarchive.archive.utils import purge_incoming
 from mlarchive.archive.utils import update_mbox_files
+from mlarchive.archive.utils import init_private_list_members
 from mlarchive.archive.models import EmailList
 
 logger = logging.getLogger(__name__)
@@ -144,7 +145,7 @@ CelerySignalHandler = app.register_task(CelerySignalHandler())
 def get_membership_task():
     '''Get list membership from mailman'''
     try:
-        get_membership_3(quiet=True)
+        get_membership(quiet=True)
     except Exception as err:
         logger.error(f"Error in get_membership_task: {err}")
 
@@ -174,3 +175,12 @@ def update_mbox_files_task():
         update_mbox_files()
     except Exception as err:
         logger.error(f"Error in update_mbox_files_task: {err}")
+
+
+@shared_task
+def init_private_list_members_task():
+    '''Initialize the private list membership'''
+    try:
+        init_private_list_members()
+    except Exception as err:
+        logger.error(f"Error in init_private_list_members_task: {err}")

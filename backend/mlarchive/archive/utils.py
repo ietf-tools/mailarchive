@@ -1,9 +1,7 @@
 from builtins import input
 
-import base64
 import datetime
 import email
-import hashlib
 import json
 import logging
 import mailbox
@@ -12,16 +10,17 @@ import re
 import requests
 import shutil
 import subprocess
+import sys
 from collections import defaultdict
 
 import mailmanclient
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.http import HttpResponse
-from django.utils.encoding import smart_bytes
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 
-from mlarchive.archive.models import EmailList, Subscriber, Redirect
+from mlarchive.archive.models import EmailList, Subscriber, Redirect, UserEmail, MailmanMember, User
 from mlarchive.archive.mail import MessageWrapper
 # from mlarchive.archive.signals import _export_lists, _list_save_handler
 
@@ -142,74 +141,6 @@ def jsonapi(fn):
     return to_json
 
 
-def lookup_user(address):
-    '''
-    This function takes an email address and looks in Datatracker for an associated
-    Datatracker account name.  Returns None if the email is not found or if there is no
-    associated User account.
-    '''
-    # check cache
-    username_map = cache.get('username_map')
-    if username_map and address in username_map:
-        return username_map[address]
-
-    apikey = settings.DATATRACKER_PERSON_ENDPOINT_API_KEY
-    url = settings.DATATRACKER_PERSON_ENDPOINT
-    data = {'apikey': apikey, '_expand': 'user', 'email': address}
-
-    try:
-        response = requests.post(url, data, timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
-    except requests.exceptions.RequestException as error:
-        logger.error(str(error))
-        return None
-
-    if response.status_code != 200:
-        logger.error('Call to %s returned error %s' % (url, response.status_code))
-        return None
-
-    try:
-        output = response.json()
-        person_ids = list(output['person.person'])
-        if not person_ids:
-            logger.warning(f'lookup_user failed for {address}')
-            return None
-        username = output['person.person'][person_ids[0]]['user']['username']
-    except (TypeError, LookupError) as error:
-        logger.error(str(error))
-        return None
-
-    if username_map is None:
-        username_map = {}
-
-    username_map[address] = username
-    cache.set('username_map', username_map, timeout=None)
-
-    return username
-
-
-def process_members(email_list, emails):
-    '''
-    This function takes an EmailList object and a list of emails, from the mailman list_members
-    command and creates the appropriate list membership relationships
-    '''
-    email_mapping = {}
-    members = email_list.members.all()
-    for address in emails:
-        if address in email_mapping:
-            name = email_mapping[address]
-        else:
-            name = lookup_user(address)
-            email_mapping[address] = name
-
-        if name:
-            try:
-                user = User.objects.get(username__iexact=name)
-            except User.DoesNotExist:
-                user = User.objects.create(username=name, email=name)
-            if user not in members:
-                email_list.members.add(user)
-
-
 def add_cloudflare_credentials(params):
     params['headers']['CF-Access-Client-Id'] = settings.MAILMAN_CF_ACCESS_CLIENT_ID
     params['headers']['CF-Access-Client-Secret'] = settings.MAILMAN_CF_ACCESS_CLIENT_SECRET
@@ -286,7 +217,7 @@ def get_subscriber_counts():
     Subscriber.objects.bulk_create(subscribers)
 
 
-def get_membership_3(quiet=False):
+def get_membership(quiet=False):
     '''For all private lists, get membership from mailman 3 API and update
     list membership as needed.
 
@@ -312,16 +243,22 @@ def get_membership_3(quiet=False):
             continue
         fqdn = plist.name + '@' + fqdn_map[plist.name]
         mailman_list = client.get_list(fqdn)
-        mailman_members = mailman_list.members
-        members = [m.email for m in mailman_members]
-        sha = hashlib.sha1(smart_bytes(members))
-        digest = base64.urlsafe_b64encode(sha.digest())
-        digest = digest.decode()
-        if plist.members_digest != digest:
+        mailman_members = [m.email for m in mailman_list.members]
+        existing_members = plist.mailmanmember_set.values_list('address', flat=True)
+        # handle new members
+        for address in set(mailman_members) - set(existing_members):
+            MailmanMember.objects.create(email_list=plist, address=address)
+            try:
+                user_email = UserEmail.objects.get(address=address)
+            except UserEmail.DoesNotExist:
+                continue
+            plist.members.add(user_email.user)
             has_changed = True
-            process_members(plist, members)
-            plist.members_digest = digest
-            plist.save()
+        # handle deleted members
+        for addresss in set(existing_members) - set(mailman_members):
+            # do not delete unsubscribed members
+            # one time subscribers retain access to the archives
+            pass
 
     if has_changed:
         _export_lists()
@@ -448,3 +385,229 @@ def move_list(source, target):
         # create redirect
         new_url = msg.get_absolute_url()
         Redirect.objects.create(old=old_url, new=new_url)
+
+
+def get_known_emails(email):
+    '''Calls Datatracker API to retrieve all known emails related to given email'''
+    url = settings.DATATRACKER_EMAIL_RELATED_URL.format(email=email)
+    headers = {
+        "X-API-KEY": settings.DATATRACKER_EMAIL_RELATED_API_KEY,
+        "Accept": "application/json",
+    }
+    response = requests.get(url, headers=headers, timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
+    if response.status_code == 200:
+        try:
+            data = response.json()
+        except ValueError as e:
+            logger.error(f'get_known_emails(): cannot decode response {e}')
+        if 'addresses' in data:
+            return data['addresses']
+        else:
+            logger.warning('get_known_emails(): No addresses in response')
+    else:
+        logger.warning(f'get_known_emails(): Received unexpected status code {response.status_code}')
+
+    return []
+
+# -------------------------------------------------------
+# Delete functions below after migrating
+# -------------------------------------------------------
+
+def init_private_list_members():
+    # init mailmanmember for all private lists in mailman
+    init_mailmanmember()
+
+    # check / migrate users
+    # per Robert, do not attempt to convert these, rely on
+    # user requests if needed to provide access to old lists
+    # init_check_users()
+
+    # set missing emails
+    init_set_user_email()
+
+    # derive mailmanmember for old private lists
+    init_derived_mailmanmember()
+
+
+def init_mailmanmember():
+    '''Get members for all private lists from mailman and
+    create MailmanMember objects'''
+    client = mailmanclient.Client(
+        settings.MAILMAN_API_URL,
+        settings.MAILMAN_API_USER,
+        settings.MAILMAN_API_PASSWORD,
+        request_hooks=[add_cloudflare_credentials])
+
+    private_lists = get_mailman_lists(private=True)
+    fqdn_map = get_fqdn_map()
+    for plist in private_lists:
+        if plist.name not in fqdn_map:
+            logger.warning("Can't find fqdn for list: {}".format(plist.name))
+            continue
+        fqdn = plist.name + '@' + fqdn_map[plist.name]
+        mailman_list = client.get_list(fqdn)
+        mailman_members = [m.email for m in mailman_list.members]
+        existing_members = plist.mailmanmember_set.values_list('address', flat=True)
+        # handle new members
+        for address in set(mailman_members) - set(existing_members):
+            MailmanMember.objects.create(email_list=plist, address=address)
+
+
+def init_check_users():
+    '''For all Users, check that User.username is an email in Datatracker.
+    If not, it was a User.username from Datatracker. Find the primary email
+    for this Datatracker account and change username,email to that.
+    '''
+    count = 0
+    for user in User.objects.all():
+        # check if user.username is a known datatracker email
+        logger.info(f'checking {user.username}')
+        is_valid_email = True
+        try:
+            validate_email(user.username)
+        except ValidationError:
+            is_valid_email = False
+            logger.info(f'{user.username} is not a valid email. Not looking up.')
+
+        if is_valid_email:
+            is_known_email = lookup_user(user.username) is not None
+        else:
+            is_known_email = False
+
+        if not is_known_email:
+            count = count + 1
+            email = username_to_email(username=user.username)
+            if not email:
+                logger.warn(f'init_check_users: no email found for {user.username}')
+                # logger.info(f'deleting user {user.username}')
+                # user.delete()
+                continue
+            logger.info(f'Found non-email user.username. Converting {user.username} to {email}')
+            logger.info(f'{user.username}=>{email}')
+            new_user, created = User.objects.get_or_create(username=email, defaults={'email': email})
+            emaillists = user.emaillist_set.all()
+            new_user.emaillist_set.add(*emaillists)
+            # assert user.last_login is None      # confirm never logged in
+            # logger.info(f'deleting user {user.username}')
+            # user.delete()
+    logger.info(f'{count} changed')
+
+
+def init_set_user_email():
+    '''Old Users created by get_subscribers didn't get email set. Set from
+    username if it is a valid email'''
+    for user in User.objects.filter(email=''):
+        try:
+            validate_email(user.username)
+        except ValidationError:
+            continue
+        user.email = user.username
+        user.save()
+
+
+def init_derived_mailmanmember():
+    '''For private lists no longer managed by mailman (they have been closed / deleted)
+    create MailmanMember objects for all current member relations. This preserves the
+    list membership going forward in the archive with the new setup. This way if
+    someone had subscribed to an old list with an email Datatracker didn't know about,
+    now when they add that email to Datatracker the member relationship will be created
+    and access granted.
+    '''
+    mailman_lists = get_mailman_lists(private=True)
+    pks = [x.pk for x in mailman_lists]
+    non_mailman_lists = EmailList.objects.filter(private=True).exclude(pk__in=pks)
+    for elist in non_mailman_lists:
+        for member in elist.members.all():
+            MailmanMember.objects.create(email_list=elist, address=member.username)
+
+
+def lookup_user(address):
+    '''
+    This function takes an email address and looks in Datatracker for an associated
+    Datatracker account name.  Returns None if the email is not found or if there is no
+    associated User account.
+    '''
+    # check cache
+    username_map = cache.get('username_map')
+    if username_map and address in username_map:
+        return username_map[address]
+
+    apikey = settings.DATATRACKER_PERSON_ENDPOINT_API_KEY
+    url = settings.DATATRACKER_PERSON_ENDPOINT
+    data = {'apikey': apikey, '_expand': 'user', 'email': address}
+
+    try:
+        response = requests.post(url, data, timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
+    except requests.exceptions.RequestException as error:
+        logger.error(str(error))
+        return None
+
+    if response.status_code != 200:
+        logger.error('Call to %s returned error %s' % (url, response.status_code))
+        return None
+
+    try:
+        output = response.json()
+        person_ids = list(output['person.person'])
+        if not person_ids:
+            logger.warning(f'lookup_user failed for {address}')
+            return None
+        user = output['person.person'][person_ids[0]]['user']
+        if user == 'None':
+            return None
+        username = user['username']
+    except (TypeError, LookupError) as error:
+        logger.error(f'lookup_user json response: {output}')
+        logger.error(str(error))
+        return None
+
+    if username_map is None:
+        username_map = {}
+
+    username_map[address] = username
+    cache.set('username_map', username_map, timeout=None)
+
+    return username
+
+
+def username_to_email(username):
+    apikey = settings.DATATRACKER_PERSON_ENDPOINT_API_KEY
+    url = settings.DATATRACKER_PERSON_ENDPOINT
+    data = {'apikey': apikey, '_expand': 'email_set', 'user__username': username}
+
+    try:
+        response = requests.post(url, data, timeout=settings.DEFAULT_REQUESTS_TIMEOUT)
+    except requests.exceptions.RequestException as error:
+        logger.error(str(error))
+        return None
+
+    if response.status_code != 200:
+        logger.error('Call to %s returned error %s' % (url, response.status_code))
+        return None
+
+    try:
+        output = response.json()
+        person_ids = list(output['person.person'])
+        if not person_ids:
+            logger.warning(f'username_to_email failed for {username}')
+            return None
+        email_set = output["person.person"][person_ids[0]]["email_set"]
+        found_email = next(
+            (email for email, details in email_set.items() if details.get("primary")), None
+        )
+        if not found_email:
+            # try active
+            found_email = next(
+                (email for email, details in email_set.items() if details.get("active")), None
+            )
+        if not found_email:
+            # settle for inactive
+            found_email = next(
+                (email for email, details in email_set.items()), None
+            )
+
+    except (TypeError, LookupError) as error:
+        logger.error(str(error))
+        return None
+
+    return found_email

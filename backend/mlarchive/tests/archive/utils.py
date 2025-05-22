@@ -15,11 +15,11 @@ from django.core.cache import cache
 from django.contrib.auth.models import AnonymousUser
 from django.http import QueryDict
 from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
-    lookup_user, process_members, check_inactive, EmailList, purge_incoming,
+    check_inactive, EmailList, purge_incoming,
     create_mbox_file, _get_lists_as_xml, get_subscribers, Subscriber,
-    get_mailman_lists, get_membership_3, get_subscriber_counts, get_fqdn,
+    get_mailman_lists, get_membership, get_subscriber_counts, get_fqdn,
     update_mbox_files, _export_lists, move_list)
-from mlarchive.archive.models import User, Message, Redirect
+from mlarchive.archive.models import User, Message, Redirect, MailmanMember, UserEmail
 from mlarchive.archive.mail import make_hash
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.backends.elasticsearch import search_from_form
@@ -177,63 +177,10 @@ def test_get_lists_for_user(admin_user):
     assert private2.name not in lists
 
 
-@patch('requests.post')
-def test_lookup_user(mock_post):
-    # setup mocks
-    response1 = requests.Response()
-    response1.status_code = 404
-    response2 = requests.Response()
-    response2.status_code = 200
-    response2._content = b'{"person.person": {"1": {"user": ""}}}'
-    response3 = requests.Response()
-    response3.status_code = 200
-    response3._content = b'{"person.person": {"1": {"user": {"username": "joe@example.com"}}}}'
-    mock_post.side_effect = [response1, response2, response3]
-    # test error status
-    user = lookup_user('joe@example.com')
-    assert user is None
-    # test no user object
-    user = lookup_user('joe@example.com')
-    assert user is None
-    # test success
-    user = lookup_user('joe@example.com')
-    assert user == 'joe@example.com'
-
-
-@patch('requests.post')
-@pytest.mark.django_db(transaction=True)
-def test_process_members(mock_post):
-    response = requests.Response()
-    response.status_code = 200
-    response._content = b'{"person.person": {"1": {"user": {"username": "joe@example.com"}}}}'
-    mock_post.return_value = response
-    email_list = EmailListFactory.create(name='private', private=True)
-    assert email_list.members.count() == 0
-    process_members(email_list, ['joe@example.com'])
-    assert email_list.members.count() == 1
-    assert email_list.members.get(username='joe@example.com')
-
-
-@patch('requests.post')
-@pytest.mark.django_db(transaction=True)
-def test_process_members_case_insensitive(mock_post):
-    response = requests.Response()
-    response.status_code = 200
-    response._content = b'{"person.person": {"1": {"user": {"username": "Joe@example.com"}}}}'
-    mock_post.return_value = response
-    email_list = EmailListFactory.create(name='private', private=True)
-    user = User.objects.create(username='joe@example.com')
-    email_list.members.add(user)
-    assert email_list.members.count() == 1
-    process_members(email_list, ['Joe@example.com'])
-    assert email_list.members.count() == 1
-    assert email_list.members.get(username='joe@example.com')
-
-
 @patch('mailmanclient.restbase.connection.Connection.call')
-@patch('requests.post')
+# @patch('requests.post')
 @pytest.mark.django_db(transaction=True)
-def test_get_membership_3(mock_post, mock_client):
+def test_get_membership(mock_client):
     # setup
     today_utc = datetime.datetime.now(datetime.timezone.utc).date()
     date_string = today_utc.strftime('%Y%m%d')
@@ -241,7 +188,8 @@ def test_get_membership_3(mock_post, mock_client):
     if os.path.exists(path):
         os.remove(path)
     private = EmailListFactory.create(name='private', private=True)
-
+    user = UserFactory.create()
+    _ = UserEmail.objects.create(user=user, address='holden.ford@example.com')
     # prep mock
     response_lists = requests.Response()
     response_lists.status_code = 200
@@ -252,21 +200,19 @@ def test_get_membership_3(mock_post, mock_client):
     response_members = requests.Response()
     response_members.status_code = 200
     response_members._content = json.dumps(MAILMAN_MEMBERS).encode('ascii')
-    response_lookup = requests.Response()
-    response_lookup.status_code = 200
-    response_lookup._content = b'{"person.person": {"1": {"user": {"username": "bperson@example.com"}}}}'
     mock_client.side_effect = [
-        (response_lists, response_lists.json()),
-        (response_lists, response_lists.json()),
-        (response_list, response_list.json()),
-        (response_members, response_members.json())]
-    mock_post.return_value = response_lookup
+        (response_lists, response_lists.json()),        # get_mailman_lists
+        (response_lists, response_lists.json()),        # get_fqdn_map
+        (response_list, response_list.json()),          # client.get_list
+        (response_members, response_members.json())]    # mailman_list.members
     assert private.members.count() == 0
-    get_membership_3(quiet=True)
+    assert MailmanMember.objects.count() == 0
+    get_membership(quiet=True)
+    assert MailmanMember.objects.filter(email_list=private).count() == 1
     print(EmailList.objects.all())
     print(User.objects.all())
     assert private.members.count() == 1
-    assert private.members.first().username == 'bperson@example.com'
+    assert private.members.first().username == 'admin'
     assert os.path.exists(path)
 
 

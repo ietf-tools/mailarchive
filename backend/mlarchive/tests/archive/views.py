@@ -17,9 +17,10 @@ from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils.encoding import smart_str
 from factories import EmailListFactory, MessageFactory, UserFactory, SubscriberFactory
-from mlarchive.archive.models import Message, Attachment, Redirect
+from mlarchive.archive.models import Message, Attachment, Redirect, EmailList
 from mlarchive.archive.views import (TimePeriod, add_nav_urls, is_small_year,
-    get_this_next_periods, get_date_endpoints, get_thread_endpoints, DateStaticIndexView)
+    get_this_next_periods, get_date_endpoints, get_thread_endpoints, DateStaticIndexView,
+    CustomBrowseView)
 from mlarchive.utils.test_utils import login_testing_unauthorized
 from mlarchive.utils.test_utils import load_message
 
@@ -271,6 +272,24 @@ def test_browse_gbt(client, messages):
     assert len(response.context['results']) == 6
     # assert proper order
     assert [r.pk for r in response.context['results']] == [m.pk for m in messages]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_gbt_build_page(client, messages):
+    '''Test that query.high_mark is raised to results_per_page to
+    avoid slow queries with low LIMIT
+    '''
+    email_list = EmailList.objects.get(name='apple')
+    url = reverse('archive_browse_list', kwargs={'list_name': 'apple'}) + '?gbt=1'
+    request = RequestFactory().get(url)
+    view = CustomBrowseView()
+    view.setup(request, list_name='apple', email_list=email_list)
+    _ = view.get(request, list_name='apple', email_list=email_list)
+    paginator, page = view.build_page()
+    count = email_list.message_set.count()
+    assert page.object_list.query.high_mark > count
+    assert page.object_list.query.high_mark == view.results_per_page
+    assert f'LIMIT {view.results_per_page}' in str(page.object_list.query)
 
 
 @pytest.mark.django_db(transaction=True)

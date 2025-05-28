@@ -10,6 +10,7 @@ import os
 import sys
 import environ
 from email.utils import getaddresses
+from urllib.parse import urljoin
 
 from mlarchive import __version__, __release_hash__
 
@@ -34,6 +35,7 @@ env = environ.Env(
     DATABASES_HOST=(str, ''),
     DATABASES_PORT=(str, ''),
     DATABASES_OPTS_JSON=(str, '{}'),
+    DATATRACKER_API_BASE_URL=(str, ''),
     DATATRACKER_PERSON_ENDPOINT_API_KEY=(str, ''),
     DATATRACKER_EMAIL_RELATED_API_KEY=(str, ''),
     DEBUG=(bool, False),
@@ -367,9 +369,10 @@ IMPORT_DIR = os.path.join(DATA_ROOT, 'incoming')
 
 
 # DATATRACKER API
-DATATRACKER_PERSON_ENDPOINT = 'https://datatracker.ietf.org/api/v2/person/person'
+DATATRACKER_API_BASE_URL = env('DATATRACKER_API_BASE_URL')
+DATATRACKER_PERSON_ENDPOINT = urljoin(DATATRACKER_API_BASE_URL, '/api/v2/person/person/')
 DATATRACKER_PERSON_ENDPOINT_API_KEY = env('DATATRACKER_PERSON_ENDPOINT_API_KEY')
-DATATRACKER_EMAIL_RELATED_URL = 'https://datatracker.ietf.org/api/person/email/{email}/related/'
+DATATRACKER_EMAIL_RELATED_URL = urljoin(DATATRACKER_API_BASE_URL, '/api/person/email/{email}/related/')
 DATATRACKER_EMAIL_RELATED_API_KEY = env('DATATRACKER_EMAIL_RELATED_API_KEY')
 
 # CLOUDFLARE  INTEGRATION

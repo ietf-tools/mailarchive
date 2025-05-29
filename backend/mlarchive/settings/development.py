@@ -4,6 +4,12 @@ from .base import *
 
 ALLOWED_HOSTS = ['*']
 
+DEBUG = True
+
+SERVER_MODE = 'development'
+
+AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
+
 import logging
 
 LOGGING = {

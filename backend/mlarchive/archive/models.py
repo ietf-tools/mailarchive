@@ -548,7 +548,8 @@ class UserEmail(models.Model):
     address = models.EmailField()
 
     def __str__(self):
-        return f'{self.user.name}:{self.address}'
+        return f'{self.user.username}:{self.address}'
+
 
 class MailmanMember(models.Model):
     email_list = models.ForeignKey(EmailList, on_delete=models.CASCADE)

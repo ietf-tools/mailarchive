@@ -109,7 +109,7 @@
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        {% if server_mode == "production" or server_mode == "development" %}
+                        {% if server_mode == "production" %}
                             <a class="nav-link" href="{% url 'oidc_authentication_init' %}" rel="nofollow">Sign in</a>
                         {% else %}
                             <a class="nav-link" href="{% url 'login' %}" rel="nofollow">Sign in</a>

@@ -139,7 +139,7 @@ spec:
       - ReadWriteOnce
       resources:
         requests:
-          storage: 25Gi
+          storage: 32Gi
       # storageClassName: ""
   - metadata:
       name: es-config # PVC for Elasticsearch configuration

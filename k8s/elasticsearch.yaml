@@ -33,19 +33,33 @@ spec:
             privileged: true
             runAsUser: 0
           command: ['sh', '-c', 'sysctl -w vm.max_map_count=262144']
-        - name: update-keystore
-          command:
-          - sh
-          - -c
-          - |
-            whoami
-            pwd
-            echo "$(printenv AZURE_BACKUP_ACCOUNT)" | bin/elasticsearch-keystore add --stdin --force azure.client.default.account
-            echo "$(printenv AZURE_BACKUP_KEY)" | bin/elasticsearch-keystore add --stdin --force azure.client.default.key
-            ls -l config
-            bin/elasticsearch-keystore list
-            cp -r --preserve=mode,ownership /usr/share/elasticsearch/config/. /tmp/keystore/
+      containers:
+        - image: "ghcr.io/ietf-tools/mailarchive-elasticsearch:latest"
+          imagePullPolicy: IfNotPresent
+          name: elasticsearch
+          ports:
+            - name: elasticsearch
+              containerPort: 9200
+              protocol: TCP
+          volumeMounts:
+            - name: es-data
+              mountPath: /usr/share/elasticsearch/data
+            - name: es-snapshots
+              mountPath: /mnt/snapshots
           env:
+            - name: discovery.type
+              value: single-node
+            - name: xpack.security.enabled
+              value: "true"
+            - name: ELASTIC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ml-secrets-env
+                  key: ELASTICSEARCH_PASSWORD
+            - name: path.repo
+              value: /mnt/snapshots
+            - name: ES_JAVA_OPTS
+              value: "-Xms1g -Xmx1g"
             - name: AZURE_BACKUP_KEY
               valueFrom:
                 secretKeyRef:
@@ -66,47 +80,6 @@ spec:
                 secretKeyRef:
                   name: ml-secrets-env
                   key: AZURE_BACKUP_BASE_PATH
-          image: "ghcr.io/ietf-tools/mailarchive-elasticsearch:latest"
-          imagePullPolicy: IfNotPresent
-          resources: {}
-          securityContext:
-            runAsGroup: 1000
-            runAsNonRoot: true
-            runAsUser: 1000
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: File
-          volumeMounts:
-          - name: es-config
-            mountPath: /tmp/keystore/
-      containers:
-        - image: "ghcr.io/ietf-tools/mailarchive-elasticsearch:latest"
-          imagePullPolicy: IfNotPresent
-          name: elasticsearch
-          ports:
-            - name: elasticsearch
-              containerPort: 9200
-              protocol: TCP
-          volumeMounts:
-            - name: es-data
-              mountPath: /usr/share/elasticsearch/data
-            - name: es-snapshots
-              mountPath: /mnt/snapshots
-            - name: es-config
-              mountPath: /usr/share/elasticsearch/config
-          env:
-            - name: discovery.type
-              value: single-node
-            - name: xpack.security.enabled
-              value: "true"
-            - name: ELASTIC_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: ml-secrets-env
-                  key: ELASTICSEARCH_PASSWORD
-            - name: path.repo
-              value: /mnt/snapshots
-            - name: ES_JAVA_OPTS
-              value: "-Xms1g -Xmx1g"
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -129,7 +102,6 @@ spec:
       volumes:
         # To be overriden with the actual shared volume
         - name: es-snapshots
-        - name: es-config
   volumeClaimTemplates:
   - metadata:
       name: es-data
@@ -140,14 +112,6 @@ spec:
         requests:
           storage: 32Gi
       # storageClassName: ""
-  - metadata:
-      name: es-config # PVC for Elasticsearch configuration
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 1Gi
 ---
 apiVersion: v1
 kind: Service

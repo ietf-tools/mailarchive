@@ -33,6 +33,51 @@ spec:
             privileged: true
             runAsUser: 0
           command: ['sh', '-c', 'sysctl -w vm.max_map_count=262144']
+        - name: update-keystore
+          command:
+          - sh
+          - -c
+          - |
+            whoami
+            pwd
+            echo "$(printenv AZURE_BACKUP_ACCOUNT)" | bin/elasticsearch-keystore add --stdin --force azure.client.default.account
+            echo "$(printenv AZURE_BACKUP_KEY)" | bin/elasticsearch-keystore add --stdin --force azure.client.default.key
+            ls -l config
+            bin/elasticsearch-keystore list
+            cp -a /usr/share/elasticsearch/config/elasticsearch.keystore /tmp/keystore/
+          env:
+            - name: AZURE_BACKUP_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ml-secrets-env
+                  key: AZURE_BACKUP_KEY
+            - name: AZURE_BACKUP_ACCOUNT
+              valueFrom:
+                secretKeyRef:
+                  name: ml-secrets-env
+                  key: AZURE_BACKUP_ACCOUNT
+            - name: AZURE_BACKUP_CONTAINER
+              valueFrom:
+                secretKeyRef:
+                  name: ml-secrets-env
+                  key: AZURE_BACKUP_CONTAINER
+            - name: AZURE_BACKUP_BASE_PATH
+              valueFrom:
+                secretKeyRef:
+                  name: ml-secrets-env
+                  key: AZURE_BACKUP_BASE_PATH
+          image: "ghcr.io/ietf-tools/mailarchive-elasticsearch:latest"
+          imagePullPolicy: IfNotPresent
+          resources: {}
+          securityContext:
+            runAsGroup: 1000
+            runAsNonRoot: true
+            runAsUser: 1000
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - name: es-config
+            mountPath: /tmp/keystore
       containers:
         - image: "ghcr.io/ietf-tools/mailarchive-elasticsearch:latest"
           imagePullPolicy: IfNotPresent
@@ -46,6 +91,9 @@ spec:
               mountPath: /usr/share/elasticsearch/data
             - name: es-snapshots
               mountPath: /mnt/snapshots
+            - name: es-config
+              mountPath: /usr/share/elasticsearch/config/elasticsearch.keystore
+              subPath: elasticsearch.keystore
           env:
             - name: discovery.type
               value: single-node
@@ -82,6 +130,7 @@ spec:
       volumes:
         # To be overriden with the actual shared volume
         - name: es-snapshots
+        - name: es-config
   volumeClaimTemplates:
   - metadata:
       name: es-data
@@ -90,8 +139,16 @@ spec:
       - ReadWriteOnce
       resources:
         requests:
-          storage: 25Gi
+          storage: 32Gi
       # storageClassName: ""
+  - metadata:
+      name: es-config # PVC for Elasticsearch configuration
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
 ---
 apiVersion: v1
 kind: Service

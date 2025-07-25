@@ -44,6 +44,7 @@ spec:
             echo "$(printenv AZURE_BACKUP_KEY)" | bin/elasticsearch-keystore add --stdin --force azure.client.default.key
             ls -l config
             bin/elasticsearch-keystore list
+            cp -a /usr/share/elasticsearch/config/. /tmp/keystore/
           env:
             - name: AZURE_BACKUP_KEY
               valueFrom:
@@ -76,7 +77,7 @@ spec:
           terminationMessagePolicy: File
           volumeMounts:
           - name: es-config
-            mountPath: /usr/share/elasticsearch/config
+            mountPath: /tmp/keystore/
       containers:
         - image: "ghcr.io/ietf-tools/mailarchive-elasticsearch:latest"
           imagePullPolicy: IfNotPresent

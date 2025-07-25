@@ -44,7 +44,7 @@ spec:
             echo "$(printenv AZURE_BACKUP_KEY)" | bin/elasticsearch-keystore add --stdin --force azure.client.default.key
             ls -l config
             bin/elasticsearch-keystore list
-            cp -a /usr/share/elasticsearch/config/. /tmp/keystore/
+            cp -r --preserve=mode,ownership /usr/share/elasticsearch/config/. /tmp/keystore/
           env:
             - name: AZURE_BACKUP_KEY
               valueFrom:

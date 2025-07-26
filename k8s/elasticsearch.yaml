@@ -35,7 +35,7 @@ spec:
           command: ['sh', '-c', 'sysctl -w vm.max_map_count=262144']
       containers:
         - image: "ghcr.io/ietf-tools/mailarchive-elasticsearch:latest"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           name: elasticsearch
           ports:
             - name: elasticsearch

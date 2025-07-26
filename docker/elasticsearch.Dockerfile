@@ -8,3 +8,4 @@ RUN sed -i 's/\r$//' /docker-init.sh && \
     chmod +x /docker-init.sh
 
 ENTRYPOINT ["/bin/tini", "--", "/docker-init.sh"]
+CMD ["eswrapper"]

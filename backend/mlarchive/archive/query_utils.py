@@ -1,6 +1,6 @@
+import datetime
 import random
 import re
-from datetime import datetime, timedelta, timezone
 
 from django.conf import settings
 from django.core.cache import cache
@@ -129,17 +129,17 @@ def get_qdr_time(val):
     and returns the corresponding datetime to use in the search filter.
     EXAMPLE: h -> now - one hour
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     if val == 'h':
-        return now - timedelta(hours=1)
+        return now - datetime.timedelta(hours=1)
     elif val == 'd':
-        return now - timedelta(days=1)
+        return now - datetime.timedelta(days=1)
     elif val == 'w':
-        return now - timedelta(weeks=1)
+        return now - datetime.timedelta(weeks=1)
     elif val == 'm':
-        return now - timedelta(days=30)
+        return now - datetime.timedelta(days=30)
     elif val == 'y':
-        return now - timedelta(days=365)
+        return now - datetime.timedelta(days=365)
 
 
 def get_qdr_time_iso(val):

@@ -50,7 +50,7 @@ class MsgCountView(View):
             self.data['start'] = self.request.GET.get('start')
             try:
                 sdate = isoparse(self.data['start'])
-                filters['date__gte'] = sdate.astimezone(datetime.timezone.utc)
+                filters['date__gte'] = sdate.astimezone(datetime.UTC)
             except ValueError:
                 raise HttpJson400('invalid start date')
         if 'end' in self.request.GET:
@@ -59,12 +59,12 @@ class MsgCountView(View):
             self.data['end'] = self.request.GET.get('end')
             try:
                 edate = isoparse(self.data['end'])
-                filters['date__lt'] = edate.astimezone(datetime.timezone.utc)
+                filters['date__lt'] = edate.astimezone(datetime.UTC)
             except ValueError:
                 raise HttpJson400('invalid end date')
         # default to previous month if no dates or duration given
         if 'start' not in self.request.GET and 'end' not in self.request.GET and 'duration' not in self.request.GET:
-            end = datetime.datetime.now(datetime.timezone.utc)
+            end = datetime.datetime.now(datetime.UTC)
             start = end - relativedelta(months=1)
             self.data['start'] = start.strftime("%Y%m%d")
             self.data['end'] = end.strftime("%Y%m%d")
@@ -91,7 +91,7 @@ class MsgCountView(View):
                 filters['date__gte'] = start
             else:
                 # only duration appears in parameters
-                end = datetime.datetime.now(datetime.timezone.utc)
+                end = datetime.datetime.now(datetime.UTC)
                 start = end - relativedelta(**kwargs)
                 self.data['start'] = start.strftime("%Y%m%d")
                 self.data['end'] = end.strftime("%Y%m%d")
@@ -145,12 +145,12 @@ class SubscriberCountsView(View):
             self.data['date'] = self.request.GET.get('date')
             try:
                 date = isoparse(self.data['date'])
-                filters['date'] = date.astimezone(datetime.timezone.utc)
+                filters['date'] = date.astimezone(datetime.UTC)
             except ValueError:
                 raise HttpJson400('invalid date')
         # default to previous month if date not given
         else:
-            date = datetime.datetime.now(datetime.timezone.utc) - relativedelta(months=1)
+            date = datetime.datetime.now(datetime.UTC) - relativedelta(months=1)
             date = date.replace(day=1)
             self.data['date'] = date.strftime("%Y%m%d")
             filters['date'] = date
@@ -391,7 +391,7 @@ class SearchMessageView(View):
             # message date is stored as timezone aware UTC
             # for simplicity omit the +00:00 offset in the date field
             # by first converting to a naive datetime
-            dt = msg_obj.date.astimezone(datetime.timezone.utc)
+            dt = msg_obj.date.astimezone(datetime.UTC)
             dt_naive = dt.replace(tzinfo=None)
             message['date'] = dt_naive.isoformat()
             results.append(message)

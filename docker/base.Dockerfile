@@ -1,4 +1,4 @@
-FROM python:3.9-bullseye
+FROM python:3.12-bookworm
 LABEL maintainer="Ryan Cross <rcross@amsl.com>"
 
 # Ensure apt is in non-interactive to avoid prompts

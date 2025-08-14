@@ -295,6 +295,8 @@ def test_browse_gbt_build_page(client, messages):
 @pytest.mark.django_db(transaction=True)
 def test_browse_list_sort_subject(client, messages):
     url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?so=subject'
+    for msg in Message.objects.filter(email_list__name='pubone').order_by('base_subject'):
+        print(msg.base_subject)
     response = client.get(url)
     assert response.status_code == 200
     assert len(response.context['results']) == 5

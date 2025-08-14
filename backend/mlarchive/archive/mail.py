@@ -752,7 +752,7 @@ class MessageWrapper(object):
         for func in (get_received_date, get_header_date, get_envelope_date):
             date = func(self.email_message)
             if date:
-                return date.astimezone(datetime.timezone.utc)
+                return date.astimezone(datetime.UTC)
 
         else:
             # can't really proceed without a date, likely indicates bigger parsing error

@@ -294,7 +294,7 @@ class DateForm(forms.Form):
             sdate = isoparse(start_date)
         except ValueError:
             raise forms.ValidationError('Invalid date')
-        return sdate.astimezone(datetime.timezone.utc)
+        return sdate.astimezone(datetime.UTC)
 
     def clean_end_date(self):
         end_date = self.cleaned_data['end_date']
@@ -302,4 +302,4 @@ class DateForm(forms.Form):
             edate = isoparse(end_date)
         except ValueError:
             raise forms.ValidationError('Invalid date')
-        return edate.astimezone(datetime.timezone.utc)
+        return edate.astimezone(datetime.UTC)

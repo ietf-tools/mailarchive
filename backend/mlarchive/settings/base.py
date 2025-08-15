@@ -399,7 +399,8 @@ OIDC_STORE_ID_TOKEN = True
 OIDC_USERNAME_ALGO = 'mlarchive.authbackend.oidc.generate_username'
 
 # DJANGO DEBUG TOOLBAR SETTINGS
-if env('DEBUG_TOOLBAR_ON'):
+DEBUG_TOOLBAR_ON = env('DEBUG_TOOLBAR_ON')
+if DEBUG_TOOLBAR_ON:
     INSTALLED_APPS.append('debug_toolbar')
     MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
     DEBUG_TOOLBAR_CONFIG = {'INSERT_BEFORE': '<!-- debug_toolbar_here -->'}

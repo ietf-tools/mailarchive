@@ -301,6 +301,7 @@ async function main () {
       `VIRTUAL_PORT=8000`,
       `PGHOST=ma-db-${branch}`,
       `DEBUG=True`,
+      `DEBUG_TOOLBAR_ON=True`,
       `ELASTICSEARCH_HOST=ma-es-${branch}`,
       `ELASTICSEARCH_SIGNAL_PROCESSOR=mlarchive.archive.signals.RealtimeSignalProcessor`
     ],

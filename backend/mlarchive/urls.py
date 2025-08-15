@@ -28,7 +28,7 @@ urlpatterns = [
         name='django.contrib.sitemaps.views.sitemap'),
 ]
 
-if settings.DEBUG:
+if settings.DEBUG_TOOLBAR_ON:
     import debug_toolbar
     urlpatterns = [
         path('__debug__/', include(debug_toolbar.urls)),

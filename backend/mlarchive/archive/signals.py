@@ -4,7 +4,7 @@ import requests
 import shutil
 import sys
 import traceback
-from cloudflare import Cloudflare
+from cloudflare import Cloudflare, APIError
 
 from importlib import import_module
 
@@ -118,10 +118,10 @@ def purge_files_from_cache(message, created=True):
     urls = get_purge_cache_urls(message, created)
     with Cloudflare(api_token=settings.CLOUDFLARE_AUTH_KEY) as cf:
         try:
-            cf.zones.purge_cache.post(settings.CLOUDFLARE_ZONE_ID, data={'files': urls})
+            cf.cache.purge(zone_id=settings.CLOUDFLARE_ZONE_ID, files=urls)
             logger.info('purging cached urls for list {}'.format(message.email_list.name))
             logger.debug('purging cached urls: {}'.format(urls))
-        except Cloudflare.exceptions.CloudflareAPIError as e:
+        except APIError as e:
             traceback.print_exc(file=sys.stdout)
             logger.error(e)
         except requests.exceptions.HTTPError as e:

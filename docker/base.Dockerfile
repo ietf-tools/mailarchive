@@ -28,7 +28,7 @@ RUN apt-get update --fix-missing && apt-get install -qy \
     locales \
     postgresql-client-16 \
     memcached \
-    netcat \
+    netcat-openbsd \
     nodejs \
     rsync \
     rsyslog \

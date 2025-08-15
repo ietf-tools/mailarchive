@@ -103,10 +103,10 @@ def get_this_next_periods(time_period):
     (datetime(2017,4,1), datetime(2017,5,1))
     """
     if time_period.month:
-        this_period = datetime.datetime(time_period.year, time_period.month, 1, tzinfo=timezone.utc)
+        this_period = datetime.datetime(time_period.year, time_period.month, 1, tzinfo=datetime.UTC)
         next_period = this_period + relativedelta(months=1)
     else:
-        this_period = datetime.datetime(time_period.year, 1, 1, tzinfo=timezone.utc)
+        this_period = datetime.datetime(time_period.year, 1, 1, tzinfo=datetime.UTC)
         next_period = this_period + relativedelta(years=1)
     return (this_period, next_period)
 
@@ -667,7 +667,7 @@ def admin(request):
     })
 
 
-@csp_exempt
+@csp_exempt()
 @staff_member_required
 def admin_console(request):
     weekly_chart_data = get_weekly_data()
@@ -684,7 +684,7 @@ def admin_console(request):
 def get_weekly_data():
     '''Returns weekly archive incoming messages'''
     data = []
-    start = datetime.datetime.now(timezone.utc) - datetime.timedelta(days=365 * 3)
+    start = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=365 * 3)
     start = start.replace(hour=0, second=0, microsecond=0)
     for day in range(156):
         end = start + datetime.timedelta(days=7)
@@ -697,13 +697,13 @@ def get_weekly_data():
 
 def datetime_to_millis(date):
     '''Convert a datetime object to Milliseconds since Unix Epoch'''
-    return (date - datetime.datetime(1970, 1, 1, tzinfo=timezone.utc)).total_seconds() * 1000
+    return (date - datetime.datetime(1970, 1, 1, tzinfo=datetime.UTC)).total_seconds() * 1000
 
 
 def get_top25_data():
     '''Returns incoming message count for top 25 most active lists'''
     counts = {}
-    end = datetime.datetime.now(timezone.utc)
+    end = datetime.datetime.now(datetime.UTC)
     start = end - datetime.timedelta(days=30)
     for message in Message.objects.filter(date__gte=start, date__lt=end).select_related('email_list'):
         name = message.email_list.name
@@ -803,7 +803,7 @@ def browse_static_redirect(request, list_name):
     if last_message:
         return redirect(last_message.get_static_date_page_url())
     else:
-        return redirect('archive_browse_static_date', list_name=list_name, date=datetime.datetime.now(timezone.utc).year)
+        return redirect('archive_browse_static_date', list_name=list_name, date=datetime.datetime.now(datetime.UTC).year)
 
 
 def browse_static_thread_redirect(request, list_name):
@@ -812,7 +812,7 @@ def browse_static_thread_redirect(request, list_name):
     if last_message:
         return redirect(last_message.get_static_thread_page_url())
     else:
-        return redirect('archive_browse_static_thread', list_name=list_name, date=datetime.datetime.now(timezone.utc).year)
+        return redirect('archive_browse_static_thread', list_name=list_name, date=datetime.datetime.now(datetime.UTC).year)
 
 
 @pad_id
@@ -962,7 +962,7 @@ class ReportsMessagesView(LoginRequiredMixin, CSVResponseMixin, TemplateView):
         
         # if no date submitted default to last month
         if 'start_date' not in self.request.GET and 'end_date' not in self.request.GET:
-            now = datetime.datetime.now(timezone.utc)
+            now = datetime.datetime.now(datetime.UTC)
             # last day of last month
             edate = now.replace(day=1, hour=23, minute=59, second=0, microsecond=0) - relativedelta(days=1)
             # first day of last month

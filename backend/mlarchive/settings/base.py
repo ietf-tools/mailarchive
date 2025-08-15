@@ -11,6 +11,7 @@ import sys
 import environ
 from email.utils import getaddresses
 from urllib.parse import urljoin
+from csp.constants import SELF, UNSAFE_INLINE
 
 from mlarchive import __version__, __release_hash__
 
@@ -247,14 +248,46 @@ ELASTICSEARCH_INDEX_MAPPINGS = {
 
 # SECURITY SETTINGS
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Content security policy configuration (django-csp)
-CSP_REPORT_ONLY = False
-CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'")
-CSP_IMG_SRC = ("'self'", 'data:', 'https://online.swagger.io', 'https://validator.swagger.io', 'https://cdn.datatables.net', 'https://static.ietf.org')
-CSP_FONT_SRC = ("'self'", 'data:', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com', 'https://static.ietf.org')
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com', 'https://cdn.datatables.net', 'https://static.ietf.org')
-CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'", 'https://cdnjs.cloudflare.com', 'https://cdn.datatables.net', 'https://static.ietf.org')
-CSP_CONNECT_SRC = ("'self'", 'https://raw.githubusercontent.com')
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "default-src": [SELF, UNSAFE_INLINE],
+        "img-src": [
+            SELF,
+            "data:",
+            "https://online.swagger.io",
+            "https://validator.swagger.io",
+            "https://cdn.datatables.net",
+            "https://static.ietf.org"
+        ],
+        "font-src": [
+            SELF,
+            "data:",
+            "https://fonts.googleapis.com",
+            "https://fonts.gstatic.com",
+            "https://static.ietf.org"
+        ],
+        "style-src": [
+            SELF,
+            UNSAFE_INLINE,
+            "https://cdnjs.cloudflare.com",
+            "https://cdn.datatables.net",
+            "https://static.ietf.org"
+        ],
+        "script-src": [
+            SELF,
+            UNSAFE_INLINE,
+            "https://cdnjs.cloudflare.com",
+            "https://cdn.datatables.net",
+            "https://static.ietf.org"
+        ],
+        "connect-src": [
+            SELF,
+            "https://raw.githubusercontent.com"
+        ]
+    }
+}
 
 # Setting for django_referrer_policy.middleware.ReferrerPolicyMiddleware
 REFERRER_POLICY = 'strict-origin-when-cross-origin'

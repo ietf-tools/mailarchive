@@ -138,7 +138,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django_referrer_policy.middleware.ReferrerPolicyMiddleware',
+    'django.middleware.security.SecurityMiddleware',
     'csp.middleware.CSPMiddleware',
     'mlarchive.middleware.JsonExceptionMiddleware',
 ]
@@ -289,8 +289,8 @@ CONTENT_SECURITY_POLICY = {
     }
 }
 
-# Setting for django_referrer_policy.middleware.ReferrerPolicyMiddleware
-REFERRER_POLICY = 'strict-origin-when-cross-origin'
+# Referrer Policy (built-in since Django 3.0)
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # ARCHIVE SETTINGS
 ARCHIVE_HOST_URL = 'https://mailarchive.ietf.org'

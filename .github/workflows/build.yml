@@ -153,7 +153,7 @@ jobs:
         AWS_ENDPOINT_URL: ${{ secrets.CF_R2_ENDPOINT }}
       run: |
         echo "Collecting statics..."
-        docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/mailarchive-app-base:latest sh build/app/collectstatics.sh
+        docker run --rm --name collectstatics -v $(pwd):/workspace ghcr.io/ietf-tools/mailarchive-app-base:py312 sh build/app/collectstatics.sh
         echo "Pushing statics..."
         cd static
         aws s3 sync . s3://static/mailarchive/$PKG_VERSION --only-show-errors --checksum-algorithm CRC32

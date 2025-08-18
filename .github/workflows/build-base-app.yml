@@ -39,4 +39,6 @@ jobs:
         file: docker/base.Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
-        tags: ghcr.io/ietf-tools/mailarchive-app-base:latest
+        tags: |
+          ghcr.io/ietf-tools/mailarchive-app-base:py312
+          ${{ github.ref == 'refs/heads/main' && 'ghcr.io/ietf-tools/mailarchive-app-base:latest' || '' }}

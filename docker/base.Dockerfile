@@ -1,4 +1,4 @@
-FROM python:3.9-bullseye
+FROM python:3.12-bookworm
 LABEL maintainer="Ryan Cross <rcross@amsl.com>"
 
 # Ensure apt is in non-interactive to avoid prompts
@@ -28,7 +28,7 @@ RUN apt-get update --fix-missing && apt-get install -qy \
     locales \
     postgresql-client-16 \
     memcached \
-    netcat \
+    netcat-openbsd \
     nodejs \
     rsync \
     rsyslog \

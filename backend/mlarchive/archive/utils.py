@@ -38,7 +38,7 @@ MAILMAN_LISTID_PATTERN = re.compile(r'(.*)\.(ietf|irtf|iab|iesg|rfc-editor)\.org
 def _export_lists():
     """Write XML dump of list membership for IMAP"""
 
-    today_utc = datetime.datetime.now(datetime.timezone.utc).date()
+    today_utc = datetime.datetime.now(datetime.UTC).date()
     date_string = today_utc.strftime('%Y%m%d')
     data = _get_lists_as_xml()
     path = os.path.join(settings.EXPORT_DIR, 'email_lists.{}.xml'.format(date_string))
@@ -326,7 +326,7 @@ def create_mbox_file(month, year, elist):
 
 def update_mbox_files():
     '''Update archive mbox files'''
-    yesterday = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
+    yesterday = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=1)
     month = yesterday.month
     year = yesterday.year
     for elist in EmailList.objects.filter(active=True, private=False):

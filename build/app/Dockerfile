@@ -1,4 +1,4 @@
-FROM ghcr.io/ietf-tools/mailarchive-app-base:latest
+FROM ghcr.io/ietf-tools/mailarchive-app-base:py312
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 # set python path

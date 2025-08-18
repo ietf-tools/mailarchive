@@ -4,7 +4,7 @@
 
 [![Release](https://img.shields.io/github/release/ietf-tools/mailarch.svg?style=flat&maxAge=300)](https://github.com/ietf-tools/mailarch/releases)
 [![License](https://img.shields.io/github/license/ietf-tools/mailarch?maxAge=3600)](https://github.com/ietf-tools/mailarch/blob/main/LICENSE)
-[![Python Version](https://img.shields.io/badge/python-3.9-blue?logo=python&logoColor=white)](#prerequisites)
+[![Python Version](https://img.shields.io/badge/python-3.12-blue?logo=python&logoColor=white)](#prerequisites)
 [![Django Version](https://img.shields.io/badge/django-4.2-blue?logo=django&logoColor=white)](#prerequisites)
 [![Node Version](https://img.shields.io/badge/node.js-16.x-green?logo=node.js&logoColor=white)](#prerequisites)
 [![MySQL Version](https://img.shields.io/badge/postgres-14.6-blue?logo=postgresql&logoColor=white)](#prerequisites)

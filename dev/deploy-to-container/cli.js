@@ -78,7 +78,7 @@ async function main () {
 
   // Pull latest DB image
   console.info('Pulling DB docker image...')
-  const dbImagePullStream = await dock.pull('postgres:16')
+  const dbImagePullStream = await dock.pull('postgres:17')
   await new Promise((resolve, reject) => {
     dock.modem.followProgress(dbImagePullStream, (err, res) => err ? reject(err) : resolve(res))
   })
@@ -184,7 +184,7 @@ async function main () {
   // Create DB container
   console.info(`Creating DB docker container... [ma-db-${branch}]`)
   const dbContainer = await dock.createContainer({
-    Image: 'postgres:16',
+    Image: 'postgres:17',
     name: `ma-db-${branch}`,
     Hostname: `ma-db-${branch}`,
     Env: [

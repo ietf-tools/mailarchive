@@ -7,7 +7,7 @@
 [![Python Version](https://img.shields.io/badge/python-3.12-blue?logo=python&logoColor=white)](#prerequisites)
 [![Django Version](https://img.shields.io/badge/django-4.2-blue?logo=django&logoColor=white)](#prerequisites)
 [![Node Version](https://img.shields.io/badge/node.js-16.x-green?logo=node.js&logoColor=white)](#prerequisites)
-[![MySQL Version](https://img.shields.io/badge/postgres-14.6-blue?logo=postgresql&logoColor=white)](#prerequisites)
+[![MySQL Version](https://img.shields.io/badge/postgres-17-blue?logo=postgresql&logoColor=white)](#prerequisites)
 
 ##### IETF Mail List Archives
 

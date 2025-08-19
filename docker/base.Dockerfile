@@ -26,7 +26,7 @@ RUN apt-get update --fix-missing && apt-get install -qy \
     libnss3 \
     libxss1 \
     locales \
-    postgresql-client-16 \
+    postgresql-client-17 \
     memcached \
     netcat-openbsd \
     nodejs \

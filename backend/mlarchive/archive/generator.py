@@ -20,7 +20,7 @@ from bs4 import BeautifulSoup
 from django.conf import settings
 from django.template.loader import render_to_string
 from lxml.etree import XMLSyntaxError, ParserError
-from lxml.html.clean import Cleaner
+from lxml_html_clean import Cleaner
 
 from mlarchive.utils.encoding import decode_safely, get_filename, is_attachment
 

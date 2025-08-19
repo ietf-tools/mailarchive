@@ -226,8 +226,8 @@ class MySeleniumTests(StaticLiveServerTestCase):
             lambda driver: driver.find_element(By.TAG_NAME, 'body'))
 
         # Get results page
+        self.selenium.get_screenshot_as_file('tests/tmp/back_to_advanced_search.png')
         self.assertIn('IETF Mail List Archives', self.selenium.title)
-        self.selenium.get_screenshot_as_file('tests/tmp/mailarch_test.png')
 
         # Press back button
         self.selenium.find_element(By.ID, 'modify-search').click()
@@ -269,8 +269,8 @@ class MySeleniumTests(StaticLiveServerTestCase):
             lambda driver: driver.find_element(By.TAG_NAME, 'body'))
 
         # Get results page
+        self.selenium.get_screenshot_as_file('tests/tmp/advanced_search_exact.png')
         self.assertIn('IETF Mail List Archives', self.selenium.title)
-        self.selenium.get_screenshot_as_file('tests/tmp/advanced_search.png')
         o = urlparse(self.selenium.current_url)
         assert unquote(o.query) == 'qdr=a&start_date=&end_date=&email_list=&q=text:"data"&as=1'
 

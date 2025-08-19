@@ -1,6 +1,5 @@
 import datetime
 import hashlib
-import six
 from collections import OrderedDict
 from dateutil.parser import isoparse
 
@@ -163,8 +162,8 @@ class LowerCaseModelMultipleChoiceField(forms.ModelMultipleChoiceField):
     def prepare_value(self, value):
         if not value:
             return []
-        if hasattr(value, '__iter__') and isinstance(value[0], six.string_types):
-            value = [v.lower() for v in value if isinstance(v, six.string_types)]
+        if hasattr(value, '__iter__') and isinstance(value[0], str):
+            value = [v.lower() for v in value if isinstance(v, str)]
         return super(LowerCaseModelMultipleChoiceField, self).prepare_value(value)
 
 

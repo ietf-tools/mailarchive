@@ -43,4 +43,3 @@ pytest-django>=2.9.1
 python-dateutil>=2.2
 scout-apm>=2.23.0
 selenium
-six

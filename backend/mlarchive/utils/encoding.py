@@ -1,7 +1,6 @@
 import binascii
 import email
 import re
-import six
 from email import policy
 from email.header import HeaderParseError, decode_header
 from email.headerregistry import HeaderRegistry, ContentTransferEncodingHeader
@@ -24,7 +23,7 @@ def decode_rfc2047_header(text):
 
 def decode_safely(data, charset=DEFAULT_CHARSET):
     """Return data decoded according to charset, but do so safely."""
-    if isinstance(data, six.text_type):
+    if isinstance(data, str):
         return data
     try:
         # return str(data, charset or DEFAULT_CHARSET)
@@ -39,7 +38,7 @@ def get_filename(sub_message):
     str or unicode(when collapse_rfc2231() is used), Python 3 always returns str.
     """
     filename = sub_message.get_filename()
-    if isinstance(filename, six.binary_type):
+    if isinstance(filename, bytes):
         try:
             filename = filename.decode('ascii')
         except UnicodeDecodeError:

@@ -14,7 +14,6 @@ unicode object.
 
 import email
 import mailbox
-import six
 
 from email.utils import collapse_rfc2231_value
 from bs4 import BeautifulSoup
@@ -322,7 +321,7 @@ class Generator:
         parts = []
         output = self._dispatch(entity)
         if output:
-            if isinstance(output, six.string_types):
+            if isinstance(output, str):
                 parts.append(output)
             else:
                 parts.extend(output)

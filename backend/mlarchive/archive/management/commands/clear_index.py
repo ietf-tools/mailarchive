@@ -1,7 +1,5 @@
 # encoding: utf-8
 
-import six
-
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
@@ -30,7 +28,7 @@ class Command(BaseCommand):
             self.stdout.write("WARNING: This will irreparably remove EVERYTHING from your search index in connection '%s'." % settings.ELASTICSEARCH_INDEX_NAME)
             self.stdout.write("Your choices after this are to restore from backups or rebuild via the `rebuild_index` command.")
 
-            yes_or_no = six.moves.input("Are you sure you wish to continue? [y/N] ")
+            yes_or_no = input("Are you sure you wish to continue? [y/N] ")
 
             if not yes_or_no.lower().startswith('y'):
                 self.stdout.write("No action taken.")

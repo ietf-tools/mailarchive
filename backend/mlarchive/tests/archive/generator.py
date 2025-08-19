@@ -2,7 +2,6 @@ import email
 import io
 import os
 import pytest
-import six
 from email import policy
 
 from django.conf import settings
@@ -164,10 +163,10 @@ def test_handle_message_external_body_type_b(client):
 
 
 def test_generator_clean_headers():
-    data = (('Date', six.b('Thu, 7 Nov 2013 17:54:55 +0000')),
-            ('From', six.b('Joe <joe@example.com>')),
-            ('Subject', six.b('Hello Bj\xf6rn')),
-            ('To', six.b('text')))
+    data = (('Date', b'Thu, 7 Nov 2013 17:54:55 +0000'),
+            ('From', b'Joe <joe@example.com>'),
+            ('Subject', b'Hello Bj\xf6rn'),
+            ('To', b'text'))
     output = Generator._clean_headers(data)
     assert output[2][1] == 'Hello Bj\xf6rn'
 
@@ -181,4 +180,4 @@ def test_generator_multipart_malformed(client):
     g = Generator(msg)
     text = g.as_text()
     print(type(text))
-    assert isinstance(text, six.text_type)
+    assert isinstance(text, str)

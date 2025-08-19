@@ -292,6 +292,7 @@ def test_browse_gbt_build_page(client, messages):
     assert f'LIMIT {view.results_per_page}' in str(page.object_list.query)
 
 
+@pytest.mark.skip(reason='revisit after deploying postgres 17 client. See ticket #3941')
 @pytest.mark.django_db(transaction=True)
 def test_browse_list_sort_subject(client, messages):
     url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?so=subject'

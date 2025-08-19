@@ -10,7 +10,6 @@ import os
 import pytest
 import pytz
 import shutil
-import six
 import sys
 from io import StringIO, BytesIO
 from dateutil.tz import tzoffset

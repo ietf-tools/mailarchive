@@ -1,5 +1,3 @@
-import six
-
 from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -27,7 +25,7 @@ def ajax_admin_action(request):
     if request.method == 'POST':
         action = request.POST.get('action')
         ids = request.POST.get('ids')
-        if ids and isinstance(ids, six.string_types):
+        if ids and isinstance(ids, str):
             ids = ids.split(',')
         else:
             return {'success': False}

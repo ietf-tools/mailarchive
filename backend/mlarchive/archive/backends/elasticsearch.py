@@ -1,6 +1,5 @@
 import logging
 import re
-import six
 
 from elasticsearch import Elasticsearch, TransportError
 from elasticsearch.helpers import bulk
@@ -350,7 +349,7 @@ def get_identifier(obj_or_string):
 
     If not overridden, uses <app_label>.<object_name>.<pk>.
     """
-    if isinstance(obj_or_string, six.string_types):
+    if isinstance(obj_or_string, str):
         if not IDENTIFIER_REGEX.match(obj_or_string):
             raise AttributeError(u"Provided string '%s' is not a valid identifier." % obj_or_string)
 

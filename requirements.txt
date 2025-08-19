@@ -23,9 +23,9 @@ factory-boy>=2.6.0
 flower>=1.0.0
 gunicorn==23.0.0
 html5lib==1.1
-jedi==0.19.2              # 0.18 has bug with ipython
+jedi==0.19.2
 jsonschema[format]>=4.2.1
-lxml==5.1.0               # 5.2.0 lxml.html.clean module now separate
+lxml-html-clean==0.4.2
 mailmanclient==3.3.5
 mock>=2.0.0
 mozilla-django-oidc==4.0.1

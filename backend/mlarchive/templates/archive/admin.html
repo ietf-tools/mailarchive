@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static django_bootstrap5 widget_tweaks %}
+{% load static django_bootstrap5 %}
 
 {% block extrastyle %}
 <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker.min.css' %}" type="text/css">
@@ -18,31 +18,31 @@
             <form id="id_admin_form" name="admin-search-form" action="." method="get">
                 <div class="row mb-3">
                     <div class="col-md-4 offset-md-2">
-                        {% render_field form.subject class="form-control" placeholder="Subject" %}
+                        {% bootstrap_field form.subject placeholder="Subject" show_label=False wrapper_class="" %}
                     </div>
                     <div class="col-md-4">
-                        {% render_field form.msgid class="form-control" placeholder="Message-Id" %}
+                        {% bootstrap_field form.msgid placeholder="Message-Id" show_label=False wrapper_class="" %}
                     </div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-2 offset-md-2">
-                        {% render_field form.frm class="form-control" placeholder="From" %}
+                        {% bootstrap_field form.frm placeholder="From" show_label=False wrapper_class="" %}
                     </div>
                     <div class="col-md-2">
-                        {% render_field form.spam_score class="form-control" placeholder="Spam Score" %}
+                        {% bootstrap_field form.spam_score placeholder="Spam Score" show_label=False wrapper_class="" %}
                     </div>
                     <div class="col-md-4">
-                        {% render_field form.email_list class="form-control" placeholder="Email List Name (one or more separated by spaces)" %}
+                        {% bootstrap_field form.email_list placeholder="Email List Name (one or more separated by spaces)" show_label=False wrapper_class="" show_help=False %}
                     </div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-4 offset-md-2">
                         <div class="row">
                             <div class="col">
-                              {% render_field form.start_date class="form-control" placeholder="Start Date" %}
+                              {% bootstrap_field form.start_date placeholder="Start Date" show_label=False wrapper_class="" %}
                             </div>
                             <div class="col">
-                                {% render_field form.end_date class="form-control" placeholder="End Date" %}
+                                {% bootstrap_field form.end_date placeholder="End Date" show_label=False wrapper_class="" %}
                             </div>
                         </div>
                     </div>

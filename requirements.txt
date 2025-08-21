@@ -9,7 +9,7 @@ beautifulsoup4==4.13.4
 celery==5.5.3
 cloudflare==4.3.1
 cryptography==45.0.6
-Django>=4.1,<5.0
+Django>=5.2.5,<6.0
 django-appconf==1.1.0
 django-bootstrap5==25.2
 django-csp==4.0

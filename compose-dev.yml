@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     environment: 
@@ -22,25 +20,39 @@ services:
     # network_mode: service:db
 
     depends_on:
-        - db
-        - es
-        - rabbit
+      - db
+      - es
+      - rabbit
 
     ipc: host
     volumes:
-        - app-data:/data
-        - app-assets:/assets
+      - app-data:/data
+      - app-assets:/assets
 
   es:
-    image: "elasticsearch:7.17.4"
+    image: "elasticsearch:7.17.21"
     # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
     # (Adding the "ports" property to this file will not forward from a Codespace.)
     environment:
-        - discovery.type=single-node
-        - xpack.security.enabled=true
-        - ELASTIC_PASSWORD=changeme
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=changeme
     volumes:
-        - es-data:/usr/share/elasticsearch/data
+      - es-data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: "kibana:7.17.21"
+    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
+    # (Adding the "ports" property to this file will not forward from a Codespace.)
+    environment:
+      - ELASTICSEARCH_HOSTS=http://es:9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=${ELASTIC_PASSWORD:-changeme}
+      - XPACK_SECURITY_ENABLED=true
+      - XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=${KIBANA_ENCRYPTION_KEY:-min-32-byte-long-strong-encryption-key}
+      - SERVER_PUBLICBASEURL=http://localhost:5601
+    depends_on:
+      - es
 
   db:
     image: postgres:17
@@ -53,8 +65,8 @@ services:
     # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
     # (Adding the "ports" property to this file will not forward from a Codespace.)
     volumes:
-        - postgresdb-data:/var/lib/postgresql/data
-        - app-assets:/assets
+      - postgresdb-data:/var/lib/postgresql/data
+      - app-assets:/assets
 
   rabbit:
     image: rabbitmq:3.12-alpine
@@ -77,16 +89,13 @@ services:
       DATABASES_PASSWORD: franticmarble
       DATABASES_HOST: db
       ELASTICSEARCH_HOST: es
-    # command:
-    #   - '--loglevel=INFO'
-    # depends on /data subdirectories
     depends_on:
-        - app
+      - app
     restart: unless-stopped
     stop_grace_period: 1m
     volumes:
-        - app-data:/data
-        - app-assets:/assets
+      - app-data:/data
+      - app-assets:/assets
 
   beat:
     build:
@@ -103,17 +112,14 @@ services:
       DATABASES_PASSWORD: franticmarble
       DATABASES_HOST: db
       ELASTICSEARCH_HOST: es
-    command:
-      - '--loglevel=INFO'
-      - '--scheduler=django_celery_beat.schedulers:DatabaseScheduler'
     # depends on /data subdirectories
     depends_on:
-        - app
+      - app
     restart: unless-stopped
     stop_grace_period: 1m
     volumes:
-        - app-data:/data
-        - app-assets:/assets
+      - app-data:/data
+      - app-assets:/assets
 
 volumes:
     app-assets:

@@ -35,7 +35,7 @@ spec:
               protocol: TCP
           env:
             - name: ELASTICSEARCH_HOSTS
-              value: "http://elasticsearch:9200"
+              value: "http://ml-elasticsearch:9200"
             - name: ELASTICSEARCH_USERNAME
               value: "elastic"
             - name: ELASTICSEARCH_PASSWORD
@@ -43,8 +43,6 @@ spec:
                 secretKeyRef:
                   name: ml-secrets-env
                   key: ELASTICSEARCH_PASSWORD
-            - name: XPACK_SECURITY_ENABLED
-              value: "true"
             - name: XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY
               valueFrom:
                 secretKeyRef:

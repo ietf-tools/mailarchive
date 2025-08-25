@@ -8,7 +8,6 @@ import io
 import mailbox
 import os
 import pytest
-import pytz
 import shutil
 import sys
 from io import StringIO, BytesIO
@@ -278,7 +277,7 @@ def test_get_header_date():
         message = email.message_from_string(item[0])
         date = get_header_date(message)
         # convert to naive if we get a timezone aware object
-        date = date.astimezone(pytz.utc).replace(tzinfo=None)
+        date = date.astimezone(datetime.UTC).replace(tzinfo=None)
         assert date == item[1]
 
 
@@ -297,13 +296,13 @@ for <ancp@ietfa.amsl.com>; Tue, 29 Jan 2013 00:08:57 -0800 (PST)'''
     message = email.message_from_string(data)
     date = get_received_date(message)
     # convert to naive if we get a timezone aware object
-    date = date.astimezone(pytz.utc).replace(tzinfo=None)
+    date = date.astimezone(datetime.UTC).replace(tzinfo=None)
     assert date == datetime.datetime(2013, 1, 29, 8, 8, 57)
 
 
 def test_is_aware():
     assert is_aware(datetime.datetime(2013, 1, 1)) is False
-    assert is_aware(datetime.datetime(2013, 1, 1, 12, 0, 0, 0, pytz.UTC)) is True
+    assert is_aware(datetime.datetime(2013, 1, 1, 12, 0, 0, 0, datetime.UTC)) is True
 
 
 def test_parsedate_to_datetime():

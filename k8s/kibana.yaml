@@ -65,7 +65,7 @@ spec:
               cpu: "1"
           readinessProbe:
             httpGet:
-              path: /api/status
+              path: /status
               port: 5601
             initialDelaySeconds: 30
             timeoutSeconds: 10
@@ -74,7 +74,7 @@ spec:
             failureThreshold: 3
           livenessProbe:
             httpGet:
-              path: /api/status
+              path: /status
               port: 5601
             initialDelaySeconds: 60
             timeoutSeconds: 10

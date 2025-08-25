@@ -128,7 +128,6 @@ INSTALLED_APPS = [
     'django_bootstrap5',
     'django_celery_beat',
     'mlarchive.archive.apps.ArchiveConfig',
-    'widget_tweaks',
 ]
 
 

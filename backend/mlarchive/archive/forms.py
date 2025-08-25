@@ -133,6 +133,8 @@ class AdminForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request')
         super(self.__class__, self).__init__(*args, **kwargs)
+        self.fields['start_date'].widget.attrs["placeholder"] = "Start Date"
+        self.fields['end_date'].widget.attrs["placeholder"] = "End Date"
 
     '''
     def clean_email_list(self):
@@ -257,7 +259,7 @@ class AdvancedSearchForm(forms.Form):
 
 class SearchForm(forms.Form):
     q = forms.CharField(required=False, label='Search',
-                        widget=forms.TextInput(attrs={'type': 'search'}))
+                        widget=forms.TextInput(attrs={'type': 'search', 'spellcheck': False}))
 
 
 class BrowseForm(forms.Form):

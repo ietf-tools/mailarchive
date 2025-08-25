@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     environment: 
@@ -77,9 +75,6 @@ services:
       DATABASES_PASSWORD: franticmarble
       DATABASES_HOST: db
       ELASTICSEARCH_HOST: es
-    # command:
-    #   - '--loglevel=INFO'
-    # depends on /data subdirectories
     depends_on:
         - app
     restart: unless-stopped
@@ -103,10 +98,6 @@ services:
       DATABASES_PASSWORD: franticmarble
       DATABASES_HOST: db
       ELASTICSEARCH_HOST: es
-    command:
-      - '--loglevel=INFO'
-      - '--scheduler=django_celery_beat.schedulers:DatabaseScheduler'
-    # depends on /data subdirectories
     depends_on:
         - app
     restart: unless-stopped
@@ -114,6 +105,13 @@ services:
     volumes:
         - app-data:/data
         - app-assets:/assets
+
+  memcached:
+    image: memcached:latest
+    container_name: memcached
+    ports:
+      - "11211:11211"
+    restart: unless-stopped
 
 volumes:
     app-assets:

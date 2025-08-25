@@ -12,25 +12,41 @@
         "EDITOR_VSCODE": "true"
     },
 
-    // Add the IDs of extensions you want installed when the container is created.
-    "extensions": [
-        "arcanis.vscode-zipfs",
-        "batisteo.vscode-django",
-        "dbaeumer.vscode-eslint",
-        "eamodio.gitlens",
-        "editorconfig.editorconfig",
-        "mrmlnc.vscode-duplicate",
-        "ms-azuretools.vscode-docker",
-        "ms-python.python",
-        "ms-python.vscode-pylance",
-        "mtxr.sqltools-driver-mysql",
-        "mtxr.sqltools",
-        "mutantdino.resourcemonitor",
-        "oderwat.indent-rainbow",
-        "redhat.vscode-yaml",
-        "spmeesseman.vscode-taskexplorer",
-        "visualstudioexptteam.vscodeintellicode"
-    ],
+    "features": {
+    },
+
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "arcanis.vscode-zipfs",
+                "batisteo.vscode-django",
+                "dbaeumer.vscode-eslint",
+                "eamodio.gitlens",
+                "editorconfig.editorconfig",
+                // Newer volar >=3.0.0 causes crashes in devcontainers
+                "vue.volar@2.2.10",
+                "mrmlnc.vscode-duplicate",
+                "ms-azuretools.vscode-docker",
+                "ms-playwright.playwright",
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "mutantdino.resourcemonitor",
+                "oderwat.indent-rainbow",
+                "redhat.vscode-yaml",
+                "spmeesseman.vscode-taskexplorer",
+                "visualstudioexptteam.vscodeintellicode",
+                "ms-python.pylint"
+            ],
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "zsh",
+                "python.pythonPath": "/usr/local/bin/python",
+                "python.languageServer": "Default",
+                "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
+                "python.formatting.blackPath": "/usr/local/py-utils/bin/black",
+                "python.formatting.yapfPath": "/usr/local/py-utils/bin/yapf"
+            }
+        }
+    },
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
     "forwardPorts": [8000, 5432, 9200, 5672, 5601],
     

@@ -112,7 +112,6 @@ services:
       DATABASES_PASSWORD: franticmarble
       DATABASES_HOST: db
       ELASTICSEARCH_HOST: es
-    # depends on /data subdirectories
     depends_on:
       - app
     restart: unless-stopped
@@ -120,6 +119,13 @@ services:
     volumes:
       - app-data:/data
       - app-assets:/assets
+
+  memcached:
+    image: memcached:latest
+    container_name: memcached
+    ports:
+      - "11211:11211"
+    restart: unless-stopped
 
 volumes:
     app-assets:

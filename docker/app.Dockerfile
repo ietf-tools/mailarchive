@@ -3,11 +3,6 @@ LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Copy library scripts to execute
-ADD https://raw.githubusercontent.com/microsoft/vscode-dev-containers/v0.236.0/containers/python-3/.devcontainer/library-scripts/common-debian.sh /tmp/library-scripts/
-ADD https://raw.githubusercontent.com/microsoft/vscode-dev-containers/v0.236.0/containers/python-3/.devcontainer/library-scripts/python-debian.sh /tmp/library-scripts/
-ADD https://raw.githubusercontent.com/microsoft/vscode-dev-containers/v0.236.0/containers/python-3/.devcontainer/library-scripts/meta.env /tmp/library-scripts/
-
 # [Option] Install zsh
 ARG INSTALL_ZSH="true"
 # [Option] Upgrade OS packages to their latest versions
@@ -16,15 +11,18 @@ ARG UPGRADE_PACKAGES="true"
 ARG USERNAME=dev
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
+COPY docker/scripts/app-setup-debian.sh /tmp/library-scripts/docker-setup-debian.sh
+RUN sed -i 's/\r$//' /tmp/library-scripts/docker-setup-debian.sh && chmod +x /tmp/library-scripts/docker-setup-debian.sh
+
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     # Install common packages, non-root user
-    && bash /tmp/library-scripts/common-debian.sh "${INSTALL_ZSH}" "${USERNAME}" "${USER_UID}" "${USER_GID}" "${UPGRADE_PACKAGES}" "true" "true"
+    # Syntax: ./docker-setup-debian.sh [install zsh flag] [username] [user UID] [user GID] [upgrade packages flag] [install Oh My Zsh! flag] [Add non-free packages]
+    && bash /tmp/library-scripts/docker-setup-debian.sh "true" "${USERNAME}" "${USER_UID}" "${USER_GID}" "false" "true" "true"
 
 # Setup default python tools in a venv via pipx to avoid conflicts
 ENV PIPX_HOME=/usr/local/py-utils \
     PIPX_BIN_DIR=/usr/local/py-utils/bin
 ENV PATH=${PATH}:${PIPX_BIN_DIR}
-RUN bash /tmp/library-scripts/python-debian.sh "none" "/usr/local" "${PIPX_HOME}" "${USERNAME}"
 
 # Remove library scripts for final image
 RUN rm -rf /tmp/library-scripts

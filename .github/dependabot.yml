@@ -17,8 +17,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    reviewers:
-      - "rpcross"
   - package-ecosystem: "npm"
     directory: "/dev/deploy-to-container"
     schedule:

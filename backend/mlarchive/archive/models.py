@@ -557,3 +557,30 @@ class MailmanMember(models.Model):
 
     def __str__(self):
         return f'{self.email_list.name}:{self.address}'
+
+
+class StoredObject(models.Model):
+    """Hold metadata about objects placed in object storage"""
+
+    store = models.CharField(max_length=256)
+    name = models.CharField(max_length=1024, null=False, blank=False)  # N.B. the 1024 limit on name comes from S3
+    sha384 = models.CharField(max_length=96)
+    length = models.PositiveBigIntegerField()
+    store_created = models.DateTimeField(help_text="The instant the object ws first placed in the store")
+    created = models.DateTimeField(
+        null=False,
+        help_text="Instant object became known. May not be the same as the storage's created value for the instance. It will hold ctime for objects imported from older disk storage"
+    )
+    modified = models.DateTimeField(
+        null=False,
+        help_text="Last instant object was modified. May not be the same as the storage's modified value for the instance. It will hold mtime for objects imported from older disk storage unless they've actually been overwritten more recently"
+    )
+    deleted = models.DateTimeField(null=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['store', 'name'], name='unique_name_per_store'),
+        ]
+
+    def __str__(self):
+        return f"{self.store}:{self.name}"

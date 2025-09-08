@@ -213,6 +213,10 @@ def test_import_message(client, settings):
     assert Message.objects.count() == 0
     assert EmailList.objects.filter(name='apple').exists() is False
     incoming_dir = settings.INCOMING_DIR
+    print(settings.BASE_DIR)
+    print(settings.ROOT_DIR)
+    print(settings.DATA_ROOT)
+    print(settings.INCOMING_DIR)
     assert os.path.isdir(incoming_dir)
     for file in os.listdir(incoming_dir):
         file_path = os.path.join(incoming_dir, file)

@@ -37,9 +37,11 @@ CACHES = {
     }
 }
 
+# BLOBDB
+# BLOBDB_DATABASE = 'default'
+
 # IMAP Interface
 EXPORT_DIR = os.path.join(DATA_ROOT, 'export')
-
 
 # CLOUDFLARE  INTEGRATION
 USING_CDN = False

@@ -1,4 +1,4 @@
-FROM docker.elastic.co/elasticsearch/elasticsearch:7.17.21
+FROM docker.elastic.co/elasticsearch/elasticsearch:9.1.3
 
 RUN bin/elasticsearch-plugin install --batch repository-azure
 

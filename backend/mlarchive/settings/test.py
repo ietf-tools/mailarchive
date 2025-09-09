@@ -4,6 +4,22 @@ from .base import *
 
 DATA_ROOT = '/tmp/mailarch/data'
 
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
+# Disable ROUTERS to use one default database for all tables during tests
+DATABASE_ROUTERS = []
+
+DATABASES = {
+    'default': {
+        'HOST': 'db',
+        'PORT': 5432,
+        'NAME': 'mailarch',
+        'ENGINE': 'django.db.backends.postgresql',
+        'USER': 'mailarch',
+        'PASSWORD': 'franticmarble',
+    },
+}
+
 AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
 
 # ELASTICSEARCH SETTINGS
@@ -37,9 +53,11 @@ CACHES = {
     }
 }
 
+# BLOBDB
+BLOBDB_DATABASE = 'default'
+
 # IMAP Interface
 EXPORT_DIR = os.path.join(DATA_ROOT, 'export')
-
 
 # CLOUDFLARE  INTEGRATION
 USING_CDN = False

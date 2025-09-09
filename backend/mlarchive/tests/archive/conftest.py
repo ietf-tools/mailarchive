@@ -60,7 +60,20 @@ def data_dir(tmp_dir, settings):
     settings.ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
     if not os.path.exists(settings.ARCHIVE_DIR):
         os.mkdir(settings.ARCHIVE_DIR)
+
     settings.EXPORT_DIR = os.path.join(DATA_ROOT, 'export')
+    if not os.path.exists(settings.EXPORT_DIR):
+        os.mkdir(settings.EXPORT_DIR)
+
+    settings.INCOMING_DIR = os.path.join(DATA_ROOT, 'incoming')
+    print(f'checking incoming dir {settings.INCOMING_DIR}')
+    if not os.path.exists(settings.INCOMING_DIR):
+        os.mkdir(settings.INCOMING_DIR)
+
+    settings.IMPORT_DIR = os.path.join(DATA_ROOT, 'incoming')
+    if not os.path.exists(settings.IMPORT_DIR):
+        os.mkdir(settings.IMPORT_DIR)
+
     yield
 
 # -----------------------------------

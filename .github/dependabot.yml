@@ -13,10 +13,15 @@ updates:
     directory: "/docker"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "elasticsearch/elasticsearch"
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "elasticsearch"
+      - dependency-name: "elasticsearch-dsl"
   - package-ecosystem: "npm"
     directory: "/dev/deploy-to-container"
     schedule:

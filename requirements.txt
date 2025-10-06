@@ -19,7 +19,7 @@ gunicorn==23.0.0
 html5lib==1.1
 jedi==0.19.2
 jsonschema[format]>=4.2.1
-lxml-html-clean==0.4.2
+lxml-html-clean==0.4.3
 mailmanclient==3.3.5
 mock>=2.0.0
 mozilla-django-oidc==4.0.1

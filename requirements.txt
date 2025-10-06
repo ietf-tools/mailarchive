@@ -1,6 +1,6 @@
 # -*- conf-mode -*-
 #
-beautifulsoup4==4.13.5
+beautifulsoup4==4.14.2
 celery==5.5.3
 cloudflare==4.3.1
 cryptography==45.0.7

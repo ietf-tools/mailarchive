@@ -128,7 +128,7 @@ services:
 #       - app-assets:/assets
 
   blobstore:
-      image: ghcr.io/ietf-tools/mailarchive-devblobstore:latest
+      image: ghcr.io/ietf-tools/datatracker-devblobstore:latest
       restart: unless-stopped
       volumes:
           - "minio-data:/data"

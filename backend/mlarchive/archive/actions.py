@@ -42,7 +42,7 @@ def remove_selected(request, queryset):
 
 
 def not_spam(request, queryset):
-    """Mark selected messages as not spam (spam_score=0)"""
+    """Mark selected messages as not spam (spam_score=settings.SPAM_SCORE_NOT_SPAM)"""
     mark_not_spam_task.delay(message_ids=[q.id for q in queryset])
 
     if is_ajax(request):

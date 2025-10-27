@@ -59,10 +59,8 @@ def store_file(
     name: str,
     file: Union[File, BufferedReader],
     allow_overwrite: bool = False,
-    doc_name: Optional[str] = None,
-    doc_rev: Optional[str] = None,
-    content_type: str="",
-    mtime: Optional[datetime.datetime]=None,
+    content_type: str = "",
+    mtime: Optional[datetime.datetime] = None,
 ) -> None:
     from .storage import StoredObjectFile  # avoid circular import
     if settings.ENABLE_BLOBSTORAGE:
@@ -77,8 +75,6 @@ def store_file(
                 StoredObjectFile(
                     file=file,
                     name=name,
-                    doc_name=doc_name,
-                    doc_rev=doc_rev,
                     mtime=mtime,
                     content_type=content_type,
                 ),
@@ -99,8 +95,6 @@ def store_bytes(
     name: str,
     content: bytes,
     allow_overwrite: bool = False,
-    doc_name: Optional[str] = None,
-    doc_rev: Optional[str] = None,
     content_type: str = "",
     mtime: Optional[datetime.datetime] = None,
 ) -> None:
@@ -111,8 +105,6 @@ def store_bytes(
                 name,
                 ContentFile(content),
                 allow_overwrite,
-                doc_name,
-                doc_rev,
                 content_type,
                 mtime,
             )
@@ -129,8 +121,6 @@ def store_str(
     name: str,
     content: str,
     allow_overwrite: bool = False,
-    doc_name: Optional[str] = None,
-    doc_rev: Optional[str] = None,
     content_type: str = "",
     mtime: Optional[datetime.datetime] = None,
 ) -> None:
@@ -142,8 +132,6 @@ def store_str(
                 name,
                 content_bytes,
                 allow_overwrite,
-                doc_name,
-                doc_rev,
                 content_type,
                 mtime,
             )
@@ -156,7 +144,7 @@ def store_str(
 
 
 def retrieve_bytes(kind: str, name: str) -> bytes:
-    from ietf.doc.storage import maybe_log_timing
+    from mlarchive.archive.storage import maybe_log_timing
     content = b""
     if settings.ENABLE_BLOBSTORAGE:
         try:

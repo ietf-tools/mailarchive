@@ -210,7 +210,7 @@ TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 DATABASE_ROUTERS = ["mlarchive.blobdb.routers.BlobdbStorageRouter"]
 
 # -------------------------------------
-# CUSTOM SETTINGS
+# BLOBSTORE SETTINGS
 # -------------------------------------
 
 STORAGES = {
@@ -222,12 +222,17 @@ STORAGES = {
     }
 }
 
+# Storages for artifacts stored as blobs
+ARTIFACT_STORAGE_NAMES: list[str] = [
+    "message",
+]
+
 ENABLE_BLOBSTORAGE = True
 BLOBDB_DATABASE = 'blobdb'
 BLOBDB_REPLICATION = {
-    "ENABLED": False,
+    "ENABLED": True,
     "DEST_STORAGE_PATTERN": "r2-{bucket}",
-    "INCLUDE_BUCKETS": [],
+    "INCLUDE_BUCKETS": ARTIFACT_STORAGE_NAMES,
     "EXCLUDE_BUCKETS": ["staging"],
     "VERBOSE_LOGGING": True,
 }
@@ -238,9 +243,12 @@ BLOBSTORAGE_MAX_ATTEMPTS = 5  # boto3 default is 3 (for "standard" retry mode)
 BLOBSTORAGE_CONNECT_TIMEOUT = 10  # seconds; boto3 default is 60
 BLOBSTORAGE_READ_TIMEOUT = 10  # seconds; boto3 default is 60
 
+# -------------------------------------
+# ELASTICSEARCH SETTINGS
+# -------------------------------------
+
 SEARCH_RESULTS_PER_PAGE = 40
 
-# ELASTICSEARCH SETTINGS
 ELASTICSEARCH_INDEX_NAME = 'mail-archive'
 ELASTICSEARCH_SILENTLY_FAIL = True
 ES_URL = 'http://{}:9200/'.format(env('ELASTICSEARCH_HOST'))

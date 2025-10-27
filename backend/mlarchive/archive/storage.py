@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 class StoredObjectFile(MetadataFile):
     """Django storage File object that represents a StoredObject"""
-    def __init__(self, file, name, mtime=None, content_type="", store=None, doc_name=None, doc_rev=None):
+    def __init__(self, file, name, mtime=None, content_type="", store=None):
         super().__init__(
             file=file,
             name=name,
@@ -28,8 +28,6 @@ class StoredObjectFile(MetadataFile):
             content_type=content_type,
         )
         self.store = store
-        self.doc_name = doc_name
-        self.doc_rev = doc_rev
 
     @classmethod
     def from_storedobject(cls, file, name, store):
@@ -37,7 +35,7 @@ class StoredObjectFile(MetadataFile):
         stored_object = StoredObject.objects.filter(store=store, name=name, deleted__isnull=True).first()
         if stored_object is None:
             raise FileNotFoundError(f"StoredObject for {store}:{name} does not exist or was deleted")
-        file = cls(file, name, store, doc_name=stored_object.doc_name, doc_rev=stored_object.doc_rev)
+        file = cls(file, name, store)
         if int(file.custom_metadata["len"]) != stored_object.len:
             raise RuntimeError(f"File length changed unexpectedly for {store}:{name}")
         if file.custom_metadata["sha384"] != stored_object.sha384:
@@ -130,16 +128,6 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
                 store_created=now,
                 created=now,
                 modified=now,
-                doc_name=getattr(
-                    content,
-                    "doc_name",  # Note that these are assumed to be invariant
-                    None,  # should be blank?
-                ),
-                doc_rev=getattr(
-                    content,
-                    "doc_rev",  # for a given name
-                    None,  # should be blank?
-                ),
             ),
         )
         if not created:
@@ -166,8 +154,8 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
         return existing_record.first()
 
     def _save(self, name, content):
-        """Perform the save operation 
-        
+        """Perform the save operation
+
         In principle the name could change on save to the blob store. As of now, BlobdbStorage
         will not change it, but allow for that possibility. Callers should be prepared for this.
         """

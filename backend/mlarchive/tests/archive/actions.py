@@ -16,7 +16,6 @@ def test_temporary_directory(messages):
 def test_remove_selected(mock_update, rf, admin_user, messages):
     '''Simple test of function. See tests/archive/utils.py for test
     of underlying functionality'''
-    mock_update.return_value = 1
     request = rf.post(
         '/arch/admin/',
         data={'action': 'remove_selected'},
@@ -25,6 +24,7 @@ def test_remove_selected(mock_update, rf, admin_user, messages):
     response = remove_selected(request, messages)
     assert isinstance(response, JsonResponse)
     assert response.status_code == 200
+    mock_update.assert_called_with(user_id=admin_user.id)
 
 
 @patch('mlarchive.archive.tasks.mark_not_spam_task.delay')
@@ -32,7 +32,6 @@ def test_remove_selected(mock_update, rf, admin_user, messages):
 def test_not_spam(mock, rf, admin_user, messages):
     '''Simple test of function. See tests/archive/utils.py for test
     of underlying functionality'''
-    mock.return_value = 1
     request = rf.post(
         '/arch/admin/',
         data={'action': 'not_spam'},
@@ -41,3 +40,4 @@ def test_not_spam(mock, rf, admin_user, messages):
     response = not_spam(request, messages)
     assert isinstance(response, JsonResponse)
     assert response.status_code == 200
+    assert mock.called is True

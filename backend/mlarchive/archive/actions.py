@@ -4,6 +4,7 @@ These take a request object and queryset of objects to act on.
 """
 from django.conf import settings
 from django.contrib import messages
+from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import redirect
 
@@ -29,7 +30,9 @@ def remove_selected(request, queryset):
     directory
     """
     queryset.update(spam_score=settings.SPAM_SCORE_TO_REMOVE)
-    remove_selected_task.delay(user_id=request.user.id)
+    transaction.on_commit(
+        lambda: remove_selected_task.delay(user_id=request.user.id)
+    )
 
     if is_ajax(request):
         return JsonResponse({

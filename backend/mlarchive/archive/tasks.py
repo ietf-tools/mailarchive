@@ -128,17 +128,7 @@ class CelerySignalHandler(Task):
             raise ValueError("Unrecognized action %s" % action)
 
 
-CelerySignalHandler = app.register_task(CelerySignalHandler())
-
-
-def get_mbox_updates(queryset):
-    """Returns the list of mbox files to rebuild, identified by the tuple
-    (month, year, list id)
-    """
-    results = set()
-    for message in queryset:
-        results.add((message.date.month, message.date.year, message.email_list.pk))
-    return list(results)
+app.register_task(CelerySignalHandler())
 
 
 @app.task

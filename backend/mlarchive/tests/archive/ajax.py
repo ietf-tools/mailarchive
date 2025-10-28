@@ -15,7 +15,7 @@ import os
 import shutil
 
 
-@patch('mlarchive.archive.tasks.update_mbox.delay')
+@patch('mlarchive.archive.tasks.remove_selected_task.delay')
 @pytest.mark.django_db(transaction=True)
 def test_ajax_admin_action(mock_update, admin_client):
     mock_update.return_value = None
@@ -25,7 +25,6 @@ def test_ajax_admin_action(mock_update, admin_client):
     data = {'action': 'remove_selected', 'ids': '%s' % msg.pk}
     response = admin_client.post(url, data)
     assert response.status_code == 200
-    assert Message.objects.count() == 0
 
 
 @pytest.mark.django_db(transaction=True)

@@ -49,9 +49,8 @@
                     <div class="col-md-1">
                         <button class="btn btn-secondary" type="submit">Search</button>
                     </div>
-                    <div class="col-md-3 form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" id="exclude-checkbox" name="exclude_whitelisted_senders" value="exclude_whitelisted_senders">
-                        <label class="form-check-label" for="exclude-checkbox">Exclude Whitelisted Senders</label>
+                    <div class="col-md-3">
+                        {% bootstrap_field form.exclude_not_spam %}
                     </div>
                 </div>
             </form>

@@ -622,8 +622,13 @@ def admin(request):
     the administrator to run queries and perform actions, ie. remove spam, on the
     results.  Available actions are defined in actions.py
     """
+    # warn if messages still in process of removal
+    for_removal = Message.objects.filter(spam_score=settings.SPAM_SCORE_TO_REMOVE).count()
+    if for_removal:
+        messages.warning(request, f'{for_removal} messages left to be removed')
+
     results = []
-    form = AdminForm(request=request)
+    form = AdminForm(request=request, initial={'exclude_not_spam': True})
     action_form = AdminActionForm()
 
     # def is_not_whitelisted(search_result):

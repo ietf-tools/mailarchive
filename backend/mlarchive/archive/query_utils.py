@@ -26,6 +26,7 @@ DEFAULT_SORT = getattr(settings, 'ARCHIVE_DEFAULT_SORT', '-date')
 DB_THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
 IDX_THREAD_SORT_FIELDS = ('-thread_date', 'thread_id', 'thread_order')
 
+
 # --------------------------------------------------
 # Functions handle URL parameters
 # --------------------------------------------------
@@ -101,8 +102,11 @@ def filters_from_params(params):
         filters.append(Q('terms', email_list=params['email_list']))
     if params.get('qdr') and params.get('qdr') in ['d', 'w', 'm', 'y']:
         filters.append(Q('range', date={'gte': get_qdr_time_iso(params['qdr'])}))
+    # used in admin
     if params.get('spam_score'):
         filters.append(Q('term', spam_score=params['spam_score']))
+    if params.get('exclude_not_spam'):
+        filters.append(~Q('term', spam_score=settings.SPAM_SCORE_NOT_SPAM))
     return filters
 
 

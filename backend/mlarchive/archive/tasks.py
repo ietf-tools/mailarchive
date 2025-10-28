@@ -14,7 +14,9 @@ from mlarchive.archive.utils import get_subscriber_counts
 from mlarchive.archive.utils import purge_incoming
 from mlarchive.archive.utils import update_mbox_files
 from mlarchive.archive.utils import init_private_list_members
-from mlarchive.archive.models import EmailList
+from mlarchive.archive.utils import remove_selected
+from mlarchive.archive.utils import mark_not_spam
+from mlarchive.archive.models import EmailList, Message, User
 
 logger = logging.getLogger(__name__)
 
@@ -126,14 +128,17 @@ class CelerySignalHandler(Task):
             raise ValueError("Unrecognized action %s" % action)
 
 
+app.register_task(CelerySignalHandler())
+
+
 @app.task
-def update_mbox(files):
-    for file in files:
-        elist = EmailList.objects.get(pk=file[2])
-        create_mbox_file(file[0], file[1], elist)
+def remove_selected_task(user_id):
+    remove_selected(user_id)
 
 
-CelerySignalHandler = app.register_task(CelerySignalHandler())
+@app.task
+def mark_not_spam_task(message_ids):
+    mark_not_spam(message_ids)
 
 
 # --------------------------------------------------

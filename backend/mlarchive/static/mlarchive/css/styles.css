@@ -344,6 +344,14 @@ ul.browse-list li {
   height: calc(100vh - 435px);
 }
 
+.row-has-brackets {
+  background-color: #ddecfe;
+}
+
+.spam-mode tr.row-selected {
+  outline: 2px solid black;
+}
+
 /* ==========================================================================
    Export
    ========================================================================== */
@@ -559,7 +567,7 @@ table.msg-list-header-table th a.btn {
   top: 0;
 }
 
-.row-selected {
+div.row-selected {
   background-color: #ddecfe;
 }
 

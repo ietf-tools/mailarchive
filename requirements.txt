@@ -1,12 +1,12 @@
 # -*- conf-mode -*-
 #
-beautifulsoup4==4.13.4
+beautifulsoup4==4.13.5
 boto3>=1.35,<1.36
 boto3-stubs[s3]>=1.35,<1.36
 botocore>=1.35,<1.36
 celery==5.5.3
 cloudflare==4.3.1
-cryptography==45.0.6
+cryptography==45.0.7
 Django>=5.2.5,<6.0
 django-admin-rangefilter>=0.13.3
 django-appconf==1.1.0
@@ -29,7 +29,7 @@ mailmanclient==3.3.5
 mock>=2.0.0
 mozilla-django-oidc==4.0.1
 passlib==1.7.4
-psycopg==3.2.9
+psycopg==3.2.10
 pymemcache==4.0.0
 python-json-logger>=2.0.7
 pyopenssl

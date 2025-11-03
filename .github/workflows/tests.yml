@@ -58,7 +58,7 @@ jobs:
           POSTGRES_DB: test_mailarchive
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup ChromeDriver
         uses: browser-actions/setup-chrome@v1

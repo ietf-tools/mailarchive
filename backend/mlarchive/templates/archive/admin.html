@@ -49,9 +49,8 @@
                     <div class="col-md-1">
                         <button class="btn btn-secondary" type="submit">Search</button>
                     </div>
-                    <div class="col-md-3 form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" id="exclude-checkbox" name="exclude_whitelisted_senders" value="exclude_whitelisted_senders">
-                        <label class="form-check-label" for="exclude-checkbox">Exclude Whitelisted Senders</label>
+                    <div class="col-md-3">
+                        {% bootstrap_field form.exclude_not_spam %}
                     </div>
                 </div>
             </form>
@@ -98,7 +97,7 @@
         </div> <!-- row -->
 
         <div class="spam-top d-none">
-          <div class="alert alert-warning" role="alert">Use left and right arrow keys to sort messages.  Right = spam, Left = not spam.  Use Process Spam button to remove spam and mark clean messages.</div>
+          <div class="alert alert-warning" role="alert">Use left and right arrow keys to sort individual messages.  Right = spam, Left = not spam.  Use "s" and "c" to bulk sort messages. "s" to mark all messages above checked message as spam, "c" to mark all messages above checked message as clean. Use Process Spam button to remove spam and mark clean messages. Since spam usually does not have the bracketed [listname] in the subject text, messages with [listname] are highlighted with blue to visually distinguish from spam. </div>
           <ul class="nav nav-tabs nav-justified">
             <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#clean-pane">Clean - 0</a></li>
             <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#search-pane">Search - {{ results|length }}</a></li>

@@ -146,6 +146,25 @@ def test_admin_search_list(admin_client, messages):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_admin_search_list_exclude_not_spam(admin_client, messages):
+    # use pubone, check first, mark, check again
+    url = reverse('archive_admin') + '?email_list=pubone&exclude_not_spam=on'
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    before = len(results)
+    msg = Message.objects.filter(email_list__name='pubone').first()
+    assert str(msg.pk) in [r.django_id for r in results]
+    msg.spam_score = -1
+    msg.save()
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    results = response.context['results']
+    assert len(results) == before - 1
+    assert str(msg.pk) not in [r.django_id for r in results]
+
+
+@pytest.mark.django_db(transaction=True)
 def test_admin_no_action(admin_client, messages):
     url = reverse('archive_admin')
     response = admin_client.post(url, {'select-across': 0, 'index': 0})

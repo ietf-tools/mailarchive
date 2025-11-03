@@ -1,12 +1,13 @@
 services:
   app:
     environment: 
-      DJANGO_SETTINGS_MODULE: mlarchive.settings.settings
+      DJANGO_SETTINGS_MODULE: mlarchive.settings.docker-development
       SECRET_KEY: 2y&2u=%@di1tnc3gt82e9p@$7cq7nbctll41d02@e$#=9jrzj$
       DATABASES_PASSWORD: franticmarble
       DATABASES_HOST: db
       ELASTICSEARCH_HOST: es
       BLOBDB_PASSWORD: abcd1234
+      DATA_ROOT: /data
 
     build:
       context: .

@@ -218,7 +218,7 @@ STORAGES = {
     'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
     'message': {
         "BACKEND": "mlarchive.archive.storage.StoredObjectBlobdbStorage",
-        "OPTIONS": {"bucket_name": 'public'},
+        "OPTIONS": {"bucket_name": 'message'},
     }
 }
 

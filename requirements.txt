@@ -9,7 +9,7 @@ django-appconf==1.1.0
 django-bootstrap5==25.2
 django-csp==4.0
 django-celery-beat==2.8.1
-django-debug-toolbar==6.0.0
+django-debug-toolbar==6.1.0
 django-environ==0.12.0
 elasticsearch>=7.0.0,<8.0.0
 elasticsearch-dsl>=7.0.0,<8.0.0

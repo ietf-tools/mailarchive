@@ -233,7 +233,7 @@ BLOBDB_REPLICATION = {
     "ENABLED": True,
     "DEST_STORAGE_PATTERN": "r2-{bucket}",
     "INCLUDE_BUCKETS": ARTIFACT_STORAGE_NAMES,
-    "EXCLUDE_BUCKETS": ["staging"],
+    "EXCLUDE_BUCKETS": ["staging", "removed"],
     "VERBOSE_LOGGING": True,
 }
 

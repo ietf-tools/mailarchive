@@ -1,7 +1,7 @@
 # Instructions for adding blobdb app
 
 - add app to INSTALLED_APPS
-- add python dependencies: django-admin-rangefilter, django-storages
+- add python dependencies: django-admin-rangefilter, django-storages, botocore, boto3, boto3-stubs
 - add settings 
   - STORAGES
   - ENABLE_BLOBSTORAGE

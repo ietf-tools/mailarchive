@@ -1,16 +1,21 @@
 # -*- conf-mode -*-
 #
 beautifulsoup4==4.13.5
+boto3>=1.39.15
+boto3-stubs[s3]>=1.39.15
+botocore>=1.39.15
 celery==5.5.3
 cloudflare==4.3.1
 cryptography==45.0.7
 Django>=5.2.5,<6.0
+django-admin-rangefilter>=0.13.3
 django-appconf==1.1.0
 django-bootstrap5==25.2
 django-csp==4.0
 django-celery-beat==2.8.1
 django-debug-toolbar==6.0.0
 django-environ==0.12.0
+django-storages==1.14.6
 elasticsearch>=7.0.0,<8.0.0
 elasticsearch-dsl>=7.0.0,<8.0.0
 factory-boy>=2.6.0

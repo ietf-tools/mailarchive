@@ -18,6 +18,12 @@ DATABASES = {
 
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
+# Disable ROUTERS to use one default database for all tables during tests
+DATABASE_ROUTERS = []
+
+# BLOBDB
+BLOBDB_DATABASE = 'default'
+
 AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
 
 # ELASTICSEARCH SETTINGS

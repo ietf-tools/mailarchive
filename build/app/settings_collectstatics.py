@@ -1,4 +1,4 @@
-from .base import *
+from .settings import *
 from mlarchive import __version__
 
 STATIC_URL = "https://static.ietf.org/mailarchive/%s/"%__version__

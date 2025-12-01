@@ -24,6 +24,30 @@ DATABASE_ROUTERS = []
 # BLOBDB
 BLOBDB_DATABASE = 'default'
 
+# Blob replication storage for testing
+import botocore.config
+for storagename in ARTIFACT_STORAGE_NAMES:
+    replica_storagename = f"r2-{storagename}"
+    STORAGES[replica_storagename] = {
+        "BACKEND": "mlarchive.archive.storage.MetadataS3Storage",
+        "OPTIONS": dict(
+            endpoint_url="http://blobstore:9000",
+            access_key="minio_root",
+            secret_key="minio_pass",
+            security_token=None,
+            client_config=botocore.config.Config(
+                request_checksum_calculation="when_required",
+                response_checksum_validation="when_required",
+                signature_version="s3v4",
+                connect_timeout=BLOBSTORAGE_CONNECT_TIMEOUT,
+                read_timeout=BLOBSTORAGE_READ_TIMEOUT,
+                retries={"total_max_attempts": BLOBSTORAGE_MAX_ATTEMPTS},
+            ),
+            verify=False,
+            bucket_name=f"{storagename}",
+        ),
+    }
+
 AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
 
 # ELASTICSEARCH SETTINGS
@@ -59,7 +83,6 @@ CACHES = {
 
 # IMAP Interface
 EXPORT_DIR = os.path.join(DATA_ROOT, 'export')
-
 
 # CLOUDFLARE  INTEGRATION
 USING_CDN = False

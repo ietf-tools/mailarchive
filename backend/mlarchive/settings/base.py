@@ -39,9 +39,11 @@ env = environ.Env(
     BLOB_STORE_ENDPOINT_URL=(str, ''),
     BLOB_STORE_SECRET_KEY=(str, ''),
     BLOB_STORE_ACCESS_KEY=(str, ''),
-    BLOB_STORE_CONNECT_TIMEOUT=(int, 5),
-    BLOB_STORE_READ_TIMEOUT=(int, 30),
-    BLOB_STORE_MAX_ATTEMPTS=(int, 4),
+    # "standard" retry mode is used, which does exponential backoff with a base factor of 2
+    # and a cap of 20.
+    BLOB_STORE_CONNECT_TIMEOUT=(int, 10),  # seconds; boto3 default is 60
+    BLOB_STORE_READ_TIMEOUT=(int, 10),  # seconds; boto3 default is 60
+    BLOB_STORE_MAX_ATTEMPTS=(int, 5),  # boto3 default is 3 (for "standard" retry mode)
     BLOB_STORE_BUCKET_PREFIX=(str, ''),
     BLOB_STORE_ENABLE_PROFILING=(bool, False),
     BLOBDB_HOST=(str, 'blobdb'),
@@ -246,11 +248,14 @@ BLOBDB_REPLICATION = {
     "VERBOSE_LOGGING": True,
 }
 
-# "standard" retry mode is used, which does exponential backoff with a base factor of 2
-# and a cap of 20.
-BLOBSTORAGE_MAX_ATTEMPTS = 5  # boto3 default is 3 (for "standard" retry mode)
-BLOBSTORAGE_CONNECT_TIMEOUT = 10  # seconds; boto3 default is 60
-BLOBSTORAGE_READ_TIMEOUT = 10  # seconds; boto3 default is 60
+BLOB_STORE_ENDPOINT_URL = env('BLOB_STORE_ENDPOINT_URL')
+BLOB_STORE_SECRET_KEY = env('BLOB_STORE_SECRET_KEY')
+BLOB_STORE_ACCESS_KEY = env('BLOB_STORE_ACCESS_KEY')
+BLOB_STORE_CONNECT_TIMEOUT = env('BLOB_STORE_CONNECT_TIMEOUT')
+BLOB_STORE_READ_TIMEOUT = env('BLOB_STORE_READ_TIMEOUT')
+BLOB_STORE_MAX_ATTEMPTS = env('BLOB_STORE_MAX_ATTEMPTS')
+BLOB_STORE_BUCKET_PREFIX = env('BLOB_STORE_BUCKET_PREFIX')
+BLOB_STORE_ENABLE_PROFILING = env('BLOB_STORE_ENABLE_PROFILING')
 
 # -------------------------------------
 # ELASTICSEARCH SETTINGS

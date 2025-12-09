@@ -1,0 +1,17 @@
+{# Copyright The IETF Trust 2025, All Rights Reserved #}
+{% extends "base.html" %}
+{% block title %}Error: Page Not Found{% endblock %}
+{% block content %}
+    <div class="alert alert-warning my-3">
+        <h1>The page you were looking for couldn't be found</h1>
+        <hr>
+        <p>
+            The requested URL was not found on this server. If you entered the URL
+            manually please check your spelling and try again.
+        </p>
+        <p class="mb-0">
+            If you think this is a server error, please contact
+            <a href="mailto:tools-help@ietf.org">tools-help@ietf.org</a>.
+        </p>
+    </div>
+{% endblock %}

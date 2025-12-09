@@ -228,7 +228,7 @@ STORAGES = {
     'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
     'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
     'message': {
-        "BACKEND": "mlarchive.archive.storage.StoredObjectBlobdbStorage",
+        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
         "OPTIONS": {"bucket_name": 'message'},
     }
 }

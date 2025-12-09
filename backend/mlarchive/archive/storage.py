@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
-from typing import Optional
 
 import debug  # pyflakes:ignore
 import json
@@ -9,38 +8,10 @@ from storages.backends.s3 import S3Storage
 
 from django.core.files.base import File
 
-from mlarchive.blobdb.storage import BlobdbStorage
-from mlarchive.archive.models import StoredObject
-from mlarchive.utils.storage import MetadataFile
 from django.utils import timezone
 
 import logging
 logger = logging.getLogger(__name__)
-
-
-class StoredObjectFile(MetadataFile):
-    """Django storage File object that represents a StoredObject"""
-    def __init__(self, file, name, mtime=None, content_type="", store=None):
-        super().__init__(
-            file=file,
-            name=name,
-            mtime=mtime,
-            content_type=content_type,
-        )
-        self.store = store
-
-    @classmethod
-    def from_storedobject(cls, file, name, store):
-        """Alternate constructor for objects that already exist in the StoredObject table"""
-        stored_object = StoredObject.objects.filter(store=store, name=name, deleted__isnull=True).first()
-        if stored_object is None:
-            raise FileNotFoundError(f"StoredObject for {store}:{name} does not exist or was deleted")
-        file = cls(file, name, store)
-        if int(file.custom_metadata["len"]) != stored_object.len:
-            raise RuntimeError(f"File length changed unexpectedly for {store}:{name}")
-        if file.custom_metadata["sha384"] != stored_object.sha384:
-            raise RuntimeError(f"SHA-384 hash changed unexpectedly for {store}:{name}")
-        return file
 
 
 @contextmanager
@@ -111,58 +82,3 @@ class MetadataS3Storage(S3Storage):
         if hasattr(content, "custom_metadata"):
             params["Metadata"].update(content.custom_metadata)
         return params
-
-
-class StoredObjectBlobdbStorage(BlobdbStorage):
-    ietf_log_blob_timing = True
-    warn_if_missing = True  # TODO-BLOBSTORE make this configurable (or remove it)
-
-    def _save_stored_object(self, name, content) -> StoredObject:
-        now = timezone.now()
-        record, created = StoredObject.objects.get_or_create(
-            store=self.bucket_name,
-            name=name,
-            defaults=dict(
-                sha384=content.custom_metadata["sha384"],
-                len=int(content.custom_metadata["len"]),
-                store_created=now,
-                created=now,
-                modified=now,
-            ),
-        )
-        if not created:
-            record.sha384 = content.custom_metadata["sha384"]
-            record.len = int(content.custom_metadata["len"])
-            record.modified = now
-            record.deleted = None
-            record.save()
-        return record
-
-    def _delete_stored_object(self, name) -> Optional[StoredObject]:
-        existing_record = StoredObject.objects.filter(store=self.bucket_name, name=name)
-        if not existing_record.exists() and self.warn_if_missing:
-            complaint = (
-                f"WARNING: Asked to delete {name} from {self.bucket_name} storage, "
-                f"but there was no matching StoredObject"
-            )
-            logger.warning(complaint)
-            debug.show("complaint")
-        else:
-            now = timezone.now()
-            # Note that existing_record is a queryset that will have one matching object
-            existing_record.filter(deleted__isnull=True).update(deleted=now)
-        return existing_record.first()
-
-    def _save(self, name, content):
-        """Perform the save operation
-
-        In principle the name could change on save to the blob store. As of now, BlobdbStorage
-        will not change it, but allow for that possibility. Callers should be prepared for this.
-        """
-        saved_name = super()._save(name, content)
-        self._save_stored_object(saved_name, content)
-        return saved_name
-
-    def delete(self, name):
-        self._delete_stored_object(name)
-        super().delete(name)

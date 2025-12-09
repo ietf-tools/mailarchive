@@ -8,6 +8,7 @@ from typing import Optional, Union
 from django.conf import settings
 from django.core.files.base import ContentFile, File
 from django.core.files.storage import storages, Storage
+from mlarchive.blobdb.storage import BlobFile
 
 import logging
 logger = logging.getLogger(__name__)
@@ -62,7 +63,6 @@ def store_file(
     content_type: str = "",
     mtime: Optional[datetime.datetime] = None,
 ) -> None:
-    from .storage import StoredObjectFile  # avoid circular import
     if settings.ENABLE_BLOBSTORAGE:
         try:
             is_new = not exists_in_storage(kind, name)
@@ -72,8 +72,8 @@ def store_file(
                 raise RuntimeError(f"Failed to save {kind}:{name} - name already exists in store")
             new_name = _get_storage(kind).save(
                 name,
-                StoredObjectFile(
-                    file=file,
+                BlobFile(
+                    content=file.read(),
                     name=name,
                     mtime=mtime,
                     content_type=content_type,
@@ -169,7 +169,6 @@ def retrieve_str(kind: str, name: str) -> str:
     if settings.ENABLE_BLOBSTORAGE:
         try:
             content_bytes = retrieve_bytes(kind, name)
-            # TODO-BLOBSTORE: try to decode all the different ways doc.text() does
             content = content_bytes.decode("utf-8")
         except Exception as err:
             logger.error(f"Blobstore Error: Failed to read string from {kind}:{name}: {repr(err)}")

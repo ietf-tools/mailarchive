@@ -6,6 +6,9 @@ echo "Running Mailarchive checks..."
 echo "Running Mailarchive migrations..."
 ./backend/manage.py migrate
 
+echo "Running Mailarchive migrations..."
+./backend/manage.py migrate --database=blobdb
+
 echo "Running Initializing index..."
 ./backend/manage.py init_index
 

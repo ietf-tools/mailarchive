@@ -3,6 +3,7 @@ import datetime
 import email
 import glob
 import hashlib
+import io
 import mailbox
 import os
 import re
@@ -25,6 +26,7 @@ from mlarchive.archive.models import (Attachment, EmailList, Legacy, Message,
     Thread, get_in_reply_to_message, is_attachment)
 from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES, UNKNOWN_CONTENT_TYPE
 from mlarchive.archive.inspectors import *      # noqa
+from mlarchive.archive.storage_utils import store_file
 from mlarchive.archive.thread import compute_thread, reconcile_thread, parse_message_ids
 from mlarchive.utils.decorators import check_datetime
 from mlarchive.utils.encoding import decode_safely, decode_rfc2047_header, get_filename
@@ -972,9 +974,10 @@ class MessageWrapper(object):
 
         # build path
         if subdir:
-            path = os.path.join(settings.ARCHIVE_DIR, self.listname, subdir, filename)
+            subpath = os.path.join(self.listname, subdir, filename)
         else:
-            path = os.path.join(settings.ARCHIVE_DIR, self.listname, filename)
+            subpath = os.path.join(self.listname, filename)
+        path = os.path.join(settings.ARCHIVE_DIR, subpath)
 
         # if the file already exists, append a suffix
         if os.path.exists(path):
@@ -982,5 +985,8 @@ class MessageWrapper(object):
             logger.error(log_msg)
             path = get_incr_path(path)
 
-        # write file
+        # write file to disk
         write_file(path, self.bytes)
+
+        # write blob
+        store_file('message', subpath, io.BytesIO(self.bytes))

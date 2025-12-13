@@ -368,6 +368,9 @@ class Message(models.Model):
         host_url = settings.ARCHIVE_HOST_URL
         return [host_url + self.get_static_date_page_url(), host_url + self.get_static_thread_page_url()]
 
+    def get_blob_name(self):
+        return f'{self.email_list.name}/{self.hashcode}'
+
     def get_file_path(self):
         return os.path.join(
             settings.ARCHIVE_DIR,

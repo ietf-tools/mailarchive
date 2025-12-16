@@ -989,4 +989,4 @@ class MessageWrapper(object):
         write_file(path, self.bytes)
 
         # write blob
-        store_file('message', subpath, io.BytesIO(self.bytes))
+        store_file('message', subpath, io.BytesIO(self.bytes), content_type='message/rfc822')

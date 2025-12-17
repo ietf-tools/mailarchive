@@ -1,5 +1,7 @@
+import email
+from email import policy
+import json
 import os
-
 
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
@@ -52,3 +54,19 @@ def login_testing_unauthorized(client, url, username='staff@example.com'):
     if response.status_code == 302:
         assert '/accounts/login' in response['Location']
     return client.login(username=username, password='password')
+
+
+def is_email_message(byte_data):
+    msg = email.message_from_bytes(byte_data, policy=policy.default)
+    # Basic check: Does it have essential headers?
+    important_headers = ['From', 'To', 'Subject', 'Date']
+    has_headers = any(header in msg for header in important_headers)
+    return has_headers
+
+
+def is_json(my_str):
+    try:
+        json.loads(my_str)
+        return True
+    except (ValueError, TypeError):
+        return False

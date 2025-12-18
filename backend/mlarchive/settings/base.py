@@ -227,15 +227,20 @@ DATABASE_ROUTERS = ["mlarchive.blobdb.routers.BlobdbStorageRouter"]
 STORAGES = {
     'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
     'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
-    'message': {
+    'ml-messages': {
         "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
-        "OPTIONS": {"bucket_name": 'message'},
+        "OPTIONS": {"bucket_name": 'ml-messages'},
+    },
+    'ml-messages-json': {
+        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "OPTIONS": {"bucket_name": 'ml-messages-json'},
     }
 }
 
 # Storages for artifacts stored as blobs
 ARTIFACT_STORAGE_NAMES: list[str] = [
-    "message",
+    "ml-messages",
+    "ml-messages-json",
 ]
 
 ENABLE_BLOBSTORAGE = True

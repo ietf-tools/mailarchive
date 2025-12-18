@@ -18,14 +18,16 @@ from django.conf import settings
 from django.core.management import call_command
 from django.urls import reverse
 from django.utils.timezone import is_aware
+from factories import EmailListFactory, MessageFactory, ThreadFactory
 
 from mlarchive.archive.models import Message, EmailList
 from mlarchive.archive.mail import (archive_message, clean_spaces, MessageWrapper,
     get_base_subject, get_envelope_date, get_from, get_header_date, get_mb,
     get_received_date, parsedate_to_datetime, subject_is_reply,
-    lookup_extension, get_message_from_bytes)
-from factories import EmailListFactory, MessageFactory, ThreadFactory
-from mlarchive.utils.test_utils import message_from_file
+    lookup_extension, get_message_from_bytes, make_hash)
+from mlarchive.archive.storage_utils import (exists_in_storage, retrieve_bytes,
+    retrieve_str)
+from mlarchive.utils.test_utils import message_from_file, is_email_message, is_json
 
 
 SIMPLE_MESSAGE_BYTES = b'''From: Joe <joe@example.com>
@@ -62,17 +64,28 @@ Hello,
 This is a test email.  database
 '''
     data = data.encode('ASCII')
+    hashcode = make_hash('0000000002@example.com', 'test')
+    blob_name = f'test/{hashcode}'
+    assert Message.objects.all().count() == 0
+    assert not exists_in_storage('ml-messages', blob_name)
+    assert not exists_in_storage('ml-messages-json', blob_name)
     status = archive_message(data, 'test', private=False)
     assert status == 0
     # ensure message in db
     assert Message.objects.all().count() == 1
+    # ensure message in blob storage
+    assert exists_in_storage('ml-messages', blob_name)
+    msg_bytes = retrieve_bytes('ml-messages', blob_name)
+    assert is_email_message(msg_bytes)
+    # ensure message json in blob storage
+    assert exists_in_storage('ml-messages-json', blob_name)
+    msg_str = retrieve_str('ml-messages-json', blob_name)
+    assert is_json(msg_str)
     # ensure message in index
     url = '%s?q=database' % reverse('archive_search')
     response = client.get(url)
     print(response.context['results'])
     assert len(response.context['results']) == 1
-    # ensure message on disk
-    # TODO
     # test that thread date is correct in index
     url = reverse('archive_search') + '?q=tdate:20131107175455'
     assert len(response.context['results']) == 1

@@ -308,6 +308,9 @@ def check_inactive(prompt=True):
 
 
 def create_mbox_file(month, year, elist):
+    # private lists should not have mbox files in rsync
+    if elist.private:
+        return
     filename = '{:04d}-{:02d}.mail'.format(year, month)
     path = os.path.join(settings.ARCHIVE_MBOX_DIR, 'public', elist.name, filename)
     messages = elist.message_set.filter(date__month=month, date__year=year)
@@ -634,7 +637,8 @@ def remove_selected(user_id):
     queryset.delete()
     for file in mbox_updates:
         elist = EmailList.objects.get(pk=file[2])
-        create_mbox_file(file[0], file[1], elist)
+        if not elist.private:
+            create_mbox_file(file[0], file[1], elist)
 
 
 def mark_not_spam(message_ids):

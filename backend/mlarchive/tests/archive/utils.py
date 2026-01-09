@@ -268,6 +268,13 @@ def test_create_mbox_file(tmpdir, settings, latin1_messages):
     mbox = mailbox.mbox(path)
     assert len(mbox) == 1
     mbox.close()
+    # confirm private list ignored
+    os.remove(path)
+    elist.private = True
+    elist.save()
+    assert not os.path.exists(path)
+    create_mbox_file(month=month, year=year, elist=elist)
+    assert not os.path.exists(path)
 
 
 @pytest.mark.django_db(transaction=True)

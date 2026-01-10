@@ -234,6 +234,22 @@ STORAGES = {
     'ml-messages-json': {
         "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
         "OPTIONS": {"bucket_name": 'ml-messages-json'},
+    },
+    'ml-messages-private': {
+        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "OPTIONS": {"bucket_name": 'ml-messages-private'},
+    },
+    'ml-messages-private-json': {
+        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "OPTIONS": {"bucket_name": 'ml-messages-private-json'},
+    },
+    'ml-messages-removed': {
+        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "OPTIONS": {"bucket_name": 'ml-messages-removed'},
+    },
+    'ml-messages-incoming': {
+        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "OPTIONS": {"bucket_name": 'ml-messages-incoming'},
     }
 }
 
@@ -241,6 +257,10 @@ STORAGES = {
 ARTIFACT_STORAGE_NAMES: list[str] = [
     "ml-messages",
     "ml-messages-json",
+    "ml-messages-private",
+    "ml-messages-private-json",
+    "ml-messages-removed",
+    "ml-messages-incoming",
 ]
 
 ENABLE_BLOBSTORAGE = True
@@ -249,7 +269,11 @@ BLOBDB_REPLICATION = {
     "ENABLED": env('BLOBDB_REPLICATION_ENABLED'),
     "DEST_STORAGE_PATTERN": "r2-{bucket}",
     "INCLUDE_BUCKETS": ARTIFACT_STORAGE_NAMES,
-    "EXCLUDE_BUCKETS": ["staging", "removed"],
+    "EXCLUDE_BUCKETS": [
+        "ml-messages-private",
+        "ml-messages-private-json",
+        "ml-messages-removed",
+        "ml-messages-incoming"],
     "VERBOSE_LOGGING": True,
 }
 

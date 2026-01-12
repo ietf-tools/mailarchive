@@ -92,6 +92,39 @@ This is a test email.  database
 
 
 @pytest.mark.django_db(transaction=True)
+def test_archive_message_private(client):
+    data = '''From: Joe <joe@example.com>
+To: Joe <joe@example.com>
+Date: Thu, 7 Nov 2013 17:54:55 +0000
+Message-ID: <0000000002@example.com>
+Content-Type: text/plain; charset="us-ascii"
+Subject: This is a test
+
+Hello,
+
+This is a test email.  database
+'''
+    data = data.encode('ASCII')
+    hashcode = make_hash('0000000002@example.com', 'test')
+    blob_name = f'test/{hashcode}'
+    assert Message.objects.all().count() == 0
+    assert not exists_in_storage('ml-messages', blob_name)
+    assert not exists_in_storage('ml-messages-json', blob_name)
+    assert not exists_in_storage('ml-messages-private', blob_name)
+    status = archive_message(data, 'test', private=True)
+    assert status == 0
+    # ensure message in db
+    assert Message.objects.all().count() == 1
+    # ensure message in blob storage
+    assert not exists_in_storage('ml-messages', blob_name)
+    assert exists_in_storage('ml-messages-private', blob_name)
+    msg_bytes = retrieve_bytes('ml-messages-private', blob_name)
+    assert is_email_message(msg_bytes)
+    # ensure message json in blob storage
+    assert not exists_in_storage('ml-messages-json', blob_name)
+
+
+@pytest.mark.django_db(transaction=True)
 def test_archive_message_fail(client):
     data = b'Hello,\n This is a test email.  With no headers.'
     # remove any existing failed messages

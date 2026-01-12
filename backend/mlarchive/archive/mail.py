@@ -988,8 +988,9 @@ class MessageWrapper(object):
         # write file to disk
         write_file(path, self.bytes)
 
-        # write raw message to blobdb
-        store_file('ml-messages', subpath, io.BytesIO(self.bytes), content_type='message/rfc822')
-
-        # write message json to blobdb
-        store_file('ml-messages-json', subpath, io.BytesIO(self.archive_message.as_json().encode('utf-8')), content_type='application/json')
+        # write message to appropriate blobdb bucket(s)
+        if self.private:
+            store_file('ml-messages-private', subpath, io.BytesIO(self.bytes), content_type='message/rfc822')
+        else:
+            store_file('ml-messages', subpath, io.BytesIO(self.bytes), content_type='message/rfc822')
+            store_file('ml-messages-json', subpath, io.BytesIO(self.archive_message.as_json().encode('utf-8')), content_type='application/json')

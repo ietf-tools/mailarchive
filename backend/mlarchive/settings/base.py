@@ -239,10 +239,6 @@ STORAGES = {
         "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
         "OPTIONS": {"bucket_name": 'ml-messages-private'},
     },
-    'ml-messages-private-json': {
-        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
-        "OPTIONS": {"bucket_name": 'ml-messages-private-json'},
-    },
     'ml-messages-removed': {
         "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
         "OPTIONS": {"bucket_name": 'ml-messages-removed'},
@@ -258,7 +254,6 @@ ARTIFACT_STORAGE_NAMES: list[str] = [
     "ml-messages",
     "ml-messages-json",
     "ml-messages-private",
-    "ml-messages-private-json",
     "ml-messages-removed",
     "ml-messages-incoming",
 ]
@@ -271,7 +266,6 @@ BLOBDB_REPLICATION = {
     "INCLUDE_BUCKETS": ARTIFACT_STORAGE_NAMES,
     "EXCLUDE_BUCKETS": [
         "ml-messages-private",
-        "ml-messages-private-json",
         "ml-messages-removed",
         "ml-messages-incoming"],
     "VERBOSE_LOGGING": True,

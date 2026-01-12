@@ -111,7 +111,6 @@ This is a test email.  database
     assert not exists_in_storage('ml-messages', blob_name)
     assert not exists_in_storage('ml-messages-json', blob_name)
     assert not exists_in_storage('ml-messages-private', blob_name)
-    assert not exists_in_storage('ml-messages-private-json', blob_name)
     status = archive_message(data, 'test', private=True)
     assert status == 0
     # ensure message in db
@@ -123,7 +122,6 @@ This is a test email.  database
     assert is_email_message(msg_bytes)
     # ensure message json in blob storage
     assert not exists_in_storage('ml-messages-json', blob_name)
-    assert not exists_in_storage('ml-messages-private-json', blob_name)
 
 
 @pytest.mark.django_db(transaction=True)

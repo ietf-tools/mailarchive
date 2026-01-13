@@ -31,9 +31,9 @@ spec:
         runAsNonRoot: true
       containers:
         # -----------------------------------------------------
-        # Celery Container
+        # Replicator Container
         # -----------------------------------------------------
-        - name: celery
+        - name: replicator
           image: "ghcr.io/ietf-tools/mailarchive:$APP_IMAGE_TAG"
           imagePullPolicy: Always
           volumeMounts:

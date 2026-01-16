@@ -20,6 +20,7 @@ RUN apt-get update --fix-missing && apt-get install -qy \
     bash \
     build-essential \
     curl \
+    docker-ce-cli \
     libgtk-3-0 \
     libgbm-dev \
     libasound2 \

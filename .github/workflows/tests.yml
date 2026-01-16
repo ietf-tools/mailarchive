@@ -57,6 +57,9 @@ jobs:
           POSTGRES_PASSWORD: RkTkDPFnKpko
           POSTGRES_DB: test_mailarchive
 
+      blobstore:
+        image: ghcr.io/ietf-tools/datatracker-devblobstore:latest
+
     steps:
       - uses: actions/checkout@v5
 

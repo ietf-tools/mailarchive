@@ -84,15 +84,16 @@ services:
       dockerfile: build/app/Dockerfile
     init: true
     environment:
+      BLOBDB_PASSWORD: abcd1234
+      BROKER_URL: amqp://guest:guest@rabbit:5672//
       CELERY_APP: mlarchive.celeryapp:app
       CONTAINER_ROLE: celery
-      UPDATE_REQUIREMENTS_FROM: requirements.txt
-      BROKER_URL: amqp://guest:guest@rabbit:5672//
-      DJANGO_SETTINGS_MODULE: mlarchive.settings.settings
-      SECRET_KEY: 2y&2u=%@di1tnc3gt82e9p@$7cq7nbctll41d02@e$#=9jrzj$
-      DATABASES_PASSWORD: franticmarble
       DATABASES_HOST: db
+      DATABASES_PASSWORD: franticmarble
+      DJANGO_SETTINGS_MODULE: mlarchive.settings.settings
       ELASTICSEARCH_HOST: es
+      SECRET_KEY: 2y&2u=%@di1tnc3gt82e9p@$7cq7nbctll41d02@e$#=9jrzj$
+      UPDATE_REQUIREMENTS_FROM: requirements.txt
     depends_on:
       - app
     restart: unless-stopped
@@ -107,15 +108,16 @@ services:
       dockerfile: build/app/Dockerfile
     init: true
     environment:
+      BLOBDB_PASSWORD: abcd1234
+      BROKER_URL: amqp://guest:guest@rabbit:5672//
       CELERY_APP: mlarchive.celeryapp:app
       CONTAINER_ROLE: replicator
-      UPDATE_REQUIREMENTS_FROM: requirements.txt
-      BROKER_URL: amqp://guest:guest@rabbit:5672//
+      DATABASES_HOST: db
+      DATABASES_PASSWORD: franticmarble
+      ELASTICSEARCH_HOST: es
       DJANGO_SETTINGS_MODULE: mlarchive.settings.settings
       SECRET_KEY: 2y&2u=%@di1tnc3gt82e9p@$7cq7nbctll41d02@e$#=9jrzj$
-      DATABASES_PASSWORD: franticmarble
-      DATABASES_HOST: db
-      ELASTICSEARCH_HOST: es
+      UPDATE_REQUIREMENTS_FROM: requirements.txt
     depends_on:
       - app
     restart: unless-stopped

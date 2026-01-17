@@ -13,4 +13,5 @@ resources:
   - mailarchive.yaml
   - memcached.yaml
   - rabbitmq.yaml
+  - replicator.yaml
   # - kibana.yaml

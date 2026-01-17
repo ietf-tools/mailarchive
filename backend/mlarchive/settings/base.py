@@ -36,9 +36,9 @@ env = environ.Env(
     DATABASES_USER=(str, 'mailarch'),
     DATABASES_PASSWORD=(str, ''),
     DATABASES_OPTS_JSON=(str, '{}'),
-    BLOB_STORE_ENDPOINT_URL=(str, ''),
-    BLOB_STORE_SECRET_KEY=(str, ''),
-    BLOB_STORE_ACCESS_KEY=(str, ''),
+    BLOB_STORE_ENDPOINT_URL=(str, 'http://blobstore:9000'),
+    BLOB_STORE_SECRET_KEY=(str, 'minio_pass'),
+    BLOB_STORE_ACCESS_KEY=(str, 'minio_root'),
     # "standard" retry mode is used, which does exponential backoff with a base factor of 2
     # and a cap of 20.
     BLOB_STORE_CONNECT_TIMEOUT=(int, 10),  # seconds; boto3 default is 60
@@ -52,7 +52,7 @@ env = environ.Env(
     BLOBDB_USER=(str, 'mailarch'),
     BLOBDB_PASSWORD=(str, ''),
     BLOBDB_OPTS_JSON=(str, '{}'),
-    BLOBDB_REPLICATION_ENABLED=(bool, False),
+    BLOBDB_REPLICATION_ENABLED=(bool, True),
     DATATRACKER_API_BASE_URL=(str, ''),
     DATATRACKER_PERSON_ENDPOINT_API_KEY=(str, ''),
     DATATRACKER_EMAIL_RELATED_API_KEY=(str, ''),

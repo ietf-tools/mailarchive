@@ -1,4 +1,7 @@
-FROM --platform=linux/amd64 ghcr.io/ietf-tools/mailarchive-app-base:py312
+# FROM --platform=linux/amd64 ghcr.io/ietf-tools/mailarchive-app-base:py312
+# FROM --platform=linux/arm64/v8 ghcr.io/ietf-tools/mailarchive-app-base:py312
+# FROM ghcr.io/ietf-tools/mailarchive-app-base:py312
+FROM ghcr.io/ietf-tools/mailarchive-app-base:py312
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive

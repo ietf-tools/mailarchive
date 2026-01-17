@@ -59,6 +59,10 @@ for sub in \
     sudo chown -R dev:dev "/data"
 done
 
+# Configure the development blobstore
+
+echo "Configuring blobstore..."
+PYTHONPATH=/workspace python ./docker/scripts/app-configure-blobstore.py
 
 # Wait for DB container
 

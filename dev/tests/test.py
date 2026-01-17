@@ -24,6 +24,9 @@ DATABASE_ROUTERS = []
 # BLOBDB
 BLOBDB_DATABASE = 'default'
 
+# Turn off blob replication for testing
+BLOBDB_REPLICATION['ENABLED'] = False
+
 # Blob replication storage for testing
 import botocore.config
 for storagename in ARTIFACT_STORAGE_NAMES:

@@ -989,6 +989,8 @@ class MessageWrapper(object):
         write_file(path, self.bytes)
 
         # write message to appropriate blobdb bucket(s)
+        # strip trailing "=" from filename to match message URL
+        subpath = subpath.rstrip('=')
         if self.private:
             store_file('ml-messages-private', subpath, io.BytesIO(self.bytes), content_type='message/rfc822')
         else:

@@ -65,7 +65,7 @@ This is a test email.  database
 '''
     data = data.encode('ASCII')
     hashcode = make_hash('0000000002@example.com', 'test')
-    blob_name = f'test/{hashcode}'
+    blob_name = f'test/{hashcode}'.rstrip('=')
     assert Message.objects.all().count() == 0
     assert not exists_in_storage('ml-messages', blob_name)
     assert not exists_in_storage('ml-messages-json', blob_name)
@@ -106,7 +106,7 @@ This is a test email.  database
 '''
     data = data.encode('ASCII')
     hashcode = make_hash('0000000002@example.com', 'test')
-    blob_name = f'test/{hashcode}'
+    blob_name = f'test/{hashcode}'.rstrip('=')
     assert Message.objects.all().count() == 0
     assert not exists_in_storage('ml-messages', blob_name)
     assert not exists_in_storage('ml-messages-json', blob_name)

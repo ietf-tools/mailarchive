@@ -14,6 +14,9 @@ case "${CONTAINER_ROLE:-mailarchive}" in
     beat)
         exec ./celery-start.sh --app="${CELERY_APP:-mlarchive.celeryapp:app}" beat
         ;;
+    replicator)
+        exec ./celery-start.sh --app="${CELERY_APP:-mlarchive.celeryapp:app}" worker --queues=blobdb --concurrency=1
+        ;;
     *)
         echo "Unknown role '${CONTAINER_ROLE}'"
         exit 255       

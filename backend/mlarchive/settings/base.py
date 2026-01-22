@@ -246,6 +246,18 @@ STORAGES = {
     'ml-messages-incoming': {
         "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
         "OPTIONS": {"bucket_name": 'ml-messages-incoming'},
+    },
+    'ml-messages-filtered': {
+        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "OPTIONS": {"bucket_name": 'ml-messages-filtered'},
+    },
+    'ml-messages-dupes': {
+        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "OPTIONS": {"bucket_name": 'ml-messages-dupes'},
+    },
+    'ml-messages-spam': {
+        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "OPTIONS": {"bucket_name": 'ml-messages-spam'},
     }
 }
 
@@ -256,6 +268,9 @@ ARTIFACT_STORAGE_NAMES: list[str] = [
     "ml-messages-private",
     "ml-messages-removed",
     "ml-messages-incoming",
+    "ml-messages-filtered",
+    "ml-messages-dupes",
+    "ml-messages-spam",
 ]
 
 ENABLE_BLOBSTORAGE = True
@@ -267,7 +282,10 @@ BLOBDB_REPLICATION = {
     "EXCLUDE_BUCKETS": [
         "ml-messages-private",
         "ml-messages-removed",
-        "ml-messages-incoming"],
+        "ml-messages-incoming",
+        "ml-messages-filtered",
+        "ml-messages-dupes",
+        "ml-messages-spam"],
     "VERBOSE_LOGGING": True,
 }
 

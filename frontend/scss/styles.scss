@@ -377,7 +377,8 @@ ul.browse-list li {
 }
 
 .row-has-brackets {
-    background-color: $pale-blue;
+    --bs-table-bg: #{$pale-blue};
+    --bs-table-accent-bg: #{$pale-blue};
 }
 
 .spam-mode tr.row-selected {
@@ -600,7 +601,8 @@ table.msg-list-header-table th a.btn {
 }
 
 div.row-selected {
-    background-color: $pale-blue;
+    --bs-table-bg: #{$pale-blue};
+    --bs-table-accent-bg: #{$pale-blue};
 }
 
 .date-col {

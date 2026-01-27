@@ -1,27 +1,35 @@
-// Custom.scss
-// Option A: Include all of Bootstrap
-
-// Other variables are derived from these, so they must be overriden
-// before importing the bootstrap partials
-
-// Default variable overrides
-$primary:                     #337ab7;
-$line-height-base:            1.42857;
-$font-size-base:              0.875rem;
-$link-decoration:             none;
-
-
+// 1. REQUIRED: Include functions first
 @import "../node_modules/bootstrap/scss/functions";
+
+// 2. Variable Overrides (Non-Map variables)
+// These can stay here because they use !default in the source
+$primary:             #337ab7;
+$line-height-base:    1.42857;
+$font-size-base:      0.875rem;
+$link-decoration:     none;
+$enable-shadows:      true;
+$enable-gradients:    true;
+
+// 3. REQUIRED: Include variables AND the new variables-dark
 @import "../node_modules/bootstrap/scss/variables";
+@import "../node_modules/bootstrap/scss/variables-dark"; // New for 5.3+
+
+// 4. MAP OVERRIDES
+// In 5.3, if you want your custom $primary to propagate to all
+// subtle backgrounds and borders, you should re-merge the map:
+$theme-colors: map-merge($theme-colors, (
+  "primary": $primary
+));
+
+// 5. NAVBAR UPDATES
+// Bootstrap 5.3 deprecated $navbar-dark-* in favor of Color Modes,
+// but for backward compatibility, you can still set these.
+// Note: Use the new variable names if you want to support Dark Mode properly.
+$navbar-dark-color:        $white;
+$navbar-dark-hover-color:  rgba($white, .75);
+
+// 6. Include remaining Bootstrap stacks
+@import "../node_modules/bootstrap/scss/maps";
 @import "../node_modules/bootstrap/scss/mixins";
-
-// Your variable overrides
-$enable-shadows:            true;
-$enable-gradients:          true; 
-
-// Navbar
-
-$navbar-dark-color:                 $white;
-$navbar-dark-hover-color:           rgba($white, .75);
-// $navbar-dark-active-color:          $white !default;
-// $navbar-dark-disabled-color:        rgba($white, .25) !default;
+@import "../node_modules/bootstrap/scss/root";
+@import "../node_modules/bootstrap/scss/bootstrap";

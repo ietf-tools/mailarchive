@@ -70,6 +70,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
 
     # TEST MESSAGE VIEW NAVIGAIONS
 
+    @pytest.mark.skip(reason='Selenium replaced by Playwright')
     @pytest.mark.usefixtures("thread_messages")
     def test_message_detail_next_list(self):
         '''Test next message in list button of message detail'''
@@ -88,6 +89,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         self.assertIn(messages[1].subject, self.selenium.title)
         self.assertIn(messages[1].msgid, self.selenium.page_source)
 
+    @pytest.mark.skip(reason='Selenium replaced by Playwright')
     @pytest.mark.usefixtures("thread_messages")
     def test_message_detail_previous_list(self):
         '''Test previous message in list button of message detail'''
@@ -139,7 +141,8 @@ class MySeleniumTests(StaticLiveServerTestCase):
         print self.selenium.current_url
         self.assertIn(next_message_url, self.selenium.current_url)
     """
-    
+
+    @pytest.mark.skip(reason='Selenium replaced by Playwright')
     @pytest.mark.usefixtures("thread_messages")
     def test_message_detail_toggle_nav(self):
         '''Test toggle navigation bar feature of message detail'''
@@ -165,6 +168,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         element = self.selenium.find_element(By.CLASS_NAME, 'navbar-msg-detail')
         assert element.is_displayed()
 
+    @pytest.mark.skip(reason='Selenium replaced by Playwright')
     @pytest.mark.usefixtures("thread_messages")
     def test_message_detail_toggle_msg_header(self):
         '''Test toggle message header feature of message detail'''
@@ -191,6 +195,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         element = self.selenium.find_element(By.ID, 'msg-header')
         assert not element.is_displayed()
 
+    @pytest.mark.skip(reason='Selenium replaced by Playwright')
     def test_back_to_search(self):
         # User performs search
         url = urljoin(self.live_server_url, reverse('archive'))
@@ -214,6 +219,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         self.selenium.get_screenshot_as_file('tests/tmp/back_to_search.png')
         self.assertEqual('IETF Mail List Archives', self.selenium.title)
 
+    @pytest.mark.skip(reason='Selenium replaced by Playwright')
     def test_back_to_advanced_search(self):
         # User performs search
         url = urljoin(self.live_server_url, reverse('archive_advsearch'))
@@ -237,6 +243,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         # End up back at advanced search
         self.assertEqual('Mail Archive Advanced Search', self.selenium.title)
 
+    @pytest.mark.skip(reason='Selenium replaced by Playwright')
     def test_advanced_search_contains(self):
         url = urljoin(self.live_server_url, reverse('archive_advsearch'))
         self.selenium.get(url)
@@ -253,6 +260,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         o = urlparse(self.selenium.current_url)
         assert unquote(o.query) == 'qdr=a&start_date=&end_date=&email_list=&q=text:(data)&as=1'
 
+    @pytest.mark.skip(reason='Selenium replaced by Playwright')
     def test_advanced_search_exact(self):
         url = urljoin(self.live_server_url, reverse('archive_advsearch'))
         self.selenium.get(url)
@@ -274,6 +282,7 @@ class MySeleniumTests(StaticLiveServerTestCase):
         o = urlparse(self.selenium.current_url)
         assert unquote(o.query) == 'qdr=a&start_date=&end_date=&email_list=&q=text:"data"&as=1'
 
+    @pytest.mark.skip(reason='Selenium replaced by Playwright')
     @pytest.mark.usefixtures("thread_messages")
     def test_message_detail_date_link(self):
         '''Test toggle message header feature of message detail'''
@@ -297,8 +306,10 @@ class MySeleniumTests(StaticLiveServerTestCase):
         self.assertIn('Date Index', self.selenium.title)
         self.assertTrue(self.is_element_focus(message.hashcode.strip('=')))
 
+    @pytest.mark.skip(reason='Selenium replaced by Playwright')
     def is_element_focus(self, id):
         return self.selenium.find_element(By.ID, id) == self.selenium.switch_to.active_element
+
 
 """
     def test_static_mode(self):

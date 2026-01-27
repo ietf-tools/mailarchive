@@ -36,9 +36,32 @@ def pytest_configure(tmpdir_factory):
     # settings.configure()
 '''
 
+os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+
 # -----------------------------------
 # Session Fixtures
 # -----------------------------------
+
+
+# playwright settings
+
+@pytest.fixture(scope="session")
+def browser_context_args(browser_context_args):
+    """Configure browser context for all tests."""
+    return {
+        **browser_context_args,
+        "viewport": {"width": 1400, "height": 1000},
+    }
+
+
+@pytest.fixture(scope="session")
+def browser_type_launch_args(browser_type_launch_args):
+    """Configure browser launch args - headless by default."""
+    return {
+        **browser_type_launch_args,
+        "headless": True,
+    }
+
 
 '''
 The following two fixtures cause the test run to use a temporary
@@ -522,6 +545,17 @@ def users():
         email='unprivileged@example.com',
         password='password',
         is_staff=False)
+
+
+@pytest.fixture()
+def admin_user():
+    """A fixture that creates an admin superuser for testing"""
+    return UserFactory(
+        username='admin',
+        password='password',
+        email='admin@example.com',
+        is_superuser=True,
+        is_staff=True)
 
 # --------------------------------------------------
 # Celery Fixtures

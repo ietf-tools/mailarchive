@@ -44,7 +44,7 @@ jobs:
           xpack.security.enabled: "false"
 
       db:
-        image: postgres:14
+        image: postgres:17
         ports:
           - 5432:5432
         options: >-
@@ -57,11 +57,17 @@ jobs:
           POSTGRES_PASSWORD: RkTkDPFnKpko
           POSTGRES_DB: test_mailarchive
 
+      blobstore:
+        image: ghcr.io/ietf-tools/datatracker-devblobstore:latest
+
     steps:
       - uses: actions/checkout@v5
 
       - name: Setup ChromeDriver
-        uses: browser-actions/setup-chrome@v1
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+          install-chromedriver: true
 
       - name: Prepare for tests
         run: |

@@ -18,6 +18,7 @@ from django.db import models, connection, transaction
 from mlarchive.archive.models import Message, EmailList
 from mlarchive.archive.backends.elasticsearch import ESBackend, get_identifier
 from mlarchive.archive.utils import _export_lists
+from mlarchive.celeryapp import app
 
 logger = logging.getLogger(__name__)
 
@@ -249,17 +250,10 @@ def enqueue_task(action, instance, **kwargs):
         task_func()
 
 
-def get_update_task(task_path=None):
-    import_path = task_path or settings.CELERY_DEFAULT_TASK
-    module, attr = import_path.rsplit('.', 1)
-    try:
-        mod = import_module(module)
-    except ImportError as e:
-        raise ImproperlyConfigured('Error importing module %s: "%s"' %
-                                   (module, e))
-    try:
-        Task = getattr(mod, attr)
-    except AttributeError:
-        raise ImproperlyConfigured('Module "%s" does not define a "%s" '
-                                   'class.' % (module, attr))
-    return Task
+def get_update_task(name=None):
+    task_name = name or settings.CELERY_DEFAULT_TASK
+    task = app.tasks.get(task_name)
+    if task:
+        return task
+    else:
+        raise ImproperlyConfigured(f'Invalid task name {task_name}')

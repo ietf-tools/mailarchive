@@ -1,4 +1,5 @@
 name: Build and Release
+run-name: ${{ github.ref_name == 'main' && '[Prod]' || '[Dev]' }} Build ${{ github.run_number }} of branch ${{ github.ref_name }} by @${{ github.actor }}
 
 on:
   push:
@@ -48,19 +49,37 @@ jobs:
         fetch-depth: 1
         fetch-tags: false
         
-    - name: Get Next Version
+    - name: Get Next Version (Prod)
       if: ${{ github.event.inputs.publish == 'true' }}
       id: semver
       uses: ietf-tools/semver-action@v1
       with:
         token: ${{ github.token }}
         branch: main
-        
+        skipInvalidTags: true
+        patchList: fix, bugfix, perf, refactor, test, tests, chore
+
+    - name: Get Dev Version
+      if: ${{ github.event.inputs.publish != 'true' }}
+      id: semverdev
+      uses: ietf-tools/semver-action@v1
+      with:
+        token: ${{ github.token }}
+        branch: main
+        skipInvalidTags: true
+        noVersionBumpBehavior: 'current'
+        noNewCommitBehavior: 'current'
+
     - name: Set Next Version Env Var
       if: ${{ github.event.inputs.publish == 'true' }}
       run: |
         echo "NEXT_VERSION=$nextStrict" >> "$GITHUB_ENV"
-        
+
+    - name: Set Release Flag
+      if: ${{ github.event.inputs.publish == 'true' }}
+      run: |
+        echo "IS_RELEASE=true" >> $GITHUB_ENV
+
     - name: Create Draft Release
       uses: ncipollo/release-action@v1
       if: ${{ github.event.inputs.publish == 'true' }}
@@ -76,21 +95,16 @@ jobs:
     - name: Set Build Variables
       id: buildvars
       run: |
-        if [[ $NEXT_VERSION ]]; then
-          echo "Using AUTO SEMVER mode: $NEXT_VERSION"
+        if [[ $IS_RELEASE ]]; then
+          echo "Using AUTO SEMVER mode: ${{ steps.semver.outputs.nextStrict }}"
           echo "should_deploy=true" >> "$GITHUB_OUTPUT"
-          echo "pkg_version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
-          echo "::notice::Release created using branch $GITHUB_REF_NAME"
-        elif [[ "$GITHUB_REF" =~ ^refs/tags/* ]]; then
-          echo "Using TAG mode: $GITHUB_REF_NAME"
-          echo "should_deploy=true" >> "$GITHUB_OUTPUT"
-          echo "pkg_version=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
-          echo "::notice::Release created using tag $GITHUB_REF_NAME"
+          echo "pkg_version=${{ steps.semver.outputs.nextStrict }}" >> $GITHUB_OUTPUT
+          echo "::notice::Release ${{ steps.semver.outputs.nextStrict }} created using branch $GITHUB_REF_NAME"
         else
-          echo "Using TEST mode: v2.0.0-dev.$GITHUB_RUN_NUMBER"
-          echo "should_deploy=false" >> "$GITHUB_OUTPUT"
-          echo "pkg_version=2.0.0-dev.$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
-          echo "::notice::Non-production build created using branch $GITHUB_REF_NAME"
+          echo "Using TEST mode: ${{ steps.semverdev.outputs.nextMajorStrict }}.0.0-dev.$GITHUB_RUN_NUMBER"
+          echo "should_deploy=false" >> $GITHUB_OUTPUT
+          echo "pkg_version=${{ steps.semverdev.outputs.nextMajorStrict }}.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
+          echo "::notice::Non-production build ${{ steps.semverdev.outputs.nextMajorStrict }}.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
         fi
 
   # -----------------------------------------------------------------
@@ -187,7 +201,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build Release Docker Image
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: build/app/Dockerfile

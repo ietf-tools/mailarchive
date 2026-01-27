@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: replicator
+  labels:
+    deleteBeforeUpgrade: yes
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: replicator
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: replicator
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - mailarchive
+              topologyKey: "kubernetes.io/hostname"
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        # -----------------------------------------------------
+        # Replicator Container
+        # -----------------------------------------------------
+        - name: replicator
+          image: "ghcr.io/ietf-tools/mailarchive:$APP_IMAGE_TAG"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: ml-vol
+              mountPath: /mnt/mailarchive
+            - name: ml-tmp
+              mountPath: /tmp
+          env:
+            - name: "CONTAINER_ROLE"
+              value: "replicator"
+          envFrom:
+            - configMapRef:
+                name: django-config
+            - secretRef:
+                name: ml-secrets-env
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
+      volumes:
+        # To be overridden with the actual shared volume
+        - name: ml-vol
+        - name: ml-tmp
+          emptyDir:
+            sizeLimit: "2Gi"
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30

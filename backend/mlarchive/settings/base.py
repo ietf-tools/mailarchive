@@ -30,12 +30,29 @@ env = environ.Env(
     CLOUDFLARE_ZONE_ID=(str, ''),
     DATA_UPLOAD_MAX_MEMORY_SIZE=(int, 90000000),
     DATA_ROOT=(str, '/data'),
+    DATABASES_HOST=(str, ''),
+    DATABASES_PORT=(str, ''),
     DATABASES_NAME=(str, 'mailarch'),
     DATABASES_USER=(str, 'mailarch'),
     DATABASES_PASSWORD=(str, ''),
-    DATABASES_HOST=(str, ''),
-    DATABASES_PORT=(str, ''),
     DATABASES_OPTS_JSON=(str, '{}'),
+    BLOB_STORE_ENDPOINT_URL=(str, 'http://blobstore:9000'),
+    BLOB_STORE_SECRET_KEY=(str, 'minio_pass'),
+    BLOB_STORE_ACCESS_KEY=(str, 'minio_root'),
+    # "standard" retry mode is used, which does exponential backoff with a base factor of 2
+    # and a cap of 20.
+    BLOB_STORE_CONNECT_TIMEOUT=(int, 10),  # seconds; boto3 default is 60
+    BLOB_STORE_READ_TIMEOUT=(int, 10),  # seconds; boto3 default is 60
+    BLOB_STORE_MAX_ATTEMPTS=(int, 5),  # boto3 default is 3 (for "standard" retry mode)
+    BLOB_STORE_BUCKET_PREFIX=(str, ''),
+    BLOB_STORE_ENABLE_PROFILING=(bool, False),
+    BLOBDB_HOST=(str, 'blobdb'),
+    BLOBDB_PORT=(str, '5432'),
+    BLOBDB_NAME=(str, 'blobdb'),
+    BLOBDB_USER=(str, 'mailarch'),
+    BLOBDB_PASSWORD=(str, ''),
+    BLOBDB_OPTS_JSON=(str, '{}'),
+    BLOBDB_REPLICATION_ENABLED=(bool, True),
     DATATRACKER_API_BASE_URL=(str, ''),
     DATATRACKER_PERSON_ENDPOINT_API_KEY=(str, ''),
     DATATRACKER_EMAIL_RELATED_API_KEY=(str, ''),
@@ -88,13 +105,22 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = env('DATA_UPLOAD_MAX_MEMORY_SIZE')
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env("DATABASES_NAME"),
-        'USER': env("DATABASES_USER"),
-        'PASSWORD': env("DATABASES_PASSWORD"),
         'HOST': env("DATABASES_HOST"),
         'PORT': env("DATABASES_PORT"),
+        'NAME': env("DATABASES_NAME"),
+        'ENGINE': 'django.db.backends.postgresql',
+        'USER': env("DATABASES_USER"),
+        'PASSWORD': env("DATABASES_PASSWORD"),
         'OPTIONS': json.loads(env("DATABASES_OPTS_JSON")),
+    },
+    'blobdb': {
+        'HOST': env("BLOBDB_HOST"),
+        'PORT': env("BLOBDB_PORT"),
+        'NAME': env("BLOBDB_NAME"),
+        'ENGINE': 'django.db.backends.postgresql',
+        'USER': env("BLOBDB_USER"),
+        'PASSWORD': env("BLOBDB_PASSWORD"),
+        'OPTIONS': json.loads(env("BLOBDB_OPTS_JSON")),
     }
 }
 
@@ -128,6 +154,7 @@ INSTALLED_APPS = [
     'django_bootstrap5',
     'django_celery_beat',
     'mlarchive.archive.apps.ArchiveConfig',
+    'mlarchive.blobdb',
 ]
 
 
@@ -191,13 +218,74 @@ STATICFILES_DIRS = (
 
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
+DATABASE_ROUTERS = ["mlarchive.blobdb.routers.BlobdbStorageRouter"]
+
 # -------------------------------------
-# CUSTOM SETTINGS
+# BLOBSTORE SETTINGS
+# -------------------------------------
+
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+    'ml-messages': {
+        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "OPTIONS": {"bucket_name": 'ml-messages'},
+    },
+    'ml-messages-json': {
+        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "OPTIONS": {"bucket_name": 'ml-messages-json'},
+    },
+    'ml-messages-private': {
+        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "OPTIONS": {"bucket_name": 'ml-messages-private'},
+    },
+    'ml-messages-removed': {
+        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "OPTIONS": {"bucket_name": 'ml-messages-removed'},
+    },
+    'ml-messages-incoming': {
+        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "OPTIONS": {"bucket_name": 'ml-messages-incoming'},
+    }
+}
+
+# Storages for artifacts stored as blobs
+ARTIFACT_STORAGE_NAMES: list[str] = [
+    "ml-messages",
+    "ml-messages-json",
+    "ml-messages-private",
+    "ml-messages-removed",
+    "ml-messages-incoming",
+]
+
+ENABLE_BLOBSTORAGE = True
+BLOBDB_DATABASE = 'blobdb'
+BLOBDB_REPLICATION = {
+    "ENABLED": env('BLOBDB_REPLICATION_ENABLED'),
+    "DEST_STORAGE_PATTERN": "r2-{bucket}",
+    "INCLUDE_BUCKETS": ARTIFACT_STORAGE_NAMES,
+    "EXCLUDE_BUCKETS": [
+        "ml-messages-private",
+        "ml-messages-removed",
+        "ml-messages-incoming"],
+    "VERBOSE_LOGGING": True,
+}
+
+BLOB_STORE_ENDPOINT_URL = env('BLOB_STORE_ENDPOINT_URL')
+BLOB_STORE_SECRET_KEY = env('BLOB_STORE_SECRET_KEY')
+BLOB_STORE_ACCESS_KEY = env('BLOB_STORE_ACCESS_KEY')
+BLOB_STORE_CONNECT_TIMEOUT = env('BLOB_STORE_CONNECT_TIMEOUT')
+BLOB_STORE_READ_TIMEOUT = env('BLOB_STORE_READ_TIMEOUT')
+BLOB_STORE_MAX_ATTEMPTS = env('BLOB_STORE_MAX_ATTEMPTS')
+BLOB_STORE_BUCKET_PREFIX = env('BLOB_STORE_BUCKET_PREFIX')
+BLOB_STORE_ENABLE_PROFILING = env('BLOB_STORE_ENABLE_PROFILING')
+
+# -------------------------------------
+# ELASTICSEARCH SETTINGS
 # -------------------------------------
 
 SEARCH_RESULTS_PER_PAGE = 40
 
-# ELASTICSEARCH SETTINGS
 ELASTICSEARCH_INDEX_NAME = 'mail-archive'
 ELASTICSEARCH_SILENTLY_FAIL = True
 ES_URL = 'http://{}:9200/'.format(env('ELASTICSEARCH_HOST'))
@@ -344,6 +432,10 @@ STATIC_INDEX_DIR = os.path.join(DATA_ROOT, 'static')
 STATIC_INDEX_MESSAGES_PER_PAGE = 500
 STATIC_INDEX_YEAR_MINIMUM = 750
 
+# predefined spam_scores
+SPAM_SCORE_NOT_SPAM = -1
+SPAM_SCORE_TO_REMOVE = 1000
+
 # spam_score bits
 MARK_BITS = {'NON_ASCII_HEADER': 0b0001,
              'NO_RECVD_DATE': 0b0010,
@@ -392,6 +484,9 @@ CELERY_HAYSTACK_DEFAULT_ALIAS = 'default'
 CELERY_HAYSTACK_MAX_RETRIES = 1
 CELERY_HAYSTACK_RETRY_DELAY = 300
 CELERY_HAYSTACK_TRANSACTION_SAFE = False
+CELERY_TASK_ROUTES = {
+    "mlarchive.blobdb.tasks.pybob_the_blob_replicator_task": {"queue": "blobdb"}
+}
 
 
 # IMAP Interface

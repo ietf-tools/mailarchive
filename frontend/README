@@ -5,3 +5,17 @@ $ npm install npm-run-all --save-dev
 
 Build CSS resource
 $ yarn build
+
+Note:
+As of 2026-01-26 yarn build has lots of deprecation warnings. For example:
+
+Deprecation Warning [import]: Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.
+Deprecation Warning [if-function]: The Sass if() syntax is deprecated in favor of the modern CSS syntax.
+Deprecation Warning [global-builtin]: Global built-in functions are deprecated and will be removed in Dart Sass 3.0.0.
+
+Bootstrap 5.3 itself has these same warnings and Sass 3.0.0 is not out yet, so ignore for now.
+Can add --quiet-deps to sass commands in pacakge.json.
+
+Note:
+In Sass/SCSS, a file that starts with an underscore is a partial. So _custom.scss is meant to
+be imported by other files and not compiled on its own. @import "./custom"; will find _custom.scss.

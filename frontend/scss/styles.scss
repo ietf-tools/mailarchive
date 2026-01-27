@@ -376,6 +376,15 @@ ul.browse-list li {
     height: calc(100vh - 435px);
 }
 
+.row-has-brackets {
+    --bs-table-bg: #{$pale-blue};
+    --bs-table-accent-bg: #{$pale-blue};
+}
+
+.spam-mode tr.row-selected {
+    outline: 2px solid black;
+}
+
 /* ==========================================================================
    Export
    ========================================================================== */
@@ -591,8 +600,9 @@ table.msg-list-header-table th a.btn {
     top: 0;
 }
 
-.row-selected {
-    background-color: $pale-blue;
+div.row-selected {
+    --bs-table-bg: #{$pale-blue};
+    --bs-table-accent-bg: #{$pale-blue};
 }
 
 .date-col {

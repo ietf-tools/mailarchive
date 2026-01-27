@@ -18,7 +18,7 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     check_inactive, EmailList, purge_incoming,
     create_mbox_file, _get_lists_as_xml, get_subscribers, Subscriber,
     get_mailman_lists, get_membership, get_subscriber_counts, get_fqdn,
-    update_mbox_files, _export_lists, move_list)
+    update_mbox_files, _export_lists, move_list, remove_selected, mark_not_spam)
 from mlarchive.archive.models import User, Message, Redirect, MailmanMember, UserEmail
 from mlarchive.archive.mail import make_hash
 from mlarchive.archive.forms import AdvancedSearchForm
@@ -268,6 +268,13 @@ def test_create_mbox_file(tmpdir, settings, latin1_messages):
     mbox = mailbox.mbox(path)
     assert len(mbox) == 1
     mbox.close()
+    # confirm private list ignored
+    os.remove(path)
+    elist.private = True
+    elist.save()
+    assert not os.path.exists(path)
+    create_mbox_file(month=month, year=year, elist=elist)
+    assert not os.path.exists(path)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -448,3 +455,38 @@ def test_move_list(rf, search_api_messages):
     # check db updated
     assert Message.objects.filter(email_list__name=source).count() == 0
     assert Message.objects.filter(email_list__name=target).count() == 4
+
+
+@pytest.mark.django_db(transaction=True)
+def test_remove_selected(client, search_api_messages_ford, users):
+    user = User.objects.get(username='staff@example.com')
+    msg = Message.objects.first()
+    # remove mbox file if it already exists
+    mbox_filename = '{:04d}-{:02d}.mail'.format(msg.date.year, msg.date.month)
+    mbox_path = os.path.join(settings.ARCHIVE_MBOX_DIR, 'public', msg.email_list.name, mbox_filename)
+    if os.path.exists(mbox_path):
+        os.remove(mbox_path)
+    # mark message for removal
+    msg.spam_score = settings.SPAM_SCORE_TO_REMOVE
+    msg.save()
+    path = msg.get_file_path()
+    assert os.path.isfile(path)
+    totalb4 = Message.objects.count()
+    remove_selected(user_id=user.id)
+    assert Message.objects.count() == totalb4 - 1
+    assert not Message.objects.filter(id=msg.id).exists()
+    # check file moved
+    assert not os.path.isfile(path)
+    target = os.path.join(msg.get_removed_dir(), msg.hashcode)
+    assert os.path.isfile(target)
+    # check mbox update
+    assert os.path.isfile(mbox_path)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_mark_not_spam(client, messages):
+    assert Message.objects.filter(spam_score=settings.SPAM_SCORE_NOT_SPAM).count() == 0
+    queryset = Message.objects.filter(email_list__name='pubone')
+    mark_not_spam(queryset)
+    assert Message.objects.filter(spam_score=settings.SPAM_SCORE_NOT_SPAM).count() == queryset.count()
+    assert queryset.first().spam_score == settings.SPAM_SCORE_NOT_SPAM

@@ -20,7 +20,8 @@ from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 
-from mlarchive.archive.models import EmailList, Subscriber, Redirect, UserEmail, MailmanMember, User
+from mlarchive.archive.models import (EmailList, Subscriber, Redirect, UserEmail, MailmanMember,
+    User, Message)
 from mlarchive.archive.mail import MessageWrapper
 # from mlarchive.archive.signals import _export_lists, _list_save_handler
 
@@ -307,6 +308,9 @@ def check_inactive(prompt=True):
 
 
 def create_mbox_file(month, year, elist):
+    # private lists should not have mbox files in rsync
+    if elist.private:
+        return
     filename = '{:04d}-{:02d}.mail'.format(year, month)
     path = os.path.join(settings.ARCHIVE_MBOX_DIR, 'public', elist.name, filename)
     messages = elist.message_set.filter(date__month=month, date__year=year)
@@ -611,3 +615,35 @@ def username_to_email(username):
         return None
 
     return found_email
+
+
+def get_mbox_updates(queryset):
+    """Returns the list of mbox files to rebuild, identified by the tuple
+    (month, year, list id)
+    """
+    results = set()
+    for message in queryset:
+        results.add((message.date.month, message.date.year, message.email_list.pk))
+    return list(results)
+
+
+def remove_selected(user_id):
+    user = User.objects.get(id=user_id)
+    queryset = Message.objects.filter(spam_score=settings.SPAM_SCORE_TO_REMOVE)
+    for message in queryset:
+        logger.info('User %s removed message [list=%s,hash=%s,msgid=%s,pk=%s]' %
+                    (user, message.email_list, message.hashcode, message.msgid, message.pk))
+    mbox_updates = get_mbox_updates(queryset)
+    queryset.delete()
+    for file in mbox_updates:
+        elist = EmailList.objects.get(pk=file[2])
+        if not elist.private:
+            create_mbox_file(file[0], file[1], elist)
+
+
+def mark_not_spam(message_ids):
+    # queryset.update() doesn't call save() which means the index doesn't get updated
+    # via RealtimeSingalProcessor, need to loop through and call save()
+    for message in Message.objects.filter(id__in=message_ids):
+        message.spam_score = settings.SPAM_SCORE_NOT_SPAM
+        message.save()

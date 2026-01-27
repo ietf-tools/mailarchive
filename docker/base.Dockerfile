@@ -9,6 +9,11 @@ RUN apt-get update \
     && apt-get -qy upgrade \
     && apt-get -y install --no-install-recommends apt-utils dialog 2>&1
 
+# Add Docker Source
+RUN mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list
+
 # Add Postgresql Apt Repository
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
 RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
@@ -20,6 +25,7 @@ RUN apt-get update --fix-missing && apt-get install -qy \
     bash \
     build-essential \
     curl \
+    docker-ce-cli \
     libgtk-3-0 \
     libgbm-dev \
     libasound2 \

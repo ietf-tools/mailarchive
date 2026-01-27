@@ -129,6 +129,9 @@ class AdminForm(forms.Form):
     spam = forms.BooleanField(required=False)
     spam_score = forms.CharField(max_length=6, required=False)
     exclude_whitelisted_senders = forms.BooleanField(required=False)
+    exclude_not_spam = forms.BooleanField(
+        required=False,
+        label='Exclude messages marked not spam')
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request')

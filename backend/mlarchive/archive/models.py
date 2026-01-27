@@ -2,6 +2,7 @@ from email.utils import parseaddr
 from email import policy as email_policy
 import datetime
 import email
+import json
 import logging
 import os
 import re
@@ -10,6 +11,7 @@ import subprocess
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
+from django.forms.models import model_to_dict
 from django.urls import reverse
 from django.utils.http import urlencode
 from django.template.loader import render_to_string
@@ -209,6 +211,20 @@ class Message(models.Model):
 
         return body
 
+    def as_json(self, fields=None, exclude=None):
+        """Returns message as json"""
+        data = model_to_dict(self, fields=fields, exclude=exclude)
+
+        if 'date' in data:
+            data['date'] = self.date.isoformat()
+
+        if 'updated' in data:
+            data['updated'] = self.updated.isoformat()
+
+        data['content'] = self.get_body()
+
+        return json.dumps(data)
+
     @property
     def frm_email(self):
         """This property is the email portion of the "From" header all lowercase
@@ -367,6 +383,9 @@ class Message(models.Model):
     def get_absolute_static_index_urls(self):
         host_url = settings.ARCHIVE_HOST_URL
         return [host_url + self.get_static_date_page_url(), host_url + self.get_static_thread_page_url()]
+
+    def get_blob_name(self):
+        return f'{self.email_list.name}/{self.hashcode}'.rstrip('=')
 
     def get_file_path(self):
         return os.path.join(

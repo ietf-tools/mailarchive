@@ -4,7 +4,47 @@ from .base import *
 
 DATA_ROOT = '/tmp/mailarch/data'
 
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
+# Disable ROUTERS to use one default database for all tables during tests
+DATABASE_ROUTERS = []
+
+DATABASES = {
+    'default': {
+        'HOST': 'db',
+        'PORT': 5432,
+        'NAME': 'mailarch',
+        'ENGINE': 'django.db.backends.postgresql',
+        'USER': 'mailarch',
+        'PASSWORD': 'franticmarble',
+    },
+}
+
 AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
+
+# Blob replication storage for dev
+import botocore.config
+for storagename in ARTIFACT_STORAGE_NAMES:
+    replica_storagename = f"r2-{storagename}"
+    STORAGES[replica_storagename] = {
+        "BACKEND": "mlarchive.archive.storage.MetadataS3Storage",
+        "OPTIONS": dict(
+            endpoint_url="http://blobstore:9000",
+            access_key="minio_root",
+            secret_key="minio_pass",
+            security_token=None,
+            client_config=botocore.config.Config(
+                request_checksum_calculation="when_required",
+                response_checksum_validation="when_required",
+                signature_version="s3v4",
+                connect_timeout=BLOB_STORE_CONNECT_TIMEOUT,
+                read_timeout=BLOB_STORE_READ_TIMEOUT,
+                retries={"total_max_attempts": BLOB_STORE_MAX_ATTEMPTS},
+            ),
+            verify=False,
+            bucket_name=f"{storagename}",
+        ),
+    }
 
 # ELASTICSEARCH SETTINGS
 ELASTICSEARCH_INDEX_NAME = 'test-mail-archive'
@@ -37,9 +77,11 @@ CACHES = {
     }
 }
 
+# BLOBDB
+BLOBDB_DATABASE = 'default'
+
 # IMAP Interface
 EXPORT_DIR = os.path.join(DATA_ROOT, 'export')
-
 
 # CLOUDFLARE  INTEGRATION
 USING_CDN = False

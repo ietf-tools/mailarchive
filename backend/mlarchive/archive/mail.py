@@ -988,11 +988,24 @@ class MessageWrapper(object):
         # write file to disk
         write_file(path, self.bytes)
 
+        # ---------------------------------------------------------------
         # write message to appropriate blobdb bucket(s)
+        # the original system used subdirectories to organize messages
+        # that were excluded from the searchable archive: dupes, removed,
+        # spam and filtered. The new system uses special buckets in place
+        # of subdirectories.
+
         # strip trailing "=" from filename to match message URL
-        subpath = subpath.rstrip('=')
-        if self.private:
-            store_file('ml-messages-private', subpath, io.BytesIO(self.bytes), content_type='message/rfc822')
+        blob_path = os.path.join(self.listname, filename.rstrip('='))
+
+        # store siloed messages
+        if subdir:
+            bucket = f'ml-messages-{subdir.lstrip('_')}'
+            store_file(bucket, blob_path, io.BytesIO(self.bytes), content_type='message/rfc822')
+        # store private messages
+        elif self.email_list.private:
+            store_file('ml-messages-private', blob_path, io.BytesIO(self.bytes), content_type='message/rfc822')
+        # store regular public messages
         else:
-            store_file('ml-messages', subpath, io.BytesIO(self.bytes), content_type='message/rfc822')
-            store_file('ml-messages-json', subpath, io.BytesIO(self.archive_message.as_json().encode('utf-8')), content_type='application/json')
+            store_file('ml-messages', blob_path, io.BytesIO(self.bytes), content_type='message/rfc822')
+            store_file('ml-messages-json', blob_path, io.BytesIO(self.archive_message.as_json().encode('utf-8')), content_type='application/json')

@@ -389,7 +389,8 @@ CONTENT_SECURITY_POLICY = {
         ],
         "connect-src": [
             SELF,
-            "https://raw.githubusercontent.com"
+            "https://raw.githubusercontent.com",
+            "https://static.ietf.org"
         ]
     }
 }

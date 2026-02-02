@@ -262,8 +262,11 @@ class ImportMessageView(View):
         logger.info(f'Received message: {blob_name}')
         try:
             store_file(bucket, blob_name, io.BytesIO(message), content_type='message/rfc822')
-        except Exception as error:
-            return self._err(500, error)
+        except Exception as err:
+            # if message write to blobdb fails return a non 201
+            # response code which will cause mailman to queue message
+            # for resubmission to archive
+            return self._err(500, str(err))
 
         # enqueue import task
         import_message_blob_task.delay(bucket=bucket, name=blob_name)

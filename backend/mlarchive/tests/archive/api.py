@@ -204,6 +204,7 @@ def get_error_message(response):
 
 @pytest.mark.django_db(transaction=True)
 def test_import_message(client, settings):
+    settings.CELERY_TASK_ALWAYS_EAGER = True
     url = reverse('api_import_message')
     settings.API_KEYS = {url: 'valid_token'}
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
@@ -267,6 +268,7 @@ def test_import_message(client, settings):
 @pytest.mark.django_db(transaction=True)
 def test_import_message_private(client, settings):
     '''Ensure list_type variable is respected'''
+    settings.CELERY_TASK_ALWAYS_EAGER = True
     url = reverse('api_import_message')
     settings.API_KEYS = {url: 'valid_token'}
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')

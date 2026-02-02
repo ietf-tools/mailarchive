@@ -173,8 +173,10 @@ def retrieve_str(kind: str, name: str) -> str:
 
 def get_unique_blob_name(prefix, bucket):
     storage = destination_storage_for(bucket)
-    while True:
+    for _ in range(1000):
         token = secrets.token_hex(8)
         blob_name = f'{prefix}{token}'
         if not storage.exists(blob_name):
             return blob_name
+    logger.error('Blobstore Error: get_unique_blob_name() failed.')
+    raise Exception()

@@ -258,15 +258,15 @@ class ImportMessageView(View):
         # store message in blobdb
         prefix = f'{list_name}.{list_visibility}.'
         bucket = 'ml-messages-incoming'
-        blob_name = get_unique_blob_name(prefix=prefix, bucket=bucket)
-        logger.info(f'Received message: {blob_name}')
         try:
+            blob_name = get_unique_blob_name(prefix=prefix, bucket=bucket)
+            logger.info(f'Received message: {blob_name}')
             store_file(bucket, blob_name, io.BytesIO(message), content_type='message/rfc822')
-        except Exception as err:
+        except Exception:
             # if message write to blobdb fails return a non 201
             # response code which will cause mailman to queue message
             # for resubmission to archive
-            return self._err(500, str(err))
+            return self._err(500, 'Unable to process message import at this time. Please try again later.')
 
         # enqueue import task
         import_message_blob_task.delay(bucket=bucket, name=blob_name)

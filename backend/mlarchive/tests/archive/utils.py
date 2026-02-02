@@ -372,25 +372,27 @@ def test_get_subscribers(mock_client):
     assert subs == ['holden.ford@example.com']
 
 
-def test_purge_incoming(tmpdir, settings):
-    path = str(tmpdir)
-    settings.INCOMING_DIR = path
-    # create new file
-    new_file_path = os.path.join(path, 'new.txt')
-    with open(new_file_path, 'w') as f:
-        f.write("This is a test file.")
-
-    old_file_path = os.path.join(path, 'old.txt') 
-    with open(old_file_path, 'w') as f:
-        f.write("This is a test file.")
-    desired_mtime = time.time() - (86400 * 91)  # 91 days ago
-    os.utime(old_file_path, (desired_mtime, desired_mtime))
-
-    assert len(os.listdir(path)) == 2
+@pytest.mark.django_db(transaction=True)
+def test_purge_incoming(settings):
+    bucket = 'ml-messages-incoming'
+    # create old message
+    now = datetime.datetime.now()
+    old_time = now - datetime.timedelta(days=100)
+    old_blob_name = get_unique_blob_name(prefix='apple.public.', bucket=bucket)
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
+    with open(path, 'rb') as f:
+        message = f.read()
+    store_file(bucket, old_blob_name, io.BytesIO(message), content_type='message/rfc822')
+    old_blob = Blob.objects.get(bucket=bucket, name=old_blob_name)
+    old_blob.modified = old_time
+    old_blob.save()
+    # create recent message
+    new_blob_name = get_unique_blob_name(prefix='apple.public.', bucket=bucket)
+    store_file(bucket, new_blob_name, io.BytesIO(message), content_type='message/rfc822')
+    # purge
     purge_incoming()
-    assert len(os.listdir(path)) == 1
-    assert os.path.exists(new_file_path)
-    assert not os.path.exists(old_file_path)
+    assert not Blob.objects.filter(bucket=bucket, name=old_blob_name).exists()
+    assert Blob.objects.filter(bucket=bucket, name=new_blob_name).exists()
 
 
 def list_only_files(directory):

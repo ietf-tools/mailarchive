@@ -24,6 +24,7 @@ from mlarchive.archive.models import (EmailList, Subscriber, Redirect, UserEmail
     User, Message)
 from mlarchive.archive.mail import MessageWrapper, archive_message
 from mlarchive.archive.storage_utils import retrieve_bytes
+from mlarchive.blobdb.models import Blob
 
 
 logger = logging.getLogger(__name__)
@@ -339,14 +340,11 @@ def update_mbox_files():
 
 
 def purge_incoming():
-    '''Purge messages older than 90 days from incoming directory'''
-    path = settings.INCOMING_DIR
+    '''Purge messages older than 90 days from incoming bucket'''
     cutoff_date = datetime.datetime.now() - datetime.timedelta(days=90)
-    for file in os.listdir(path):
-        file_path = os.path.join(path, file)
-        file_mtime = datetime.datetime.fromtimestamp(os.path.getmtime(file_path))
-        if file_mtime < cutoff_date:
-            os.remove(file_path)
+    blobs = Blob.objects.filter(bucket='ml-messages-incoming', modified__lt=cutoff_date)
+    for blob in blobs:
+        blob.delete()
 
 
 def move_list(source, target):

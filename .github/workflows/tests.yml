@@ -61,7 +61,7 @@ jobs:
         image: ghcr.io/ietf-tools/datatracker-devblobstore:latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Setup ChromeDriver
         uses: browser-actions/setup-chrome@v2

@@ -36,6 +36,165 @@ MAILMAN_LISTID_PATTERN = re.compile(r'(.*)\.(ietf|irtf|iab|iesg|rfc-editor)\.org
 # --------------------------------------------------
 
 
+def is_duplicate_message(msg1, msg2):
+    """Check if two email.message.EmailMessage objects are duplicates.
+
+    Messages are considered duplicates if they have the same Message-ID
+    and the same content (payload). This ignores headers like Received
+    which may differ between duplicate submissions.
+
+    Args:
+        msg1: First email.message.EmailMessage object
+        msg2: Second email.message.EmailMessage object
+
+    Returns:
+        bool: True if messages are duplicates, False otherwise
+    """
+    # Check if Message-ID headers match
+    msgid1 = msg1.get('Message-ID')
+    msgid2 = msg2.get('Message-ID')
+
+    if msgid1 != msgid2:
+        return False
+
+    # If Message-IDs match, compare the actual message content
+    # Get the payload (body) of both messages
+    if msg1.is_multipart() and msg2.is_multipart():
+        # For multipart messages, compare all parts
+        parts1 = list(msg1.walk())
+        parts2 = list(msg2.walk())
+
+        if len(parts1) != len(parts2):
+            return False
+
+        # Compare each part's payload
+        for part1, part2 in zip(parts1, parts2):
+            if part1.get_payload() != part2.get_payload():
+                return False
+
+        return True
+    elif not msg1.is_multipart() and not msg2.is_multipart():
+        # For single-part messages, compare payloads directly
+        return msg1.get_payload() == msg2.get_payload()
+    else:
+        # One is multipart, one is not - not duplicates
+        return False
+
+
+def purge_confirmed_dupes(listname=None, dry_run=False):
+    """Walk through all email lists and purge confirmed duplicate messages.
+
+    For each email list, checks the _dupes directory for messages that are
+    confirmed duplicates of messages already in the archive. If a message in
+    _dupes has the same Message-ID and content as an archived message, the
+    duplicate file is removed and the action is logged.
+
+    Args:
+        listname: Optional name of a specific list to process. If None, processes all lists.
+        dry_run: If True, only report what would be done without actually removing files.
+    """
+    removed_count = 0
+    error_count = 0
+
+    if dry_run:
+        logger.info('DRY RUN MODE: No files will be removed')
+
+    # Get the lists to process
+    if listname:
+        try:
+            email_lists = [EmailList.objects.get(name=listname)]
+        except EmailList.DoesNotExist:
+            logger.error(f'Email list not found: {listname}')
+            return {'removed': 0, 'errors': 1}
+    else:
+        email_lists = EmailList.objects.all()
+
+    for elist in email_lists:
+        dupes_dir = os.path.join(settings.ARCHIVE_DIR, elist.name, '_dupes')
+
+        # Skip if _dupes directory doesn't exist
+        if not os.path.isdir(dupes_dir):
+            continue
+
+        logger.info(f'Processing _dupes directory for list: {elist.name}')
+
+        # Process each file in the _dupes directory
+        for filename in os.listdir(dupes_dir):
+            dupe_file_path = os.path.join(dupes_dir, filename)
+
+            # Skip directories
+            if not os.path.isfile(dupe_file_path):
+                continue
+
+            try:
+                # Parse the message from the _dupes directory
+                with open(dupe_file_path, 'rb') as f:
+                    dupe_msg = email.message_from_binary_file(f)
+
+                # Get the Message-ID and strip angle brackets (database stores without them)
+                message_id = dupe_msg.get('Message-ID')
+                if not message_id:
+                    logger.warning(f'Message in _dupes has no Message-ID: {dupe_file_path}')
+                    error_count += 1
+                    continue
+
+                message_id = message_id.strip('<>')
+
+                # Look up message in database
+                try:
+                    archived_message = Message.objects.get(
+                        email_list=elist,
+                        msgid=message_id
+                    )
+                except Message.DoesNotExist:
+                    logger.info(f'Message-ID not found in archive, keeping in _dupes: {message_id}')
+                    continue
+                except Message.MultipleObjectsReturned:
+                    logger.warning(f'Multiple messages found with Message-ID: {message_id}')
+                    error_count += 1
+                    continue
+
+                # Get the archived message's EmailMessage object
+                archived_msg = archived_message.pymsg
+
+                # Compare the two messages
+                if is_duplicate_message(dupe_msg, archived_msg):
+                    # Confirmed duplicate - remove the file (unless dry run)
+                    if dry_run:
+                        logger.info(
+                            f'[DRY RUN] Would remove confirmed duplicate: list={elist.name}, '
+                            f'msgid={message_id}, file={filename}'
+                        )
+                    else:
+                        os.remove(dupe_file_path)
+                        logger.info(
+                            f'Removed confirmed duplicate: list={elist.name}, '
+                            f'msgid={message_id}, file={filename}'
+                        )
+                    removed_count += 1
+                else:
+                    logger.info(
+                        f'Message-ID matches but content differs, keeping in _dupes: '
+                        f'msgid={message_id}, file={filename}'
+                    )
+
+            except Exception as e:
+                logger.error(f'Error processing dupe file {dupe_file_path}: {e}')
+                error_count += 1
+                continue
+
+    if dry_run:
+        logger.info(
+            f'Purge completed (DRY RUN): {removed_count} duplicates would be removed, '
+            f'{error_count} errors encountered'
+        )
+    else:
+        logger.info(
+            f'Purge completed: {removed_count} duplicates removed, {error_count} errors encountered'
+        )
+    return {'removed': removed_count, 'errors': error_count}
+
+
 def _export_lists():
     """Write XML dump of list membership for IMAP"""
 

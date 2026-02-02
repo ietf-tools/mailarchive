@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 import datetime
+import secrets
 from io import BufferedReader
 from typing import Optional, Union
 
@@ -9,6 +10,7 @@ from django.conf import settings
 from django.core.files.base import ContentFile, File
 from django.core.files.storage import storages, Storage
 from mlarchive.blobdb.storage import BlobFile
+from mlarchive.blobdb.replication import destination_storage_for
 
 import logging
 logger = logging.getLogger(__name__)
@@ -32,8 +34,7 @@ def exists_in_storage(kind: str, name: str) -> bool:
             return False
         except Exception as err:
             logger.error(f"Blobstore Error: Failed to test existence of {kind}:{name}: {repr(err)}")
-            if settings.SERVER_MODE == "development":
-                raise
+            raise
     return False
 
 
@@ -46,12 +47,10 @@ def remove_from_storage(kind: str, name: str, warn_if_missing: bool = True) -> N
                 complaint = (
                     f"WARNING: Asked to delete non-existent {name} from {kind} storage"
                 )
-                # debug.show("complaint")
                 logger.info(complaint)
         except Exception as err:
             logger.warning(f"Blobstore Error: Failed to remove {kind}:{name}: {repr(err)}")
-            if settings.SERVER_MODE == "development":
-                raise
+            raise
     return None
 
 
@@ -81,12 +80,11 @@ def store_file(
             )
             if new_name != name:
                 complaint = f"Error encountered saving '{name}' - results stored in '{new_name}' instead."
-                # debug.show("complaint")
+                logger.error(f"Blobstore Error: {complaint}")
                 raise RuntimeError(complaint)
         except Exception as err:
             logger.error(f"Blobstore Error: Failed to store file {kind}:{name}: {repr(err)}")
-            if settings.SERVER_MODE == "development":
-                raise  # TODO-BLOBSTORE eventually make this an error for all modes
+            raise
     return None
 
 
@@ -111,8 +109,7 @@ def store_bytes(
         except Exception as err:
             # n.b., not likely to get an exception here because store_file or store_bytes will catch it
             logger.error(f"Blobstore Error: Failed to store bytes to {kind}:{name}: {repr(err)}")
-            if settings.SERVER_MODE == "development":
-                raise  # TODO-BLOBSTORE eventually make this an error for all modes
+            raise
     return None
 
 
@@ -138,8 +135,7 @@ def store_str(
         except Exception as err:
             # n.b., not likely to get an exception here because store_file or store_bytes will catch it
             logger.error(f"Blobstore Error: Failed to store string to {kind}:{name}: {repr(err)}")
-            if settings.SERVER_MODE == "development":
-                raise  # TODO-BLOBSTORE eventually make this an error for all modes
+            raise
     return None
 
 
@@ -159,8 +155,7 @@ def retrieve_bytes(kind: str, name: str) -> bytes:
                     content = f.read()
         except Exception as err:
             logger.error(f"Blobstore Error: Failed to read bytes from {kind}:{name}: {repr(err)}")
-            if settings.SERVER_MODE == "development":
-                raise
+            raise
     return content
 
 
@@ -172,6 +167,14 @@ def retrieve_str(kind: str, name: str) -> str:
             content = content_bytes.decode("utf-8")
         except Exception as err:
             logger.error(f"Blobstore Error: Failed to read string from {kind}:{name}: {repr(err)}")
-            if settings.SERVER_MODE == "development":
-                raise
+            raise
     return content
+
+
+def get_unique_blob_name(prefix, bucket):
+    storage = destination_storage_for(bucket)
+    while True:
+        token = secrets.token_hex(8)
+        blob_name = f'{prefix}{token}'
+        if not storage.exists(blob_name):
+            return blob_name

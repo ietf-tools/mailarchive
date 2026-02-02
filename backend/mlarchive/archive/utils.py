@@ -22,8 +22,8 @@ from django.core.validators import validate_email
 
 from mlarchive.archive.models import (EmailList, Subscriber, Redirect, UserEmail, MailmanMember,
     User, Message)
-from mlarchive.archive.mail import MessageWrapper
-# from mlarchive.archive.signals import _export_lists, _list_save_handler
+from mlarchive.archive.mail import MessageWrapper, archive_message
+from mlarchive.archive.storage_utils import retrieve_bytes
 
 
 logger = logging.getLogger(__name__)
@@ -647,3 +647,21 @@ def mark_not_spam(message_ids):
     for message in Message.objects.filter(id__in=message_ids):
         message.spam_score = settings.SPAM_SCORE_NOT_SPAM
         message.save()
+
+
+def import_message_blob(bucket, name):
+    name_pattern = r"(?P<list_name>.+)\.(?P<visibility>private|public)\.(?P<hex_id>[a-f0-9]{16})$"
+    match = re.match(name_pattern, name)
+    if not match:
+        logger.error(f'Unrecognized blob name format: {name}')
+        return
+    message_bytes = retrieve_bytes(bucket, name)
+    if message_bytes:
+        groups = match.groupdict()
+        list_name = groups['list_name']
+        is_private = groups['visibility'] == 'private'
+        status = archive_message(
+            data=message_bytes,
+            listname=list_name,
+            private=is_private)
+        logger.info(f'Archive message status: {name} {status}')

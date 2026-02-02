@@ -1,4 +1,5 @@
 import datetime
+import io
 import json
 import mailbox
 import pytest
@@ -18,11 +19,15 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     check_inactive, EmailList, purge_incoming,
     create_mbox_file, _get_lists_as_xml, get_subscribers, Subscriber,
     get_mailman_lists, get_membership, get_subscriber_counts, get_fqdn,
-    update_mbox_files, _export_lists, move_list, remove_selected, mark_not_spam)
+    update_mbox_files, _export_lists, move_list, remove_selected, mark_not_spam,
+    import_message_blob)
 from mlarchive.archive.models import User, Message, Redirect, MailmanMember, UserEmail
 from mlarchive.archive.mail import make_hash
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.backends.elasticsearch import search_from_form
+from mlarchive.archive.storage_utils import (store_file, get_unique_blob_name,
+    exists_in_storage)
+from mlarchive.blobdb.models import Blob
 from factories import EmailListFactory
 
 
@@ -490,3 +495,37 @@ def test_mark_not_spam(client, messages):
     mark_not_spam(queryset)
     assert Message.objects.filter(spam_score=settings.SPAM_SCORE_NOT_SPAM).count() == queryset.count()
     assert queryset.first().spam_score == settings.SPAM_SCORE_NOT_SPAM
+
+
+@pytest.mark.django_db(transaction=True)
+def test_import_message_blob(client):
+    # test setup
+    bucket = 'ml-messages-incoming'
+    blob_name = get_unique_blob_name(prefix='apple.public.', bucket=bucket)
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
+    with open(path, 'rb') as f:
+        message = f.read()
+    store_file(bucket, blob_name, io.BytesIO(message), content_type='message/rfc822')
+
+    assert Blob.objects.filter(
+        bucket='ml-messages-incoming',
+        name__startswith='apple.public',
+    ).count() == 1
+
+    assert not EmailList.objects.filter(name='apple', private=False).exists()
+    assert not Message.objects.exists()
+
+    # call import
+    import_message_blob(bucket=bucket, name=blob_name)
+
+    # assert list exists
+    assert EmailList.objects.filter(name='apple', private=False).exists()
+
+    # assert message exists, message-id
+    msg = Message.objects.get(email_list__name='apple', msgid='0000000001@amsl.com')
+    assert msg.subject == 'This is a test'
+
+    # assert message blob exists in archive storage
+    storage_blob_name = f'apple/{msg.hashcode.strip('=')}'
+    assert exists_in_storage('ml-messages', storage_blob_name)
+    assert exists_in_storage('ml-messages-json', storage_blob_name)

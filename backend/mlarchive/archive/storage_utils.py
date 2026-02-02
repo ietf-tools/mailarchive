@@ -178,5 +178,6 @@ def get_unique_blob_name(prefix, bucket):
         blob_name = f'{prefix}{token}'
         if not storage.exists(blob_name):
             return blob_name
-    logger.error('Blobstore Error: get_unique_blob_name() failed.')
-    raise Exception()
+    msg = 'Blobstore Error: get_unique_blob_name() failed.'
+    logger.error(msg)
+    raise RuntimeError(msg)

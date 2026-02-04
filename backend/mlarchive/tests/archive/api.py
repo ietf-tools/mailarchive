@@ -8,6 +8,8 @@ from datetime import timezone
 from django.urls import reverse
 from factories import EmailListFactory, MessageFactory
 from mlarchive.archive.models import Subscriber, Message, EmailList
+from mlarchive.blobdb.models import Blob
+from mlarchive.archive.storage_utils import exists_in_storage
 
 
 @pytest.mark.django_db(transaction=True)
@@ -202,6 +204,7 @@ def get_error_message(response):
 
 @pytest.mark.django_db(transaction=True)
 def test_import_message(client, settings):
+    settings.CELERY_TASK_ALWAYS_EAGER = True
     url = reverse('api_import_message')
     settings.API_KEYS = {url: 'valid_token'}
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
@@ -209,15 +212,8 @@ def test_import_message(client, settings):
         message = f.read()
     message_b64 = base64.b64encode(message).decode()
 
-    # test setup
-    assert Message.objects.count() == 0
-    assert EmailList.objects.filter(name='apple').exists() is False
-    incoming_dir = settings.INCOMING_DIR
-    assert os.path.isdir(incoming_dir)
-    for file in os.listdir(incoming_dir):
-        file_path = os.path.join(incoming_dir, file)
-        os.remove(file_path)
-    assert len(os.listdir(incoming_dir)) == 0
+    # no messages in incoming. Must us db query because name will be random
+    assert not Blob.objects.filter(bucket='ml-messages-incoming').exists()
 
     # no api key
     response = client.post(
@@ -260,23 +256,19 @@ def test_import_message(client, settings):
     assert response.status_code == 201
 
     # assert file exists in incoming
-    assert len(os.listdir(incoming_dir)) == 1
-    assert os.listdir(incoming_dir)[0].startswith('apple.public.')
+    assert Blob.objects.filter(
+        bucket='ml-messages-incoming',
+        name__startswith='apple.public',
+    ).count() == 1
 
-    # assert list exists
-    assert EmailList.objects.filter(name='apple', private=False).exists()
-
-    # assert message exists, message-id
-    msg = Message.objects.get(email_list__name='apple', msgid='0000000001@amsl.com')
-    assert msg.subject == 'This is a test'
-
-    # assert file exists in archive
-    assert os.path.exists(msg.get_file_path())
+    blob = Blob.objects.filter(bucket='ml-messages-incoming').first()
+    assert blob.content == message
 
 
 @pytest.mark.django_db(transaction=True)
 def test_import_message_private(client, settings):
     '''Ensure list_type variable is respected'''
+    settings.CELERY_TASK_ALWAYS_EAGER = True
     url = reverse('api_import_message')
     settings.API_KEYS = {url: 'valid_token'}
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
@@ -284,15 +276,8 @@ def test_import_message_private(client, settings):
         message = f.read()
     message_b64 = base64.b64encode(message).decode()
 
-    # test setup
-    assert Message.objects.count() == 0
-    assert EmailList.objects.filter(name='apple').exists() is False
-    incoming_dir = settings.INCOMING_DIR
-    assert os.path.isdir(incoming_dir)
-    for file in os.listdir(incoming_dir):
-        file_path = os.path.join(incoming_dir, file)
-        os.remove(file_path)
-    assert len(os.listdir(incoming_dir)) == 0
+    # pre-conditions
+    assert Blob.objects.count() == 0
 
     # valid request
     response = client.post(
@@ -302,31 +287,29 @@ def test_import_message_private(client, settings):
         content_type='application/json')
     assert response.status_code == 201
 
-    # assert file exists in incoming
-    assert len(os.listdir(incoming_dir)) == 1
-    assert os.listdir(incoming_dir)[0].startswith('apple.private.')
-
-    # assert list exists
-    assert EmailList.objects.filter(name='apple', private=True).exists()
+    assert Blob.objects.filter(
+        bucket='ml-messages-incoming',
+        name__startswith='apple.private',
+    ).count() == 1
 
 
 @pytest.mark.django_db(transaction=True)
-def test_import_message_failure(client, settings):
-    '''Test various failure scenarios.'''
+def test_import_message_integration(client, settings):
+    '''Test end-to-end import, save and processing of message'''
+    # skip sending task to broker and execute immediately
+    settings.CELERY_TASK_ALWAYS_EAGER = True
     url = reverse('api_import_message')
     settings.API_KEYS = {url: 'valid_token'}
-    message = b'This is not an email'
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
+    with open(path, 'rb') as f:
+        message = f.read()
     message_b64 = base64.b64encode(message).decode()
 
-    # test setup
+    # confirm pre-conditions
     assert Message.objects.count() == 0
     assert EmailList.objects.filter(name='apple').exists() is False
-    incoming_dir = settings.INCOMING_DIR
-    assert os.path.isdir(incoming_dir)
-    for file in os.listdir(incoming_dir):
-        file_path = os.path.join(incoming_dir, file)
-        os.remove(file_path)
-    assert len(os.listdir(incoming_dir)) == 0
+    # no messages in incoming. Must us db query because name will be random
+    assert not Blob.objects.filter(bucket='ml-messages-incoming').exists()
 
     # valid request
     response = client.post(
@@ -334,17 +317,28 @@ def test_import_message_failure(client, settings):
         {'list_name': 'apple', 'list_visibility': 'public', 'message': message_b64},
         headers={'X-API-Key': 'valid_token'},
         content_type='application/json')
-    assert response.status_code == 400
+    assert response.status_code == 201
 
     # assert file exists in incoming
-    assert len(os.listdir(incoming_dir)) == 1
-    assert os.listdir(incoming_dir)[0].startswith('apple.public.')
+    assert Blob.objects.filter(
+        bucket='ml-messages-incoming',
+        name__startswith='apple.public',
+    ).count() == 1
 
-    # assert list does not exist
-    assert not EmailList.objects.filter(name='apple', private=False).exists()
+    blob = Blob.objects.filter(bucket='ml-messages-incoming').first()
+    assert blob.content == message
 
-    # assert message does not exist
-    assert Message.objects.all().count() == 0
+    # assert list exists
+    assert EmailList.objects.filter(name='apple', private=False).exists()
+
+    # assert message exists, message-id
+    msg = Message.objects.get(email_list__name='apple', msgid='0000000001@amsl.com')
+    assert msg.subject == 'This is a test'
+
+    # assert message blob exists in archive storage
+    storage_blob_name = f'apple/{msg.hashcode.strip('=')}'
+    assert exists_in_storage('ml-messages', storage_blob_name)
+    assert exists_in_storage('ml-messages-json', storage_blob_name)
 
 
 @pytest.mark.django_db(transaction=True)

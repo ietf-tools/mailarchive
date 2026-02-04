@@ -4,14 +4,12 @@ from collections import OrderedDict
 import datetime
 from dateutil.parser import isoparse
 from dateutil.relativedelta import relativedelta
+import io
 import json
 import jsonschema
 import re
-import os
 import sys
-import tempfile
 
-from django.conf import settings
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse, HttpResponse
@@ -19,9 +17,10 @@ from django.utils.decorators import method_decorator
 
 from mlarchive.exceptions import HttpJson400, HttpJson404
 from mlarchive.archive.models import Message, EmailList, Subscriber
-from mlarchive.archive.mail import archive_message
 from mlarchive.utils.decorators import require_api_key
 from mlarchive.archive.backends.elasticsearch import ElasticsearchSimpleQuery
+from mlarchive.archive.storage_utils import store_file, get_unique_blob_name
+from mlarchive.archive.tasks import import_message_blob_task
 
 import logging
 logger = logging.getLogger(__name__)
@@ -215,7 +214,7 @@ class ImportMessageView(View):
     '''An API to import a message.
     Expect a POST request with JSON payload
     message: base64 encoded email message
-    and X-API-Key header
+    and X-API-Key header.
     '''
     http_method_names = ['post']
 
@@ -227,7 +226,7 @@ class ImportMessageView(View):
         if request.content_type != "application/json":
             return self._err(415, "Content-Type must be application/json")
 
-        # Validate
+        # Validate payload
         try:
             payload = json.loads(request.body)
             _import_message_json_validator.validate(payload)
@@ -254,29 +253,25 @@ class ImportMessageView(View):
             return self._err(400, msg)
 
         list_name = payload["list_name"]
-        list_visibility = payload["list_visibility"]
+        list_visibility = payload["list_visibility"].lower()
 
-        # stash message on disk
-        if not os.path.exists(settings.IMPORT_DIR):
-            os.makedirs(settings.IMPORT_DIR)
+        # store message in blobdb
         prefix = f'{list_name}.{list_visibility}.'
+        bucket = 'ml-messages-incoming'
         try:
-            fd, filepath = tempfile.mkstemp(prefix=prefix, dir=settings.IMPORT_DIR)
-            with os.fdopen(fd, 'wb') as f:
-                f.write(message)
-        except (FileNotFoundError, PermissionError, OSError) as e:
-            msg = str(e)
-            logger.error(msg)
-            return self._err(500, msg)
-        logger.info(f'Received message: {filepath}')
+            blob_name = get_unique_blob_name(prefix=prefix, bucket=bucket)
+            logger.info(f'Received message: {blob_name}')
+            store_file(bucket, blob_name, io.BytesIO(message), content_type='message/rfc822')
+        except Exception:
+            # if message write to blobdb fails return a non 201
+            # response code which will cause mailman to queue message
+            # for resubmission to archive
+            return self._err(500, 'Unable to process message import at this time. Please try again later.')
 
-        # process message
-        status = archive_message(message, list_name, private=bool(list_visibility == 'private'))
-        logger.info(f'Archive message status: {filepath} {status}')
-        if status == 0:
-            return HttpResponse(status=201)
-        else:
-            return self._err(400, 'archive_message error')
+        # enqueue import task
+        import_message_blob_task.delay(bucket=bucket, name=blob_name)
+
+        return HttpResponse(status=201)
 
 
 _search_message_json_validator = jsonschema.Draft202012Validator(

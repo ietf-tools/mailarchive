@@ -172,7 +172,7 @@ def retrieve_str(kind: str, name: str) -> str:
 
 
 def get_unique_blob_name(prefix, bucket):
-    storage = destination_storage_for(bucket)
+    storage = storages[bucket]
     for _ in range(1000):
         token = secrets.token_hex(8)
         blob_name = f'{prefix}{token}'

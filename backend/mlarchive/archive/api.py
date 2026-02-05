@@ -262,10 +262,11 @@ class ImportMessageView(View):
             blob_name = get_unique_blob_name(prefix=prefix, bucket=bucket)
             logger.info(f'Received message: {blob_name}')
             store_file(bucket, blob_name, io.BytesIO(message), content_type='message/rfc822')
-        except Exception:
+        except Exception as err:
             # if message write to blobdb fails return a non 201
             # response code which will cause mailman to queue message
             # for resubmission to archive
+            logger.error(f'Blobstore Error: failed to store incoming message ({repr(err)})')
             return self._err(500, 'Unable to process message import at this time. Please try again later.')
 
         # enqueue import task

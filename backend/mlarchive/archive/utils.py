@@ -60,9 +60,11 @@ def is_duplicate_message(msg1, msg2):
     # If Message-IDs match, compare the actual message content
     # Get the payload (body) of both messages
     if msg1.is_multipart() and msg2.is_multipart():
-        # For multipart messages, compare all parts
-        parts1 = list(msg1.walk())
-        parts2 = list(msg2.walk())
+        # For multipart messages, compare all non-container parts
+        # walk() returns all message components including multipart containers,
+        # so we need to skip the container parts and only compare leaf parts
+        parts1 = [part for part in msg1.walk() if not part.is_multipart()]
+        parts2 = [part for part in msg2.walk() if not part.is_multipart()]
 
         if len(parts1) != len(parts2):
             return False
@@ -81,7 +83,7 @@ def is_duplicate_message(msg1, msg2):
         return False
 
 
-def purge_confirmed_dupes(listname=None, dry_run=False):
+def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False):
     """Walk through all email lists and purge confirmed duplicate messages.
 
     For each email list, checks the _dupes directory for messages that are
@@ -92,6 +94,7 @@ def purge_confirmed_dupes(listname=None, dry_run=False):
     Args:
         listname: Optional name of a specific list to process. If None, processes all lists.
         dry_run: If True, only report what would be done without actually removing files.
+        exitfirst: If True, exit the function on first failure (logger.warning).
     """
     removed_count = 0
     error_count = 0
@@ -136,6 +139,8 @@ def purge_confirmed_dupes(listname=None, dry_run=False):
                 if not message_id:
                     logger.warning(f'Message in _dupes has no Message-ID: {dupe_file_path}')
                     error_count += 1
+                    if exitfirst:
+                        return {'removed': removed_count, 'errors': error_count}
                     continue
 
                 message_id = message_id.strip('<>')
@@ -147,11 +152,15 @@ def purge_confirmed_dupes(listname=None, dry_run=False):
                         msgid=message_id
                     )
                 except Message.DoesNotExist:
-                    logger.info(f'Message-ID not found in archive, keeping in _dupes: {message_id}')
+                    logger.warning(f'Message-ID not found in archive, keeping in _dupes: {message_id}')
+                    if exitfirst:
+                        return {'removed': removed_count, 'errors': error_count}
                     continue
                 except Message.MultipleObjectsReturned:
                     logger.warning(f'Multiple messages found with Message-ID: {message_id}')
                     error_count += 1
+                    if exitfirst:
+                        return {'removed': removed_count, 'errors': error_count}
                     continue
 
                 # Get the archived message's EmailMessage object
@@ -173,10 +182,12 @@ def purge_confirmed_dupes(listname=None, dry_run=False):
                         )
                     removed_count += 1
                 else:
-                    logger.info(
+                    logger.warning(
                         f'Message-ID matches but content differs, keeping in _dupes: '
-                        f'msgid={message_id}, file={filename}'
+                        f'path={dupe_file_path}, list={elist.name}, msgid={message_id}'
                     )
+                    if exitfirst:
+                        return {'removed': removed_count, 'errors': error_count}
 
             except Exception as e:
                 logger.error(f'Error processing dupe file {dupe_file_path}: {e}')

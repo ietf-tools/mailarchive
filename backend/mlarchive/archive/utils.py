@@ -36,6 +36,48 @@ MAILMAN_LISTID_PATTERN = re.compile(r'(.*)\.(ietf|irtf|iab|iesg|rfc-editor)\.org
 # --------------------------------------------------
 
 
+def is_mailman_footer(part):
+    """Check if a message part is a Mailman footer.
+
+    Mailman footers are identified by:
+    - Content type is text/plain
+    - After removing leading whitespace, starts with "___"
+    - Contains the text "listinfo"
+
+    Args:
+        part: An email message part
+
+    Returns:
+        bool: True if this is a Mailman footer, False otherwise
+    """
+    # Check content type
+    if part.get_content_type() != 'text/plain':
+        return False
+
+    # Get the payload
+    payload = part.get_payload(decode=True)
+    if payload is None:
+        return False
+
+    # Decode to string if bytes
+    if isinstance(payload, bytes):
+        try:
+            payload = payload.decode('utf-8', errors='ignore')
+        except Exception:
+            return False
+
+    # Check if starts with ___ after stripping leading whitespace
+    stripped = payload.lstrip()
+    if not stripped.startswith('___'):
+        return False
+
+    # Check if contains "listinfo"
+    if 'listinfo' not in payload:
+        return False
+
+    return True
+
+
 def is_duplicate_message(msg1, msg2):
     """Check if two email.message.EmailMessage objects are duplicates.
 
@@ -63,8 +105,11 @@ def is_duplicate_message(msg1, msg2):
         # For multipart messages, compare all non-container parts
         # walk() returns all message components including multipart containers,
         # so we need to skip the container parts and only compare leaf parts
-        parts1 = [part for part in msg1.walk() if not part.is_multipart()]
-        parts2 = [part for part in msg2.walk() if not part.is_multipart()]
+        # Also exclude Mailman footers from comparison
+        parts1 = [part for part in msg1.walk()
+                  if not part.is_multipart() and not is_mailman_footer(part)]
+        parts2 = [part for part in msg2.walk()
+                  if not part.is_multipart() and not is_mailman_footer(part)]
 
         if len(parts1) != len(parts2):
             return False
@@ -76,8 +121,14 @@ def is_duplicate_message(msg1, msg2):
 
         return True
     elif not msg1.is_multipart() and not msg2.is_multipart():
-        # For single-part messages, compare payloads directly
-        return msg1.get_payload() == msg2.get_payload()
+        # For single-part messages, skip comparison if both are Mailman footers
+        # or compare payloads directly if neither is a footer
+        if is_mailman_footer(msg1) and is_mailman_footer(msg2):
+            return True
+        elif is_mailman_footer(msg1) or is_mailman_footer(msg2):
+            return False
+        else:
+            return msg1.get_payload() == msg2.get_payload()
     else:
         # One is multipart, one is not - not duplicates
         return False

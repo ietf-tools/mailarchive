@@ -1,4 +1,5 @@
 import datetime
+import email
 import json
 import mailbox
 import pytest
@@ -18,7 +19,8 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     check_inactive, EmailList, purge_incoming,
     create_mbox_file, _get_lists_as_xml, get_subscribers, Subscriber,
     get_mailman_lists, get_membership, get_subscriber_counts, get_fqdn,
-    update_mbox_files, _export_lists, move_list, remove_selected, mark_not_spam)
+    update_mbox_files, _export_lists, move_list, remove_selected, mark_not_spam,
+    is_duplicate_message, is_mailman_footer)
 from mlarchive.archive.models import User, Message, Redirect, MailmanMember, UserEmail
 from mlarchive.archive.mail import make_hash
 from mlarchive.archive.forms import AdvancedSearchForm
@@ -490,3 +492,73 @@ def test_mark_not_spam(client, messages):
     mark_not_spam(queryset)
     assert Message.objects.filter(spam_score=settings.SPAM_SCORE_NOT_SPAM).count() == queryset.count()
     assert queryset.first().spam_score == settings.SPAM_SCORE_NOT_SPAM
+
+
+# --------------------------------------------------
+# Tests for is_duplicate_message
+# --------------------------------------------------
+
+def test_is_duplicate_message_identical():
+    """Test that two identical messages are detected as duplicates."""
+    mbox_path = os.path.join(os.path.dirname(__file__), '../data/duplicate_tests.mbox')
+    mbox = mailbox.mbox(mbox_path)
+    msg1 = email.message_from_bytes(bytes(mbox[0]))  # Control message
+    msg2 = email.message_from_bytes(bytes(mbox[1]))  # Identical copy
+    assert is_duplicate_message(msg1, msg2) is True
+    mbox.close()
+
+
+def test_is_duplicate_message_different_received_headers():
+    """Test that messages with different Received headers but same content are duplicates."""
+    mbox_path = os.path.join(os.path.dirname(__file__), '../data/duplicate_tests.mbox')
+    mbox = mailbox.mbox(mbox_path)
+    msg1 = email.message_from_bytes(bytes(mbox[0]))  # Control message
+    msg3 = email.message_from_bytes(bytes(mbox[2]))  # Different Received headers
+    assert is_duplicate_message(msg1, msg3) is True
+    mbox.close()
+
+
+def test_is_duplicate_message_doubled_mailman_footers():
+    """Test that messages with doubled Mailman footers are considered duplicates."""
+    mbox_path = os.path.join(os.path.dirname(__file__), '../data/duplicate_tests.mbox')
+    mbox = mailbox.mbox(mbox_path)
+    msg4 = email.message_from_bytes(bytes(mbox[3]))  # Multipart with one footer
+    msg5 = email.message_from_bytes(bytes(mbox[4]))  # Multipart with doubled footers
+    assert is_duplicate_message(msg4, msg5) is True
+    mbox.close()
+
+
+def test_is_duplicate_message_different_content():
+    """Test that messages with same Message-ID but different content are NOT duplicates."""
+    mbox_path = os.path.join(os.path.dirname(__file__), '../data/duplicate_tests.mbox')
+    mbox = mailbox.mbox(mbox_path)
+    msg1 = email.message_from_bytes(bytes(mbox[0]))  # Control message
+    msg6 = email.message_from_bytes(bytes(mbox[5]))  # Different content, same Message-ID
+    assert is_duplicate_message(msg1, msg6) is False
+    mbox.close()
+
+
+def test_is_duplicate_message_different_message_id():
+    """Test that messages with different Message-IDs are NOT duplicates."""
+    mbox_path = os.path.join(os.path.dirname(__file__), '../data/duplicate_tests.mbox')
+    mbox = mailbox.mbox(mbox_path)
+    msg1 = email.message_from_bytes(bytes(mbox[0]))  # Control message
+    msg7 = email.message_from_bytes(bytes(mbox[6]))  # Different content, same Message-ID
+    assert is_duplicate_message(msg1, msg7) is False
+    mbox.close()
+
+
+def test_is_mailman_footer_detection():
+    """Test that Mailman footers are correctly detected."""
+    mbox_path = os.path.join(os.path.dirname(__file__), '../data/duplicate_tests.mbox')
+    mbox = mailbox.mbox(mbox_path)
+    msg8 = email.message_from_bytes(bytes(mbox[7]))  # Valid Mailman footer
+    parts = [part for part in msg8.walk()]
+    assert is_mailman_footer(parts[-1]) is True
+    msg9 = email.message_from_bytes(bytes(mbox[8]))  # Not a Mailman footer - doesn't start with ___
+    parts = [part for part in msg9.walk()]
+    assert is_mailman_footer(parts[-1]) is False
+    msg10 = email.message_from_bytes(bytes(mbox[9]))  # Not a Mailman footer - missing "listinfo"
+    parts = [part for part in msg10.walk()]
+    assert is_mailman_footer(parts[-1]) is False
+    mbox.close()

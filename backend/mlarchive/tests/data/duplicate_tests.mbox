@@ -1,0 +1,184 @@
+From test@example.com Thu Feb 13 10:00:00 2026
+Message-ID: <control-msg-001@example.com>
+From: Test User <test@example.com>
+To: testlist@ietf.org
+Subject: Control Message
+Date: Thu, 13 Feb 2026 10:00:00 -0000
+Content-Type: text/plain; charset="utf-8"
+
+This is the control message body.
+It has multiple lines.
+End of message.
+
+From test@example.com Thu Feb 13 10:01:00 2026
+Message-ID: <control-msg-001@example.com>
+From: Test User <test@example.com>
+To: testlist@ietf.org
+Subject: Control Message
+Date: Thu, 13 Feb 2026 10:00:00 -0000
+Content-Type: text/plain; charset="utf-8"
+
+This is the control message body.
+It has multiple lines.
+End of message.
+
+From test@example.com Thu Feb 13 10:02:00 2026
+Received: from mail.example.com (mail.example.com [10.0.0.1])
+	by archive.ietf.org with ESMTP id ABC123
+	for <testlist@ietf.org>; Thu, 13 Feb 2026 10:02:00 -0000
+Received: from sender.example.com (sender.example.com [10.0.0.2])
+	by mail.example.com with ESMTP id XYZ789
+	for <testlist@ietf.org>; Thu, 13 Feb 2026 10:01:50 -0000
+Message-ID: <control-msg-001@example.com>
+From: Test User <test@example.com>
+To: testlist@ietf.org
+Subject: Control Message
+Date: Thu, 13 Feb 2026 10:00:00 -0000
+Content-Type: text/plain; charset="utf-8"
+
+This is the control message body.
+It has multiple lines.
+End of message.
+
+From test@example.com Thu Feb 13 10:03:00 2026
+Message-ID: <control-msg-001@example.com>
+From: Test User <test@example.com>
+To: testlist@ietf.org
+Subject: Control Message
+Date: Thu, 13 Feb 2026 10:00:00 -0000
+Content-Type: multipart/mixed; boundary="boundary123"
+
+--boundary123
+Content-Type: text/plain; charset="utf-8"
+
+This is the control message body.
+It has multiple lines.
+End of message.
+--boundary123
+Content-Type: text/plain; charset="utf-8"
+
+_______________________________________________
+testlist mailing list
+testlist@ietf.org
+https://www.ietf.org/mailman/listinfo/testlist
+--boundary123--
+
+From test@example.com Thu Feb 13 10:03:00 2026
+Message-ID: <control-msg-001@example.com>
+From: Test User <test@example.com>
+To: testlist@ietf.org
+Subject: Control Message
+Date: Thu, 13 Feb 2026 10:00:00 -0000
+Content-Type: multipart/mixed; boundary="boundary123"
+
+--boundary123
+Content-Type: text/plain; charset="utf-8"
+
+This is the control message body.
+It has multiple lines.
+End of message.
+--boundary123
+Content-Type: text/plain; charset="utf-8"
+
+_______________________________________________
+testlist mailing list
+testlist@ietf.org
+https://www.ietf.org/mailman/listinfo/testlist
+--boundary123
+Content-Type: text/plain; charset="utf-8"
+
+_______________________________________________
+testlist mailing list
+testlist@ietf.org
+https://www.ietf.org/mailman/listinfo/testlist
+--boundary123--
+
+From test@example.com Thu Feb 13 10:04:00 2026
+Message-ID: <control-msg-001@example.com>
+From: Test User <test@example.com>
+To: testlist@ietf.org
+Subject: Different Subject
+Date: Thu, 13 Feb 2026 10:04:00 -0000
+Content-Type: text/plain; charset="utf-8"
+
+This is completely different content.
+The message body has changed.
+This should NOT be considered a duplicate.
+
+From test@example.com Thu Feb 13 10:00:00 2026
+Message-ID: <different_id@example.com>
+From: Test User <test@example.com>
+To: testlist@ietf.org
+Subject: Control Message
+Date: Thu, 13 Feb 2026 10:00:00 -0000
+Content-Type: text/plain; charset="utf-8"
+
+This is the control message body.
+It has multiple lines.
+End of message.
+
+From test@example.com Thu Feb 13 10:03:00 2026
+Message-ID: <control-msg-001@example.com>
+From: Test User <test@example.com>
+To: testlist@ietf.org
+Subject: Control Message
+Date: Thu, 13 Feb 2026 10:00:00 -0000
+Content-Type: multipart/mixed; boundary="boundary123"
+
+--boundary123
+Content-Type: text/plain; charset="utf-8"
+
+This is the control message body.
+It has multiple lines.
+End of message.
+--boundary123
+Content-Type: text/plain; charset="utf-8"
+
+_______________________________________________
+testlist mailing list
+testlist@ietf.org
+https://www.ietf.org/mailman/listinfo/testlist
+--boundary123--
+
+From test@example.com Thu Feb 13 10:03:00 2026
+Message-ID: <control-msg-001@example.com>
+From: Test User <test@example.com>
+To: testlist@ietf.org
+Subject: Control Message
+Date: Thu, 13 Feb 2026 10:00:00 -0000
+Content-Type: multipart/mixed; boundary="boundary123"
+
+--boundary123
+Content-Type: text/plain; charset="utf-8"
+
+This is the control message body.
+It has multiple lines.
+End of message.
+--boundary123
+Content-Type: text/plain; charset="utf-8"
+
+signature line
+Joe Smith
+--boundary123--
+
+From test@example.com Thu Feb 13 10:03:00 2026
+Message-ID: <control-msg-001@example.com>
+From: Test User <test@example.com>
+To: testlist@ietf.org
+Subject: Control Message
+Date: Thu, 13 Feb 2026 10:00:00 -0000
+Content-Type: multipart/mixed; boundary="boundary123"
+
+--boundary123
+Content-Type: text/plain; charset="utf-8"
+
+This is the control message body.
+It has multiple lines.
+End of message.
+--boundary123
+Content-Type: text/plain; charset="utf-8"
+
+_______________________________________________
+non mailman stuff
+
+--boundary123--

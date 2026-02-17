@@ -17,6 +17,7 @@ from mlarchive.archive.utils import init_private_list_members
 from mlarchive.archive.utils import remove_selected
 from mlarchive.archive.utils import mark_not_spam
 from mlarchive.archive.utils import purge_confirmed_dupes
+from mlarchive.archive.utils import import_message_blob
 from mlarchive.archive.models import EmailList, Message, User
 
 logger = logging.getLogger(__name__)
@@ -140,6 +141,15 @@ def remove_selected_task(user_id):
 @app.task
 def mark_not_spam_task(message_ids):
     mark_not_spam(message_ids)
+
+
+# --------------------------------------------------
+# Regular Shared Tasks
+# --------------------------------------------------
+
+@shared_task
+def import_message_blob_task(bucket, name):
+    import_message_blob(bucket, name)
 
 
 # --------------------------------------------------

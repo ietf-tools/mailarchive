@@ -500,6 +500,40 @@ def test_mark_not_spam(client, messages):
     assert queryset.first().spam_score == settings.SPAM_SCORE_NOT_SPAM
 
 
+@pytest.mark.django_db(transaction=True)
+def test_import_message_blob(client):
+    # test setup
+    bucket = 'ml-messages-incoming'
+    blob_name = get_unique_blob_name(prefix='apple.public.', bucket=bucket)
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
+    with open(path, 'rb') as f:
+        message = f.read()
+    store_file(bucket, blob_name, io.BytesIO(message), content_type='message/rfc822')
+
+    assert Blob.objects.filter(
+        bucket='ml-messages-incoming',
+        name__startswith='apple.public',
+    ).count() == 1
+
+    assert not EmailList.objects.filter(name='apple', private=False).exists()
+    assert not Message.objects.exists()
+
+    # call import
+    import_message_blob(bucket=bucket, name=blob_name)
+
+    # assert list exists
+    assert EmailList.objects.filter(name='apple', private=False).exists()
+
+    # assert message exists, message-id
+    msg = Message.objects.get(email_list__name='apple', msgid='0000000001@amsl.com')
+    assert msg.subject == 'This is a test'
+
+    # assert message blob exists in archive storage
+    storage_blob_name = f'apple/{msg.hashcode.strip('=')}'
+    assert exists_in_storage('ml-messages', storage_blob_name)
+    assert exists_in_storage('ml-messages-json', storage_blob_name)
+
+
 # --------------------------------------------------
 # Tests for is_duplicate_message
 # --------------------------------------------------
@@ -549,7 +583,7 @@ def test_is_duplicate_message_different_message_id():
     mbox_path = os.path.join(os.path.dirname(__file__), '../data/duplicate_tests.mbox')
     mbox = mailbox.mbox(mbox_path)
     msg1 = email.message_from_bytes(bytes(mbox[0]))  # Control message
-    msg7 = email.message_from_bytes(bytes(mbox[6]))  # Different content, same Message-ID
+    msg7 = email.message_from_bytes(bytes(mbox[6]))  # Same content, different Message-ID
     assert is_duplicate_message(msg1, msg7) is False
     mbox.close()
 
@@ -568,37 +602,3 @@ def test_is_mailman_footer_detection():
     parts = [part for part in msg10.walk()]
     assert is_mailman_footer(parts[-1]) is False
     mbox.close()
-
-    
-@pytest.mark.django_db(transaction=True)
-def test_import_message_blob(client):
-    # test setup
-    bucket = 'ml-messages-incoming'
-    blob_name = get_unique_blob_name(prefix='apple.public.', bucket=bucket)
-    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
-    with open(path, 'rb') as f:
-        message = f.read()
-    store_file(bucket, blob_name, io.BytesIO(message), content_type='message/rfc822')
-
-    assert Blob.objects.filter(
-        bucket='ml-messages-incoming',
-        name__startswith='apple.public',
-    ).count() == 1
-
-    assert not EmailList.objects.filter(name='apple', private=False).exists()
-    assert not Message.objects.exists()
-
-    # call import
-    import_message_blob(bucket=bucket, name=blob_name)
-
-    # assert list exists
-    assert EmailList.objects.filter(name='apple', private=False).exists()
-
-    # assert message exists, message-id
-    msg = Message.objects.get(email_list__name='apple', msgid='0000000001@amsl.com')
-    assert msg.subject == 'This is a test'
-
-    # assert message blob exists in archive storage
-    storage_blob_name = f'apple/{msg.hashcode.strip('=')}'
-    assert exists_in_storage('ml-messages', storage_blob_name)
-    assert exists_in_storage('ml-messages-json', storage_blob_name)

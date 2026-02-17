@@ -85,15 +85,7 @@ def is_duplicate_message(msg1, msg2):
     Messages are considered duplicates if they have the same Message-ID
     and the same content (payload). This ignores headers like Received
     which may differ between duplicate submissions.
-
-    Args:
-        msg1: First email.message.EmailMessage object
-        msg2: Second email.message.EmailMessage object
-
-    Returns:
-        bool: True if messages are duplicates, False otherwise
     """
-    # Check if Message-ID headers match
     msgid1 = msg1.get('Message-ID')
     msgid2 = msg2.get('Message-ID')
 
@@ -119,19 +111,10 @@ def is_duplicate_message(msg1, msg2):
         for part1, part2 in zip(parts1, parts2):
             if part1.get_payload() != part2.get_payload():
                 return False
-
         return True
     elif not msg1.is_multipart() and not msg2.is_multipart():
-        # For single-part messages, skip comparison if both are Mailman footers
-        # or compare payloads directly if neither is a footer
-        if is_mailman_footer(msg1) and is_mailman_footer(msg2):
-            return True
-        elif is_mailman_footer(msg1) or is_mailman_footer(msg2):
-            return False
-        else:
-            return msg1.get_payload() == msg2.get_payload()
+        return msg1.get_payload() == msg2.get_payload()
     else:
-        # One is multipart, one is not - not duplicates
         return False
 
 
@@ -154,7 +137,6 @@ def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False):
     if dry_run:
         logger.info('DRY RUN MODE: No files will be removed')
 
-    # Get the lists to process
     if listname:
         try:
             email_lists = [EmailList.objects.get(name=listname)]
@@ -167,26 +149,21 @@ def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False):
     for elist in email_lists:
         dupes_dir = os.path.join(settings.ARCHIVE_DIR, elist.name, '_dupes')
 
-        # Skip if _dupes directory doesn't exist
         if not os.path.isdir(dupes_dir):
             continue
 
         logger.info(f'Processing _dupes directory for list: {elist.name}')
 
-        # Process each file in the _dupes directory
         for filename in os.listdir(dupes_dir):
             dupe_file_path = os.path.join(dupes_dir, filename)
 
-            # Skip directories
             if not os.path.isfile(dupe_file_path):
                 continue
 
             try:
-                # Parse the message from the _dupes directory
                 with open(dupe_file_path, 'rb') as f:
                     dupe_msg = email.message_from_binary_file(f)
 
-                # Get the Message-ID and strip angle brackets (database stores without them)
                 message_id = dupe_msg.get('Message-ID')
                 if not message_id:
                     logger.warning(f'Message in _dupes has no Message-ID: {dupe_file_path}')
@@ -197,7 +174,6 @@ def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False):
 
                 message_id = message_id.strip('<>')
 
-                # Look up message in database
                 try:
                     archived_message = Message.objects.get(
                         email_list=elist,
@@ -215,12 +191,9 @@ def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False):
                         return {'removed': removed_count, 'errors': error_count}
                     continue
 
-                # Get the archived message's EmailMessage object
                 archived_msg = archived_message.pymsg
 
-                # Compare the two messages
                 if is_duplicate_message(dupe_msg, archived_msg):
-                    # Confirmed duplicate - remove the file (unless dry run)
                     if dry_run:
                         logger.info(
                             f'[DRY RUN] Would remove confirmed duplicate: list={elist.name}, '

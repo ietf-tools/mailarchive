@@ -16,6 +16,7 @@ from mlarchive.archive.utils import update_mbox_files
 from mlarchive.archive.utils import init_private_list_members
 from mlarchive.archive.utils import remove_selected
 from mlarchive.archive.utils import mark_not_spam
+from mlarchive.archive.utils import purge_confirmed_dupes
 from mlarchive.archive.utils import import_message_blob
 from mlarchive.archive.models import EmailList, Message, User
 
@@ -199,3 +200,13 @@ def init_private_list_members_task():
         init_private_list_members()
     except Exception as err:
         logger.error(f"Error in init_private_list_members_task: {err}")
+
+
+@shared_task
+def purge_confirmed_dupes_task():
+    '''Crawl [listname]/_dupes directories in archive and delete confirmed
+    duplicate messages'''
+    try:
+        purge_confirmed_dupes()
+    except Exception as err:
+        logger.error(f"Error in purge_confirmed_dupes_task: {err}")

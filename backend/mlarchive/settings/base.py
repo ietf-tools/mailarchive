@@ -258,6 +258,10 @@ STORAGES = {
     'ml-messages-spam': {
         "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
         "OPTIONS": {"bucket_name": 'ml-messages-spam'},
+    },
+    'ml-templates': {
+        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "OPTIONS": {"bucket_name": 'ml-templates'},
     }
 }
 
@@ -271,6 +275,7 @@ ARTIFACT_STORAGE_NAMES: list[str] = [
     "ml-messages-filtered",
     "ml-messages-dupes",
     "ml-messages-spam",
+    "ml-templates",
 ]
 
 ENABLE_BLOBSTORAGE = True

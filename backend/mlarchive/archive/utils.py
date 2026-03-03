@@ -12,13 +12,17 @@ import shutil
 import subprocess
 import sys
 from collections import defaultdict
+from pathlib import Path
 
 import mailmanclient
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.template.loader import render_to_string
+from django.test import RequestFactory
 
 from mlarchive.archive.models import (EmailList, Subscriber, Redirect, UserEmail, MailmanMember,
     User, Message)
@@ -857,3 +861,32 @@ def import_message_blob(bucket, name):
             listname=list_name,
             private=is_private)
         logger.info(f'Archive message status: {name} {status}')
+
+
+def create_cf_worker_templates():
+    """Create message template for Cloudflare worker. Here we are mainly mapping django template
+    varaibles to cloudflare worker mustache variables"""
+    path = Path(settings.CF_WORKER_TEMPLATE_DIR, 'message-detail.html')
+    path.parent.mkdir(parents=True, exist_ok=True)
+    context = {}
+    context['server_mode'] = 'production'
+    context['queryid'] = None  # query based navigation turned off in generic template
+    # context['static_mode_enabled']  # provided by context processor
+    # pass request to enable context processors
+    msg = {}
+    msg['subject'] = '{{ subject }}'
+    msg['get_date_index_url'] = '{{{ date_index_url }}}'
+    msg['get_thread_index_url'] = '{{{ thread_index_url }}}'
+    msg['get_static_date_index_url'] = '{{{ static_date_index_url }}}'
+    msg['get_static_thread_index_url'] = '{{{ static_thread_index_url }}}'
+    msg['get_thread_snippet'] = '{{{ thread_snippet }}}'
+    msg['get_body_html'] = '{{{ body }}}'
+    context['msg'] = msg
+    context['previous_in_list'] = {'get_absolute_url': '{{{ previous_in_list }}}'}
+    context['next_in_list'] = {'get_absolute_url': '{{{ next_in_list }}}'}
+    context['previous_in_thread'] = {'get_absolute_url': '{{{ previous_in_thread }}}'}
+    context['next_in_thread'] = {'get_absolute_url': '{{{ next_in_thread }}}'}
+    request = RequestFactory().get('/')
+    request.user = AnonymousUser()
+    html = render_to_string('archive/detail.html', context, request=request)
+    path.write_text(html, encoding='utf-8')

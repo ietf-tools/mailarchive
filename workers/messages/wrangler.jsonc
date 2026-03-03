@@ -1,0 +1,78 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mailarchive-message-worker",
+  "main": "index.js",
+  "compatibility_date": "2026-03-03",
+  "workers_dev": false,
+  "observability": {
+    "enabled": true
+  },
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+
+  "env": {
+    /*************************************
+    * STAGING
+    **************************************/
+    "staging": {
+      "name": "mailarchive-message-staging",
+      "routes": [
+        {
+          "pattern": "mailarchive.staging.ietf.org/arch/msg/*",
+          "zone_name": "ietf.org"
+        }
+      ],
+      "vars": {
+        "ORIGIN_URL": "https://mailarchive.staging.ietf.org",
+        "TEMPLATE_NAME": "message-detail.html",
+        "TEMPLATE_CACHE_TTL": "3600", 
+      },
+      "r2_buckets": [
+        {
+          "binding": "MESSAGES",
+          "bucket_name": "ml-messages-json",
+          "preview_bucket_name": "ml-messages-json"
+        },
+        {
+          "binding": "TEMPLATES",
+          "bucket_name": "ml-templates",
+          "preview_bucket_name": "ml-templates"
+        }
+      ]
+    },
+    /*************************************
+    * PROD
+    **************************************/
+    "prod": {
+      "name": "mailarchive-message",
+      "routes": [
+        {
+          "pattern": "mailarchive.ietf.org/arch/msg/*",
+          "zone_name": "ietf.org"
+        }
+      ],
+      "vars": {
+        "ORIGIN_URL": "https://mailarchive.ietf.org",
+        "TEMPLATE_NAME": "message-detail.html",
+        "TEMPLATE_CACHE_TTL": "3600", 
+      },
+      "r2_buckets": [
+        {
+          "binding": "MESSAGES",
+          "bucket_name": "ml-messages-json",
+          "preview_bucket_name": "ml-messages-json"
+        },
+        {
+          "binding": "TEMPLATES",
+          "bucket_name": "ml-templates",
+          "preview_bucket_name": "ml-templates"
+        }
+      ]
+    }
+  }
+}

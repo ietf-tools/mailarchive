@@ -271,7 +271,7 @@ class Generator:
         try:
             clean = cleaner.clean_html(payload)
         except (XMLSyntaxError, ParserError, ValueError) as error:
-            logger.error('Error cleaning HTML body [{}, {}, {}]'.format(
+            logger.warning('Error cleaning HTML body [{}, {}, {}]'.format(
                 self.msg.email_list, self.msg.msgid, error.args))
             if self.text_only:
                 return None

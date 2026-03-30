@@ -51,6 +51,8 @@ spec:
               value: single-node
             - name: xpack.security.enabled
               value: "true"
+            - name: ingest.geoip.downloader.enabled
+              value: "false"
             - name: ELASTIC_PASSWORD
               valueFrom:
                 secretKeyRef:

@@ -608,5 +608,5 @@ def test_is_mailman_footer_detection():
 def test_create_cf_worker_templates():
     """Test the creation of the Cloudflare worker message edge template"""
     create_cf_worker_templates()
-    path = os.path.join(settings.WORKER_TEMPLATE_PATH, 'message-detail.html')
+    path = os.path.join(settings.CF_WORKER_TEMPLATE_DIR, 'message-detail.html')
     assert os.path.exists(path)

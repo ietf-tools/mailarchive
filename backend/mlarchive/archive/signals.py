@@ -1,3 +1,4 @@
+import io
 import logging
 import os
 import requests
@@ -17,6 +18,7 @@ from django.db import models, connection, transaction
 
 from mlarchive.archive.models import Message, EmailList
 from mlarchive.archive.backends.elasticsearch import ESBackend, get_identifier
+from mlarchive.archive.storage_utils import store_file, remove_from_storage
 from mlarchive.archive.utils import _export_lists
 from mlarchive.celeryapp import app
 
@@ -26,6 +28,23 @@ logger = logging.getLogger(__name__)
 # --------------------------------------------------
 # Signal Handlers
 # --------------------------------------------------
+
+@receiver(post_save, sender=Message)
+def _save_message_json(sender, instance, **kwargs):
+    if not instance.email_list.private:
+        store_file(
+            kind='ml-messages-json',
+            name=instance.get_blob_name(),
+            file=io.BytesIO(instance.as_json().encode('utf-8')),
+            allow_overwrite=True,
+            content_type='application/json'
+        )
+
+
+@receiver(post_delete, sender=Message)
+def _delete_message_json(sender, instance, **kwargs):
+    remove_from_storage(kind='ml-messages-json', name=instance.get_blob_name())
+
 
 @receiver([post_save, post_delete], sender=EmailList)
 def _clear_lists_cache(sender, instance, **kwargs):

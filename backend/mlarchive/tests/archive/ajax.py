@@ -157,6 +157,32 @@ def test_ajax_messages_security(client, messages):
 
 
 @pytest.mark.django_db(transaction=True)
+def test_ajax_messages_bad_params(client, messages):
+    '''Test that bad parameter values do not cause 500 errors'''
+    messages = messages.filter(email_list__name='private').order_by('-date')
+    message = messages.first()
+    assert messages.count() > 1
+    # bogus referenceitem
+    url = '{}?qid=&referenceitem=33%27%22&browselist=pubone&referenceid={}&direction=next'.format(
+        reverse('ajax_messages'), message.pk)
+    response = client.get(url)
+    print('private: {}'.format(message.pk))
+    print('pubone: {}'.format([m.pk for m in Message.objects.filter(email_list__name='pubone')]))
+    print(response.content)
+    assert response.status_code == 400
+    # bogus referenceid
+    url = '{}?qid=&referenceitem=&browselist=pubone&referenceid={}&direction=next'.format(
+        reverse('ajax_messages'), 'bad')
+    response = client.get(url)
+    assert response.status_code == 400
+    # bogus direction
+    url = '{}?qid=&referenceitem=&browselist=pubone&referenceid={}&direction=bad'.format(
+        reverse('ajax_messages'), message.pk)
+    response = client.get(url)
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db(transaction=True)
 def test_ajax_get_messages_browse_next(client, messages):
     message = messages.filter(email_list__name='pubone').order_by('-date').first()
     url = '{}?qid=&referenceitem=0&browselist=pubone&referenceid={}&direction=next'.format(

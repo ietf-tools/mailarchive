@@ -5,6 +5,8 @@ from mlarchive.archive.models import (Message, EmailList, Attachment, Thread,
 
 class MessageAdmin(admin.ModelAdmin):
     raw_id_fields = ('email_list', 'in_reply_to', 'thread')
+    search_fields = ['msgid', 'hashcode', 'frm']
+    search_help_text = 'Search by msgid, hashcode or from fields'
 
 
 class EmailListAdmin(admin.ModelAdmin):

@@ -62,8 +62,8 @@ services:
     image: postgres:17
     restart: always
     environment:
-      POSTGRES_DB: mailarch
-      POSTGRES_USER: mailarch
+      POSTGRES_DB: mailarchive
+      POSTGRES_USER: mailarchive
       POSTGRES_PASSWORD: franticmarble
       POSTGRES_HOST_AUTH_METHOD: trust
     # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.

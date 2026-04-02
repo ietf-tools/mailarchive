@@ -166,9 +166,6 @@ def test_ajax_messages_bad_params(client, messages):
     url = '{}?qid=&referenceitem=33%27%22&browselist=pubone&referenceid={}&direction=next'.format(
         reverse('ajax_messages'), message.pk)
     response = client.get(url)
-    print('private: {}'.format(message.pk))
-    print('pubone: {}'.format([m.pk for m in Message.objects.filter(email_list__name='pubone')]))
-    print(response.content)
     assert response.status_code == 400
     # bogus referenceid
     url = '{}?qid=&referenceitem=&browselist=pubone&referenceid={}&direction=next'.format(

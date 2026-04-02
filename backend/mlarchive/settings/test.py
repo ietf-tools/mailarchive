@@ -13,9 +13,9 @@ DATABASES = {
     'default': {
         'HOST': 'db',
         'PORT': 5432,
-        'NAME': 'mailarch',
+        'NAME': 'mailarchive',
         'ENGINE': 'django.db.backends.postgresql',
-        'USER': 'mailarch',
+        'USER': 'mailarchive',
         'PASSWORD': 'franticmarble',
     },
 }

@@ -1,4 +1,4 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+For format details, refer to https://aka.ms/devcontainer.json. For configuration options, please see the README at:
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.238.0/containers/docker-existing-docker-compose
 // If you want to run as a non-root user in the container, see .devcontainer/docker-compose.yml.
 {

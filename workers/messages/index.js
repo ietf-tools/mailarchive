@@ -94,11 +94,6 @@ function parseMessageUrl(pathname) {
   const list = match[1];
   const hashcode = match[2];
 
-  // Validate hashcode: 27 characters, base64 charset
-  if (hashcode.length !== 27) {
-    return null;
-  }
-
   // Base64.urlsafe charset: A-Z, a-z, 0-9, -, _
   if (!/^[A-Za-z0-9_\-]{27}$/.test(hashcode)) {
     return null;

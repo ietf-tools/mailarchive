@@ -181,3 +181,18 @@ def get_unique_blob_name(prefix, bucket):
     msg = 'Blobstore Error: get_unique_blob_name() failed.'
     logger.error(msg)
     raise RuntimeError(msg)
+
+
+def move_object(key: str, source_bucket: str, target_bucket: str) -> None:
+    if settings.ENABLE_BLOBSTORAGE:
+        try:
+            store = _get_storage(target_bucket)
+            content = retrieve_bytes(source_bucket, key)
+            store_bytes(target_bucket, key, content=content)
+            assert exists_in_storage(target_bucket, key)
+            assert store.size(key) == len(content)
+            remove_from_storage(source_bucket, key)
+        except Exception as err:
+            logger.error(f"Blobstore Error: Failed to move {key} from {source_bucket} to {target_bucket} {repr(err)}")
+            raise
+    return

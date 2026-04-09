@@ -1008,4 +1008,3 @@ class MessageWrapper(object):
         # store regular public messages
         else:
             store_file('ml-messages', blob_path, io.BytesIO(self.bytes), content_type='message/rfc822')
-            store_file('ml-messages-json', blob_path, io.BytesIO(self.archive_message.as_json().encode('utf-8')), content_type='application/json')

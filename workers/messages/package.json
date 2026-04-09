@@ -10,9 +10,9 @@
     "dev-remote": "wrangler dev --env staging --remote"
   },
   "dependencies": {
-    "mustache": "^4.2.0"
+    "mustache": "4.2.0"
   },
   "devDependencies": {
-    "wrangler": "^4.67.0"
+    "wrangler": "4.81.1"
   }
 }

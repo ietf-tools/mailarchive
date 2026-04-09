@@ -35,13 +35,13 @@
       "r2_buckets": [
         {
           "binding": "MESSAGES",
-          "bucket_name": "ml-messages-json",
-          "preview_bucket_name": "ml-messages-json"
+          "bucket_name": "staging-ml-messages-json",
+          "preview_bucket_name": "staging-ml-messages-json"
         },
         {
           "binding": "TEMPLATES",
-          "bucket_name": "ml-templates",
-          "preview_bucket_name": "ml-templates"
+          "bucket_name": "staging-ml-templates",
+          "preview_bucket_name": "staging-ml-templates"
         }
       ]
     },

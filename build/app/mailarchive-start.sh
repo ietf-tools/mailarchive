@@ -35,7 +35,6 @@ gunicorn \
           --bind :8000 \
           --capture-output \
           --access-logfile -\
-          --control-socket /tmp/gunicorn.ctl \
           ${GUNICORN_EXTRA_ARGS} \
           backend.mlarchive.wsgi:application &
 gunicorn_pid=$!

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from mlarchive.archive.models import (Message, EmailList, Attachment, Thread,
-    Redirect, UserEmail, MailmanMember)
+    Redirect, UserEmail, MailmanMember, Subscriber)
 
 
 class MessageAdmin(admin.ModelAdmin):
@@ -28,5 +28,6 @@ admin.site.register(EmailList, EmailListAdmin)
 admin.site.register(Attachment)
 admin.site.register(Thread)
 admin.site.register(Redirect)
+admin.site.register(Subscriber)
 admin.site.register(UserEmail, UserEmailAdmin)
 admin.site.register(MailmanMember, MailmanMemberAdmin)

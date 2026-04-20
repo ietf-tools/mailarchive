@@ -1,0 +1,23 @@
+{
+  "id": 12345,
+  "base_subject": "DNS QNAME minimisation",
+  "cc": "",
+  "date": "2026-02-18T10:30:00+00:00",
+  "email_list": 42,
+  "frm": "John Doe <john.doe@example.com>",
+  "from_line": "john.doe@example.com Tue Feb 18 10:30:00 2026",
+  "hashcode": "aBcDeFgHiJkLmNoPqRsTuVwXyZ1",
+  "in_reply_to": null,
+  "in_reply_to_value": "",
+  "legacy_number": null,
+  "msgid": "<20260218103000.12345@example.com>",
+  "references": "",
+  "spam_score": -1,
+  "subject": "Re: DNS QNAME minimisation",
+  "thread": 123,
+  "thread_depth": 0,
+  "thread_order": 1,
+  "to": "dnsop@ietf.org",
+  "updated": "2026-02-18T10:35:00+00:00",
+  "content": "This is a test message about DNS QNAME minimisation.\n\nQNAME minimisation is a technique in DNS where the DNS resolver no longer\nsends the full original QNAME to the upstream name server. This improves\nprivacy by reducing the amount of information leaked in DNS queries.\n\nFor more details, see RFC 7816.\n\nBest regards,\nJohn"
+}

@@ -21,7 +21,8 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     create_mbox_file, _get_lists_as_xml, get_subscribers, Subscriber,
     get_mailman_lists, get_membership, get_subscriber_counts, get_fqdn,
     update_mbox_files, _export_lists, move_list, remove_selected, mark_not_spam,
-    is_duplicate_message, is_mailman_footer, import_message_blob)
+    is_duplicate_message, is_mailman_footer, import_message_blob,
+    create_cf_worker_templates)
 from mlarchive.archive.models import User, Message, Redirect, MailmanMember, UserEmail
 from mlarchive.archive.mail import make_hash
 from mlarchive.archive.forms import AdvancedSearchForm
@@ -602,3 +603,10 @@ def test_is_mailman_footer_detection():
     parts = [part for part in msg10.walk()]
     assert is_mailman_footer(parts[-1]) is False
     mbox.close()
+
+
+def test_create_cf_worker_templates():
+    """Test the creation of the Cloudflare worker message edge template"""
+    create_cf_worker_templates()
+    path = os.path.join(settings.CF_WORKER_TEMPLATE_DIR, 'message-detail.html')
+    assert os.path.exists(path)

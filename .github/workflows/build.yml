@@ -171,6 +171,7 @@ jobs:
         echo "Pushing statics..."
         cd static
         aws s3 sync . s3://static/mailarchive/$PKG_VERSION --only-show-errors --checksum-algorithm CRC32
+        aws s3 cp mlarchive/html/message-detail.html s3://ml-templates/message-detail.html --only-show-errors --checksum-algorithm CRC32
 
     - name: Augment dockerignore for docker image build
       env:

@@ -131,7 +131,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v6.3.0
       with:
-        node-version: 16.x
+        node-version: 24.x
     
     - name: Setup Python
       uses: actions/setup-python@v6

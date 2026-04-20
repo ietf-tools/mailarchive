@@ -25,12 +25,6 @@ $red1: #ff8080;
 $pale-blue: #ddecfe;
 
 $dev-header: #904141;
-$link-visited: #551A8B;
-
-// same as bootstrap
-// $link-color: #337ab7;
-$link-hover-color:          darken($link-color, 15%);
-$link-decoration:           none;
 $link-hover-decoration:     underline;
 
 body {
@@ -105,7 +99,6 @@ div:focus {
     bottom: 0;
     left: 0;
     right: 0;
-    background-color: white;
 }
 
 .footer p {
@@ -120,7 +113,7 @@ div:focus {
 /* customize bootstrap navbar */
 nav.navbar {
     padding: 3px 0;
-    border: 1px solid $gray-300;
+    border: 1px solid var(--bs-border-color);
 }
 
 /* Progressive Enhancement Styling
@@ -377,12 +370,13 @@ ul.browse-list li {
 }
 
 .row-has-brackets {
-    --bs-table-bg: #{$pale-blue};
-    --bs-table-accent-bg: #{$pale-blue};
+    --bs-table-bg: var(--bs-primary-subtle);
+    --bs-table-accent-bg: var(--bs-primary-subtle);
+    color: var(--bs-primary-text-emphasis);
 }
 
 .spam-mode tr.row-selected {
-    outline: 2px solid black;
+    outline: 2px solid var(--bs-emphasis-color);
 }
 
 /* ==========================================================================
@@ -402,7 +396,7 @@ ul.export-buttons li {
    Search
    ========================================================================== */
 #sidebar {
-    color: $gray-600;
+    color: var(--bs-secondary);
     float: left;
     height: calc(100vh - 44px);
     padding-left: 20px;
@@ -422,8 +416,12 @@ ul.export-buttons li {
 }
 
 a.selected {
-    color: $link-hover-color;
+    color: var(--bs-emphasis-color);
     text-decoration: $link-hover-decoration;
+}
+
+a:hover {
+    text-decoration: underline;
 }
 
 i.toggle-pane {
@@ -439,10 +437,10 @@ i.toggle-pane {
 }
 
 .filter-popup {
-    background: none repeat scroll 0 0 white;
-    border: 1px solid $gray-300;
-    box-shadow: 0 2px 4px $gray-300;
-    color: $gray-800;
+    background-color: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    box-shadow: 0 2px 4px var(--bs-border-color);
+    color: var(--bs-body-color);
     line-height: 17px;
     padding-bottom: 5px;
     padding-top: 5px;
@@ -530,7 +528,7 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 .msg-list {
-    border-top: 1px solid $gray-300;
+    border-top: 1px solid var(--bs-border-color);
     cursor: pointer;
     height: calc(100% - 65px);
     overflow: auto;
@@ -538,7 +536,7 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 #msg-list-controls {
-    border-top: 1px solid $gray-300;
+    border-top: 1px solid var(--bs-border-color);
     padding: 8px 1em 8px 1em;
 }
 
@@ -553,11 +551,11 @@ table.msg-table > thead > tr > th {
 }
 
 table.msg-table th:hover {
-    background-color: $gray-300;
+    background-color: var(--bs-secondary-bg);
 }
 
 table.msg-table th a {
-    color: black;
+    color: var(--bs-emphasis-color);
     padding: 8px 8px 8px 0;
     display:inline-block;
     width:100%;
@@ -582,7 +580,7 @@ table.msg-list-header-table th a.btn {
 }
 
 .fa-sort-asc, .fa-sort-desc {
-    color: black
+    color: var(--bs-emphasis-color);
 }
 
 .fa-arrow-right {
@@ -592,7 +590,7 @@ table.msg-list-header-table th a.btn {
 }
 
 #list-pane {
-    border: 1px solid $gray-300;
+    border: 1px solid var(--bs-border-color);
     height: 100%;
     left: 0;
     position: absolute;
@@ -601,8 +599,8 @@ table.msg-list-header-table th a.btn {
 }
 
 div.row-selected {
-    --bs-table-bg: #{$pale-blue};
-    --bs-table-accent-bg: #{$pale-blue};
+    --bs-table-bg: var(--bs-primary-bg-subtle);
+    background-color: var(--bs-table-bg);
 }
 
 .date-col {
@@ -650,7 +648,7 @@ div.row-selected {
 }
 
 #msg-list.no-preview .subj-col a:visited {
-    color: $link-visited;
+    color: var(--bs-gray-500);
 }
 
 #msg-list.no-preview .xtd {
@@ -666,9 +664,9 @@ div.row-selected {
     background-position: 50%;
     background-repeat: no-repeat;
     background-image: url("../images/horizontal-grip.png");
-    background-color: $gray9;
-    border-left: 1px solid $gray-300;
-    border-right: 1px solid $gray-300;
+    background-color: var(--bs-secondary-bg);
+    border-left: 1px solid var(--bs-border-color);
+    border-right: 1px solid var(--bs-border-color);
     position: absolute;
     left: 0;
     right: 0;
@@ -678,7 +676,7 @@ div.row-selected {
 }
 
 .view-pane {
-    border: 1px solid $gray-300;
+    border: 1px solid var(--bs-border-color);
     bottom: 0;
     left: 0;
     overflow-y: scroll;
@@ -712,8 +710,8 @@ div.row-selected {
     right: 12px;
     padding: 5px;
     z-index: 10;
-    background-color: white;
-    color: $gray5;
+    background-color: var(--bs-body-bg);
+    color: var(--bs-secondary-color);
 }
 
 #msg-body #message-links a {
@@ -735,8 +733,8 @@ div.row-selected {
 }
 
 #msg-link {
-    background: white;
-    border-top: 1px solid $gray-300;
+    background: var(--bs-body-bg);
+    border-top: 1px solid var(--bs-border-color);
     bottom: 0;
     padding: 2px 5px;
     position: fixed;
@@ -831,7 +829,7 @@ div.row-selected {
 }
 
 .xtr {
-    border: 1px solid $gray-300;
+    border: 1px solid var(--bs-border-color);
     margin: 8px 4px;
     padding: 4px 8px;
     box-shadow: 0 2px 4px 0 rgba(0,0,0,0.16),0 2px 10px 0 rgba(0,0,0,0.12);
@@ -843,7 +841,7 @@ div.row-selected {
 }
 
 .header a {
-    color: black;
+    color: var(--bs-emphasis-color);
     padding: 6px 8px;
     display: inline-block;
     width: 100%;
@@ -860,7 +858,7 @@ div.row-selected {
     }
     
     .xtd {
-        border-bottom: 1px solid $gray-300;
+        border-bottom: 1px solid var(--bs-border-color);
         display: table-cell;
         padding: 6px 8px;
         line-height: 1.42857143;
@@ -881,11 +879,11 @@ div.row-selected {
     }
     
     .xtable.thread-sorted .xtr.thread-border .xtd {
-        border-top: 1px solid $gray-300;
+        border-top: 1px solid var(--bs-border-color);
     }
 
     #msg-list.no-preview .xtable:not(.thread-sorted) .xtr.date-border .xtd{
-        border-top: 1px solid $gray-700;
+        border-top: 1px solid var(--bs-border-color-translucent);
     }
 
     .list-col {
@@ -893,11 +891,11 @@ div.row-selected {
     }
     
     .subj-col, .from-col, .date-col {
-        border-right: 1px solid $gray9;
+        border-right: 1px solid var(--bs-body-secondary);
     }
     
     .header a, .header span {
-        color: black;
+        color: var(--bs-emphasis-color);
         padding: 6px 8px;
         display: inline-block;
         width: 100%;
@@ -910,7 +908,7 @@ div.row-selected {
     }
 
     .header.sortable:hover {
-        background-color: $gray-300;
+        background-color: $gray-500;
     }
 
     .header a:hover {
@@ -978,7 +976,7 @@ ul.navbar-nav a.disabled, ul.navbar-nav a.disabled:hover {
 }
 
 .current-msg {
-    background: $gray12;
+    background: var(--bs-secondary-bg);
 }
 
 @media (min-width: 768px)
@@ -1019,8 +1017,29 @@ ul.navbar-nav a.disabled, ul.navbar-nav a.disabled:hover {
    ========================================================================== */
 
 .admin-console {
-    background: $gray9;
+    background: var(--bs-secondary-bg);
 }
+
+/* ==========================================================================
+   Swagger UI
+   ========================================================================== */
+
+/* Apply only when Bootstrap is in dark mode */
+[data-bs-theme="dark"] .swagger-ui {
+    filter: invert(88%) hue-rotate(180deg);
+}
+
+/* Fix images/icons that look weird when inverted */
+[data-bs-theme="dark"] .swagger-ui .topbar img,
+[data-bs-theme="dark"] .swagger-ui .model-box-control {
+    filter: invert(100%) hue-rotate(180deg);
+}
+
+/* ==========================================================================
+   Reports
+   ========================================================================== */
+
+
 
 /* ==========================================================================
    Test

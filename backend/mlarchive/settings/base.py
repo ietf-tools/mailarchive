@@ -377,6 +377,7 @@ CONTENT_SECURITY_POLICY = {
             SELF,
             UNSAFE_INLINE,
             "https://cdnjs.cloudflare.com",
+            "https://cdn.jsdelivr.net",
             "https://cdn.datatables.net",
             "https://static.ietf.org"
         ],
@@ -389,6 +390,8 @@ CONTENT_SECURITY_POLICY = {
         ],
         "connect-src": [
             SELF,
+            "https://cdnjs.cloudflare.com",
+            "https://cdn.jsdelivr.net",
             "https://raw.githubusercontent.com",
             "https://static.ietf.org"
         ]

@@ -61,6 +61,10 @@ env = environ.Env(
     ELASTICSEARCH_HOST=(str, '127.0.0.1'),
     ELASTICSEARCH_PASSWORD=(str, 'changeme'),
     ELASTICSEARCH_SIGNAL_PROCESSOR=(str, 'mlarchive.archive.signals.CelerySignalProcessor'),
+    TYPESENSE_HOST=(str, '127.0.0.1'),
+    TYPESENSE_PORT=(str, '8108'),
+    TYPESENSE_PROTOCOL=(str, 'http'),
+    TYPESENSE_API_KEY=(str, 'xyz'),
     EXPORT_LIMIT=(int, 5000),
     HTAUTH_PASSWD_FILENAME=(str, ''),
     IMPORT_MESSAGE_APIKEY=(str, ''),
@@ -354,6 +358,46 @@ ELASTICSEARCH_INDEX_MAPPINGS = {
         'thread_order': {'type': 'long'},
         'url': {'type': 'text', 'fields': {'keyword': {'type': 'keyword', 'ignore_above': 256}}}
     }
+}
+
+# -------------------------------------
+# SEARCH BACKEND SETTINGS
+# -------------------------------------
+
+TYPESENSE_SCHEMA = {
+    'name': 'mail-archive',
+    'fields': [
+        {'name': 'django_ct',    'type': 'string'},
+        {'name': 'django_id',    'type': 'int64'},
+        {'name': 'date',         'type': 'int64'},
+        {'name': 'email_list',   'type': 'string', 'facet': True},
+        {'name': 'frm',          'type': 'string'},
+        {'name': 'frm_name',     'type': 'string', 'facet': True},
+        {'name': 'msgid',        'type': 'string'},
+        {'name': 'subject',      'type': 'string'},
+        {'name': 'subject_base', 'type': 'string'},
+        {'name': 'text',         'type': 'string'},
+        {'name': 'thread_date',  'type': 'int64'},
+        {'name': 'thread_depth', 'type': 'int32'},
+        {'name': 'thread_id',    'type': 'int64'},
+        {'name': 'thread_order', 'type': 'int64'},
+        {'name': 'spam_score',   'type': 'int32'},
+        {'name': 'url',          'type': 'string'},
+    ],
+    'default_sorting_field': 'thread_date',
+}
+
+SEARCH_BACKENDS = {
+    'default': {
+        'ENGINE': 'typesense',
+        'URL': '{}://{}:{}'.format(
+            env('TYPESENSE_PROTOCOL'),
+            env('TYPESENSE_HOST'),
+            env('TYPESENSE_PORT'),
+        ),
+        'API_KEY': env('TYPESENSE_API_KEY'),
+        'SCHEMA': TYPESENSE_SCHEMA,
+    },
 }
 
 # SECURITY SETTINGS

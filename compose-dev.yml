@@ -6,6 +6,7 @@ services:
       DATABASES_PASSWORD: franticmarble
       DATABASES_HOST: db
       ELASTICSEARCH_HOST: es
+      TYPESENSE_HOST: typesense
       MEMCACHED_SERVICE_HOST: memcached
       BLOBDB_PASSWORD: abcd1234
       DATA_ROOT: /data
@@ -27,6 +28,7 @@ services:
       - es
       - rabbit
       - blobstore
+      - typesense
 
     ipc: host
     volumes:
@@ -180,6 +182,25 @@ services:
       - "11211:11211"
     restart: unless-stopped
 
+  typesense:
+    image: typesense/typesense:30.1
+    platform: linux/arm64  # Explicitly tells Docker to use the ARM version
+    container_name: typesense
+    restart: on-failure
+    ports:
+      - "8108:8108"
+    volumes:
+      - ts-data:/data
+    environment:
+      - TYPESENSE_API_KEY=xyz
+      - TYPESENSE_DATA_DIR=/data
+      - TYPESENSE_ENABLE_CORS=true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8108/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
 volumes:
     app-assets:
     app-data:
@@ -187,3 +208,4 @@ volumes:
     es-data:
     minio-data:
     blobdb-data:
+    ts-data:

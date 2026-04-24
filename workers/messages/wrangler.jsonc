@@ -37,11 +37,6 @@
           "binding": "MESSAGES",
           "bucket_name": "staging-ml-messages-json",
           "preview_bucket_name": "staging-ml-messages-json"
-        },
-        {
-          "binding": "TEMPLATES",
-          "bucket_name": "staging-ml-templates",
-          "preview_bucket_name": "staging-ml-templates"
         }
       ]
     },
@@ -66,11 +61,6 @@
           "binding": "MESSAGES",
           "bucket_name": "ml-messages-json",
           "preview_bucket_name": "ml-messages-json"
-        },
-        {
-          "binding": "TEMPLATES",
-          "bucket_name": "ml-templates",
-          "preview_bucket_name": "ml-templates"
         }
       ]
     }

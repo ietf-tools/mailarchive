@@ -180,6 +180,20 @@ services:
       - "11211:11211"
     restart: unless-stopped
 
+  worker:
+      image: node:24-slim
+      volumes:
+        - ./workers/messages:/app
+        - /app/node_modules
+      working_dir: /app
+      ports:
+        - "8787:8787"
+      command: >
+        sh -c "npm install && npx wrangler dev --ip 0.0.0.0 --port 8787
+        --env staging --var ORIGIN_URL:http://app:8000"
+      depends_on:
+        - app
+
 volumes:
     app-assets:
     app-data:

@@ -43,7 +43,7 @@ export default {
         const data = JSON.parse(await messageJson.text())
 
         // Get template (with caching)
-        const template = await getTemplate(env)
+        const template = await getTemplate(env, ctx)
         if (!template) {
           return proxyToOrigin(request, env, 'template-missing')
         }
@@ -76,7 +76,7 @@ export default {
  */
 function isAuthenticated (request) {
   const cookies = request.headers.get('Cookie') || ''
-  return cookies.includes('sessionid')
+  return /(?:^|;\s*)sessionid=/.test(cookies)
 }
 
 /**
@@ -103,34 +103,51 @@ function parseMessageUrl (pathname) {
 }
 
 /**
- * Get template from R2 with caching
+ * Get template: L1 in-memory → L2 CDN cache → L3 origin fetch
  */
-async function getTemplate (env) {
+async function getTemplate (env, ctx) {
+  const templateName = env.TEMPLATE_NAME || 'message-detail.html'
+  const originUrl = env.ORIGIN_URL || 'https://mailarchive.ietf.org'
+  const ttl = parseInt(env.TEMPLATE_CACHE_TTL || '3600', 10)
   const now = Date.now()
-  const ttl = parseInt(env.TEMPLATE_CACHE_TTL || '3600', 10) * 1000
 
-  // Return cached template if still valid
-  if (templateCache && now - templateCacheTime < ttl) {
+  // L1: in-memory (per-isolate)
+  if (templateCache && now - templateCacheTime < ttl * 1000) {
     return templateCache
   }
 
-  // Fetch template from R2
-  try {
-    const templateName = env.TEMPLATE_NAME || 'message-detail.html'
-    const templateObj = await env.TEMPLATES.get(templateName)
+  const templateUrl = new URL(`/static/mlarchive/html/${templateName}`, originUrl).toString()
+  const cache = caches.default
 
-    if (!templateObj) {
-      console.error('Template not found in R2:', templateName)
+  // L2: CDN cache
+  const cached = await cache.match(templateUrl)
+  if (cached) {
+    const text = await cached.text()
+    templateCache = text
+    templateCacheTime = now
+    return text
+  }
+
+  // L3: fetch from origin
+  try {
+    const response = await fetch(templateUrl)
+    if (!response.ok) {
+      console.error('Template fetch failed:', response.status, templateUrl)
       return null
     }
 
-    const templateText = await templateObj.text()
+    const text = await response.text()
 
-    // Cache template
-    templateCache = templateText
+    ctx.waitUntil(cache.put(templateUrl, new Response(text, {
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': `public, max-age=${ttl}`,
+      },
+    })))
+
+    templateCache = text
     templateCacheTime = now
-
-    return templateText
+    return text
   } catch (error) {
     console.error('Error fetching template:', error.message)
     return null

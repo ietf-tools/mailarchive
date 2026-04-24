@@ -275,7 +275,6 @@ ARTIFACT_STORAGE_NAMES: list[str] = [
     "ml-messages-filtered",
     "ml-messages-dupes",
     "ml-messages-spam",
-    "ml-templates",
 ]
 
 ENABLE_BLOBSTORAGE = True

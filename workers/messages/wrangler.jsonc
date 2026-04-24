@@ -29,8 +29,6 @@
       ],
       "vars": {
         "ORIGIN_URL": "https://mailarchive.staging.ietf.org",
-        "TEMPLATE_NAME": "message-detail.html",
-        "TEMPLATE_CACHE_TTL": "3600", 
       },
       "r2_buckets": [
         {
@@ -53,8 +51,6 @@
       ],
       "vars": {
         "ORIGIN_URL": "https://mailarchive.ietf.org",
-        "TEMPLATE_NAME": "message-detail.html",
-        "TEMPLATE_CACHE_TTL": "3600", 
       },
       "r2_buckets": [
         {

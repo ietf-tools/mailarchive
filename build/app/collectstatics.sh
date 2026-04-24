@@ -14,7 +14,7 @@ cp docker/configs/docker_env .env
 pip --disable-pip-version-check --no-cache-dir install -r requirements.txt
 
 # Pre create Cloudflare worker templates
-backend/manage.py create_cf_worker_templates --settings=mlarchive.settings.settings_collectstatics
+# backend/manage.py create_cf_worker_templates --settings=mlarchive.settings.settings_collectstatics
 
 # Collect statics
 backend/manage.py collectstatic --settings=mlarchive.settings.settings_collectstatics

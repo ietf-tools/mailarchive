@@ -1,8 +1,5 @@
 import Mustache from 'mustache'
-
-// In-memory template cache
-let templateCache = null
-let templateCacheTime = 0
+import template from './templates/message-detail.html'
 
 /**
  * Main worker entry point
@@ -39,19 +36,9 @@ export default {
           return proxyToOrigin(request, env, 'r2-miss')
         }
 
-        // Parse JSON
         const data = JSON.parse(await messageJson.text())
-
-        // Get template (with caching)
-        const template = await getTemplate(env, ctx)
-        if (!template) {
-          return proxyToOrigin(request, env, 'template-missing')
-        }
-
-        // Render HTML
         const html = renderTemplate(template, data, list)
 
-        // Return response
         return new Response(html, {
           status: 200,
           headers: {
@@ -100,58 +87,6 @@ function parseMessageUrl (pathname) {
   }
 
   return { list, hashcode }
-}
-
-/**
- * Get template: L1 in-memory → L2 CDN cache → L3 origin fetch
- */
-async function getTemplate (env, ctx) {
-  const templateName = env.TEMPLATE_NAME || 'message-detail.html'
-  const originUrl = env.ORIGIN_URL || 'https://mailarchive.ietf.org'
-  const ttl = parseInt(env.TEMPLATE_CACHE_TTL || '3600', 10)
-  const now = Date.now()
-
-  // L1: in-memory (per-isolate)
-  if (templateCache && now - templateCacheTime < ttl * 1000) {
-    return templateCache
-  }
-
-  const templateUrl = new URL(`/static/mlarchive/html/${templateName}`, originUrl).toString()
-  const cache = caches.default
-
-  // L2: CDN cache
-  const cached = await cache.match(templateUrl)
-  if (cached) {
-    const text = await cached.text()
-    templateCache = text
-    templateCacheTime = now
-    return text
-  }
-
-  // L3: fetch from origin
-  try {
-    const response = await fetch(templateUrl)
-    if (!response.ok) {
-      console.error('Template fetch failed:', response.status, templateUrl)
-      return null
-    }
-
-    const text = await response.text()
-
-    ctx.waitUntil(cache.put(templateUrl, new Response(text, {
-      headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': `public, max-age=${ttl}`,
-      },
-    })))
-
-    templateCache = text
-    templateCacheTime = now
-    return text
-  } catch (error) {
-    console.error('Error fetching template:', error.message)
-    return null
-  }
 }
 
 /**

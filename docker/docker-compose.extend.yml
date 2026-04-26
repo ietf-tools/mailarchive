@@ -20,3 +20,6 @@ services:
     rabbit:
         ports:
             - '5672'
+    celery:
+        volumes:
+            - .:/workspace

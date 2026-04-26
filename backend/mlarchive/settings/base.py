@@ -258,6 +258,10 @@ STORAGES = {
     'ml-messages-spam': {
         "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
         "OPTIONS": {"bucket_name": 'ml-messages-spam'},
+    },
+    'ml-templates': {
+        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "OPTIONS": {"bucket_name": 'ml-templates'},
     }
 }
 
@@ -377,6 +381,7 @@ CONTENT_SECURITY_POLICY = {
             SELF,
             UNSAFE_INLINE,
             "https://cdnjs.cloudflare.com",
+            "https://cdn.jsdelivr.net",
             "https://cdn.datatables.net",
             "https://static.ietf.org"
         ],
@@ -389,6 +394,8 @@ CONTENT_SECURITY_POLICY = {
         ],
         "connect-src": [
             SELF,
+            "https://cdnjs.cloudflare.com",
+            "https://cdn.jsdelivr.net",
             "https://raw.githubusercontent.com",
             "https://static.ietf.org"
         ]
@@ -527,6 +534,7 @@ CLOUDFLARE_AUTH_EMAIL = env("CLOUDFLARE_AUTH_EMAIL")
 CLOUDFLARE_AUTH_KEY = env("CLOUDFLARE_AUTH_KEY")
 CLOUDFLARE_ZONE_ID = env("CLOUDFLARE_ZONE_ID")
 CACHE_CONTROL_MAX_AGE = 60 * 60 * 24 * 7     # one week
+CF_WORKER_TEMPLATE_DIR = os.path.join(BASE_DIR, 'static/mlarchive/html')
 
 # OIDC SETTINGS
 OIDC_RP_CLIENT_ID = env('OIDC_RP_CLIENT_ID')

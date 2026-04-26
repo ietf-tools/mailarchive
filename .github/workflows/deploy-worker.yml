@@ -1,0 +1,81 @@
+name: Deploy Worker
+run-name: '[${{ inputs.deploy }}] Worker ${{ inputs.name }} deployment ${{ github.run_number }} of branch ${{ github.ref_name }} by @${{ github.actor }}'
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Worker Name'
+        default: 'messages'
+        required: true
+        type: choice
+        options:
+          - messages
+      deploy:
+        description: 'Deploy to CF'
+        default: 'Staging Only'
+        required: true
+        type: choice
+        options:
+          - Staging Only
+          - Staging + Prod
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+
+      - name: Deploy Worker
+        working-directory: workers/${{ inputs.name }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_WORKER_DEPLOY_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_WORKER_DEPLOY_ACCOUNT_ID }}
+        run: |
+          npm ci
+          npx wrangler deploy --env staging --name mailarch-${{ inputs.name }}-worker-staging
+
+  production:
+    name: Deploy to Production
+    if: ${{ !failure() && !cancelled() && (inputs.deploy == 'Staging + Prod') }}
+    needs: [staging]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+
+      - name: Deploy Worker
+        working-directory: worker/${{ inputs.name }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_WORKER_DEPLOY_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_WORKER_DEPLOY_ACCOUNT_ID }}
+        run: |
+          npm ci
+          npx wrangler deploy --env production --name mailarch-${{ inputs.name }}-worker

@@ -1,4 +1,9 @@
-# Copyright The IETF Trust 2024, All Rights Reserved
+# Copyright The IETF Trust 2024-2026, All Rights Reserved
+
+# --- Version 25+ Specific Settings ---
+# This disables the new interactive control socket
+# and prevents [Errno 30] Read-only file system errors
+control_socket_disable = True
 
 # Log as JSON on stdout (to distinguish from Django's logs on stderr)
 #

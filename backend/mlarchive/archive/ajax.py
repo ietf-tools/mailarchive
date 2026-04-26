@@ -59,9 +59,17 @@ def ajax_messages(request):
     '''
     qid = request.GET.get('qid')
     browselist = request.GET.get('browselist')
-    referenceitem = int(request.GET.get('referenceitem', 0))
-    referenceid = request.GET.get('referenceid')
+    try:
+        referenceitem = int(request.GET.get('referenceitem', 0))
+    except ValueError:
+        return HttpResponse(status=400)
+    try:
+        referenceid = int(request.GET.get('referenceid', 0))
+    except ValueError:
+        return HttpResponse(status=400)
     direction = request.GET.get('direction')
+    if direction not in ['next', 'previous']:
+        return HttpResponse(status=400)
     gbt = request.GET.get('gbt')
     order_fields = get_order_fields(request.GET, use_db=True)
     qdr_kwargs = get_qdr_kwargs(request.GET)

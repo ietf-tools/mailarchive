@@ -3,7 +3,7 @@
 
 {% block title %}Mail Archive - Subscribers{% endblock %}
 {% block extrahead %}
-  <link rel="stylesheet" type="text/css" href="{% static 'datatables/css/jquery.dataTables.min.css' %}">
+  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.3.7/css/dataTables.dataTables.min.css">
 {% endblock %}
 
 {% block content %}
@@ -12,7 +12,7 @@
 <h6 class="text-center text-muted mb-4">Date: {{ date|date:"Y-m-d" }}</h6>
 <div class="row results mt-2">
   <div class="col-md-6 offset-md-3">
-    <table class="smart-table compact stripe">
+    <table class="smart-table compact table table-striped">
       <thead>
         <tr>
           <th>List Name</th>
@@ -70,12 +70,19 @@
 {% endblock %}
 
 {% block js %}
-  <script src="{% static 'datatables/js/jquery.dataTables.min.js' %}" crossorigin="anonymous"></script>
+  <script src="https://cdn.datatables.net/2.3.7/js/dataTables.min.js" crossorigin="anonymous"></script>
   <script>
-    $('.smart-table').DataTable({
+    new DataTable('.smart-table', {
       paging: false,
       searching: false,
-      info: false
-  });
+      info: false,
+      columnDefs: [
+        {
+            targets: '_all',
+            type: 'string', // Forces DT to treat dates/numbers as strings for layout
+            className: 'dt-left'
+        }
+      ]
+    });
   </script>
 {% endblock %}

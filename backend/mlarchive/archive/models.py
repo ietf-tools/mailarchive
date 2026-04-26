@@ -221,7 +221,31 @@ class Message(models.Model):
         if 'updated' in data:
             data['updated'] = self.updated.isoformat()
 
-        data['content'] = self.get_body()
+        if self.previous_in_list():
+            data['previous_in_list'] = self.previous_in_list().get_absolute_url()
+        else:
+            data['previous_in_list'] = ''
+        if self.next_in_list():
+            data['next_in_list'] = self.next_in_list().get_absolute_url()
+        else:
+            data['next_in_list'] = ''
+
+        if self.previous_in_thread():
+            data['previous_in_thread'] = self.previous_in_thread().get_absolute_url()
+        else:
+            data['previous_in_thread'] = ''
+        if self.next_in_thread():
+            data['next_in_thread'] = self.next_in_thread().get_absolute_url()
+        else:
+            data['next_in_thread'] = ''
+
+        data['date_index_url'] = self.get_date_index_url()
+        data['thread_index_url'] = self.get_thread_index_url()
+        data['static_date_index_url'] = self.get_static_date_index_url()
+        data['static_thread_index_url'] = self.get_static_thread_index_url()
+
+        data['body'] = self.get_body_html()
+        data['thread_snippet'] = self.get_thread_snippet()
 
         return json.dumps(data)
 

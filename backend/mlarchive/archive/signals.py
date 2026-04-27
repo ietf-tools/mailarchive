@@ -295,6 +295,9 @@ def enqueue_task(action, instance, **kwargs):
 def get_update_task(name=None):
     task_name = name or settings.CELERY_DEFAULT_TASK
     task = app.tasks.get(task_name)
+    if task is None:
+        import mlarchive.archive.tasks  # noqa: ensure tasks are registered
+        task = app.tasks.get(task_name)
     if task:
         return task
     else:

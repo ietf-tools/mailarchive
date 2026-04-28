@@ -2,6 +2,9 @@ from builtins import input
 
 import datetime
 import email
+import functools
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from io import BytesIO
 import json
 import logging
 import mailbox
@@ -11,6 +14,7 @@ import requests
 import shutil
 import subprocess
 import sys
+import time
 from collections import defaultdict
 from pathlib import Path
 
@@ -39,6 +43,110 @@ MAILMAN_LISTID_PATTERN = re.compile(r'(.*)\.(ietf|irtf|iab|iesg|rfc-editor)\.org
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
+
+
+def timed(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        elapsed = time.perf_counter() - start
+        logger.debug('%s took %.3fs', func.__qualname__, elapsed)
+        return result
+    return wrapper
+
+
+def build_blob_batch(messages):
+    """Read message content from NFS and return a list of Blob objects ready for bulk_create.
+
+    Skips messages whose files are missing. The returned list may be shorter than
+    the input if any files are not found.
+    """
+    from mlarchive.blobdb.models import Blob
+
+    def bucket_for(message):
+        return 'ml-messages-private' if message.email_list.private else 'ml-messages'
+
+    batch = []
+    for message in messages:
+        try:
+            with open(message.get_file_path(), 'rb') as f:
+                content = f.read()
+        except FileNotFoundError:
+            logger.warning('build_blob_batch: missing file for pk=%d path=%s', message.pk, message.get_file_path())
+            continue
+        batch.append(Blob(
+            name=message.get_blob_name(),
+            bucket=bucket_for(message),
+            content=content,
+            content_type='message/rfc822',
+        ))
+    return batch
+
+
+
+def replicate_blob_direct(blob):
+    """Replicate a Blob using content already in memory, skipping the SQL re-fetch."""
+    from mlarchive.blobdb.replication import (
+        destination_storage_for, replication_enabled, ReplicationError, SimpleMetadataFile
+    )
+    if not replication_enabled(blob.bucket):
+        return
+    file_with_metadata = SimpleMetadataFile(file=BytesIO(bytes(blob.content)))
+    file_with_metadata.content_type = blob.content_type
+    file_with_metadata.custom_metadata = {
+        'sha384': blob.checksum,
+        'mtime': (blob.mtime or blob.modified).isoformat(),
+    }
+    try:
+        destination_storage_for(blob.bucket).save(blob.name, file_with_metadata)
+    except Exception as e:
+        raise ReplicationError from e
+
+
+def replicate_batch(blobs, max_workers=50):
+    """Replicate a list of Blob objects to R2 using a thread pool.
+
+    Returns a list of (blob, exception) tuples for any failures.
+    """
+    from mlarchive.blobdb.replication import ReplicationError
+
+    failures = []
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = {pool.submit(replicate_blob_direct, blob): blob for blob in blobs}
+        for future in as_completed(futures):
+            try:
+                future.result()
+            except ReplicationError as e:
+                blob = futures[future]
+                logger.warning('replicate_batch: failed %s:%s: %s', blob.bucket, blob.name, e)
+                failures.append((blob, e))
+    return failures
+
+
+def migrate_messages_to_blobdb(messages, max_workers=50):
+    """Migrate a batch of Messages to blobdb and replicate to R2.
+
+    Steps (each timed):
+      1. build_blob_batch  — read content from NFS
+      2. bulk_create       — insert into blobdb
+      3. replicate_batch   — upload to R2 via thread pool
+    """
+    n = len(messages)
+
+    t0 = time.perf_counter()
+    blobs = build_blob_batch(messages)
+    logger.info('migrate step 1/3 build_blob_batch: %.3fs, %d/%d blobs built', time.perf_counter() - t0, len(blobs), n)
+
+    t1 = time.perf_counter()
+    Blob.objects.bulk_create(blobs, ignore_conflicts=True)
+    logger.info('migrate step 2/3 bulk_create: %.3fs, %d blobs', time.perf_counter() - t1, len(blobs))
+
+    t2 = time.perf_counter()
+    failures = replicate_batch(blobs, max_workers=max_workers)
+    logger.info('migrate step 3/3 replicate_batch: %.3fs, %d failures', time.perf_counter() - t2, len(failures))
+
+    return failures
 
 
 def is_mailman_footer(part):

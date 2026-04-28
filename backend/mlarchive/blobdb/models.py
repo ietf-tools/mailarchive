@@ -21,8 +21,14 @@ class BlobQuerySet(models.QuerySet):
     def delete(self):
         raise NotImplementedError("Only deleting individual Blobs is supported")
 
-    def bulk_create(self, *args, **kwargs):
-        raise NotImplementedError("Only creating individual Blobs is supported")
+    def bulk_create(self, objs, batch_size=None, ignore_conflicts=False, **kwargs):
+        """Bulk insert Blobs. Computes checksums; does NOT trigger replication."""
+        now = timezone.now()
+        for obj in objs:
+            obj.checksum = sha384(bytes(obj.content), usedforsecurity=False).hexdigest()
+            if not obj.modified:
+                obj.modified = now
+        return super().bulk_create(objs, batch_size=batch_size, ignore_conflicts=ignore_conflicts, **kwargs)
 
     def update(self, *args, **kwargs):
         # n.b., update_or_create() _does_ call save()

@@ -20,12 +20,6 @@ def pybob_the_blob_replicator_task(body: str):
     replicate_blob(bucket, name)
 
 
-def _bucket_for_message(message):
-    if message.email_list.private:
-        return 'ml-messages-private'
-    return 'ml-messages'
-
-
 @shared_task
 def migrate_messages_to_blobdb(
     start_after_pk=0,
@@ -33,21 +27,23 @@ def migrate_messages_to_blobdb(
     start_date=None,
     end_date=None,
     email_lists=None,
+    max_workers=50,
 ):
-    """Copy raw message content from the filesystem into the blobdb.
+    """Copy raw message content from the filesystem into blobdb and replicate to R2.
 
     Safe to re-run: ignore_conflicts=True respects the (bucket, name) unique constraint.
     To resume after a failure, pass start_after_pk=<last logged pk>.
 
     Args:
         start_after_pk: skip messages with pk <= this value
-        batch_size: number of blobs per bulk_create call
+        batch_size: number of messages per batch
         start_date: only include messages with date >= this value (ISO 8601 string or date object)
         end_date: only include messages with date < this value (ISO 8601 string or date object)
         email_lists: list of email list names to include; None means all lists
+        max_workers: thread pool size for R2 replication
     """
     from mlarchive.archive.models import Message
-    from mlarchive.blobdb.models import Blob
+    from mlarchive.archive.utils import migrate_messages_to_blobdb as _migrate_batch
 
     filters = {'pk__gt': start_after_pk}
     if start_date is not None:
@@ -62,40 +58,21 @@ def migrate_messages_to_blobdb(
         .select_related('email_list')
         .filter(**filters)
         .order_by('pk')
-        .iterator(chunk_size=batch_size)
     )
 
-    batch = []
+    total = qs.count()
+    processed = 0
     last_pk = start_after_pk
-    total = 0
-    errors = 0
+    total_failures = []
 
-    for message in qs:
-        try:
-            with open(message.get_file_path(), 'rb') as f:
-                content = f.read()
-        except FileNotFoundError:
-            logger.warning('migrate_messages_to_blobdb: missing file for pk=%d path=%s', message.pk, message.get_file_path())
-            errors += 1
-            last_pk = message.pk
-            continue
+    for offset in range(0, total, batch_size):
+        batch = list(qs[offset:offset + batch_size])
+        failures = _migrate_batch(batch, max_workers=max_workers)
+        total_failures.extend(failures)
+        last_pk = batch[-1].pk
+        processed += len(batch)
+        logger.info('migrate_messages_to_blobdb: %d/%d done, last_pk=%d, cumulative failures=%d',
+                    processed, total, last_pk, len(total_failures))
 
-        batch.append(Blob(
-            name=message.get_blob_name(),
-            bucket=_bucket_for_message(message),
-            content=content,
-            content_type='message/rfc822',
-        ))
-        last_pk = message.pk
-
-        if len(batch) >= batch_size:
-            Blob.objects.bulk_create(batch, ignore_conflicts=True)
-            total += len(batch)
-            logger.info('migrate_messages_to_blobdb: %d blobs written, last_pk=%d, errors=%d', total, last_pk, errors)
-            batch = []
-
-    if batch:
-        Blob.objects.bulk_create(batch, ignore_conflicts=True)
-        total += len(batch)
-
-    logger.info('migrate_messages_to_blobdb: complete. %d blobs written, %d files missing, last_pk=%d', total, errors, last_pk)
+    logger.info('migrate_messages_to_blobdb: complete. %d/%d processed, %d failures',
+                processed, total, len(total_failures))

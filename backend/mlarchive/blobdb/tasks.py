@@ -4,10 +4,13 @@ import json
 import logging
 
 from celery import shared_task
+from django.core.cache import cache
 
 from .replication import replicate_blob, ReplicationError
 
 logger = logging.getLogger(__name__)
+
+MIGRATION_STOP_KEY = 'migrate_messages_to_blobdb_stop'
 
 
 @shared_task(
@@ -28,22 +31,24 @@ def migrate_messages_to_blobdb(
     end_date=None,
     email_lists=None,
     max_workers=50,
+    countdown=30,
 ):
-    """Copy raw message content from the filesystem into blobdb and replicate to R2.
+    """Migrate one batch of Messages to blobdb and replicate to R2, then self-chain.
 
-    Safe to re-run: ignore_conflicts=True respects the (bucket, name) unique constraint.
-    To resume after a failure, pass start_after_pk=<last logged pk>.
+    Processes one batch of up to batch_size messages and schedules the next batch
+    with a countdown delay, so the full migration proceeds without flooding the queue.
 
-    Args:
-        start_after_pk: skip messages with pk <= this value
-        batch_size: number of messages per batch
-        start_date: only include messages with date >= this value (ISO 8601 string or date object)
-        end_date: only include messages with date < this value (ISO 8601 string or date object)
-        email_lists: list of email list names to include; None means all lists
-        max_workers: thread pool size for R2 replication
+    To kick off:   migrate_messages_to_blobdb.apply_async(queue='blobdb')
+    To stop:       cache.set('migrate_messages_to_blobdb_stop', True, timeout=None)
+    To resume:     cache.delete('migrate_messages_to_blobdb_stop')
+                   migrate_messages_to_blobdb.apply_async(queue='blobdb', kwargs={'start_after_pk': <last logged pk>, ...})
     """
     from mlarchive.archive.models import Message
     from mlarchive.archive.utils import migrate_messages_to_blobdb as _migrate_batch
+
+    if cache.get(MIGRATION_STOP_KEY):
+        logger.info('migrate_messages_to_blobdb: halted by stop flag, resume with start_after_pk=%d', start_after_pk)
+        return
 
     filters = {'pk__gt': start_after_pk}
     if start_date is not None:
@@ -53,26 +58,31 @@ def migrate_messages_to_blobdb(
     if email_lists:
         filters['email_list__name__in'] = email_lists
 
-    qs = (
+    batch = list(
         Message.objects
         .select_related('email_list')
         .filter(**filters)
-        .order_by('pk')
+        .order_by('pk')[:batch_size]
     )
 
-    total = qs.count()
-    processed = 0
-    last_pk = start_after_pk
-    total_failures = []
+    if not batch:
+        logger.info('migrate_messages_to_blobdb: complete, last_pk=%d', start_after_pk)
+        return
 
-    for offset in range(0, total, batch_size):
-        batch = list(qs[offset:offset + batch_size])
-        failures = _migrate_batch(batch, max_workers=max_workers)
-        total_failures.extend(failures)
-        last_pk = batch[-1].pk
-        processed += len(batch)
-        logger.info('migrate_messages_to_blobdb: %d/%d done, last_pk=%d, cumulative failures=%d',
-                    processed, total, last_pk, len(total_failures))
+    failures = _migrate_batch(batch, max_workers=max_workers)
+    last_pk = batch[-1].pk
+    logger.info('migrate_messages_to_blobdb: batch done, last_pk=%d, failures=%d', last_pk, len(failures))
 
-    logger.info('migrate_messages_to_blobdb: complete. %d/%d processed, %d failures',
-                processed, total, len(total_failures))
+    migrate_messages_to_blobdb.apply_async(
+        kwargs=dict(
+            start_after_pk=last_pk,
+            batch_size=batch_size,
+            start_date=start_date,
+            end_date=end_date,
+            email_lists=email_lists,
+            max_workers=max_workers,
+            countdown=countdown,
+        ),
+        countdown=countdown,
+        queue='blobdb',
+    )

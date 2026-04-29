@@ -211,7 +211,7 @@ class Message(models.Model):
 
         return body
 
-    def as_json(self, fields=None, exclude=None):
+    def as_json(self, fields=None, exclude=None, nav=None):
         """Returns message as json"""
         data = model_to_dict(self, fields=fields, exclude=exclude)
 
@@ -221,23 +221,21 @@ class Message(models.Model):
         if 'updated' in data:
             data['updated'] = self.updated.isoformat()
 
-        if self.previous_in_list():
-            data['previous_in_list'] = self.previous_in_list().get_absolute_url()
+        if nav is not None:
+            data['previous_in_list'] = nav.get('previous_in_list', '')
+            data['next_in_list'] = nav.get('next_in_list', '')
+            data['previous_in_thread'] = nav.get('previous_in_thread', '')
+            data['next_in_thread'] = nav.get('next_in_thread', '')
         else:
-            data['previous_in_list'] = ''
-        if self.next_in_list():
-            data['next_in_list'] = self.next_in_list().get_absolute_url()
-        else:
-            data['next_in_list'] = ''
+            prev_list = self.previous_in_list()
+            data['previous_in_list'] = prev_list.get_absolute_url() if prev_list else ''
+            next_list = self.next_in_list()
+            data['next_in_list'] = next_list.get_absolute_url() if next_list else ''
 
-        if self.previous_in_thread():
-            data['previous_in_thread'] = self.previous_in_thread().get_absolute_url()
-        else:
-            data['previous_in_thread'] = ''
-        if self.next_in_thread():
-            data['next_in_thread'] = self.next_in_thread().get_absolute_url()
-        else:
-            data['next_in_thread'] = ''
+            prev_thread = self.previous_in_thread()
+            data['previous_in_thread'] = prev_thread.get_absolute_url() if prev_thread else ''
+            next_thread = self.next_in_thread()
+            data['next_in_thread'] = next_thread.get_absolute_url() if next_thread else ''
 
         data['date_index_url'] = self.get_date_index_url()
         data['thread_index_url'] = self.get_thread_index_url()

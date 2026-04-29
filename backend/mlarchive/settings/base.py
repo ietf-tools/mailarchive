@@ -511,7 +511,8 @@ CELERY_HAYSTACK_MAX_RETRIES = 1
 CELERY_HAYSTACK_RETRY_DELAY = 300
 CELERY_HAYSTACK_TRANSACTION_SAFE = False
 CELERY_TASK_ROUTES = {
-    "mlarchive.blobdb.tasks.pybob_the_blob_replicator_task": {"queue": "blobdb"}
+    "mlarchive.blobdb.tasks.pybob_the_blob_replicator_task": {"queue": "blobdb"},
+    "mlarchive.blobdb.tasks.migrate_messages_to_blobdb": {"queue": "blobdb"},
 }
 
 

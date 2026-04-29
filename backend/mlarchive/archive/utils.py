@@ -22,11 +22,13 @@ import mailmanclient
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
+from django.db import connection
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.template.loader import render_to_string
 from django.test import RequestFactory
+from django.urls import reverse
 
 from mlarchive.archive.models import (EmailList, Subscriber, Redirect, UserEmail, MailmanMember,
     User, Message)
@@ -84,7 +86,6 @@ def build_blob_batch(messages):
     return batch
 
 
-
 def replicate_blob_direct(blob):
     """Replicate a Blob using content already in memory, skipping the SQL re-fetch."""
     from mlarchive.blobdb.replication import (
@@ -124,29 +125,148 @@ def replicate_batch(blobs, max_workers=50):
     return failures
 
 
+_NAV_SQL = """
+SELECT
+    m.id,
+    pl.hashcode  AS prev_list_hc,  pl.list_name  AS prev_list_ln,
+    nl.hashcode  AS next_list_hc,  nl.list_name  AS next_list_ln,
+    COALESCE(pts.hashcode, pte.hashcode) AS prev_thread_hc,
+    COALESCE(pts.list_name, pte.list_name) AS prev_thread_ln,
+    COALESCE(nts.hashcode, nte.hashcode) AS next_thread_hc,
+    COALESCE(nts.list_name, nte.list_name) AS next_thread_ln
+FROM archive_message m
+JOIN archive_thread mt ON mt.id = m.thread_id
+LEFT JOIN LATERAL (
+    SELECT p.hashcode, el.name AS list_name
+    FROM archive_message p JOIN archive_emaillist el ON el.id = p.email_list_id
+    WHERE p.email_list_id = m.email_list_id AND p.date < m.date
+    ORDER BY p.date DESC LIMIT 1
+) pl ON true
+LEFT JOIN LATERAL (
+    SELECT n.hashcode, el.name AS list_name
+    FROM archive_message n JOIN archive_emaillist el ON el.id = n.email_list_id
+    WHERE n.email_list_id = m.email_list_id AND n.date > m.date
+    ORDER BY n.date ASC LIMIT 1
+) nl ON true
+LEFT JOIN LATERAL (
+    SELECT p.hashcode, el.name AS list_name
+    FROM archive_message p JOIN archive_emaillist el ON el.id = p.email_list_id
+    WHERE p.thread_id = m.thread_id AND p.thread_order < m.thread_order
+    ORDER BY p.thread_order DESC LIMIT 1
+) pts ON true
+LEFT JOIN LATERAL (
+    SELECT p.hashcode, el.name AS list_name
+    FROM archive_thread t
+    JOIN archive_message p ON p.thread_id = t.id
+    JOIN archive_emaillist el ON el.id = p.email_list_id
+    WHERE t.email_list_id = m.email_list_id AND t.date < mt.date
+    ORDER BY t.date DESC, p.thread_order ASC LIMIT 1
+) pte ON true
+LEFT JOIN LATERAL (
+    SELECT n.hashcode, el.name AS list_name
+    FROM archive_message n JOIN archive_emaillist el ON el.id = n.email_list_id
+    WHERE n.thread_id = m.thread_id AND n.thread_order > m.thread_order
+    ORDER BY n.thread_order ASC LIMIT 1
+) nts ON true
+LEFT JOIN LATERAL (
+    SELECT n.hashcode, el.name AS list_name
+    FROM archive_thread t
+    JOIN archive_message n ON n.thread_id = t.id
+    JOIN archive_emaillist el ON el.id = n.email_list_id
+    WHERE t.email_list_id = m.email_list_id AND t.date > mt.date
+    ORDER BY t.date ASC, n.thread_order ASC LIMIT 1
+) nte ON true
+WHERE m.id = ANY(%s)
+"""
+
+
+def _nav_url(hashcode, list_name):
+    if hashcode is None:
+        return ''
+    return reverse('archive_detail', kwargs={'list_name': list_name, 'id': hashcode.rstrip('=')})
+
+
+def fetch_nav_for_batch(messages):
+    """Return nav URLs for all messages in one SQL query.
+
+    Returns {pk: {'previous_in_list': url, 'next_in_list': url,
+                  'previous_in_thread': url, 'next_in_thread': url}}
+    """
+    pks = [m.pk for m in messages]
+    if not pks:
+        return {}
+    with connection.cursor() as cursor:
+        cursor.execute(_NAV_SQL, [pks])
+        rows = cursor.fetchall()
+    result = {}
+    for pk, pl_hc, pl_ln, nl_hc, nl_ln, pt_hc, pt_ln, nt_hc, nt_ln in rows:
+        result[pk] = {
+            'previous_in_list': _nav_url(pl_hc, pl_ln),
+            'next_in_list': _nav_url(nl_hc, nl_ln),
+            'previous_in_thread': _nav_url(pt_hc, pt_ln),
+            'next_in_thread': _nav_url(nt_hc, nt_ln),
+        }
+    return result
+
+
+def build_json_blob_batch(messages):
+    """Build JSON blob objects for public messages, ready for bulk_create."""
+    public = [m for m in messages if not m.email_list.private]
+    if not public:
+        return []
+    nav_map = fetch_nav_for_batch(public)
+    batch = []
+    for message in public:
+        batch.append(Blob(
+            name=message.get_blob_name(),
+            bucket='ml-messages-json',
+            content=message.as_json(nav=nav_map.get(message.pk)).encode('utf-8'),
+            content_type='application/json',
+        ))
+    return batch
+
+
 def migrate_messages_to_blobdb(messages, max_workers=50):
     """Migrate a batch of Messages to blobdb and replicate to R2.
 
     Steps (each timed):
-      1. build_blob_batch  — read content from NFS
-      2. bulk_create       — insert into blobdb
-      3. replicate_batch   — upload to R2 via thread pool
+      1. build_blob_batch       — read raw message content from NFS
+      2. bulk_create messages   — insert into blobdb
+      3. replicate messages     — upload to R2 via thread pool
+      4. build_json_blob_batch  — serialise JSON for public messages
+      5. bulk_create json       — insert into blobdb
+      6. replicate json         — upload to R2 via thread pool
     """
     n = len(messages)
+    all_failures = []
 
     t0 = time.perf_counter()
     blobs = build_blob_batch(messages)
-    logger.info('migrate step 1/3 build_blob_batch: %.3fs, %d/%d blobs built', time.perf_counter() - t0, len(blobs), n)
+    logger.info('migrate step 1/6 build_blob_batch: %.3fs, %d/%d blobs built', time.perf_counter() - t0, len(blobs), n)
 
     t1 = time.perf_counter()
     Blob.objects.bulk_create(blobs, ignore_conflicts=True)
-    logger.info('migrate step 2/3 bulk_create: %.3fs, %d blobs', time.perf_counter() - t1, len(blobs))
+    logger.info('migrate step 2/6 bulk_create messages: %.3fs, %d blobs', time.perf_counter() - t1, len(blobs))
 
     t2 = time.perf_counter()
     failures = replicate_batch(blobs, max_workers=max_workers)
-    logger.info('migrate step 3/3 replicate_batch: %.3fs, %d failures', time.perf_counter() - t2, len(failures))
+    all_failures.extend(failures)
+    logger.info('migrate step 3/6 replicate messages: %.3fs, %d failures', time.perf_counter() - t2, len(failures))
 
-    return failures
+    t3 = time.perf_counter()
+    json_blobs = build_json_blob_batch(messages)
+    logger.info('migrate step 4/6 build_json_blob_batch: %.3fs, %d blobs', time.perf_counter() - t3, len(json_blobs))
+
+    t4 = time.perf_counter()
+    Blob.objects.bulk_create(json_blobs, ignore_conflicts=True)
+    logger.info('migrate step 5/6 bulk_create json: %.3fs, %d blobs', time.perf_counter() - t4, len(json_blobs))
+
+    t5 = time.perf_counter()
+    failures = replicate_batch(json_blobs, max_workers=max_workers)
+    all_failures.extend(failures)
+    logger.info('migrate step 6/6 replicate json: %.3fs, %d failures', time.perf_counter() - t5, len(failures))
+
+    return all_failures
 
 
 def is_mailman_footer(part):

@@ -1,6 +1,14 @@
 import Mustache from 'mustache'
 import template from './templates/message-detail.html'
 
+// Match Django's html.escape: encode only &, <, >, ", ' — not / or =
+Mustache.escape = (text) => String(text)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#x27;')
+
 /**
  * Main worker entry point
  */

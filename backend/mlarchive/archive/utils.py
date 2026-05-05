@@ -1094,6 +1094,12 @@ def import_message_blob(bucket, name):
 def create_cf_worker_templates():
     """Create message template for Cloudflare worker. Here we are mainly mapping django template
     varaibles to cloudflare worker mustache variables"""
+    from mlarchive import (
+        __release_hash__,
+        __release_branch__,
+        __version__,
+        __patch__)
+
     path = Path(settings.CF_WORKER_TEMPLATE_DIR, 'message-detail.html')
     path.parent.mkdir(parents=True, exist_ok=True)
     context = {}
@@ -1103,17 +1109,18 @@ def create_cf_worker_templates():
     # pass request to enable context processors
     msg = {}
     msg['subject'] = '{{ subject }}'
-    msg['get_date_index_url'] = '{{{ date_index_url }}}'
-    msg['get_thread_index_url'] = '{{{ thread_index_url }}}'
-    msg['get_static_date_index_url'] = '{{{ static_date_index_url }}}'
-    msg['get_static_thread_index_url'] = '{{{ static_thread_index_url }}}'
+    msg['get_date_index_url'] = '{{ date_index_url }}'
+    msg['get_thread_index_url'] = '{{ thread_index_url }}'
+    msg['get_static_date_index_url'] = '{{ static_date_index_url }}'
+    msg['get_static_thread_index_url'] = '{{ static_thread_index_url }}'
     msg['get_thread_snippet'] = '{{{ thread_snippet }}}'
     msg['get_body_html'] = '{{{ body }}}'
     context['msg'] = msg
-    context['previous_in_list'] = {'get_absolute_url': '{{{ previous_in_list }}}'}
-    context['next_in_list'] = {'get_absolute_url': '{{{ next_in_list }}}'}
-    context['previous_in_thread'] = {'get_absolute_url': '{{{ previous_in_thread }}}'}
-    context['next_in_thread'] = {'get_absolute_url': '{{{ next_in_thread }}}'}
+    context['previous_in_list'] = {'get_absolute_url': '{{ previous_in_list }}'}
+    context['next_in_list'] = {'get_absolute_url': '{{ next_in_list }}'}
+    context['previous_in_thread'] = {'get_absolute_url': '{{ previous_in_thread }}'}
+    context['next_in_thread'] = {'get_absolute_url': '{{ next_in_thread }}'}
+    context['version_num'] = __version__ + __patch__
     request = RequestFactory().get('/')
     request.user = AnonymousUser()
     html = render_to_string('archive/detail.html', context, request=request)

@@ -1094,11 +1094,7 @@ def import_message_blob(bucket, name):
 def create_cf_worker_templates():
     """Create message template for Cloudflare worker. Here we are mainly mapping django template
     varaibles to cloudflare worker mustache variables"""
-    from mlarchive import (
-        __release_hash__,
-        __release_branch__,
-        __version__,
-        __patch__)
+    from mlarchive import __version__, __patch__
 
     path = Path(settings.CF_WORKER_TEMPLATE_DIR, 'message-detail.html')
     path.parent.mkdir(parents=True, exist_ok=True)

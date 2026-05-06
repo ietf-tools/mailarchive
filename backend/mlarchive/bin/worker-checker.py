@@ -17,11 +17,35 @@ do_setup()
 import argparse
 import difflib
 import random
+import re
 import sys
+import time
 import urllib.error
 import urllib.request
 
 from mlarchive.archive.models import Message
+
+# Normalize versioned static.ietf.org paths across app versions.
+# Matches https://static.ietf.org/mailarchive/<version>/ and replaces the
+# version segment with VERSION so comparisons are version-agnostic.
+_RE_STATIC_IETF_VERSION = re.compile(
+    r'(https://static\.ietf\.org/mailarchive/)[^/\s"\'<>]+/'
+)
+
+# Normalize the version string that appears only in the footer line, which
+# contains the "Report a Bug" anchor as a reliable discriminator.
+_RE_FOOTER_VERSION = re.compile(r'\bv\d+[\d.\w-]*\b')
+
+# Cloudflare bot-challenge scripts injected in production responses vary per
+# request (embedded nonces/tokens).  Drop any line that contains the challenge
+# platform URL so the two responses compare equal when one has the script and
+# the other doesn't, or when both have it with different token values.
+_CF_CHALLENGE_MARKER = '/cdn-cgi/challenge-platform/'
+
+# Cloudflare Automatic HTTPS Rewrites upgrades href="http://..." to
+# href="https://..." in production responses but leaves display text unchanged.
+# Normalize all href values to https so both sides compare equal.
+_RE_HTTP_HREF = re.compile(r'\bhref="http://')
 
 
 def fetch(url, timeout=15):
@@ -48,12 +72,23 @@ def print_response(label, url, status, headers, body):
 
 
 def normalize(html):
-    """Normalize whitespace for stable line-by-line comparison."""
+    """Normalize whitespace and version-specific content for stable comparison."""
     lines = []
     for line in html.splitlines():
         line = line.strip()
-        if line:
-            lines.append(line)
+        if not line:
+            continue
+        # Drop Cloudflare bot-challenge script lines (tokens vary per request)
+        if _CF_CHALLENGE_MARKER in line:
+            continue
+        # Normalize href http→https (Cloudflare Automatic HTTPS Rewrites)
+        line = _RE_HTTP_HREF.sub('href="https://', line)
+        # Replace version segment in static.ietf.org/mailarchive/<version>/ URLs
+        line = _RE_STATIC_IETF_VERSION.sub(r'\1VERSION/', line)
+        # Replace app version string in the footer line only
+        if 'Report a Bug' in line:
+            line = _RE_FOOTER_VERSION.sub('vVERSION', line)
+        lines.append(line)
     return lines
 
 
@@ -143,6 +178,8 @@ def main():
                         help='print the full URLs being fetched for each message')
     parser.add_argument('--show-worker-response', action='store_true',
                         help='print the complete worker HTTP response (status, headers, body)')
+    parser.add_argument('--rate', type=float, default=30, metavar='N',
+                        help='max requests per minute (default: 30)')
     args = parser.parse_args()
 
     qs = (Message.objects
@@ -160,6 +197,7 @@ def main():
     messages = {m.pk: m for m in qs.filter(pk__in=sample)}
 
     passed = failed = 0
+    delay = 60.0 / args.rate
 
     for pk in sample:
         msg = messages[pk]
@@ -185,6 +223,7 @@ def main():
                     print(f'      {line}')
                 if len(info['diff']) > 80:
                     print(f'      ... ({len(info["diff"]) - 80} more diff lines)')
+        time.sleep(delay)
 
     total = passed + failed
     print(f'\n{total} checked — {passed} passed, {failed} failed')

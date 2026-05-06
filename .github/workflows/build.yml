@@ -154,9 +154,6 @@ jobs:
         sed -i -r -e "s|^__version__ += '.*'$|__version__ = '$PKG_VERSION'|" backend/mlarchive/__init__.py
         sed -i -r -e "s|^__release_hash__ += '.*'$|__release_hash__ = '$GITHUB_SHA'|" backend/mlarchive/__init__.py
         sed -i -r -e "s|^__release_branch__ += '.*'$|__release_branch__ = '$GITHUB_REF_NAME'|" backend/mlarchive/__init__.py
-        echo "Build release tarball..."
-        mkdir -p /home/runner/work/release
-        tar -czf /home/runner/work/release/release.tar.gz -X dev/deploy/exclude-patterns.txt .
 
     - name: Collect + Push Statics
       env:
@@ -171,6 +168,10 @@ jobs:
         echo "Pushing statics..."
         cd static
         aws s3 sync . s3://static/mailarchive/$PKG_VERSION --only-show-errors --checksum-algorithm CRC32
+        cd ..
+        echo "Build release tarball..."
+        mkdir -p /home/runner/work/release
+        tar -czf /home/runner/work/release/release.tar.gz -X dev/deploy/exclude-patterns.txt .
 
     - name: Augment dockerignore for docker image build
       env:

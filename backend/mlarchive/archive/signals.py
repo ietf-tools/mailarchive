@@ -42,6 +42,7 @@ def _save_message_json(sender, instance, created, **kwargs):
         )
         if instance.thread_order > 0:
             update_message_json_thread(instance)
+        update_message_json_list(instance)
 
 
 @receiver([post_save, post_delete], sender=EmailList)
@@ -172,6 +173,21 @@ def update_message_json_thread(message):
             kind='ml-messages-json',
             name=msg.get_blob_name(),
             file=io.BytesIO(msg.as_json().encode('utf-8')),
+            allow_overwrite=True,
+            content_type='application/json'
+        )
+
+
+def update_message_json_list(message):
+    '''Write ml-messages-json for the previous message in list order.
+    Its next_in_list link becomes stale when a new message is added after it.
+    '''
+    prev_msg = message.previous_in_list()
+    if prev_msg:
+        store_file(
+            kind='ml-messages-json',
+            name=prev_msg.get_blob_name(),
+            file=io.BytesIO(prev_msg.as_json().encode('utf-8')),
             allow_overwrite=True,
             content_type='application/json'
         )

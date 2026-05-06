@@ -47,7 +47,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download v${{ inputs.version }} --pattern 'release.tar.gz'
+          gh release download ${{ inputs.version }} --pattern 'release.tar.gz'
           tar -xzf release.tar.gz workers/messages/templates/message-detail.html
           rm release.tar.gz
 
@@ -82,7 +82,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download v${{ inputs.version }} --pattern 'release.tar.gz'
+          gh release download ${{ inputs.version }} --pattern 'release.tar.gz'
           tar -xzf release.tar.gz workers/messages/templates/message-detail.html
           rm release.tar.gz
 

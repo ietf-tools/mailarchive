@@ -39,9 +39,9 @@
       ]
     },
     /*************************************
-    * PROD
+    * PRODUCTION
     **************************************/
-    "prod": {
+    "production": {
       "name": "mailarchive-message",
       "routes": [
         {

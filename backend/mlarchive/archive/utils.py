@@ -311,12 +311,33 @@ def is_mailman_footer(part):
     return True
 
 
+# Matches the Mailman footer separator (10+ underscores on its own line)
+# so it can be stripped before payload comparison.
+_MAILMAN_FOOTER_SEP_RE = re.compile(rb'\n_{10,}\n')
+
+
+def _normalized_payload(part):
+    """Return decoded payload with CRLF normalised to LF and inline Mailman footer stripped."""
+    data = part.get_payload(decode=True)
+    if data is None:
+        return b""
+    data = data.replace(b"\r\n", b"\n")
+    m = _MAILMAN_FOOTER_SEP_RE.search(data)
+    if m:
+        data = data[:m.start()]
+    return data.strip()
+
+
 def is_duplicate_message(msg1, msg2):
     """Check if two email.message.EmailMessage objects are duplicates.
 
     Messages are considered duplicates if they have the same Message-ID
-    and the same content (payload). This ignores headers like Received
-    which may differ between duplicate submissions.
+    and the same decoded content. Payloads are decoded before comparison so
+    that different Content-Transfer-Encoding values (e.g. base64 vs
+    quoted-printable) do not cause identical content to appear distinct.
+    Line endings are normalised (CRLF → LF) so that messages that differ
+    only in \r\n vs \n conventions compare equal. Headers like Received,
+    which commonly differ between duplicate submissions, are ignored.
     """
     msgid1 = msg1.get('Message-ID')
     msgid2 = msg2.get('Message-ID')
@@ -339,13 +360,12 @@ def is_duplicate_message(msg1, msg2):
         if len(parts1) != len(parts2):
             return False
 
-        # Compare each part's payload
         for part1, part2 in zip(parts1, parts2):
-            if part1.get_payload() != part2.get_payload():
+            if _normalized_payload(part1) != _normalized_payload(part2):
                 return False
         return True
     elif not msg1.is_multipart() and not msg2.is_multipart():
-        return msg1.get_payload() == msg2.get_payload()
+        return _normalized_payload(msg1) == _normalized_payload(msg2)
     else:
         return False
 
@@ -1121,3 +1141,18 @@ def create_cf_worker_templates():
     request.user = AnonymousUser()
     html = render_to_string('archive/detail.html', context, request=request)
     path.write_text(html, encoding='utf-8')
+
+
+def audit_blobdb():
+    for elist in EmailList.objects.order_by('name'):
+        if elist.private:
+            bucket = 'ml-messages-private'
+        else:
+            bucket = 'ml-messages'
+        messages = Message.objects.filter(email_list=elist)
+        blobs = Blob.objects.filter(bucket=bucket, name__startswith=f'{elist.name}/')
+        if messages.count() != blobs.count():
+            print(f'{elist.name}    messages:{messages.count()}  blobs:{blobs.count()}')
+            message_hashes = set([x.hashcode.strip('=') for x in messages])
+            blob_hashes = set([x.name.split('/')[1] for x in blobs])
+            print(blob_hashes - message_hashes)

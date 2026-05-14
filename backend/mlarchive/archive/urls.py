@@ -7,6 +7,7 @@ from mlarchive.archive import views
 
 urlpatterns = [
     path('ajax/msg/', ajax.ajax_get_msg, name='ajax_get_msg'),
+    path('ajax/msg/<list_name>/<id>/', ajax.ajax_get_msg, name='ajax_get_msg_hash'),
     path('ajax/messages/', ajax.ajax_messages, name='ajax_messages'),
     path('ajax/admin/action/', ajax.ajax_admin_action, name='ajax_admin_action'),
 

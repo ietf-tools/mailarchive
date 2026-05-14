@@ -25,6 +25,10 @@
         {
           "pattern": "mailarchive.staging.ietf.org/arch/msg/*",
           "zone_name": "ietf.org"
+        },
+        {
+          "pattern": "mailarchive.staging.ietf.org/arch/ajax/msg/*",
+          "zone_name": "ietf.org"
         }
       ],
       "vars": {
@@ -46,6 +50,10 @@
       "routes": [
         {
           "pattern": "mailarchive.ietf.org/arch/msg/*",
+          "zone_name": "ietf.org"
+        },
+        {
+          "pattern": "mailarchive.ietf.org/arch/ajax/msg/*",
           "zone_name": "ietf.org"
         }
       ],

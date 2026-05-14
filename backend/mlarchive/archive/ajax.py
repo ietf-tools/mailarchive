@@ -7,7 +7,7 @@ from mlarchive.archive import actions
 from mlarchive.archive.utils import jsonapi
 from mlarchive.archive.models import Message
 from mlarchive.archive.query_utils import get_cached_query, get_order_fields, get_qdr_kwargs
-from mlarchive.utils.decorators import check_access, superuser_only, check_ajax_list_access
+from mlarchive.utils.decorators import check_access, superuser_only, check_ajax_list_access, pad_id
 
 
 @superuser_only
@@ -35,10 +35,11 @@ def ajax_admin_action(request):
         return {'success': True}
 
 
+@pad_id
 @check_access
-def ajax_get_msg(request, msg):
-    '''Ajax method to retrieve message details.  One URL parameter expected, "id" which
-    is the ID of the message.  Return an HTMLized message body via get_body_html().
+def ajax_get_msg(request, msg, **kwargs):
+    '''Ajax method to retrieve message details.
+    Accepts either ?id=<int> (legacy) or path params <list_name>/<id> (hashcode).
     NOTE: the "msg" argument is Message object added by the check_access decorator
     NOTE: msg_thread changes avg response time from ~100ms to ~200ms
     '''

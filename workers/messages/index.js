@@ -17,8 +17,9 @@ export default {
     try {
       const url = new URL(request.url)
 
-      // Only handle /arch/msg/ paths
-      if (!url.pathname.startsWith('/arch/msg/')) {
+      // Only handle /arch/msg/ and /arch/ajax/msg/ paths
+      const { pathname } = url
+      if (!pathname.startsWith('/arch/msg/') && !pathname.startsWith('/arch/ajax/msg/')) {
         return proxyToOrigin(request, env)
       }
 
@@ -27,13 +28,13 @@ export default {
         return proxyToOrigin(request, env, 'authenticated')
       }
 
-      // Parse URL to extract list and hashcode
-      const parsed = parseMessageUrl(url.pathname)
+      // Parse URL to extract list, hashcode, and request type
+      const parsed = parseMessageUrl(pathname)
       if (!parsed) {
         return proxyToOrigin(request, env, 'invalid-url')
       }
 
-      const { list, hashcode } = parsed
+      const { list, hashcode, isAjax } = parsed
 
       // Try to serve from R2
       try {
@@ -45,8 +46,19 @@ export default {
         }
 
         const data = JSON.parse(await messageJson.text())
-        const html = renderTemplate(template, data, list)
 
+        if (isAjax) {
+          return new Response(renderAjaxFragment(data), {
+            status: 200,
+            headers: {
+              'Content-Type': 'text/html; charset=utf-8',
+              'Cache-Control': 'public, max-age=86400',
+              'X-Served-By': 'cloudflare-worker-r2',
+            },
+          })
+        }
+
+        const html = renderTemplate(template, data, list)
         return new Response(html, {
           status: 200,
           headers: {
@@ -75,26 +87,27 @@ function isAuthenticated (request) {
 }
 
 /**
- * Parse message URL to extract list name and hashcode
- * Returns { list, hashcode } or null if invalid
+ * Parse message URL to extract list name, hashcode, and whether it's an ajax request
+ * Handles /arch/msg/{list}/{hashcode}/ and /arch/ajax/msg/{list}/{hashcode}/
+ * Returns { list, hashcode, isAjax } or null if invalid
  */
 function parseMessageUrl (pathname) {
-  // Pattern: /arch/msg/{list}/{hashcode}/ or /arch/msg/{list}/{hashcode}
-  const match = pathname.match(/^\/arch\/msg\/([^/]+)\/([^/]+)\/?$/)
+  const match = pathname.match(/^\/arch\/(ajax\/)?msg\/([^/]+)\/([^/]+)\/?$/)
 
   if (!match) {
     return null
   }
 
-  const list = match[1]
-  const hashcode = match[2]
+  const isAjax = !!match[1]
+  const list = match[2]
+  const hashcode = match[3]
 
   // Base64.urlsafe charset: A-Z, a-z, 0-9, -, _
   if (!/^[A-Za-z0-9_-]{27}$/.test(hashcode)) {
     return null
   }
 
-  return { list, hashcode }
+  return { list, hashcode, isAjax }
 }
 
 /**
@@ -119,6 +132,14 @@ function renderTemplate (template, data, listName) {
   }
 
   return Mustache.render(template, context)
+}
+
+/**
+ * Render minimal HTML fragment for the search view pane ajax request.
+ * Mirrors Django's message_ajax.html: body HTML + thread snippet.
+ */
+function renderAjaxFragment (data) {
+  return `${data.body || ''}\n\n<div id="message-thread">\n    ${data.thread_snippet || ''}\n</div>`
 }
 
 /**

@@ -34,20 +34,35 @@ export default {
         return proxyToOrigin(request, env, 'invalid-url')
       }
 
-      const { list, hashcode, isAjax } = parsed
+      const { list, hashcode, type } = parsed
+      const r2Key = `${list}/${hashcode}`
 
       // Try to serve from R2
       try {
-        const r2Key = `${list}/${hashcode}`
-        const messageJson = await env.MESSAGES.get(r2Key)
+        if (type === 'download') {
+          const blob = await env.RAW_MESSAGES.get(r2Key)
+          if (!blob) {
+            return proxyToOrigin(request, env, 'r2-miss')
+          }
+          return new Response(blob.body, {
+            status: 200,
+            headers: {
+              'Content-Type': 'message/rfc822',
+              'Content-Disposition': `attachment; filename="${list}_${hashcode}.eml"`,
+              'Cache-Control': 'public, max-age=86400',
+              'X-Served-By': 'cloudflare-worker-r2',
+            },
+          })
+        }
 
+        const messageJson = await env.MESSAGES.get(r2Key)
         if (!messageJson) {
           return proxyToOrigin(request, env, 'r2-miss')
         }
 
         const data = JSON.parse(await messageJson.text())
 
-        if (isAjax) {
+        if (type === 'ajax') {
           return new Response(renderAjaxFragment(data), {
             status: 200,
             headers: {
@@ -87,27 +102,38 @@ function isAuthenticated (request) {
 }
 
 /**
- * Parse message URL to extract list name, hashcode, and whether it's an ajax request
- * Handles /arch/msg/{list}/{hashcode}/ and /arch/ajax/msg/{list}/{hashcode}/
- * Returns { list, hashcode, isAjax } or null if invalid
+ * Parse message URL to extract list name, hashcode, and request type.
+ * Returns { list, hashcode, type } where type is 'full' | 'ajax' | 'download',
+ * or null if the URL doesn't match any handled pattern.
  */
 function parseMessageUrl (pathname) {
-  const match = pathname.match(/^\/arch\/(ajax\/)?msg\/([^/]+)\/([^/]+)\/?$/)
+  let match
 
-  if (!match) {
-    return null
+  // Ajax fragment: /arch/ajax/msg/{list}/{hash}/
+  match = pathname.match(/^\/arch\/ajax\/msg\/([^/]+)\/([^/]+)\/?$/)
+  if (match) {
+    const [, list, hashcode] = match
+    if (!/^[A-Za-z0-9_-]{27}$/.test(hashcode)) return null
+    return { list, hashcode, type: 'ajax' }
   }
 
-  const isAjax = !!match[1]
-  const list = match[2]
-  const hashcode = match[3]
-
-  // Base64.urlsafe charset: A-Z, a-z, 0-9, -, _
-  if (!/^[A-Za-z0-9_-]{27}$/.test(hashcode)) {
-    return null
+  // Download: /arch/msg/{list}/{hash}/download/
+  match = pathname.match(/^\/arch\/msg\/([^/]+)\/([^/]+)\/download\/?$/)
+  if (match) {
+    const [, list, hashcode] = match
+    if (!/^[A-Za-z0-9_-]{27}$/.test(hashcode)) return null
+    return { list, hashcode, type: 'download' }
   }
 
-  return { list, hashcode, isAjax }
+  // Full page: /arch/msg/{list}/{hash}/
+  match = pathname.match(/^\/arch\/msg\/([^/]+)\/([^/]+)\/?$/)
+  if (match) {
+    const [, list, hashcode] = match
+    if (!/^[A-Za-z0-9_-]{27}$/.test(hashcode)) return null
+    return { list, hashcode, type: 'full' }
+  }
+
+  return null
 }
 
 /**

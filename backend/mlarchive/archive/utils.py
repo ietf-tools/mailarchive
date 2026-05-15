@@ -226,6 +226,54 @@ def build_json_blob_batch(messages):
     return batch
 
 
+def rebuild_json_blobs(messages, max_workers=50):
+    """Rebuild JSON blobs for a batch of Messages.
+
+    Steps (each timed):
+      1. build_json_blob_batch  — serialise JSON for public messages
+      2. bulk_update/create     — update existing blobs; create any that are new
+      3. replicate              — upload to R2 via thread pool
+    """
+    n = len(messages)
+
+    t0 = time.perf_counter()
+    json_blobs = build_json_blob_batch(messages)
+    logger.info('rebuild step 1/3 build_json_blob_batch: %.3fs, %d/%d blobs built', time.perf_counter() - t0, len(json_blobs), n)
+    if len(json_blobs) < n:
+        logger.info('rebuild step 1/3: %d messages skipped (private or no public content)', n - len(json_blobs))
+
+    if not json_blobs:
+        return []
+
+    t1 = time.perf_counter()
+    names = [b.name for b in json_blobs]
+    existing = {
+        name: pk
+        for name, pk in Blob.objects.filter(bucket='ml-messages-json', name__in=names).values_list('name', 'pk')
+    }
+    to_update, to_create = [], []
+    for blob in json_blobs:
+        if blob.name in existing:
+            blob.pk = existing[blob.name]
+            to_update.append(blob)
+        else:
+            to_create.append(blob)
+    if to_update:
+        Blob.bulk_objects.bulk_update(to_update, ['content', 'content_type'])
+    if to_create:
+        Blob.bulk_objects.bulk_create(to_create, ignore_conflicts=True)
+    logger.info(
+        'rebuild step 2/3 bulk_update/create json: %.3fs, %d updated, %d created',
+        time.perf_counter() - t1, len(to_update), len(to_create),
+    )
+
+    t2 = time.perf_counter()
+    failures = replicate_batch(json_blobs, max_workers=max_workers)
+    logger.info('rebuild step 3/3 replicate json: %.3fs, %d failures', time.perf_counter() - t2, len(failures))
+
+    return failures
+
+
 def migrate_messages_to_blobdb(messages, max_workers=50):
     """Migrate a batch of Messages to blobdb and replicate to R2.
 
@@ -245,7 +293,7 @@ def migrate_messages_to_blobdb(messages, max_workers=50):
     logger.info('migrate step 1/6 build_blob_batch: %.3fs, %d/%d blobs built', time.perf_counter() - t0, len(blobs), n)
 
     t1 = time.perf_counter()
-    Blob.objects.bulk_create(blobs, ignore_conflicts=True)
+    Blob.bulk_objects.bulk_create(blobs, ignore_conflicts=True)
     logger.info('migrate step 2/6 bulk_create messages: %.3fs, %d blobs', time.perf_counter() - t1, len(blobs))
 
     t2 = time.perf_counter()
@@ -258,7 +306,7 @@ def migrate_messages_to_blobdb(messages, max_workers=50):
     logger.info('migrate step 4/6 build_json_blob_batch: %.3fs, %d blobs', time.perf_counter() - t3, len(json_blobs))
 
     t4 = time.perf_counter()
-    Blob.objects.bulk_create(json_blobs, ignore_conflicts=True)
+    Blob.bulk_objects.bulk_create(json_blobs, ignore_conflicts=True)
     logger.info('migrate step 5/6 bulk_create json: %.3fs, %d blobs', time.perf_counter() - t4, len(json_blobs))
 
     t5 = time.perf_counter()

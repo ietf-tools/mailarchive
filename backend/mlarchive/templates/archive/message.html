@@ -3,7 +3,7 @@
       {% if msg.get_reply_url %}
         <a href="{{ msg.get_reply_url }}" class="reply-link" title="Reply"><i class="fas fa-reply fa-lg"></i></a>
       {% endif %}
-      <a href="{{ msg.get_download_url }}" class="download-link" title="Message Download"><i class="fa fa-download fa-lg"></i></a>
+      <a href="{{ msg.get_download_url }}" class="download-link" rel="nofollow" title="Message Download"><i class="fa fa-download fa-lg"></i></a>
       <a href="{{ msg.get_absolute_url_with_host }}" class="detail-link" title="Message Detail"><i class="fa fa-link fa-lg"></i></a>
     </div>
     <h3>{{ msg.subject }}</h3>

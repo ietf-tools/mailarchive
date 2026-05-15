@@ -5,7 +5,7 @@ import json
 import mailbox
 import pytest
 import requests
-from factories import EmailListFactory, UserFactory
+from factories import EmailListFactory, MessageFactory, UserFactory
 from mock import patch
 import os
 import subprocess   # noqa
@@ -22,7 +22,7 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     get_mailman_lists, get_membership, get_subscriber_counts, get_fqdn,
     update_mbox_files, _export_lists, move_list, remove_selected, mark_not_spam,
     is_duplicate_message, is_mailman_footer, import_message_blob,
-    create_cf_worker_templates)
+    create_cf_worker_templates, rebuild_json_blobs)
 from mlarchive.archive.models import User, Message, Redirect, MailmanMember, UserEmail
 from mlarchive.archive.mail import make_hash
 from mlarchive.archive.forms import AdvancedSearchForm
@@ -610,3 +610,34 @@ def test_create_cf_worker_templates():
     create_cf_worker_templates()
     path = os.path.join(settings.CF_WORKER_TEMPLATE_DIR, 'message-detail.html')
     assert os.path.exists(path)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_rebuild_json_blobs():
+    from mock import patch
+
+    public = EmailListFactory(name='rebuild-test', private=False)
+    msg1 = MessageFactory.create(email_list=public)
+    msg2 = MessageFactory.create(email_list=public)
+    messages = [msg1, msg2]
+    names = [m.get_blob_name() for m in messages]
+
+    # signal creates JSON blobs on message save
+    assert Blob.objects.filter(bucket='ml-messages-json', name__in=names).count() == 2
+
+    # update path: existing blobs get re-written
+    with patch('mlarchive.archive.utils.replicate_batch', return_value=[]):
+        failures = rebuild_json_blobs(messages)
+
+    assert failures == []
+    assert Blob.objects.filter(bucket='ml-messages-json', name__in=names).count() == 2
+
+    # create path: a missing blob is re-created
+    Blob.objects.get(bucket='ml-messages-json', name=names[0]).delete()
+    assert Blob.objects.filter(bucket='ml-messages-json', name__in=names).count() == 1
+
+    with patch('mlarchive.archive.utils.replicate_batch', return_value=[]):
+        failures = rebuild_json_blobs(messages)
+
+    assert failures == []
+    assert Blob.objects.filter(bucket='ml-messages-json', name__in=names).count() == 2

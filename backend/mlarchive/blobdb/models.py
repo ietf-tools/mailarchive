@@ -21,6 +21,24 @@ class BlobQuerySet(models.QuerySet):
     def delete(self):
         raise NotImplementedError("Only deleting individual Blobs is supported")
 
+    def update(self, *args, **kwargs):
+        # n.b., update_or_create() _does_ call save()
+        raise NotImplementedError("Updating BlobQuerySets is not supported")
+
+    def bulk_create(self, objs, batch_size=None, ignore_conflicts=False, **kwargs):
+        raise NotImplementedError("Use Blob.bulk_objects.bulk_create() for bulk inserts")
+
+    def bulk_update(self, *args, **kwargs):
+        raise NotImplementedError("Use Blob.bulk_objects.bulk_update() for bulk updates")
+
+
+class BlobBulkQuerySet(models.QuerySet):
+    """QuerySet for bulk Blob operations used in migration and rebuild tasks.
+
+    Computes checksums automatically but does NOT trigger replication.
+    Access via Blob.bulk_objects.
+    """
+
     def bulk_create(self, objs, batch_size=None, ignore_conflicts=False, **kwargs):
         """Bulk insert Blobs. Computes checksums; does NOT trigger replication."""
         now = timezone.now()
@@ -30,16 +48,23 @@ class BlobQuerySet(models.QuerySet):
                 obj.modified = now
         return super().bulk_create(objs, batch_size=batch_size, ignore_conflicts=ignore_conflicts, **kwargs)
 
-    def update(self, *args, **kwargs):
-        # n.b., update_or_create() _does_ call save()
-        raise NotImplementedError("Updating BlobQuerySets is not supported")
-
-    def bulk_update(self, *args, **kwargs):
-        raise NotImplementedError("Updating Blobs in bulk is not supported")
+    def bulk_update(self, objs, fields, batch_size=None, **kwargs):
+        """Bulk update Blobs. Computes checksums; does NOT trigger replication."""
+        now = timezone.now()
+        for obj in objs:
+            obj.checksum = sha384(bytes(obj.content), usedforsecurity=False).hexdigest()
+            obj.modified = now
+        fields = list(fields)
+        if 'checksum' not in fields:
+            fields.append('checksum')
+        if 'modified' not in fields:
+            fields.append('modified')
+        return super().bulk_update(objs, fields, batch_size=batch_size, **kwargs)
 
 
 class Blob(models.Model):
     objects = BlobQuerySet.as_manager()
+    bulk_objects = BlobBulkQuerySet.as_manager()
     name = models.CharField(max_length=1024, help_text="Name of the blob")
     bucket = models.CharField(
         max_length=1024, help_text="Name of the bucket containing this blob"

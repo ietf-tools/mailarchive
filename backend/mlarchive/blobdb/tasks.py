@@ -11,6 +11,7 @@ from .replication import replicate_blob, ReplicationError
 logger = logging.getLogger(__name__)
 
 MIGRATION_STOP_KEY = 'migrate_messages_to_blobdb_stop'
+REBUILD_JSON_STOP_KEY = 'rebuild_messages_json_stop'
 
 
 @shared_task(
@@ -74,6 +75,68 @@ def migrate_messages_to_blobdb(
     logger.info('migrate_messages_to_blobdb: batch done, last_pk=%d, failures=%d', last_pk, len(failures))
 
     migrate_messages_to_blobdb.apply_async(
+        kwargs=dict(
+            start_after_pk=last_pk,
+            batch_size=batch_size,
+            start_date=start_date,
+            end_date=end_date,
+            email_lists=email_lists,
+            max_workers=max_workers,
+            countdown=countdown,
+        ),
+        countdown=countdown,
+        queue='blobdb',
+    )
+
+
+@shared_task
+def rebuild_messages_json(
+    start_after_pk=0,
+    batch_size=1000,
+    start_date=None,
+    end_date=None,
+    email_lists=None,
+    max_workers=50,
+    countdown=30,
+):
+    """Rebuild JSON blobs for one batch of Messages, then self-chain.
+
+    To kick off:   rebuild_messages_json.apply_async(queue='blobdb')
+    To stop:       cache.set('rebuild_messages_json_stop', True, timeout=None)
+    To resume:     cache.delete('rebuild_messages_json_stop')
+                   rebuild_messages_json.apply_async(queue='blobdb', kwargs={'start_after_pk': <last logged pk>, ...})
+    """
+    from mlarchive.archive.models import Message
+    from mlarchive.archive.utils import rebuild_json_blobs
+
+    if cache.get(REBUILD_JSON_STOP_KEY):
+        logger.info('rebuild_messages_json: halted by stop flag, resume with start_after_pk=%d', start_after_pk)
+        return
+
+    filters = {'pk__gt': start_after_pk}
+    if start_date is not None:
+        filters['date__gte'] = start_date
+    if end_date is not None:
+        filters['date__lt'] = end_date
+    if email_lists:
+        filters['email_list__name__in'] = email_lists
+
+    batch = list(
+        Message.objects
+        .select_related('email_list')
+        .filter(**filters)
+        .order_by('pk')[:batch_size]
+    )
+
+    if not batch:
+        logger.info('rebuild_messages_json: complete, last_pk=%d', start_after_pk)
+        return
+
+    failures = rebuild_json_blobs(batch, max_workers=max_workers)
+    last_pk = batch[-1].pk
+    logger.info('rebuild_messages_json: batch done, last_pk=%d, failures=%d', last_pk, len(failures))
+
+    rebuild_messages_json.apply_async(
         kwargs=dict(
             start_after_pk=last_pk,
             batch_size=batch_size,

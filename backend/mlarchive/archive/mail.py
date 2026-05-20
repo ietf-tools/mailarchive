@@ -301,7 +301,7 @@ def get_mb(path):
     """
     with open(path, 'rb') as f:
         line = f.readline()
-        while not line or line == '\n':
+        while not line or line == b'\n':
             line = f.readline()
         if line.startswith(b'From '):                # most common mailbox type, MBOX
             # return CustomMbox(path, separator=MBOX_SEPARATOR_PATTERN)

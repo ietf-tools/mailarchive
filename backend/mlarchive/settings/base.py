@@ -64,6 +64,7 @@ env = environ.Env(
     EXPORT_LIMIT=(int, 5000),
     HTAUTH_PASSWD_FILENAME=(str, ''),
     IMPORT_MESSAGE_APIKEY=(str, ''),
+    IMPORT_MBOX_APIKEY=(str, ''),
     SEARCH_MESSAGE_APIKEY=(str, 'changeme'),
     INTERNAL_IPS=(list, []),
     LOG_DIR=(str, '/var/log/mail-archive'),
@@ -430,11 +431,16 @@ MAILMAN_API_PASSWORD = env('MAILMAN_API_PASSWORD')
 MAILMAN_CF_ACCESS_CLIENT_ID = env('MAILMAN_CF_ACCESS_CLIENT_ID')
 MAILMAN_CF_ACCESS_CLIENT_SECRET = env('MAILMAN_CF_ACCESS_CLIENT_SECRET')
 IMPORT_MESSAGE_APIKEY = env('IMPORT_MESSAGE_APIKEY')
+IMPORT_MBOX_APIKEY = env('IMPORT_MBOX_APIKEY')
+
+# admin import mbox settings
+IMPORT_MBOX_MAX_SIZE = 1_800_000_000  # 1.8 GB
 
 # API KEYS: key=endpoint, value=[api-key,]
 SEARCH_MESSAGE_APIKEY = env('SEARCH_MESSAGE_APIKEY')
 API_KEYS = {
     '/api/v1/message/import/': [IMPORT_MESSAGE_APIKEY],
+    '/api/v1/message/import-mbox/': [IMPORT_MBOX_APIKEY],
     '/api/v1/message/search/': [SEARCH_MESSAGE_APIKEY],
 }
 

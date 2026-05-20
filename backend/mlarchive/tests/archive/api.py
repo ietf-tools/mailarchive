@@ -1,9 +1,11 @@
 import base64
 import datetime
+import gzip
 import json
 import pytest
 import os
 from datetime import timezone
+from unittest.mock import patch
 
 from django.urls import reverse
 from factories import EmailListFactory, MessageFactory
@@ -495,3 +497,125 @@ def test_msg_search_query(client, search_api_messages, settings):
     response_data = response.json()
     assert 'results' in response_data
     assert len(response_data['results']) == 0
+
+
+class _MockResponse:
+    def __init__(self, content, content_type):
+        self.headers = {'Content-Type': content_type}
+        self._content = content
+
+    def raise_for_status(self):
+        pass
+
+    def iter_content(self, chunk_size=1):
+        yield self._content
+
+
+def _make_mock_response(content, content_type='application/mbox'):
+    return _MockResponse(content, content_type)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_import_mbox_no_api_key(client, settings):
+    url = reverse('api_import_mbox')
+    settings.API_KEYS = {url: 'valid_token'}
+    response = client.post(
+        url,
+        {'list_name': 'ancp', 'list_visibility': 'public', 'url': 'https://example.com/mbox'},
+        headers={},
+        content_type='application/json')
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db(transaction=True)
+def test_import_mbox_invalid_api_key(client, settings):
+    url = reverse('api_import_mbox')
+    settings.API_KEYS = {url: 'valid_token'}
+    response = client.post(
+        url,
+        {'list_name': 'ancp', 'list_visibility': 'public', 'url': 'https://example.com/mbox'},
+        headers={'X-API-Key': 'wrong_token'},
+        content_type='application/json')
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db(transaction=True)
+def test_import_mbox_wrong_content_type(client, settings):
+    url = reverse('api_import_mbox')
+    settings.API_KEYS = {url: 'valid_token'}
+    response = client.post(
+        url,
+        'list_name=ancp&list_visibility=public&url=https://example.com/mbox',
+        headers={'X-API-Key': 'valid_token'},
+        content_type='application/x-www-form-urlencoded')
+    assert response.status_code == 415
+
+
+@pytest.mark.django_db(transaction=True)
+def test_import_mbox_missing_field(client, settings):
+    url = reverse('api_import_mbox')
+    settings.API_KEYS = {url: 'valid_token'}
+    # missing url
+    response = client.post(
+        url,
+        {'list_name': 'ancp', 'list_visibility': 'public'},
+        headers={'X-API-Key': 'valid_token'},
+        content_type='application/json')
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db(transaction=True)
+def test_import_mbox_invalid_visibility(client, settings):
+    url = reverse('api_import_mbox')
+    settings.API_KEYS = {url: 'valid_token'}
+    response = client.post(
+        url,
+        {'list_name': 'ancp', 'list_visibility': 'open', 'url': 'https://example.com/mbox'},
+        headers={'X-API-Key': 'valid_token'},
+        content_type='application/json')
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db(transaction=True)
+def test_import_mbox_queues_task(client, settings):
+    url = reverse('api_import_mbox')
+    settings.API_KEYS = {url: 'valid_token'}
+
+    with patch('mlarchive.archive.api.import_mbox_url_task') as mock_task:
+        response = client.post(
+            url,
+            {'list_name': 'ancp', 'list_visibility': 'public', 'url': 'https://example.com/ancp.mbox'},
+            headers={'X-API-Key': 'valid_token'},
+            content_type='application/json')
+
+    assert response.status_code == 202
+    mock_task.delay.assert_called_once_with(
+        list_name='ancp', list_visibility='public', url='https://example.com/ancp.mbox')
+
+
+@pytest.mark.django_db(transaction=True)
+def test_import_mbox_task(settings):
+    from mlarchive.archive.tasks import import_mbox_url_task
+    mbox_path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mbox.1')
+    with open(mbox_path, 'rb') as f:
+        mbox_content = f.read()
+
+    mock_response = _make_mock_response(mbox_content)
+    with patch('mlarchive.archive.tasks.requests.get', return_value=mock_response):
+        import_mbox_url_task('ancp', 'public', 'https://example.com/ancp.mbox')
+
+    assert Message.objects.filter(email_list__name='ancp').exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_import_mbox_task_gzip(settings):
+    from mlarchive.archive.tasks import import_mbox_url_task
+    mbox_path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mbox.1')
+    with open(mbox_path, 'rb') as f:
+        mbox_content = gzip.compress(f.read())
+
+    mock_response = _make_mock_response(mbox_content, content_type='application/x-gzip')
+    with patch('mlarchive.archive.tasks.requests.get', return_value=mock_response):
+        import_mbox_url_task('ancp', 'public', 'https://example.com/ancp.mbox.gz')
+
+    assert Message.objects.filter(email_list__name='ancp').exists()

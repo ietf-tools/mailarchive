@@ -20,7 +20,7 @@ from mlarchive.archive.models import Message, EmailList, Subscriber
 from mlarchive.utils.decorators import require_api_key
 from mlarchive.archive.backends.elasticsearch import ElasticsearchSimpleQuery
 from mlarchive.archive.storage_utils import store_file, get_unique_blob_name
-from mlarchive.archive.tasks import import_message_blob_task
+from mlarchive.archive.tasks import import_message_blob_task, import_mbox_url_task
 
 import logging
 logger = logging.getLogger(__name__)
@@ -273,6 +273,72 @@ class ImportMessageView(View):
         import_message_blob_task.delay(bucket=bucket, name=blob_name)
 
         return HttpResponse(status=201)
+
+
+_import_mbox_json_validator = jsonschema.Draft202012Validator(
+    schema={
+        "type": "object",
+        "properties": {
+            "list_name": {
+                "type": "string",
+                "minLength": 1,
+            },
+            "list_visibility": {
+                "type": "string",
+                "enum": ["public", "private"],
+            },
+            "url": {
+                "type": "string",
+                "minLength": 1,
+            },
+        },
+        "required": ["list_name", "list_visibility", "url"],
+    }
+)
+
+
+@method_decorator(require_api_key, name='dispatch')
+@method_decorator(csrf_exempt, name='dispatch')
+class ImportMboxView(View):
+    '''An API to import an mbox file from a URL.
+    Expects a POST request with JSON payload:
+      list_name: email list name
+      list_visibility: "public" or "private"
+      url: URL of the mbox file to fetch (application/x-gzip decompressed automatically)
+    '''
+    http_method_names = ['post']
+
+    def _err(self, code, text):
+        return HttpResponse(text, status=code, content_type="text/plain")
+
+    def post(self, request, **kwargs):
+        if request.content_type != "application/json":
+            return self._err(415, "Content-Type must be application/json")
+
+        try:
+            payload = json.loads(request.body)
+            _import_mbox_json_validator.validate(payload)
+        except json.decoder.JSONDecodeError as err:
+            msg = f'JSON parse error at line {err.lineno} col {err.colno}: {err.msg}'
+            logger.error(msg)
+            return self._err(400, msg)
+        except jsonschema.exceptions.ValidationError as err:
+            msg = f'JSON schema error at {err.json_path}: {err.message}'
+            logger.error(msg)
+            return self._err(400, msg)
+        except Exception:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            logger.error(f"Exception type: {exc_type}, Exception message: {exc_value}", exc_info=True)
+            return self._err(400, f'Error processing request. ({exc_value})')
+
+        list_name = payload["list_name"]
+        list_visibility = payload["list_visibility"].lower()
+        url = payload["url"]
+
+        import_mbox_url_task.delay(list_name=list_name, list_visibility=list_visibility, url=url)
+        logger.info(f'Queued mbox import: list={list_name} url={url}')
+
+        return HttpResponse(status=202)
 
 
 _search_message_json_validator = jsonschema.Draft202012Validator(

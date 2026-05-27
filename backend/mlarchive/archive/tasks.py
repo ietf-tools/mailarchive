@@ -165,6 +165,8 @@ def import_mbox_url_task(list_name, list_visibility, url):
         response.raise_for_status()
     except requests.RequestException as err:
         logger.error(f'import_mbox_url_task: failed to fetch {url}: {err}')
+        if response is not None:
+            response.close()
         return
 
     content_length = response.headers.get('Content-Length')
@@ -175,6 +177,7 @@ def import_mbox_url_task(list_name, list_visibility, url):
                     f'import_mbox_url_task: {url} Content-Length {content_length} '
                     f'exceeds limit {settings.IMPORT_MBOX_MAX_SIZE}'
                 )
+                response.close()
                 return
         except ValueError:
             pass
@@ -208,6 +211,7 @@ def import_mbox_url_task(list_name, list_visibility, url):
     except Exception as err:
         logger.error(f'import_mbox_url_task: failed for {url}: {err}')
     finally:
+        response.close()
         for path in temp_files:
             try:
                 os.unlink(path)

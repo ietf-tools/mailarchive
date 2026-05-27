@@ -510,6 +510,9 @@ class _MockResponse:
     def iter_content(self, chunk_size=1):
         yield self._content
 
+    def close(self):
+        pass
+
 
 def _make_mock_response(content, content_type='application/mbox'):
     return _MockResponse(content, content_type)

@@ -177,6 +177,53 @@ paths:
         '403':
           description: Forbidden
 
+  /api/v1/message/import-mbox/:
+    post:
+      summary: Import an mbox file from a URL
+      description: >
+        Queues a background task to fetch the mbox file at the given URL and
+        import all messages into the archive. If the server responds with
+        Content-Type application/x-gzip or application/gzip the file is
+        decompressed before processing.
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                list_name:
+                  type: string
+                  minLength: 1
+                  description: email list name (no domain)
+                list_visibility:
+                  type: string
+                  enum: [public, private]
+                  description: email list visibility
+                url:
+                  type: string
+                  description: URL of the mbox file to fetch
+              required:
+                - list_name
+                - list_visibility
+                - url
+            example:
+              list_name: dnsop
+              list_visibility: public
+              url: https://example.com/lists/dnsop/2024-01.mbox
+
+      responses:
+        '202':
+          description: Accepted — import task queued
+        '400':
+          description: Bad Request
+        '403':
+          description: Forbidden
+        '415':
+          description: Unsupported media type
+
   /api/v1/message/search/:
     post:
       summary: Search public email messages

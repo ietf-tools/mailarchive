@@ -1,5 +1,9 @@
+import gzip
 import logging
+import tempfile
+import os
 
+import requests
 from celery import Task, shared_task
 from django.apps import apps
 from django.conf import settings
@@ -19,6 +23,7 @@ from mlarchive.archive.utils import mark_not_spam
 from mlarchive.archive.utils import purge_confirmed_dupes
 from mlarchive.archive.utils import import_message_blob
 from mlarchive.archive.models import EmailList, Message, User
+from mlarchive.archive.mail import Loader
 
 logger = logging.getLogger(__name__)
 
@@ -150,6 +155,68 @@ def mark_not_spam_task(message_ids):
 @shared_task
 def import_message_blob_task(bucket, name):
     import_message_blob(bucket, name)
+
+
+@shared_task
+def import_mbox_url_task(list_name, list_visibility, url):
+    """Download an mbox file from url and import all messages into the archive."""
+    try:
+        response = requests.get(url, timeout=(10, 60), stream=True)
+        response.raise_for_status()
+    except requests.RequestException as err:
+        logger.error(f'import_mbox_url_task: failed to fetch {url}: {err}')
+        if response is not None:
+            response.close()
+        return
+
+    content_length = response.headers.get('Content-Length')
+    if content_length is not None:
+        try:
+            if int(content_length) > settings.IMPORT_MBOX_MAX_SIZE:
+                logger.error(
+                    f'import_mbox_url_task: {url} Content-Length {content_length} '
+                    f'exceeds limit {settings.IMPORT_MBOX_MAX_SIZE}'
+                )
+                response.close()
+                return
+        except ValueError:
+            pass
+
+    content_type = response.headers.get('Content-Type', '')
+    is_gzip = content_type in ('application/x-gzip', 'application/gzip')
+
+    temp_files = []
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.download') as raw_f:
+            raw_path = raw_f.name
+            temp_files.append(raw_path)
+            for chunk in response.iter_content(chunk_size=65536):
+                raw_f.write(chunk)
+
+        if is_gzip:
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.mbox') as mbox_f:
+                mbox_path = mbox_f.name
+                temp_files.append(mbox_path)
+                with gzip.open(raw_path, 'rb') as gz_in:
+                    for chunk in iter(lambda: gz_in.read(65536), b''):
+                        mbox_f.write(chunk)
+            import_path = mbox_path
+        else:
+            import_path = raw_path
+
+        private = list_visibility == 'private'
+        loader = Loader(import_path, listname=list_name, private=private)
+        loader.process()
+        logger.info(f'import_mbox_url_task: imported {url} into {list_name}, stats={loader.stats}')
+    except Exception as err:
+        logger.error(f'import_mbox_url_task: failed for {url}: {err}')
+    finally:
+        response.close()
+        for path in temp_files:
+            try:
+                os.unlink(path)
+            except OSError:
+                pass
 
 
 # --------------------------------------------------

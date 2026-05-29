@@ -160,6 +160,7 @@ def import_message_blob_task(bucket, name):
 @shared_task
 def import_mbox_url_task(list_name, list_visibility, url):
     """Download an mbox file from url and import all messages into the archive."""
+    response = None
     try:
         response = requests.get(url, timeout=(10, 60), stream=True)
         response.raise_for_status()

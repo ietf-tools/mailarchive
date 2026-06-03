@@ -418,7 +418,64 @@ def is_duplicate_message(msg1, msg2):
         return False
 
 
-def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False):
+def _build_removed_message_ids(list_name):
+    """Return a dict mapping Message-ID to file path for all messages in list/_removed/."""
+    removed_message_ids = {}
+    removed_dir = os.path.join(settings.ARCHIVE_DIR, list_name, '_removed')
+    if not os.path.isdir(removed_dir):
+        return removed_message_ids
+    for filename in os.listdir(removed_dir):
+        file_path = os.path.join(removed_dir, filename)
+        if not os.path.isfile(file_path):
+            continue
+        try:
+            with open(file_path, 'rb') as f:
+                msg = email.message_from_binary_file(f)
+            msgid = msg.get('Message-ID')
+            if msgid:
+                removed_message_ids[msgid.strip('<>')] = file_path
+        except Exception:
+            pass
+    return removed_message_ids
+
+
+def _check_removed_duplicate(dupe_msg, dupe_file_path, message_id, removed_message_ids,
+                             list_name, filename, dry_run, verbosity):
+    """Check if dupe matches a message in _removed; remove the dupe if so.
+
+    Returns True if the dupe was confirmed as a duplicate of a removed message and
+    was removed (or would be removed in dry_run mode), False otherwise.
+    """
+    if message_id not in removed_message_ids:
+        return False
+
+    removed_file_path = removed_message_ids[message_id]
+    try:
+        with open(removed_file_path, 'rb') as f:
+            removed_msg = email.message_from_binary_file(f)
+    except Exception:
+        return False
+
+    if not is_duplicate_message(dupe_msg, removed_msg):
+        return False
+
+    if dry_run:
+        if verbosity >= 3:
+            logger.info(
+                f'[DRY RUN] Would remove confirmed duplicate of removed message: '
+                f'list={list_name}, msgid={message_id}, file={filename}'
+            )
+    else:
+        os.remove(dupe_file_path)
+        if verbosity >= 3:
+            logger.info(
+                f'Removed confirmed duplicate of removed message: '
+                f'list={list_name}, msgid={message_id}, file={filename}'
+            )
+    return True
+
+
+def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False, verbosity=1):
     """Walk through all email lists and purge confirmed duplicate messages.
 
     For each email list, checks the _dupes directory for messages that are
@@ -430,21 +487,24 @@ def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False):
         listname: Optional name of a specific list to process. If None, processes all lists.
         dry_run: If True, only report what would be done without actually removing files.
         exitfirst: If True, exit the function on first failure (logger.warning).
+        verbosity: Controls logging output level (0-3). 0=totals only, 1=+list names and
+            errors, 2=+messages when not removing, 3=+messages when removing.
     """
     removed_count = 0
     error_count = 0
 
-    if dry_run:
+    if dry_run and verbosity >= 1:
         logger.info('DRY RUN MODE: No files will be removed')
 
     if listname:
         try:
             email_lists = [EmailList.objects.get(name=listname)]
         except EmailList.DoesNotExist:
-            logger.error(f'Email list not found: {listname}')
+            if verbosity >= 1:
+                logger.error(f'Email list not found: {listname}')
             return {'removed': 0, 'errors': 1}
     else:
-        email_lists = EmailList.objects.all()
+        email_lists = EmailList.objects.all().order_by('name')
 
     for elist in email_lists:
         dupes_dir = os.path.join(settings.ARCHIVE_DIR, elist.name, '_dupes')
@@ -452,7 +512,10 @@ def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False):
         if not os.path.isdir(dupes_dir):
             continue
 
-        logger.info(f'Processing _dupes directory for list: {elist.name}')
+        if verbosity >= 1:
+            logger.info(f'Processing _dupes directory for list: {elist.name}')
+
+        removed_message_ids = None  # lazy: built on first Message.DoesNotExist
 
         for filename in os.listdir(dupes_dir):
             dupe_file_path = os.path.join(dupes_dir, filename)
@@ -466,7 +529,8 @@ def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False):
 
                 message_id = dupe_msg.get('Message-ID')
                 if not message_id:
-                    logger.warning(f'Message in _dupes has no Message-ID: {dupe_file_path}')
+                    if verbosity >= 2:
+                        logger.warning(f'Message in _dupes has no Message-ID: {dupe_file_path}')
                     error_count += 1
                     if exitfirst:
                         return {'removed': removed_count, 'errors': error_count}
@@ -480,12 +544,22 @@ def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False):
                         msgid=message_id
                     )
                 except Message.DoesNotExist:
-                    logger.warning(f'Message-ID not found in archive, keeping in _dupes: {message_id}')
+                    if removed_message_ids is None:
+                        removed_message_ids = _build_removed_message_ids(elist.name)
+                    if _check_removed_duplicate(
+                        dupe_msg, dupe_file_path, message_id, removed_message_ids,
+                        elist.name, filename, dry_run, verbosity
+                    ):
+                        removed_count += 1
+                        continue
+                    if verbosity >= 2:
+                        logger.warning(f'Message-ID not found in archive, keeping in _dupes: {message_id}')
                     if exitfirst:
                         return {'removed': removed_count, 'errors': error_count}
                     continue
                 except Message.MultipleObjectsReturned:
-                    logger.warning(f'Multiple messages found with Message-ID: {message_id}')
+                    if verbosity >= 2:
+                        logger.warning(f'Multiple messages found with Message-ID: {message_id}')
                     error_count += 1
                     if exitfirst:
                         return {'removed': removed_count, 'errors': error_count}
@@ -495,27 +569,31 @@ def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False):
 
                 if is_duplicate_message(dupe_msg, archived_msg):
                     if dry_run:
-                        logger.info(
-                            f'[DRY RUN] Would remove confirmed duplicate: list={elist.name}, '
-                            f'msgid={message_id}, file={filename}'
-                        )
+                        if verbosity >= 3:
+                            logger.info(
+                                f'[DRY RUN] Would remove confirmed duplicate: list={elist.name}, '
+                                f'msgid={message_id}, file={filename}'
+                            )
                     else:
                         os.remove(dupe_file_path)
-                        logger.info(
-                            f'Removed confirmed duplicate: list={elist.name}, '
-                            f'msgid={message_id}, file={filename}'
-                        )
+                        if verbosity >= 3:
+                            logger.info(
+                                f'Removed confirmed duplicate: list={elist.name}, '
+                                f'msgid={message_id}, file={filename}'
+                            )
                     removed_count += 1
                 else:
-                    logger.warning(
-                        f'Message-ID matches but content differs, keeping in _dupes: '
-                        f'path={dupe_file_path}, list={elist.name}, msgid={message_id}'
-                    )
+                    if verbosity >= 2:
+                        logger.warning(
+                            f'Message-ID matches but content differs, keeping in _dupes: '
+                            f'path={dupe_file_path}, list={elist.name}, msgid={message_id}'
+                        )
                     if exitfirst:
                         return {'removed': removed_count, 'errors': error_count}
 
             except Exception as e:
-                logger.error(f'Error processing dupe file {dupe_file_path}: {e}')
+                if verbosity >= 1:
+                    logger.error(f'Error processing dupe file {dupe_file_path}: {e}')
                 error_count += 1
                 continue
 

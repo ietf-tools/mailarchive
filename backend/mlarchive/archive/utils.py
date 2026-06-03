@@ -33,7 +33,7 @@ from django.urls import reverse
 from mlarchive.archive.models import (EmailList, Subscriber, Redirect, UserEmail, MailmanMember,
     User, Message)
 from mlarchive.archive.mail import MessageWrapper, archive_message
-from mlarchive.archive.storage_utils import retrieve_bytes
+from mlarchive.archive.storage_utils import retrieve_bytes, exists_in_storage, remove_from_storage
 from mlarchive.blobdb.models import Blob
 
 
@@ -467,6 +467,9 @@ def _check_removed_duplicate(dupe_msg, dupe_file_path, message_id, removed_messa
             )
     else:
         os.remove(dupe_file_path)
+        blob_name = os.path.join(list_name, filename.rstrip('='))
+        if exists_in_storage('ml-messages-dupes', blob_name):
+            remove_from_storage('ml-messages-dupes', blob_name)
         if verbosity >= 3:
             logger.info(
                 f'Removed confirmed duplicate of removed message: '
@@ -576,6 +579,9 @@ def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False, verbosi
                             )
                     else:
                         os.remove(dupe_file_path)
+                        blob_name = os.path.join(elist.name, filename.rstrip('='))
+                        if exists_in_storage('ml-messages-dupes', blob_name):
+                            remove_from_storage('ml-messages-dupes', blob_name)
                         if verbosity >= 3:
                             logger.info(
                                 f'Removed confirmed duplicate: list={elist.name}, '

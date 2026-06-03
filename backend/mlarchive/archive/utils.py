@@ -439,43 +439,15 @@ def _build_removed_message_ids(list_name):
     return removed_message_ids
 
 
-def _check_removed_duplicate(dupe_msg, dupe_file_path, message_id, removed_message_ids,
-                             list_name, filename, dry_run, verbosity):
-    """Check if dupe matches a message in _removed; remove the dupe if so.
-
-    Returns True if the dupe was confirmed as a duplicate of a removed message and
-    was removed (or would be removed in dry_run mode), False otherwise.
-    """
+def _get_removed_message(message_id, removed_message_ids):
+    """Return the parsed email object for message_id from _removed, or None if not found."""
     if message_id not in removed_message_ids:
-        return False
-
-    removed_file_path = removed_message_ids[message_id]
+        return None
     try:
-        with open(removed_file_path, 'rb') as f:
-            removed_msg = email.message_from_binary_file(f)
+        with open(removed_message_ids[message_id], 'rb') as f:
+            return email.message_from_binary_file(f)
     except Exception:
-        return False
-
-    if not is_duplicate_message(dupe_msg, removed_msg):
-        return False
-
-    if dry_run:
-        if verbosity >= 3:
-            logger.info(
-                f'[DRY RUN] Would remove confirmed duplicate of removed message: '
-                f'list={list_name}, msgid={message_id}, file={filename}'
-            )
-    else:
-        os.remove(dupe_file_path)
-        blob_name = os.path.join(list_name, filename.rstrip('='))
-        if exists_in_storage('ml-messages-dupes', blob_name):
-            remove_from_storage('ml-messages-dupes', blob_name)
-        if verbosity >= 3:
-            logger.info(
-                f'Removed confirmed duplicate of removed message: '
-                f'list={list_name}, msgid={message_id}, file={filename}'
-            )
-    return True
+        return None
 
 
 def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False, verbosity=1):
@@ -546,20 +518,17 @@ def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False, verbosi
                         email_list=elist,
                         msgid=message_id
                     )
+                    archived_msg = archived_message.pymsg
                 except Message.DoesNotExist:
                     if removed_message_ids is None:
                         removed_message_ids = _build_removed_message_ids(elist.name)
-                    if _check_removed_duplicate(
-                        dupe_msg, dupe_file_path, message_id, removed_message_ids,
-                        elist.name, filename, dry_run, verbosity
-                    ):
-                        removed_count += 1
+                    archived_msg = _get_removed_message(message_id, removed_message_ids)
+                    if archived_msg is None:
+                        if verbosity >= 2:
+                            logger.warning(f'Message-ID not found in archive, keeping in _dupes: {message_id}')
+                        if exitfirst:
+                            return {'removed': removed_count, 'errors': error_count}
                         continue
-                    if verbosity >= 2:
-                        logger.warning(f'Message-ID not found in archive, keeping in _dupes: {message_id}')
-                    if exitfirst:
-                        return {'removed': removed_count, 'errors': error_count}
-                    continue
                 except Message.MultipleObjectsReturned:
                     if verbosity >= 2:
                         logger.warning(f'Multiple messages found with Message-ID: {message_id}')
@@ -567,8 +536,6 @@ def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False, verbosi
                     if exitfirst:
                         return {'removed': removed_count, 'errors': error_count}
                     continue
-
-                archived_msg = archived_message.pymsg
 
                 if is_duplicate_message(dupe_msg, archived_msg):
                     if dry_run:

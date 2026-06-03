@@ -22,7 +22,7 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     get_mailman_lists, get_membership, get_subscriber_counts, get_fqdn,
     update_mbox_files, _export_lists, move_list, remove_selected, mark_not_spam,
     is_duplicate_message, is_mailman_footer, import_message_blob,
-    create_cf_worker_templates, rebuild_json_blobs, _check_removed_duplicate)
+    create_cf_worker_templates, rebuild_json_blobs, _get_removed_message)
 from mlarchive.archive.models import User, Message, Redirect, MailmanMember, UserEmail
 from mlarchive.archive.mail import make_hash
 from mlarchive.archive.forms import AdvancedSearchForm
@@ -643,10 +643,10 @@ def test_rebuild_json_blobs():
     assert Blob.objects.filter(bucket='ml-messages-json', name__in=names).count() == 2
 
 
-# Tests for _check_removed_duplicate
+# Tests for _get_removed_message
 # --------------------------------------------------
 
-def test_check_removed_duplicate_removes_dupe(tmp_path):
+def test_get_removed_message_returns_email_object(tmp_path):
     raw = (
         b"From: a@example.com\r\n"
         b"Message-ID: <abc@example.com>\r\n"
@@ -656,16 +656,9 @@ def test_check_removed_duplicate_removes_dupe(tmp_path):
     removed_file = tmp_path / "removed_msg"
     removed_file.write_bytes(raw)
 
-    dupe_file = tmp_path / "dupe_msg"
-    dupe_file.write_bytes(raw)
-
-    dupe_msg = email.message_from_bytes(raw)
     removed_message_ids = {"abc@example.com": str(removed_file)}
 
-    result = _check_removed_duplicate(
-        dupe_msg, str(dupe_file), "abc@example.com", removed_message_ids,
-        "testlist", "dupe_msg", dry_run=False, verbosity=0,
-    )
+    result = _get_removed_message("abc@example.com", removed_message_ids)
 
-    assert result is True
-    assert not dupe_file.exists()
+    assert result is not None
+    assert result["Message-ID"] == "<abc@example.com>"

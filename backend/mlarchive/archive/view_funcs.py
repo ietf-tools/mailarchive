@@ -242,6 +242,7 @@ def build_mbox_tar(results, tar, basename):
     There are various problems adding non-file objects (ie. StringIO) to tar files
     therefore the mbox files are first built on disk
     """
+    results = sorted(results, key=lambda r: (r.object.email_list.name, r.object.date))
     mbox_date = results[0].object.date.strftime('%Y-%m')
     mbox_list = results[0].object.email_list.name
     fd, temp_path = tempfile.mkstemp()

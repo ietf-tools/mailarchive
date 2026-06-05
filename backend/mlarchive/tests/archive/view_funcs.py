@@ -1,10 +1,12 @@
+import datetime
 import glob
 import io
 import mailbox
 import os
 import pytest
 import tarfile
-from factories import EmailListFactory, UserFactory
+from datetime import timezone
+from factories import EmailListFactory, ThreadFactory, MessageFactory, UserFactory
 
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
@@ -13,7 +15,7 @@ from django.urls import reverse
 from django.utils.encoding import smart_str
 
 from mlarchive.archive.view_funcs import (chunks, initialize_formsets, get_columns,
-    get_export, get_query_neighbors, apply_objects)
+    get_export, get_query_neighbors, apply_objects, build_mbox_tar)
 from mlarchive.archive.models import EmailList
 from mlarchive.utils.test_utils import get_request
 
@@ -143,6 +145,69 @@ def test_get_export_mbox(client, thread_messages, tmpdir):
     mboxs = glob.glob(os.path.join(path, '*', 'acme', '*.mbox'))
     mbox = mailbox.mbox(mboxs[0])
     assert len(mbox) == 4
+
+
+@pytest.mark.django_db(transaction=True)
+def test_build_mbox_tar_from_sorted(tmpdir):
+    """build_mbox_tar loses messages when results are sorted by a non-date field.
+
+    With frm-sorted results like [Aaron/Jan, Bob/Feb, Charlie/Jan], the same
+    archive path (acme/2024-01.mbox) is added to the tar twice. On extraction
+    the second entry overwrites the first, silently dropping messages.
+    """
+    acme = EmailListFactory.create(name='acme_export')
+    thread_jan = ThreadFactory.create(
+        date=datetime.datetime(2024, 1, 1, tzinfo=timezone.utc), email_list=acme)
+    thread_feb = ThreadFactory.create(
+        date=datetime.datetime(2024, 2, 1, tzinfo=timezone.utc), email_list=acme)
+
+    m1 = MessageFactory.create(
+        email_list=acme, frm='Aaron <a@example.com>',
+        thread=thread_jan, thread_order=0, msgid='exp01',
+        date=datetime.datetime(2024, 1, 1, tzinfo=timezone.utc))
+    m2 = MessageFactory.create(
+        email_list=acme, frm='Bob <b@example.com>',
+        thread=thread_feb, thread_order=0, msgid='exp02',
+        date=datetime.datetime(2024, 2, 1, tzinfo=timezone.utc))
+    m3 = MessageFactory.create(
+        email_list=acme, frm='Charlie <c@example.com>',
+        thread=thread_jan, thread_order=1, msgid='exp03',
+        date=datetime.datetime(2024, 1, 15, tzinfo=timezone.utc))
+
+    # Create the message files that get_file_path() points to
+    list_dir = os.path.join(settings.ARCHIVE_DIR, acme.name)
+    os.makedirs(list_dir, exist_ok=True)
+    for msg, subject in [(m1, 'January A'), (m2, 'February B'), (m3, 'January C')]:
+        with open(msg.get_file_path(), 'wb') as f:
+            f.write(
+                f'From sender@example.com Mon Jan  1 00:00:00 2024\n'
+                f'Subject: {subject}\n\nBody\n\n'.encode()
+            )
+
+    class FakeResult:
+        def __init__(self, msg):
+            self.object = msg
+
+    # Sorted by frm: Aaron (Jan), Bob (Feb), Charlie (Jan) — months interleaved
+    results = [FakeResult(m1), FakeResult(m2), FakeResult(m3)]
+
+    tardata = io.BytesIO()
+    tar = tarfile.open(fileobj=tardata, mode='w:gz')
+    tar = build_mbox_tar(results, tar, 'test_export')
+    tar.close()
+    tardata.seek(0)
+
+    extract_path = str(tmpdir.mkdir('extracted'))
+    tar2 = tarfile.open(mode='r:gz', fileobj=tardata)
+    tar2.extractall(extract_path)
+
+    mbox_files = glob.glob(os.path.join(extract_path, '**', '*.mbox'), recursive=True)
+    total_messages = sum(len(mailbox.mbox(p)) for p in mbox_files)
+
+    assert total_messages == 3, (
+        f'Expected 3 messages but got {total_messages} — '
+        'duplicate tar entries caused by non-date sort order'
+    )
 
 
 @pytest.mark.django_db(transaction=True)

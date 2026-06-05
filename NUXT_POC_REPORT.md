@@ -137,6 +137,21 @@ The new endpoints are validated end-to-end against the real search backend:
 facets/aggregations, pagination, private-list exclusion (anonymous vs member), and
 the message-detail access decorators. No regression to the existing API/view tests.
 
+### 5.3 Live demo (full stack)
+
+The complete demo was brought up and exercised through the browser path
+(Nuxt SSR → dev proxy → Django → Elasticsearch/Postgres), using a dedicated
+`demo` settings module (see Observation 8) and three lists loaded from the bundled
+mbox fixtures (`acme`, `ford`, `dnsop` — 9 messages, indexed to `demo-mail-archive`).
+
+| Page (via Nuxt on `:3000`) | Result |
+|---|---|
+| `/arch/` | ✅ Home + "Most active lists" (acme, dnsop, ford) |
+| `/arch/browse/` | ✅ List directory rendered |
+| `/arch/search/?email_list=acme` | ✅ SSR: 4 results, facets, real subjects |
+| `/arch/msg/acme/<hash>/` | ✅ SSR: title, headers (From/Date/List), body, thread, nav |
+| `/arch/api/v1/{whoami,lists,search}` (Django `:8000`) | ✅ 200, real JSON |
+
 ## 6. Observations & caveats
 
 1. **`/api/v1/` namespace collision (resolved by design).** The existing `/api/v1/`
@@ -180,6 +195,22 @@ the message-detail access decorators. No regression to the existing API/view tes
    explicitly (`from 'reka-ui'`) and components use flat names
    (`components: [{ path: '~/components', pathPrefix: false }]`) to keep the build
    robust and predictable.
+
+8. **Dev blob-storage misroutes its Postgres connection (pre-existing bug, worked
+   around).** Under `docker-development`, `Message.save()` (and the loader, and ES
+   indexing that reads the body) hits the blobdb storage, which connects to the `db`
+   container (`172.18.0.5`) using the `mailarch` role — but that role only exists on the
+   `blobdb` container (`172.18.0.8`), so it fails with `role "mailarch" does not exist`.
+   Notably, `migrate --database=blobdb` connects to the *correct* blobdb host, so
+   Django's `blobdb` database alias is configured fine — the storage layer builds a
+   different (mis-host'd) connection. Chasing this is orthogonal to the PoC, so the demo
+   uses a small **`backend/mlarchive/settings/demo.py`** that does what `settings/test.py`
+   already does successfully: route blob models to the **default** database
+   (`BLOBDB_DATABASE = 'default'`, `DATABASE_ROUTERS = []`), disable replication, and use
+   a dedicated `demo-mail-archive` ES index — but against the *persistent* dev DB so data
+   survives restarts. **Recommended follow-up (out of scope):** fix the blobdb storage
+   connection so the full dev blob pipeline works, or document `demo.py` as the supported
+   way to run a self-contained instance without the blob-import pipeline.
 
 ## 7. Productionization path (NOT built in this PoC)
 
@@ -234,12 +265,50 @@ docker compose -f compose-dev.yml -f .devcontainer/docker-compose.extend.yml exe
 docker compose -f compose-dev.yml -f .devcontainer/docker-compose.extend.yml down
 ```
 
-## 10. File inventory (commit `4cb2c38b`)
+### Running the full live demo (with data)
+
+```bash
+DC="docker compose -f compose-dev.yml -f .devcontainer/docker-compose.extend.yml"
+
+# 1. Start all required services
+$DC up -d app db es rabbit blobstore blobdb memcached
+
+# 2. Initialize the app (creates .env, configures blobstore, migrates)
+$DC exec -e EDITOR_VSCODE=true app /docker-init.sh
+
+# 3. Migrate + load sample lists + build the index, using the demo settings
+$DC exec -e DJANGO_SETTINGS_MODULE=mlarchive.settings.demo \
+         -e CELERY_BROKER_URL=amqp://guest:guest@rabbit:5672// app bash -lc '
+  cd /workspace/backend
+  python manage.py migrate --noinput
+  D=/workspace/backend/mlarchive/tests/data
+  python manage.py load $D/search_api.mbox      --listname acme  --summary
+  python manage.py load $D/search_api_ford.mbox --listname ford  --summary
+  python manage.py load $D/urlize.mbox          --listname dnsop --summary
+  python manage.py rebuild_index --noinput'
+
+# 4. Start Django (detached, in the container) on :8000
+$DC exec -d -e DJANGO_SETTINGS_MODULE=mlarchive.settings.demo \
+            -e CELERY_BROKER_URL=amqp://guest:guest@rabbit:5672// \
+  app bash -lc 'cd /workspace/backend && python manage.py runserver 0.0.0.0:8000'
+
+# 5. Start Nuxt on the host (proxies /arch/api -> :8000)
+cd client && npm run dev        # open http://localhost:3000/arch/
+```
+
+Note: the message-detail body renders because the mbox loader stores the raw message
+(in `demo` mode, to the default DB / `ARCHIVE_DIR`). Factory-only seeding would leave
+bodies empty.
+
+## 10. File inventory
+
+Implementation (commit `4cb2c38b`):
 
 **Backend**
 - `backend/mlarchive/archive/web_api.py` *(new)*
 - `backend/mlarchive/archive/urls.py` *(modified — routes)*
 - `backend/mlarchive/tests/archive/web_api.py` *(new — 12 tests)*
+- `backend/mlarchive/settings/demo.py` *(new — runnable demo settings; see Observation 8)*
 
 **Frontend (`client/`)** — Nuxt app: `nuxt.config.ts`, `app/` (pages, layouts,
 components for common/browse/search/message, composables `useApi`/`useSearchQuery`,
@@ -253,6 +322,8 @@ stores `search`/`user`, utilities), `shared/schemas/` (Zod contract), `tests/uni
 
 1. Decide whether to align the repo `test.py` with CI (`BLOBDB_REPLICATION['ENABLED'] =
    False`) so the suite doesn't require a live broker.
-2. Run the Playwright e2e against a live Django + Nuxt with sample data.
-3. If proceeding beyond the PoC, scaffold the strangler nginx routing and the Nuxt
+2. Investigate the dev blob-storage connection bug (Observation 8) so the full
+   `docker-development` blob pipeline works without the `demo.py` workaround.
+3. Run the Playwright e2e against the live Django + Nuxt + sample data now running.
+4. If proceeding beyond the PoC, scaffold the strangler nginx routing and the Nuxt
    sidecar image, and migrate the first low-risk page behind a canary.

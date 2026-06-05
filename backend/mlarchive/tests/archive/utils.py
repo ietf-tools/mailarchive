@@ -24,7 +24,7 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     is_duplicate_message, is_mailman_footer, import_message_blob,
     create_cf_worker_templates, rebuild_json_blobs, _get_removed_message)
 from mlarchive.archive.models import User, Message, Redirect, MailmanMember, UserEmail
-from mlarchive.archive.mail import make_hash
+from mlarchive.archive.mail import make_hash, archive_message
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.backends.elasticsearch import search_from_form
 from mlarchive.archive.storage_utils import (store_file, get_unique_blob_name,
@@ -377,24 +377,35 @@ def test_get_subscribers(mock_client):
 @pytest.mark.django_db(transaction=True)
 def test_purge_incoming(settings):
     bucket = 'ml-messages-incoming'
-    # create old message
-    now = datetime.datetime.now()
-    old_time = now - datetime.timedelta(days=100)
-    old_blob_name = get_unique_blob_name(prefix='apple.public.', bucket=bucket)
+    old_time = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=100)
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
     with open(path, 'rb') as f:
-        message = f.read()
-    store_file(bucket, old_blob_name, io.BytesIO(message), content_type='message/rfc822')
-    old_blob = Blob.objects.get(bucket=bucket, name=old_blob_name)
-    old_blob.modified = old_time
-    old_blob.save()
-    # create recent message
-    new_blob_name = get_unique_blob_name(prefix='apple.public.', bucket=bucket)
-    store_file(bucket, new_blob_name, io.BytesIO(message), content_type='message/rfc822')
-    # purge
+        message_bytes = f.read()
+
+    # Case 1: old blob whose message was successfully archived → should be purged
+    archive_message(data=message_bytes, listname='apple', private=False)
+    archived_blob_name = get_unique_blob_name(prefix='apple.public.', bucket=bucket)
+    store_file(bucket, archived_blob_name, io.BytesIO(message_bytes), content_type='message/rfc822')
+    archived_blob = Blob.objects.get(bucket=bucket, name=archived_blob_name)
+    archived_blob.modified = old_time
+    archived_blob.save()
+
+    # Case 2: old blob with no archive record and not in removed bucket → should NOT be purged
+    unverified_blob_name = get_unique_blob_name(prefix='cherry.public.', bucket=bucket)
+    store_file(bucket, unverified_blob_name, io.BytesIO(message_bytes), content_type='message/rfc822')
+    unverified_blob = Blob.objects.get(bucket=bucket, name=unverified_blob_name)
+    unverified_blob.modified = old_time
+    unverified_blob.save()
+
+    # Case 3: recent blob (within cutoff) → should NOT be purged
+    recent_blob_name = get_unique_blob_name(prefix='apple.public.', bucket=bucket)
+    store_file(bucket, recent_blob_name, io.BytesIO(message_bytes), content_type='message/rfc822')
+
     purge_incoming()
-    assert not Blob.objects.filter(bucket=bucket, name=old_blob_name).exists()
-    assert Blob.objects.filter(bucket=bucket, name=new_blob_name).exists()
+
+    assert not Blob.objects.filter(bucket=bucket, name=archived_blob_name).exists()
+    assert Blob.objects.filter(bucket=bucket, name=unverified_blob_name).exists()
+    assert Blob.objects.filter(bucket=bucket, name=recent_blob_name).exists()
 
 
 def list_only_files(directory):

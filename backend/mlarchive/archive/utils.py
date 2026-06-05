@@ -885,11 +885,58 @@ def update_mbox_files():
 
 
 def purge_incoming():
-    '''Purge messages older than 90 days from incoming bucket'''
-    cutoff_date = datetime.datetime.now() - datetime.timedelta(days=90)
+    '''Purge messages older than settings.INCOMING_DAYS_TO_KEEP days from incoming bucket.
+
+    Before purging each blob, verifies the message was successfully archived (exists in
+    the Message model and ml-messages/ml-messages-private bucket) or removed (exists in
+    ml-messages-removed). Logs an error and skips purge if the message is not accounted for.
+    '''
+    name_pattern = re.compile(r'^(?P<list_name>.+)\.(?P<visibility>private|public)\.[a-f0-9]{16}$')
+
+    cutoff_date = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=settings.INCOMING_DAYS_TO_KEEP)
     blobs = Blob.objects.filter(bucket='ml-messages-incoming', modified__lt=cutoff_date)
     for blob in blobs:
-        blob.delete()
+        match = name_pattern.match(blob.name)
+        if not match:
+            logger.error(f'purge_incoming: unexpected blob name format: {blob.name}, skipping')
+            continue
+        list_name = match.group('list_name')
+        private = match.group('visibility') == 'private'
+
+        try:
+            mw = MessageWrapper.from_bytes(bytes=bytes(blob.content), listname=list_name, private=private)
+        except Exception as e:
+            logger.error(f'purge_incoming: failed to parse blob {blob.name}: {e}')
+            continue
+
+        if mw.created_id:
+            logger.error(f'purge_incoming: blob {blob.name} has no Message-Id, cannot verify, skipping')
+            continue
+
+        # Check if message exists in the main archive (DB + main storage bucket)
+        confirmed = False
+        for archive_msg in Message.objects.filter(msgid=mw.msgid, email_list__name=list_name):
+            main_bucket = 'ml-messages-private' if archive_msg.email_list.private else 'ml-messages'
+            msg_bytes = retrieve_bytes(main_bucket, archive_msg.get_blob_name())
+            if msg_bytes is None:
+                continue
+            if is_duplicate_message(mw.email_message, email.message_from_bytes(msg_bytes)):
+                confirmed = True
+                break
+        if confirmed:
+            blob.delete()
+            continue
+
+        # Not in main archive; check the removed bucket (message may have been removed as spam)
+        removed_blob_name = f'{list_name}/{mw.get_hash()}'.rstrip('=')
+        if exists_in_storage('ml-messages-removed', removed_blob_name):
+            blob.delete()
+            continue
+
+        logger.error(
+            f'purge_incoming: message not found in archive or removed bucket: '
+            f'blob={blob.name}, msgid={mw.msgid}, list={list_name}'
+        )
 
 
 def move_list(source, target):

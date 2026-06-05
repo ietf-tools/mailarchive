@@ -19,6 +19,8 @@ var mailarch = {
     showFilters: $.cookie('showfilters') == "false" ? false : true,
     showPreviewCookie: $.cookie('showpreview') == "false" ? false : true,
     lastItem: 0,
+    noScrollbarFetchCount: 0,
+    noScrollbarFetchLimit: 5,
     urlParams: {},
     resultsPerPage: 20,
     sortDefault: new Array(),
@@ -205,10 +207,13 @@ var mailarch = {
         return $(window).height() - mailarch.$listPane.offset().top - mailarch.bottomMargin;
     },
 
-    getNextMessages: function() {
+    getNextMessages: function(autoFetch = false) {
         // prevent multiple requests
         if (mailarch.ajaxRequestSent) {
             return true;
+        }
+        if (!autoFetch) {
+            mailarch.noScrollbarFetchCount = 0;
         }
         var queryid = mailarch.$msgList.data('queryid');
         var browselist = mailarch.$msgList.data('browse-list');
@@ -247,6 +252,15 @@ var mailarch = {
         request.always(function(data, testStatus, xhr) {
             mailarch.ajaxRequestSent = false;
             mailarch.$msgListProgress.hide();
+            // When the list pane is maximised (no preview) and the new rows
+            // still don't produce a scrollbar, keep fetching until they do or
+            // the server signals there are no more results (204).
+            if(xhr.status === 200 && !mailarch.showPreview && !mailarch.$msgList.hasScrollBar()) {
+                if(mailarch.noScrollbarFetchCount < mailarch.noScrollbarFetchLimit) {
+                    mailarch.noScrollbarFetchCount++;
+                    mailarch.getNextMessages(true);
+                }
+            }
         });
     },
 
@@ -377,7 +391,7 @@ var mailarch = {
             mailarch.$window.on('scroll', mailarch.infiniteScroll);
             mailarch.setPaneHeights();
             if ($(".xtr").length == mailarch.resultsPerPage && !mailarch.$msgList.hasScrollBar()) {
-                mailarch.getMessages();
+                mailarch.getNextMessages();
             }
         }
     },
@@ -855,7 +869,7 @@ var mailarch = {
     togglePreview: function(event) {
         event.preventDefault();
         if(mailarch.showPreview) {
-            mailarch.doHidePreview(event);
+            mailarch.doHidePreview(true);
         } else {
             mailarch.doShowPreview(event);
         }
@@ -880,7 +894,7 @@ var mailarch = {
         mailarch.initMessageList();
     },
 
-    doHidePreview: function(event) {
+    doHidePreview: function(animate) {
         var height = mailarch.getMaxListPaneHeight();
         mailarch.showPreview = false;
         mailarch.showPreviewCookie = false;
@@ -891,10 +905,17 @@ var mailarch = {
         //mailarch.$splitterPane.hide();
         mailarch.$viewPane.addClass("d-none");
         mailarch.$splitterPane.addClass("d-none");
-        if (event.type == 'click'){
-            mailarch.$listPane.animate({height:height});
+        if (animate) {
+            mailarch.$listPane.animate({height:height}, function() {
+                if (!mailarch.$msgList.hasScrollBar()) {
+                    mailarch.getNextMessages();
+                }
+            });
         } else {
             mailarch.$listPane.height(height);
+            if (!mailarch.$msgList.hasScrollBar()) {
+                mailarch.getNextMessages();
+            }
         }
         mailarch.$msgList.off('keydown', mailarch.messageNav);
         mailarch.$msgTable.off('click','.xtr', mailarch.selectRow);

@@ -557,6 +557,37 @@ def admin_user():
         is_superuser=True,
         is_staff=True)
 
+@pytest.fixture()
+def many_search_messages():
+    """Create 25 messages indexed in ES for infinite-scroll bug testing.
+
+    All messages share the unique term 'infinitescrollbug' in their subject.
+    SEARCH_RESULTS_PER_PAGE=20 in tests, so 20 are shown initially and 5 more
+    are available for lazy loading.
+    """
+    content = io.StringIO()
+    call_command('clear_index', interactive=False, stdout=content)
+
+    public = EmailListFactory.create(name='scrolltest')
+    now = datetime.datetime(2020, 1, 1, tzinfo=timezone.utc)
+    thread = ThreadFactory.create(date=now, email_list=public)
+
+    for i in range(25):
+        subject = f'infinitescrollbug subject {i:02d}'
+        MessageFactory.create(
+            email_list=public,
+            thread=thread,
+            thread_order=i,
+            msgid=f'infinitescrollbug-{i:03d}@example.com',
+            subject=subject,
+            base_subject=get_base_subject(subject),
+            date=now - datetime.timedelta(hours=i),
+        )
+
+    call_command('rebuild_index', interactive=False, stdout=content)
+    yield
+
+
 # --------------------------------------------------
 # Celery Fixtures
 # --------------------------------------------------

@@ -1,0 +1,25 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Rendered message bodies and thread snippets come from the Django/MHonArc
+   generator as trusted HTML and are injected with v-html. Give them sane
+   defaults so they read well inside the Tailwind shell. */
+.message-html {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.message-html a {
+  color: #2563eb;
+  text-decoration: underline;
+}

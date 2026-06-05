@@ -3,6 +3,7 @@ from django.views.generic import TemplateView
 
 from mlarchive.archive import ajax
 from mlarchive.archive import views
+from mlarchive.archive import web_api
 
 
 urlpatterns = [
@@ -10,6 +11,13 @@ urlpatterns = [
     path('ajax/msg/<list_name>/<id>/', ajax.ajax_get_msg, name='ajax_get_msg_hash'),
     path('ajax/messages/', ajax.ajax_messages, name='ajax_messages'),
     path('ajax/admin/action/', ajax.ajax_admin_action, name='ajax_admin_action'),
+
+    # Browser-facing JSON API for the Nuxt frontend (session-cookie auth).
+    # Distinct from the X-API-KEY machine API mounted at /api/v1/.
+    path('api/v1/whoami/', web_api.whoami, name='web_api_whoami'),
+    path('api/v1/lists/', web_api.lists, name='web_api_lists'),
+    path('api/v1/search/', web_api.search, name='web_api_search'),
+    path('api/v1/msg/<list_name>/<id>/', web_api.message_detail, name='web_api_message_detail'),
 
     path('', views.main, name='archive'),
     path('admin/', views.admin, name='archive_admin'),

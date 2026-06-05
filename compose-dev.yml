@@ -194,6 +194,25 @@ services:
       depends_on:
         - app
 
+  # Nuxt 4 frontend (proof of concept). Assumes Django is serving on app:8000
+  # (run `manage.py runserver 0.0.0.0:8000` in the app container). Browse to
+  # http://localhost:3000/arch/ . API calls are proxied to Django.
+  client:
+      image: node:24-slim
+      working_dir: /client
+      volumes:
+        - ./client:/client
+        - /client/node_modules
+      environment:
+        NUXT_API_INTERNAL_BASE: http://app:8000
+        NUXT_DEV_PROXY_TARGET: http://app:8000
+        NUXT_PUBLIC_API_BASE: ""
+      command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+      ports:
+        - "3000:3000"
+      depends_on:
+        - app
+
 volumes:
     app-assets:
     app-data:

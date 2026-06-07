@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { MessageDetailSchema } from '~~/shared/schemas/message'
 
+definePageMeta({ layout: 'scrolling' })
+
 const route = useRoute()
 const apiPath = computed(() => `/arch/api/v1/msg/${route.params.list}/${route.params.id}/`)
 
@@ -10,31 +12,39 @@ const { data, error } = await useAsyncData(
   { watch: [apiPath] },
 )
 
-useHead({ title: () => `${data.value?.subject || 'Message'} — IETF Mail Archive` })
+const navHidden = ref(false)
+
+useHead({ title: () => data.value?.subject || 'Message' })
 </script>
 
 <template>
-  <div>
-    <p v-if="error" class="text-red-600">Message not found, removed, or access denied.</p>
+  <div class="container-fluid">
+    <p v-if="error" class="mt-4">Message not found, removed, or access denied.</p>
 
-    <article v-else-if="data">
-      <DetailNavbar :msg="data" class="mb-3" />
-      <MessageHeaders :msg="data" />
+    <template v-else-if="data">
+      <DetailNavbar v-show="!navHidden" :msg="data" target="id-navbar-top" />
 
-      <div class="mb-4 flex flex-wrap gap-4 text-sm">
-        <a :href="data.download_url" class="text-blue-600 hover:underline">Download</a>
-        <NuxtLink :to="data.date_index_url" class="text-blue-600 hover:underline">Date index</NuxtLink>
-        <NuxtLink :to="data.thread_index_url" class="text-blue-600 hover:underline">
-          Thread index
-        </NuxtLink>
+      <div class="row">
+        <div class="msg-detail col-md-8 pt-3">
+          <div v-html="data.body"></div>
+
+          <div id="message-thread" v-html="data.thread_snippet"></div>
+
+          <div class="d-flex justify-content-center">
+            <ul id="navigation" class="list-inline">
+              <li class="list-inline-item">
+                <a id="toggle-nav" class="toggle" href="#" @click.prevent="navHidden = !navHidden">
+                  {{ navHidden ? 'Show Navigation Bar' : 'Hide Navigation Bar' }}
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="msg-aside col-md-4"></div>
       </div>
 
-      <MessageBody :html="data.body" />
-
-      <section class="mt-6 border-t border-gray-200 pt-4">
-        <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">Thread</h2>
-        <ThreadSnippet :html="data.thread_snippet" />
-      </section>
-    </article>
+      <DetailNavbar v-show="!navHidden" :msg="data" target="id-navbar-bottom" />
+    </template>
   </div>
 </template>

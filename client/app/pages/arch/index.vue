@@ -1,46 +1,46 @@
 <script setup lang="ts">
-import { ListsResponseSchema } from '~~/shared/schemas/list'
+const q = ref('')
 
-const { data } = await useAsyncData('lists-home', () =>
-  useApi('/arch/api/v1/lists/', ListsResponseSchema),
-)
+function submit() {
+  const term = q.value.trim()
+  return navigateTo({ path: '/arch/search/', query: term ? { q: term } : {} })
+}
 
-const topLists = computed(() =>
-  (data.value?.lists ?? []).toSorted((a, b) => b.message_count - a.message_count).slice(0, 12),
-)
-
-useHead({ title: 'IETF Mail Archive' })
+useHead({ title: 'IETF Mail List Archives' })
 </script>
 
 <template>
-  <div>
-    <div class="mx-auto max-w-2xl py-10 text-center">
-      <h1 class="text-3xl font-bold text-gray-900">IETF Mail Archive</h1>
-      <p class="mt-2 text-gray-500">Search and browse IETF mailing list discussions.</p>
-      <div class="mt-6">
-        <SearchBox autofocus />
-      </div>
-      <div class="mt-3 text-sm text-gray-500">
-        or
-        <NuxtLink to="/arch/browse/" class="text-blue-600 hover:underline">browse all lists</NuxtLink>
-      </div>
+  <div class="search-wrapper">
+    <div class="search-container">
+      <form id="id_search_form" name="search-form" @submit.prevent="submit">
+        <div>
+          <div class="input-group">
+            <input
+              id="id_q"
+              v-model="q"
+              name="q"
+              type="search"
+              class="form-control typeahead"
+              placeholder="Enter list name or search query..."
+              spellcheck="false"
+            />
+            <div class="input-group-append">
+              <button class="btn btn-secondary" type="submit">
+                <span class="fa fa-search" aria-hidden="true"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
     </div>
 
-    <section v-if="topLists.length" class="mx-auto max-w-3xl">
-      <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
-        Most active lists
-      </h2>
-      <ul class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-        <li v-for="l in topLists" :key="l.name">
-          <NuxtLink
-            :to="{ path: '/arch/search/', query: { email_list: l.name } }"
-            class="flex items-baseline justify-between rounded border border-gray-200 bg-white px-3 py-2 hover:border-blue-300"
-          >
-            <span class="truncate text-blue-600">{{ l.name }}</span>
-            <span class="ml-2 shrink-0 text-xs text-gray-400">{{ l.message_count }}</span>
-          </NuxtLink>
-        </li>
-      </ul>
-    </section>
+    <div class="nav-outer">
+      <div class="nav-inner">
+        <ul class="navigation">
+          <li><a href="https://mailarchive.ietf.org/arch/advsearch/">Advanced Search</a></li>
+          <li><NuxtLink to="/arch/browse/">Browse</NuxtLink></li>
+        </ul>
+      </div>
+    </div>
   </div>
 </template>

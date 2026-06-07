@@ -4,6 +4,6 @@
     <div id="content">
       <slot />
     </div>
-    <AppFooter />
+    <AppFooter scrolling />
   </div>
 </template>

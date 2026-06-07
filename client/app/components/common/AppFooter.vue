@@ -1,7 +1,14 @@
+<script setup lang="ts">
+withDefaults(defineProps<{ scrolling?: boolean }>(), { scrolling: false })
+</script>
+
 <template>
-  <footer class="border-t border-gray-200 bg-white">
-    <div class="mx-auto w-full max-w-6xl px-4 py-4 text-xs text-gray-500">
-      IETF Mail Archive — Nuxt frontend proof of concept. Data served by the Django backend.
-    </div>
-  </footer>
+  <div class="footer bg-body" :class="{ scrolling }">
+    <p class="small text-center">
+      Nuxt PoC |
+      <a href="https://github.com/ietf-tools/mailarch/issues">Report a Bug</a> |
+      <a href="mailto:tools-help@ietf.org">By Email</a> |
+      <a href="https://status.ietf.org">System Status</a>
+    </p>
+  </div>
 </template>

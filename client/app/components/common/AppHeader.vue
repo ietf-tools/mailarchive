@@ -2,7 +2,6 @@
 const route = useRoute()
 const userStore = useUserStore()
 
-// Reflect Django auth state (loaded once, SSR + client).
 await useAsyncData('whoami', async () => {
   await userStore.load()
   return userStore.me
@@ -12,25 +11,69 @@ const loginUrl = computed(() => `/accounts/login/?next=${encodeURIComponent(rout
 </script>
 
 <template>
-  <header class="border-b border-gray-200 bg-white">
-    <div class="mx-auto flex w-full max-w-6xl items-center gap-6 px-4 py-3">
-      <NuxtLink to="/arch/" class="flex items-center gap-2 font-semibold text-gray-900">
-        <Icon name="lucide:mails" class="text-xl text-blue-600" />
-        <span>IETF Mail Archive</span>
-      </NuxtLink>
+  <header class="navbar navbar-expand-md navbar-dark fixed-top px-3 py-0">
+    <div class="container-fluid">
+      <a class="navbar-brand p-0" href="/arch/">
+        <img alt="IETF Logo" src="/vendor/images/ietflogo-small-transparent.png" />
+        <span class="navbar-text d-none d-md-inline-block">Mail Archive</span>
+      </a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbar-main"
+        aria-controls="navbar-main"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
 
-      <nav class="flex items-center gap-4 text-sm text-gray-600">
-        <NuxtLink to="/arch/" class="hover:text-blue-600">Home</NuxtLink>
-        <NuxtLink to="/arch/browse/" class="hover:text-blue-600">Browse</NuxtLink>
-        <NuxtLink to="/arch/search/" class="hover:text-blue-600">Search</NuxtLink>
-      </nav>
+      <div id="navbar-main" class="navbar-header collapse navbar-collapse">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item d-none d-lg-inline">
+            <a class="nav-link" href="https://www.ietf.org/search/">Search www.ietf.org</a>
+          </li>
+          <li class="nav-item d-none d-lg-inline">
+            <a class="nav-link" href="https://datatracker.ietf.org">Search Datatracker</a>
+          </li>
+          <li class="nav-item d-none d-lg-inline navbar-text pipe"></li>
 
-      <div class="ml-auto text-sm">
-        <span v-if="userStore.me.authenticated" class="text-gray-600">
-          {{ userStore.me.username }}
-          <a href="/arch/logout/" class="ml-2 text-blue-600 hover:underline">Sign out</a>
-        </span>
-        <a v-else :href="loginUrl" class="text-blue-600 hover:underline">Sign in</a>
+          <li class="nav-item dropdown">
+            <a
+              class="nav-link dropdown-toggle"
+              href="#"
+              id="navbar-help"
+              role="button"
+              data-bs-toggle="dropdown"
+              aria-haspopup="true"
+              aria-expanded="false"
+              >Help</a
+            >
+            <div class="dropdown-menu" aria-labelledby="navbar-help">
+              <a class="dropdown-item" href="https://mailarchive.ietf.org/arch/help/">Search Syntax</a>
+              <a class="dropdown-item" href="https://mailarchive.ietf.org/docs/">API Reference</a>
+            </div>
+          </li>
+
+          <li v-if="userStore.me.authenticated" class="nav-item dropdown">
+            <a
+              class="nav-link dropdown-toggle"
+              href="#"
+              id="navbarUserDropdown"
+              data-bs-toggle="dropdown"
+              aria-haspopup="true"
+              aria-expanded="false"
+              >{{ userStore.me.username }}</a
+            >
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item" href="/arch/logout/">Sign Out</a></li>
+            </ul>
+          </li>
+          <li v-else class="nav-item">
+            <a class="nav-link" :href="loginUrl" rel="nofollow">Sign in</a>
+          </li>
+        </ul>
       </div>
     </div>
   </header>

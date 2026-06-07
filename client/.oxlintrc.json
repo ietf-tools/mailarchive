@@ -5,5 +5,5 @@
     "correctness": "error",
     "suspicious": "warn"
   },
-  "ignorePatterns": [".nuxt", ".output", "node_modules", "dist"]
+  "ignorePatterns": [".nuxt", ".output", "node_modules", "dist", "public"]
 }

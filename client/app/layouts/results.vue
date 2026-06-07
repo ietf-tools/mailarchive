@@ -4,6 +4,5 @@
     <div id="content">
       <slot />
     </div>
-    <AppFooter />
   </div>
 </template>

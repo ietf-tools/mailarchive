@@ -1,5 +1,18 @@
 <script setup lang="ts">
+import { ListsResponseSchema } from '~~/shared/schemas/list'
+
 const q = ref('')
+
+// Surface which demo lists are loaded, so users know what to search/browse.
+const { data: listsData } = await useAsyncData('lists-home', () =>
+  useApi('/arch/api/v1/lists/', ListsResponseSchema),
+)
+const demoLists = computed(() => (listsData.value?.lists ?? []).map((l) => l.name).join(', '))
+const placeholder = computed(() =>
+  demoLists.value
+    ? `Enter list name or search query... (demo uses: ${demoLists.value})`
+    : 'Enter list name or search query...',
+)
 
 function submit() {
   const term = q.value.trim()
@@ -21,7 +34,7 @@ useHead({ title: 'IETF Mail List Archives' })
               name="q"
               type="search"
               class="form-control typeahead"
-              placeholder="Enter list name or search query..."
+              :placeholder="placeholder"
               spellcheck="false"
             />
             <div class="input-group-append">

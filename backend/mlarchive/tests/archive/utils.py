@@ -24,7 +24,7 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     is_duplicate_message, is_mailman_footer, import_message_blob,
     create_cf_worker_templates, rebuild_json_blobs, _get_removed_message)
 from mlarchive.archive.models import User, Message, Redirect, MailmanMember, UserEmail
-from mlarchive.archive.mail import make_hash, archive_message
+from mlarchive.archive.mail import make_hash, archive_message, MessageWrapper
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.backends.elasticsearch import search_from_form
 from mlarchive.archive.storage_utils import (store_file, get_unique_blob_name,
@@ -401,11 +401,25 @@ def test_purge_incoming(settings):
     recent_blob_name = get_unique_blob_name(prefix='apple.public.', bucket=bucket)
     store_file(bucket, recent_blob_name, io.BytesIO(message_bytes), content_type='message/rfc822')
 
+    # Case 4: old blob whose message exists in the removed bucket → should be purged
+    path2 = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.2')
+    with open(path2, 'rb') as f:
+        removed_message_bytes = f.read()
+    removed_mw = MessageWrapper.from_bytes(bytes=removed_message_bytes, listname='banana', private=False)
+    removed_blob_name_incoming = get_unique_blob_name(prefix='banana.public.', bucket=bucket)
+    store_file(bucket, removed_blob_name_incoming, io.BytesIO(removed_message_bytes), content_type='message/rfc822')
+    removed_blob = Blob.objects.get(bucket=bucket, name=removed_blob_name_incoming)
+    removed_blob.modified = old_time
+    removed_blob.save()
+    removed_bucket_name = f'banana/{removed_mw.get_hash()}'.rstrip('=')
+    store_file('ml-messages-removed', removed_bucket_name, io.BytesIO(removed_message_bytes), content_type='message/rfc822')
+
     purge_incoming()
 
     assert not Blob.objects.filter(bucket=bucket, name=archived_blob_name).exists()
     assert Blob.objects.filter(bucket=bucket, name=unverified_blob_name).exists()
     assert Blob.objects.filter(bucket=bucket, name=recent_blob_name).exists()
+    assert not Blob.objects.filter(bucket=bucket, name=removed_blob_name_incoming).exists()
 
 
 def list_only_files(directory):

@@ -2,47 +2,56 @@
 import { SearchResponseSchema, type SearchHit } from '~~/shared/schemas/search'
 import { MessageDetailSchema } from '~~/shared/schemas/message'
 import { msgPermalinkToApi } from '~/utilities/url'
+import { addHeaderToggle } from '~/utilities/messageHeaderToggle'
 
 const props = defineProps<{ browseList?: string }>()
 
 const route = useRoute()
-const { q, qdr, listFilters, fromFilters, groupByThread, sortOrder, page, update, toggleFilter } =
+const { q, qdr, listFilters, fromFilters, groupByThread, sortOrder, update, toggleFilter } =
   useSearchQuery()
 
-// API path mirrors the page query params, plus email_list in browse mode.
-const apiPath = computed(() => {
+// Build the search API URL for a given page from the current query params,
+// plus email_list in browse mode. Page is driven by infinite scroll, not the URL.
+function buildUrl(page = 1) {
   const usp = new URLSearchParams()
   for (const [k, v] of Object.entries(route.query)) {
+    if (k === 'page') continue
     if (Array.isArray(v)) v.forEach((x) => x != null && usp.append(k, String(x)))
     else if (v != null) usp.append(k, String(v))
   }
   if (props.browseList) usp.set('email_list', props.browseList)
+  if (page > 1) usp.set('page', String(page))
   const qs = usp.toString()
   return '/arch/api/v1/search/' + (qs ? `?${qs}` : '')
+}
+const apiPath = computed(() => buildUrl(1))
+
+const { data } = await useAsyncData('results', () => useApi(apiPath.value, SearchResponseSchema), {
+  watch: [apiPath],
 })
 
-const { data, status } = await useAsyncData(
-  'results',
-  () => useApi(apiPath.value, SearchResponseSchema),
-  { watch: [apiPath] },
-)
-
-const results = computed(() => data.value?.results ?? [])
 const aggregations = computed(() => data.value?.aggregations ?? {})
 const count = computed(() => data.value?.count ?? 0)
 const numPages = computed(() => data.value?.num_pages ?? 1)
-const hasNext = computed(() => data.value?.has_next ?? false)
-const hasPrevious = computed(() => data.value?.has_previous ?? false)
 const gbt = computed(() => groupByThread.value)
 
-// --- UI state ---
+const allRows = ref<SearchHit[]>([])
+const loadedPage = ref(1)
+const loadingMore = ref(false)
+
 const filtersOpen = ref(true)
-const previewOpen = ref(false)
+const previewOpen = ref(true)
+const selectedIndex = ref(-1)
 const selectedUrl = ref('')
 const previewHtml = ref('')
 const previewLoading = ref(false)
+const splitPct = ref(45)
 const expandedList = ref(false)
 const expandedFrom = ref(false)
+
+const msgListEl = ref<HTMLElement | null>(null)
+const viewPaneEl = ref<HTMLElement | null>(null)
+const msgPanesEl = ref<HTMLElement | null>(null)
 
 const listBuckets = computed(() => aggregations.value.list_terms ?? [])
 const fromBuckets = computed(() => aggregations.value.from_terms ?? [])
@@ -53,40 +62,32 @@ const visibleFrom = computed(() =>
   expandedFrom.value ? fromBuckets.value : fromBuckets.value.slice(0, 6),
 )
 
-// --- search box ---
-const qInput = ref(q.value)
-watch(q, (v) => (qInput.value = v))
-function submitSearch() {
-  update({ q: qInput.value.trim() || undefined })
+const mounted = ref(false)
+watch(
+  () => data.value,
+  (d) => {
+    if (!d) return
+    allRows.value = [...d.results]
+    loadedPage.value = 1
+    selectedIndex.value = -1
+    selectedUrl.value = ''
+    previewHtml.value = ''
+    // After mount (incl. SPA navigations), auto-select the first result.
+    if (mounted.value) maybeSelectFirst()
+  },
+  { immediate: true },
+)
+onMounted(() => {
+  mounted.value = true
+  maybeSelectFirst()
+})
+
+// Auto-select + preview the first message, like the live site's default view.
+function maybeSelectFirst() {
+  if (previewOpen.value && allRows.value.length && selectedIndex.value < 0) select(0)
 }
 
-// --- sorting ---
-function sortBy(field: string) {
-  update({ so: sortOrder.value === field ? `-${field}` : field })
-}
-function sortIcon(field: string) {
-  if (sortOrder.value === field) return 'fa-sort-asc'
-  if (sortOrder.value === `-${field}`) return 'fa-sort-desc'
-  return 'fa-sort'
-}
-
-// --- time filter ---
-function setQdr(val: string) {
-  update({ qdr: val || undefined })
-}
-function qdrActive(val: string) {
-  return val ? qdr.value === val : !qdr.value || qdr.value === 'a'
-}
-
-// --- pagination ---
-function goPage(n: number) {
-  update({ page: n }, { resetPage: false })
-}
-
-// --- preview ---
-async function openPreview(hit: SearchHit) {
-  selectedUrl.value = hit.url
-  previewOpen.value = true
+async function loadPreview(hit: SearchHit) {
   previewLoading.value = true
   try {
     const detail = await useApi(msgPermalinkToApi(hit.url), MessageDetailSchema)
@@ -96,9 +97,122 @@ async function openPreview(hit: SearchHit) {
   } finally {
     previewLoading.value = false
   }
+  // Body is now rendered (v-else shown); inject the "Show header" toggle.
+  await nextTick()
+  addHeaderToggle(viewPaneEl.value)
+  if (viewPaneEl.value) viewPaneEl.value.scrollTop = 0
 }
+function select(i: number) {
+  if (i < 0 || i >= allRows.value.length) return
+  selectedIndex.value = i
+  selectedUrl.value = allRows.value[i]!.url
+  loadPreview(allRows.value[i]!)
+}
+function onRowClick(i: number) {
+  if (previewOpen.value) {
+    select(i)
+    msgListEl.value?.focus()
+  }
+  // when preview is off the inner <a href> handles navigation to the message
+}
+function onRowDblClick(hit: SearchHit) {
+  window.open(hit.url, '_blank')
+}
+function messageNav(dir: number) {
+  if (!previewOpen.value || !allRows.value.length) return
+  const i = Math.max(0, Math.min(allRows.value.length - 1, selectedIndex.value + dir))
+  select(i)
+  nextTick(() =>
+    msgListEl.value?.querySelector('.row-selected')?.scrollIntoView({ block: 'nearest' }),
+  )
+}
+
+// Infinite scroll: fetch the next page and append, like getNextMessages().
+async function loadMore() {
+  if (loadingMore.value || loadedPage.value >= numPages.value) return
+  loadingMore.value = true
+  try {
+    const next = await useApi(buildUrl(loadedPage.value + 1), SearchResponseSchema)
+    allRows.value.push(...next.results)
+    loadedPage.value += 1
+  } catch {
+    // ignore
+  } finally {
+    loadingMore.value = false
+  }
+}
+function onListScroll(e: Event) {
+  const el = e.target as HTMLElement
+  if (el.scrollTop + el.clientHeight > el.scrollHeight - 60) loadMore()
+}
+
+// Sorting with secondary sort, mirroring performSort().
+const SORT_DEFAULT: Record<string, string> = {
+  date: 'date',
+  email_list: 'email_list',
+  frm: 'frm',
+  subject: 'subject',
+}
+function sortBy(col: string) {
+  const so = sortOrder.value
+  let newSo = SORT_DEFAULT[col]!
+  if (so === col) newSo = `-${col}`
+  else if (so === `-${col}`) newSo = col
+  const params: Record<string, string | undefined> = { so: newSo }
+  if (so && so.replace('-', '') !== newSo.replace('-', '')) params.sso = so
+  update(params)
+}
+function sortIcon(col: string) {
+  if (sortOrder.value === col) return 'fa-sort-asc sort-active'
+  if (sortOrder.value === `-${col}`) return 'fa-sort-desc sort-active'
+  return 'fa-sort'
+}
+
+function setQdr(val: string) {
+  update({ qdr: val || undefined })
+}
+function qdrActive(val: string) {
+  return val ? qdr.value === val : !qdr.value || qdr.value === 'a'
+}
+function clearFilter(key: 'f_list' | 'f_from') {
+  update({ [key]: undefined })
+}
+
+const qInput = ref(q.value)
+watch(q, (v) => (qInput.value = v))
+function submitSearch() {
+  update({ q: qInput.value.trim() || undefined })
+}
+
 function togglePreview() {
   previewOpen.value = !previewOpen.value
+  if (previewOpen.value) {
+    maybeSelectFirst()
+  } else {
+    selectedIndex.value = -1
+    selectedUrl.value = ''
+    previewHtml.value = ''
+  }
+}
+
+// Draggable splitter between the list and preview panes.
+let dragging = false
+function onDrag(e: MouseEvent) {
+  if (!dragging || !msgPanesEl.value) return
+  const r = msgPanesEl.value.getBoundingClientRect()
+  splitPct.value = Math.max(15, Math.min(85, ((e.clientY - r.top) / r.height) * 100))
+}
+function stopDrag() {
+  dragging = false
+  window.removeEventListener('mousemove', onDrag)
+  window.removeEventListener('mouseup', stopDrag)
+}
+function startDrag(e: MouseEvent) {
+  if (!previewOpen.value) return
+  dragging = true
+  e.preventDefault()
+  window.addEventListener('mousemove', onDrag)
+  window.addEventListener('mouseup', stopDrag)
 }
 
 function listDate(iso: string) {
@@ -113,6 +227,14 @@ function frmTrunc(name: string) {
 function fromTrunc(name: string, n: number) {
   return name.length > n ? `${name.slice(0, n - 1)}…` : name
 }
+
+const listPaneStyle = computed(() => (previewOpen.value ? { height: `${splitPct.value}%` } : {}))
+const splitterStyle = computed(() => (previewOpen.value ? { top: `${splitPct.value}%` } : {}))
+const viewPaneStyle = computed(() =>
+  previewOpen.value
+    ? { top: `calc(${splitPct.value}% + 8px)`, backgroundColor: 'var(--bs-body-bg)' }
+    : {},
+)
 </script>
 
 <template>
@@ -155,6 +277,9 @@ function fromTrunc(name: string, n: number) {
                 <li v-if="listBuckets.length > 6" class="control">
                   <a class="more-link" href="#" @click.prevent="expandedList = !expandedList">{{ expandedList ? 'less...' : 'more...' }}</a>
                 </li>
+                <li v-if="listFilters.length" class="control">
+                  <a id="list-filter-clear" href="#" @click.prevent="clearFilter('f_list')">Clear</a>
+                </li>
               </ul>
             </div>
           </template>
@@ -176,6 +301,9 @@ function fromTrunc(name: string, n: number) {
               </li>
               <li v-if="fromBuckets.length > 6" class="control">
                 <a class="more-link" href="#" @click.prevent="expandedFrom = !expandedFrom">{{ expandedFrom ? 'less...' : 'more...' }}</a>
+              </li>
+              <li v-if="fromFilters.length" class="control">
+                <a id="from-filter-clear" href="#" @click.prevent="clearFilter('f_from')">Clear</a>
               </li>
             </ul>
           </div>
@@ -236,8 +364,8 @@ function fromTrunc(name: string, n: number) {
         </div>
       </nav>
 
-      <div id="msg-panes" :class="{ 'has-preview': previewOpen }">
-        <div id="list-pane">
+      <div id="msg-panes" ref="msgPanesEl">
+        <div id="list-pane" :style="listPaneStyle">
           <template v-if="gbt">
             <div class="header"><span>Subject</span></div><div class="header"><span>From</span></div><div class="header"><span>Date</span></div><div class="header" :class="{ 'd-none': browseList }"><span>List</span></div>
           </template>
@@ -245,18 +373,29 @@ function fromTrunc(name: string, n: number) {
             <div class="header sortable"><a class="unsorted sortbutton" href="#" @click.prevent="sortBy('subject')">Subject<i class="fa" :class="sortIcon('subject')" aria-hidden="true"></i></a></div><div class="header sortable"><a class="unsorted sortbutton" href="#" @click.prevent="sortBy('frm')">From<i class="fa" :class="sortIcon('frm')" aria-hidden="true"></i></a></div><div class="header sortable"><a class="unsorted sortbutton" href="#" @click.prevent="sortBy('date')">Date<i class="fa" :class="sortIcon('date')" aria-hidden="true"></i></a></div><div class="header sortable" :class="{ 'd-none': browseList }"><a class="unsorted sortbutton" href="#" @click.prevent="sortBy('email_list')">List<i class="fa" :class="sortIcon('email_list')" aria-hidden="true"></i></a></div>
           </template>
 
-          <div id="msg-list" class="msg-list wrapper" :class="{ 'no-preview': !previewOpen }" tabindex="-1">
+          <div
+            id="msg-list"
+            ref="msgListEl"
+            class="msg-list wrapper"
+            :class="{ 'no-preview': !previewOpen }"
+            tabindex="-1"
+            @scroll="onListScroll"
+            @keydown.down.prevent="messageNav(1)"
+            @keydown.up.prevent="messageNav(-1)"
+          >
             <div class="table msg-table xtable" :class="{ 'thread-sorted': gbt }">
               <div class="xtbody">
-                <template v-if="results.length">
+                <template v-if="allRows.length">
                   <div
-                    v-for="hit in results"
+                    v-for="(hit, i) in allRows"
                     :key="hit.url"
                     class="xtr"
                     :class="{ 'row-selected': hit.url === selectedUrl }"
+                    @click="onRowClick(i)"
+                    @dblclick="onRowDblClick(hit)"
                   >
                     <div class="xtd subj-col" :class="depthClass(hit.thread_depth)">
-                      <span>{{ hit.subject }}</span><a class="msg-detail" :href="hit.url" @click.prevent="openPreview(hit)">{{ hit.subject }}</a>
+                      <span>{{ hit.subject }}</span><a class="msg-detail" :href="hit.url">{{ hit.subject }}</a>
                     </div>
                     <div class="xtd from-col">{{ frmTrunc(hit.frm_name) }}</div>
                     <div class="xtd date-col">{{ listDate(hit.date) }}</div>
@@ -270,18 +409,24 @@ function fromTrunc(name: string, n: number) {
 
           <div id="msg-list-controls">
             <div id="message-count" class="list-control">{{ count }} Messages</div>
-            <div class="list-control page-nav">
-              <a v-if="hasPrevious" class="float-start" href="#" @click.prevent="goPage(page - 1)">Previous</a>
-              <span class="current-page">Page {{ page }} of {{ numPages }}</span>
-              <a v-if="hasNext" class="float-end" href="#" @click.prevent="goPage(page + 1)">Next</a>
+            <div class="progress" :style="{ display: loadingMore ? 'block' : 'none' }">
+              <div class="progress-bar progress-bar-striped progress-bar-animated w-100" role="progressbar"></div>
             </div>
-            <div id="toggle-preview"><a href="#" @click.prevent="togglePreview"><i class="fa toggle-pane" :class="previewOpen ? 'fa-chevron-up' : 'fa-chevron-down'" aria-hidden="true"></i></a></div>
+            <div id="toggle-preview">
+              <a href="#" @click.prevent="togglePreview"><i class="fa toggle-pane" :class="previewOpen ? 'fa-chevron-down' : 'fa-chevron-up'" aria-hidden="true"></i></a>
+            </div>
           </div>
         </div>
 
-        <div id="splitter-pane" class="draggable" :class="{ 'js-off': !previewOpen }"></div>
+        <div
+          id="splitter-pane"
+          class="draggable"
+          :class="{ 'js-off': !previewOpen }"
+          :style="splitterStyle"
+          @mousedown="startDrag"
+        ></div>
 
-        <div class="view-pane" :class="{ 'js-off': !previewOpen }">
+        <div ref="viewPaneEl" class="view-pane" :class="{ 'js-off': !previewOpen }" :style="viewPaneStyle">
           <p v-if="previewLoading" class="text-secondary">Loading…</p>
           <div v-else v-html="previewHtml"></div>
         </div>
@@ -309,18 +454,3 @@ function fromTrunc(name: string, n: number) {
     </div>
   </div>
 </template>
-
-<!-- Global (un-scoped) tweak: lay out the preview pane cleanly without the
-     original mailarch.js splitter resizing. -->
-<style>
-#msg-panes.has-preview #list-pane {
-  height: 45%;
-}
-#msg-panes.has-preview #splitter-pane {
-  top: 45%;
-}
-#msg-panes.has-preview .view-pane {
-  top: calc(45% + 8px);
-  background-color: var(--bs-body-bg);
-}
-</style>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { MessageDetailSchema } from '~~/shared/schemas/message'
+import { addHeaderToggle } from '~/utilities/messageHeaderToggle'
 
 definePageMeta({ layout: 'scrolling' })
 
@@ -12,7 +13,25 @@ const { data, error } = await useAsyncData(
   { watch: [apiPath] },
 )
 
-const navHidden = ref(false)
+// Navigation-bar visibility, persisted like detail.js's show_navbar cookie.
+const showNavbar = useCookie<string>('show_navbar', { default: () => 'true' })
+const navHidden = computed(() => showNavbar.value === 'false')
+function toggleNav() {
+  showNavbar.value = navHidden.value ? 'true' : 'false'
+}
+
+// Inject the "Show header" toggle into the rendered body (detail.js behaviour).
+const bodyEl = ref<HTMLElement | null>(null)
+function enhance() {
+  nextTick(() => addHeaderToggle(bodyEl.value))
+}
+onMounted(enhance)
+watch(
+  () => data.value,
+  () => {
+    if (import.meta.client) enhance()
+  },
+)
 
 useHead({ title: () => data.value?.subject || 'Message' })
 </script>
@@ -25,7 +44,7 @@ useHead({ title: () => data.value?.subject || 'Message' })
       <DetailNavbar v-show="!navHidden" :msg="data" target="id-navbar-top" />
 
       <div class="row">
-        <div class="msg-detail col-md-8 pt-3">
+        <div ref="bodyEl" class="msg-detail col-md-8 pt-3">
           <div v-html="data.body"></div>
 
           <div id="message-thread" v-html="data.thread_snippet"></div>
@@ -33,7 +52,7 @@ useHead({ title: () => data.value?.subject || 'Message' })
           <div class="d-flex justify-content-center">
             <ul id="navigation" class="list-inline">
               <li class="list-inline-item">
-                <a id="toggle-nav" class="toggle" href="#" @click.prevent="navHidden = !navHidden">
+                <a id="toggle-nav" class="toggle" href="#" @click.prevent="toggleNav">
                   {{ navHidden ? 'Show Navigation Bar' : 'Hide Navigation Bar' }}
                 </a>
               </li>

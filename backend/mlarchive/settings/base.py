@@ -411,6 +411,7 @@ ARCHIVE_HOST_URL = 'https://mailarchive.ietf.org'
 DATA_ROOT = env('DATA_ROOT')
 ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
 INCOMING_DIR = os.path.join(DATA_ROOT, 'incoming')
+INCOMING_DAYS_TO_KEEP = 90
 ARCHIVE_MBOX_DIR = os.path.join(DATA_ROOT, 'archive_mbox')
 CONSOLE_STATS_FILE = os.path.join(DATA_ROOT, 'log', 'console.json')
 

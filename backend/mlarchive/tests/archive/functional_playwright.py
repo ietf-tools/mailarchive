@@ -196,6 +196,53 @@ class TestMyPlaywright:
         expect(focused_element).to_be_focused()
 
 
+@pytest.mark.django_db
+class TestSearchInfiniteScroll:
+    '''Infinite-scroll regression tests for the no-preview (maximised list) mode'''
+
+    @pytest.fixture(autouse=True)
+    def use_locmem_cache(self, settings):
+        settings.CACHES = {'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}}
+
+    @pytest.mark.usefixtures("many_search_messages")
+    def test_hide_preview_loads_messages(self, live_server, page: Page):
+        '''Remaining messages are loaded after maximising the list pane'''
+        # Set large viewport
+        page.set_viewport_size({"width": 1400, "height": 2000})
+
+        search_url = f"{live_server.url}{reverse('archive_search')}?q=infinitescrollbug"
+        page.goto(search_url)
+        page.wait_for_selector("#msg-list .xtr")
+
+        # Verify the initial state: 20 rows, count badge shows all 25 results.
+        expect(page.locator("#msg-list .xtr")).to_have_count(20)
+        expect(page.locator("#message-count")).to_contain_text("25")
+
+        page.screenshot(path="tests/tmp/test_infinite_scroll_bug_before.png")
+
+        # Expand the list pane by hiding the preview pane.
+        page.locator("#toggle-preview a").click()
+        page.wait_for_timeout(800)  # wait for jQuery .animate() (400 ms default)
+
+        # Precondition: the list must have no scrollbar for the bug to apply.
+        # If this fails, increase the viewport height above.
+        no_scrollbar = page.evaluate(
+            "() => { const el = document.querySelector('#msg-list'); "
+            "return el.scrollHeight <= el.clientHeight; }"
+        )
+        assert no_scrollbar
+
+        # Allow time for the AJAX request that a correct implementation fires.
+        page.wait_for_timeout(2000)
+
+        page.screenshot(path="tests/tmp/test_infinite_scroll_bug_after.png")
+
+        # BUG: doHidePreview() does not call getNextMessages() when the list no
+        # longer has a scrollbar.  The count stays at 20 and this assertion fails.
+        final_count = page.locator("#msg-list .xtr").count()
+        assert final_count > 20
+
+
 def force_login_playwright(user, page: Page, base_url: str):
     """
     Helper to force login a user by setting session cookie directly.

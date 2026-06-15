@@ -31,7 +31,7 @@ mozilla-django-oidc==5.0.2
 passlib==1.7.4
 psycopg==3.3.3
 pymemcache==4.0.0
-python-json-logger>=2.0.7
+python-json-logger>=4.1.0
 pyopenssl
 pyquery
 pytest

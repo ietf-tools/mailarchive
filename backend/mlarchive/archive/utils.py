@@ -903,8 +903,8 @@ def purge_incoming():
     blobs = Blob.objects.filter(bucket='ml-messages-incoming', modified__lt=cutoff_date)
     for blob in blobs:
         content = bytes(blob.content)
-        # find an identical blob in any bucket other than incoming
-        candidates = Blob.objects.filter(checksum=blob.checksum).exclude(bucket='ml-messages-incoming')
+        # find an identical blob in any other raw message archive bucket
+        candidates = Blob.objects.filter(checksum=blob.checksum).exclude(bucket__in=['ml-messages-incoming', 'ml-messages-json'])
         if any(bytes(candidate.content) == content for candidate in candidates):
             blob.delete()
             continue

@@ -4,6 +4,7 @@ import datetime
 import email
 import functools
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from hashlib import sha384
 from io import BytesIO
 import json
 import logging
@@ -919,6 +920,50 @@ def purge_incoming():
             f'purge_incoming: no matching blob found outside incoming bucket, skipping: '
             f'blob={blob.name}, checksum={blob.checksum}'
         )
+
+
+def purge_incoming_dir():
+    '''Purge files from settings.INCOMING_DIR on disk, using the same verification as
+    purge_incoming().
+
+    A file is removed only if an identical blob (same checksum and bytes) exists in another
+    archive bucket, or the message requested not to be archived (NoArchiveInspector). Any
+    file that cannot be verified or cannot be removed is left in place.
+    Returns a dict of run statistics.
+    '''
+    stats = defaultdict(int)
+    incoming_dir = settings.INCOMING_DIR
+
+    for entry in os.scandir(incoming_dir):
+        if not entry.is_file():
+            continue
+        stats['scanned'] += 1
+        try:
+            with open(entry.path, 'rb') as f:
+                content = f.read()
+            checksum = sha384(content, usedforsecurity=False).hexdigest()
+
+            # find an identical blob in any other raw message archive bucket
+            candidates = Blob.objects.filter(checksum=checksum).exclude(
+                bucket__in=['ml-messages-incoming', 'ml-messages-json'])
+            if any(bytes(candidate.content) == content for candidate in candidates):
+                os.remove(entry.path)
+                stats['purged'] += 1
+                continue
+
+            # no stored copy: purge only if the message asked not to be archived
+            if is_no_archive(email.message_from_bytes(content)):
+                os.remove(entry.path)
+                stats['purged_no_archive'] += 1
+                continue
+
+            stats['kept'] += 1
+            logger.info(f'purge_incoming_dir: no matching blob, keeping {entry.name}')
+        except Exception as e:
+            stats['errors'] += 1
+            logger.warning(f'purge_incoming_dir: error processing {entry.name}: {e}')
+
+    return dict(stats)
 
 
 def move_list(source, target):

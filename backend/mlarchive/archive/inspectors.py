@@ -16,7 +16,7 @@ def is_no_archive(email_message):
     X-No-Archive header, or an X-Archive header whose value is "no".'''
     if 'X-No-Archive' in email_message.keys():
         return True
-    if email_message.get('X-Archive', '').lower() == 'no':
+    if email_message.get('X-Archive', '').lower().strip() == 'no':
         return True
     return False
 

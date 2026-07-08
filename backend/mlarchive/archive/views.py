@@ -899,12 +899,6 @@ def main(request):
     else:
         form = SearchForm()
 
-    if os.path.exists(settings.LOG_FILE):
-        try:
-            os.chmod(settings.LOG_FILE, 0o666)
-        except OSError:
-            pass
-
     return render(request, 'archive/main.html', {
         'form': form,
         'lists': get_lists_for_user(request.user),

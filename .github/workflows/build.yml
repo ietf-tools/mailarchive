@@ -44,7 +44,7 @@ jobs:
       pkg_version: ${{ steps.buildvars.outputs.pkg_version }}
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         fetch-depth: 1
         fetch-tags: false
@@ -123,7 +123,7 @@ jobs:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       with:
         fetch-depth: 1
         fetch-tags: false
@@ -297,7 +297,7 @@ jobs:
       PKG_VERSION: ${{needs.prepare.outputs.pkg_version}}
       
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
         
     - name: Download a Release Artifact
       uses: actions/download-artifact@v8.0.1

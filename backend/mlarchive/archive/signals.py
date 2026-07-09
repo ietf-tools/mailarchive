@@ -160,6 +160,10 @@ def purge_files_from_cache(message, created=True):
     requests - the API does not allow combining ``tags`` and ``files`` in a
     single call, and keeping them separate means a failure of one does not
     skip the other.
+
+    2026-07-09 NOTE: if later expanding the set of tags or urls to purge, first
+    consult the Cloudflare limits,
+    https://developers.cloudflare.com/cache/how-to/purge-cache/#availability-and-limits
     """
     tags = get_purge_cache_tags(message)
     urls = get_purge_cache_urls(message, created)

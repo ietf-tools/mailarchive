@@ -121,37 +121,60 @@ def _list_save_handler(sender, instance, created, **kwargs):
 # --------------------------------------------------
 
 
-def get_purge_cache_urls(message, created=True):
-    """Retuns a list of absolute urls to purge from cache when message
-    is created or deleted
+def get_purge_cache_tags(message):
+    """Returns the list of Cloudflare Cache-Tags to purge when a message is
+    created or deleted.
+
+    Message pages (detail and ajax) are tagged by thread, so purging the
+    message's thread tag invalidates every message in that thread at once.
+    The next and previous messages by list order live in adjacent threads and
+    have stale next/previous links, so their thread tags are purged too. This
+    over-purges those two neighbor threads, which is bounded and correct.
     """
-    # all messages in thread
-    if created:
-        urls = [m.get_absolute_url_with_host() for m in message.thread.message_set.all().exclude(pk=message.pk)]
-    else:
-        urls = [m.get_absolute_url_with_host() for m in message.thread.message_set.all()]
-    # previous and next by date
+    tags = [message.get_cache_tag()]
     next_in_list = message.next_in_list()
     if next_in_list:
-        urls.append(next_in_list.get_absolute_url_with_host())
+        tags.append(next_in_list.get_cache_tag())
     previous_in_list = message.previous_in_list()
     if previous_in_list:
-        urls.append(previous_in_list.get_absolute_url_with_host())
-    # index pages
-    urls.extend(message.get_absolute_static_index_urls())
+        tags.append(previous_in_list.get_cache_tag())
     # dedupe
-    urls = list(set(urls))
-    return urls
+    return list(set(tags))
+
+
+def get_purge_cache_urls(message, created=True):
+    """Returns a list of absolute urls to purge from cache when a message is
+    created or deleted.
+
+    Only the static index pages are purged by url; the message pages
+    themselves are purged by Cache-Tag (see get_purge_cache_tags).
+    """
+    return message.get_absolute_static_index_urls()
 
 
 def purge_files_from_cache(message, created=True):
-    """Purge file from Cloudflare cache"""
+    """Purge a message's cached pages from Cloudflare.
+
+    Message pages are purged by Cache-Tag (whole thread at a time) and the
+    static index pages are purged by url. These are two independent Cloudflare
+    requests - the API does not allow combining ``tags`` and ``files`` in a
+    single call, and keeping them separate means a failure of one does not
+    skip the other.
+    """
+    tags = get_purge_cache_tags(message)
     urls = get_purge_cache_urls(message, created)
     with Cloudflare(api_token=settings.CLOUDFLARE_AUTH_KEY) as cf:
         try:
+            cf.cache.purge(zone_id=settings.CLOUDFLARE_ZONE_ID, tags=tags)
+            logger.info(f'purging cached tags: {tags}')
+        except APIError as e:
+            traceback.print_exc(file=sys.stdout)
+            logger.error(e)
+        except requests.exceptions.HTTPError as e:
+            logger.error(e)
+        try:
             cf.cache.purge(zone_id=settings.CLOUDFLARE_ZONE_ID, files=urls)
-            logger.info('purging cached urls for list {}'.format(message.email_list.name))
-            logger.debug('purging cached urls: {}'.format(urls))
+            logger.info(f'purging cached urls: {urls}')
         except APIError as e:
             traceback.print_exc(file=sys.stdout)
             logger.error(e)

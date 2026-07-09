@@ -80,6 +80,7 @@ def test_ajax_get_msg_cache_control(client, admin_client, admin_user):
     print(type(response.content))
     assert response.content.find(b'This is a test') != -1
     assert response['cache-control'] == 'max-age=86400'
+    assert response['Cache-Tag'] == msg.get_cache_tag()
 
     # test authorized access to restricted Message
     url = '%s?id=%s' % (reverse('ajax_get_msg'), primsg.pk)
@@ -87,6 +88,7 @@ def test_ajax_get_msg_cache_control(client, admin_client, admin_user):
     assert response.status_code == 200
     print(response['cache-control'])
     assert response['cache-control'] == 'max-age=0, no-cache, no-store, must-revalidate, private'
+    assert response.get('Cache-Tag') is None
 
 
 @pytest.mark.django_db(transaction=True)

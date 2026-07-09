@@ -6,7 +6,7 @@ from datetime import timezone
 from factories import EmailListFactory, ThreadFactory, MessageFactory
 
 from mlarchive.archive.models import EmailList, Message, Thread
-from mlarchive.archive.signals import get_purge_cache_urls
+from mlarchive.archive.signals import get_purge_cache_urls, get_purge_cache_tags
 
 
 @pytest.mark.django_db(transaction=True)
@@ -54,24 +54,37 @@ def test_notify_new_list(client, tmpdir, settings):
 def test_get_purge_cache_urls(messages):
     message = messages.get(msgid='c02')
     urls = get_purge_cache_urls(message)
-    assert urls
-    print(urls)
-    # previous in list
-    msg = messages.get(msgid='c01')
-    assert msg.get_absolute_url_with_host() in urls
-    # next in list
-    msg = messages.get(msgid='c03')
-    assert msg.get_absolute_url_with_host() in urls
-    # thread mate
-    msg = messages.get(msgid='c04')
-    assert msg.get_absolute_url_with_host() in urls
-    # date index page
+    # only the static index pages are purged by url
     index_urls = message.get_absolute_static_index_urls()
-    assert index_urls[0] in urls
-    # thread index page
-    assert index_urls[1] in urls
-    # self on create
-    assert message.get_absolute_url_with_host() not in urls
-    # self on delete
-    urls = get_purge_cache_urls(message, created=False)
-    assert message.get_absolute_url_with_host() in urls
+    assert set(urls) == set(index_urls)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_get_purge_cache_tags(messages):
+    message = messages.get(msgid='c02')
+    tags = get_purge_cache_tags(message)
+    assert message.get_cache_tag() in tags
+    # tags are deduped
+    assert len(tags) == len(set(tags))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_get_purge_cache_tags_neighbor_threads(client):
+    """When the list neighbors are in different threads, their thread tags are
+    purged too (over-purging those neighbor threads is expected)."""
+    now = datetime.datetime.now(timezone.utc).replace(second=0, microsecond=0)
+    public = EmailListFactory.create(name='public', private=False)
+    # three messages in list order, each in its own thread
+    prev_msg = MessageFactory.create(
+        email_list=public, date=now - datetime.timedelta(minutes=2), thread=ThreadFactory.create())
+    message = MessageFactory.create(
+        email_list=public, date=now - datetime.timedelta(minutes=1), thread=ThreadFactory.create())
+    next_msg = MessageFactory.create(
+        email_list=public, date=now, thread=ThreadFactory.create())
+
+    tags = get_purge_cache_tags(message)
+    # all three thread tags are distinct and present
+    assert message.get_cache_tag() in tags
+    assert prev_msg.get_cache_tag() in tags
+    assert next_msg.get_cache_tag() in tags
+    assert len(set(tags)) == 3

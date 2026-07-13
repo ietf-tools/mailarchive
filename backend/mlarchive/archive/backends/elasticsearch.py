@@ -277,11 +277,24 @@ class ElasticsearchQuery():
 
         self.process_queries()
         self.process_filters()
-        self.exclude_private_lists()
         if not self.skip_facets:
             self.add_aggregates()
         self.handle_sort()
-        self.post_process()
+        # Cache the *user-neutral* query, then apply the current user's
+        # private-list exclusion. The exclusion is deliberately NOT part of the
+        # cached query: a qid travels in URLs and may be replayed by a different
+        # or anonymous user, so the exclusion is (re)applied per-request against
+        # the current user in get_cached_query(). Caching it here too would both
+        # leak the creator's access to later users and duplicate the must_not
+        # clause on every cached retrieval. (S2)
+        queryid = self.cache_query()
+        self.exclude_private_lists()
+        if queryid:
+            # Set custom attributes last: exclude_private_lists() clones the
+            # Search object and drops any attributes assigned to it.
+            self.search.queryid = queryid
+            self.search.query_string = self.request.META['QUERY_STRING']
+            logger.debug('Saved queryid to query: {}'.format(queryid))
 
         return self.search
 
@@ -299,22 +312,23 @@ class ElasticsearchQuery():
         logger.debug('sort fields: {}'.format(fields))
         self.search = self.search.sort(*fields)
 
-    def post_process(self):
+    def cache_query(self):
+        """Cache the query and return its (random) queryid, or None if the query
+        is empty. The cached query is user-neutral: the private-list exclusion is
+        applied per-request rather than cached (see build_search). Callers must
+        assign the returned queryid to the Search *after* exclude_private_lists(),
+        because .exclude() clones the Search and drops custom attributes."""
         # if no search parameters at all, return empty set
-        # logger.debug('elastic search: {}'.format(self.search.to_dict()))
         if not any([self.queries, self.filters]):
             self.search = self.empty_query()
-            return
+            return None
 
         # save query in cache with random id for security
         queryid = generate_queryid()
-        self.search.query_string = self.request.META['QUERY_STRING']
-        self.search.queryid = queryid
-        logger.debug('Saved queryid to query: {}'.format(queryid))
-        # Cache search as dictionary, use s.from_dict() on retrieval
+        # Cache search as dictionary, use update_from_dict() on retrieval
         cache.set(queryid, self.search.to_dict(), 7200)           # 2 hours
         logger.debug('Backend Query: {}'.format(self.search.to_dict()))
-        # logger.debug('search.count: {}'.format(self.search.count()))
+        return queryid
 
     def process_queries(self):
         # handle special "q" query

@@ -67,10 +67,10 @@ def get_cached_query(request):
             **connection_options.get('KWARGS', {}))
         search = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
         search = search.update_from_dict(search_dict)
-        # Re-apply the *current* user's private-list exclusion. The cached query
-        # was filtered for whoever created it; without this, a qid (which travels
-        # in URLs) reused by a different or anonymous user could expose private
-        # metadata they cannot access. (S2)
+        # Apply the *current* user's private-list exclusion. The cached query is
+        # user-neutral (the exclusion is not cached), and a qid travels in URLs,
+        # so it may be replayed by a different or anonymous user; filtering here
+        # ensures results are scoped to whoever is making this request. (S2)
         search = search.exclude('terms', email_list=get_noauth(request.user))
         logger.debug('Built search object from cache: {}'.format(search))
         return (queryid, search)

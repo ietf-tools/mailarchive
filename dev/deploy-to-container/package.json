@@ -4,10 +4,10 @@
   "dependencies": {
     "dockerode": "^5.0.1",
     "fs-extra": "^11.3.6",
-    "nanoid": "5.1.16",
+    "nanoid": "6.0.0",
     "nanoid-dictionary": "5.0.0",
     "slugify": "1.6.9",
-    "tar": "^7.5.19",
+    "tar": "^7.5.20",
     "yargs": "^18.0.0"
   },
   "engines": {

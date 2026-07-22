@@ -74,7 +74,8 @@ class Blob(models.Model):
     )
     content = models.BinaryField(help_text="Content of the blob")
     checksum = models.CharField(
-        max_length=96, help_text="SHA-384 digest of the content", editable=False
+        max_length=96, help_text="SHA-384 digest of the content", editable=False,
+        db_index=True,
     )
     mtime = models.DateTimeField(
         default=None,

@@ -4,6 +4,7 @@ import datetime
 import email
 import functools
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from hashlib import sha384
 from io import BytesIO
 import json
 import logging
@@ -35,6 +36,7 @@ from mlarchive.archive.models import (EmailList, Subscriber, Redirect, UserEmail
 from mlarchive.archive.mail import MessageWrapper, archive_message
 from mlarchive.archive.storage_utils import (retrieve_bytes, store_bytes, exists_in_storage,
     remove_from_storage)
+from mlarchive.archive.inspectors import is_no_archive
 from mlarchive.blobdb.models import Blob
 
 
@@ -977,56 +979,81 @@ def update_mbox_files():
 def purge_incoming():
     '''Purge messages older than settings.INCOMING_DAYS_TO_KEEP days from incoming bucket.
 
-    Before purging each blob, verifies the message was successfully archived (exists in
-    the Message model and ml-messages/ml-messages-private bucket) or removed (exists in
-    ml-messages-removed). Logs an error and skips purge if the message is not accounted for.
-    '''
-    name_pattern = re.compile(r'^(?P<list_name>.+)\.(?P<visibility>private|public)\.[a-f0-9]{16}$')
+    Before purging each blob, verifies that its content was processed by confirming an
+    identical blob (same checksum and bytes) exists in some other bucket. The archived
+    message is stored byte-for-byte, so a match in ml-messages, ml-messages-private,
+    ml-messages-removed, etc. means the message is accounted for. The match is intentionally
+    content-based and list-agnostic.
 
+    Messages that requested not to be archived (NoArchiveInspector) are deliberately dropped
+    without being stored anywhere, so they have no matching blob; these are confirmed by
+    re-checking the no-archive headers and purged. Anything else with no match is left in
+    place and logged.
+    '''
     cutoff_date = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=settings.INCOMING_DAYS_TO_KEEP)
     blobs = Blob.objects.filter(bucket='ml-messages-incoming', modified__lt=cutoff_date)
     for blob in blobs:
-        match = name_pattern.match(blob.name)
-        if not match:
-            logger.error(f'purge_incoming: unexpected blob name format: {blob.name}, skipping')
-            continue
-        list_name = match.group('list_name')
-        private = match.group('visibility') == 'private'
-
-        try:
-            mw = MessageWrapper.from_bytes(bytes=bytes(blob.content), listname=list_name, private=private)
-        except Exception as e:
-            logger.error(f'purge_incoming: failed to parse blob {blob.name}: {e}')
-            continue
-
-        if mw.created_id:
-            logger.error(f'purge_incoming: blob {blob.name} has no Message-Id, cannot verify, skipping')
-            continue
-
-        # Check if message exists in the main archive (DB + main storage bucket)
-        confirmed = False
-        for archive_msg in Message.objects.filter(msgid=mw.msgid, email_list__name=list_name):
-            main_bucket = 'ml-messages-private' if archive_msg.email_list.private else 'ml-messages'
-            msg_bytes = retrieve_bytes(main_bucket, archive_msg.get_blob_name())
-            if msg_bytes is None:
-                continue
-            if is_duplicate_message(mw.email_message, email.message_from_bytes(msg_bytes)):
-                confirmed = True
-                break
-        if confirmed:
+        content = bytes(blob.content)
+        # find an identical blob in any other raw message archive bucket
+        candidates = Blob.objects.filter(checksum=blob.checksum).exclude(bucket__in=['ml-messages-incoming', 'ml-messages-json'])
+        if any(bytes(candidate.content) == content for candidate in candidates):
             blob.delete()
             continue
 
-        # Not in main archive; check the removed bucket (message may have been removed as spam)
-        removed_blob_name = f'{list_name}/{mw.get_hash()}'.rstrip('=')
-        if exists_in_storage('ml-messages-removed', removed_blob_name):
+        # no stored copy: a no-archive message is dropped without being stored anywhere,
+        # so confirm it asked not to be archived and purge it
+        if is_no_archive(email.message_from_bytes(content)):
             blob.delete()
             continue
 
         logger.error(
-            f'purge_incoming: message not found in archive or removed bucket: '
-            f'blob={blob.name}, msgid={mw.msgid}, list={list_name}'
+            f'purge_incoming: no matching blob found outside incoming bucket, skipping: '
+            f'blob={blob.name}, checksum={blob.checksum}'
         )
+
+
+def purge_incoming_dir():
+    '''Purge files from settings.INCOMING_DIR on disk, using the same verification as
+    purge_incoming().
+
+    A file is removed only if an identical blob (same checksum and bytes) exists in another
+    archive bucket, or the message requested not to be archived (NoArchiveInspector). Any
+    file that cannot be verified or cannot be removed is left in place.
+    Returns a dict of run statistics.
+    '''
+    stats = defaultdict(int)
+    incoming_dir = settings.INCOMING_DIR
+
+    for entry in os.scandir(incoming_dir):
+        if not entry.is_file():
+            continue
+        stats['scanned'] += 1
+        try:
+            with open(entry.path, 'rb') as f:
+                content = f.read()
+            checksum = sha384(content, usedforsecurity=False).hexdigest()
+
+            # find an identical blob in any other raw message archive bucket
+            candidates = Blob.objects.filter(checksum=checksum).exclude(
+                bucket__in=['ml-messages-incoming', 'ml-messages-json'])
+            if any(bytes(candidate.content) == content for candidate in candidates):
+                os.remove(entry.path)
+                stats['purged'] += 1
+                continue
+
+            # no stored copy: purge only if the message asked not to be archived
+            if is_no_archive(email.message_from_bytes(content)):
+                os.remove(entry.path)
+                stats['purged_no_archive'] += 1
+                continue
+
+            stats['kept'] += 1
+            logger.info(f'purge_incoming_dir: no matching blob, keeping {entry.name}')
+        except Exception as e:
+            stats['errors'] += 1
+            logger.warning(f'purge_incoming_dir: error processing {entry.name}: {e}')
+
+    return dict(stats)
 
 
 def move_list(source, target):

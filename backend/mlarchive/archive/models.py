@@ -91,7 +91,7 @@ class Thread(models.Model):
 
     def get_snippet(self):
         """Returns all messages of the thread as an HTML snippet"""
-        context = {'messages': self.message_set.all()}
+        context = {'messages': self.message_set.order_by('thread_order')}
         return render_to_string('archive/thread_snippet.html', context)
 
     def set_first(self, message=None):
@@ -312,6 +312,14 @@ class Message(models.Model):
             'list_name': self.email_list.name,
             'id': self.hashcode.rstrip('=')})
 
+    def get_cache_tag(self):
+        """Returns the Cloudflare Cache-Tag value for this message's pages.
+
+        All message pages (detail, ajax) in a thread share the same tag so
+        the whole thread can be purged in one call.
+        """
+        return 'thread-{}'.format(self.thread_id)
+
     def get_admin_url(self):
         return reverse('archive_admin') + '?' + urlencode(dict(msgid=self.msgid))
 
@@ -457,7 +465,7 @@ class Message(models.Model):
     def get_thread_snippet(self):
         """Returns all messages of the thread as an HTML snippet"""
         context = {
-            'messages': self.thread.message_set.all().select_related(),
+            'messages': self.thread.message_set.order_by('thread_order'),
             'msg': self,
         }
         return render_to_string('archive/thread_snippet.html', context)

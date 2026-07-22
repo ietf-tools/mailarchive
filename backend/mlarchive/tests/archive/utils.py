@@ -390,9 +390,11 @@ def test_purge_incoming(settings):
     archived_blob.modified = old_time
     archived_blob.save()
 
-    # Case 2: old blob with no archive record and not in removed bucket → should NOT be purged
+    # Case 2: old blob whose content exists in no other bucket → should NOT be purged.
+    # Perturb the bytes so its checksum differs from every stored blob (content-based match).
+    unverified_bytes = message_bytes + b'\nmake-content-unique\n'
     unverified_blob_name = get_unique_blob_name(prefix='cherry.public.', bucket=bucket)
-    store_file(bucket, unverified_blob_name, io.BytesIO(message_bytes), content_type='message/rfc822')
+    store_file(bucket, unverified_blob_name, io.BytesIO(unverified_bytes), content_type='message/rfc822')
     unverified_blob = Blob.objects.get(bucket=bucket, name=unverified_blob_name)
     unverified_blob.modified = old_time
     unverified_blob.save()
@@ -414,12 +416,21 @@ def test_purge_incoming(settings):
     removed_bucket_name = f'banana/{removed_mw.get_hash()}'.rstrip('=')
     store_file('ml-messages-removed', removed_bucket_name, io.BytesIO(removed_message_bytes), content_type='message/rfc822')
 
+    # Case 5: old no-archive blob with no stored copy → should be purged (dropped, not archived)
+    noarchive_bytes = b'X-No-Archive: yes\n' + message_bytes
+    noarchive_blob_name = get_unique_blob_name(prefix='date.public.', bucket=bucket)
+    store_file(bucket, noarchive_blob_name, io.BytesIO(noarchive_bytes), content_type='message/rfc822')
+    noarchive_blob = Blob.objects.get(bucket=bucket, name=noarchive_blob_name)
+    noarchive_blob.modified = old_time
+    noarchive_blob.save()
+
     purge_incoming()
 
     assert not Blob.objects.filter(bucket=bucket, name=archived_blob_name).exists()
     assert Blob.objects.filter(bucket=bucket, name=unverified_blob_name).exists()
     assert Blob.objects.filter(bucket=bucket, name=recent_blob_name).exists()
     assert not Blob.objects.filter(bucket=bucket, name=removed_blob_name_incoming).exists()
+    assert not Blob.objects.filter(bucket=bucket, name=noarchive_blob_name).exists()
 
 
 def list_only_files(directory):

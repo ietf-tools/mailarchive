@@ -58,7 +58,7 @@ jobs:
           POSTGRES_DB: test_mailarchive
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Prepare for tests
         run: |

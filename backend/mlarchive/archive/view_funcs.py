@@ -70,9 +70,18 @@ def chunks(l, n):
 
 def apply_objects(hits):
     '''Add object attribute (Message) to list of hits,
-    to simulate Haystack results'''
+    to simulate Haystack results. Fetches every backing Message in
+    a single query'''
+    hits = list(hits)
+    ids = [hit.django_id for hit in hits]
+    objects = (
+        Message.objects.filter(pk__in=ids)
+        .select_related('email_list', 'thread')
+        .in_bulk()
+    )
     for hit in hits:
-        hit.object = Message.objects.get(pk=hit.django_id)
+        hit.object = objects.get(int(hit.django_id))
+    return hits
 
 # --------------------------------------------------
 # View Functions

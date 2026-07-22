@@ -850,6 +850,8 @@ def detail(request, list_name, id, msg):
 
     if msg.email_list.private:
         add_never_cache_headers(response)
+    else:
+        response['Cache-Tag'] = msg.get_cache_tag()
     return response
 
 
@@ -898,12 +900,6 @@ def main(request):
         form = SearchForm(request.GET)
     else:
         form = SearchForm()
-
-    if os.path.exists(settings.LOG_FILE):
-        try:
-            os.chmod(settings.LOG_FILE, 0o666)
-        except OSError:
-            pass
 
     return render(request, 'archive/main.html', {
         'form': form,

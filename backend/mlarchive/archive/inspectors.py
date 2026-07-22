@@ -11,6 +11,16 @@ Supported Options:
 from django.conf import settings
 
 
+def is_no_archive(email_message):
+    '''Return True if the message requests not to be archived: it has an
+    X-No-Archive header, or an X-Archive header whose value is "no".'''
+    if 'X-No-Archive' in email_message.keys():
+        return True
+    if email_message.get('X-Archive', '').lower().strip() == 'no':
+        return True
+    return False
+
+
 class InspectorMessage(Exception):
     pass
 
@@ -118,13 +128,7 @@ class SpamLevelSpamInspector(SpamInspector):
 class NoArchiveInspector(Inspector):
     '''Checks for no archive headers'''
     def has_condition(self):
-        keys = self.message_wrapper.email_message.keys()
-        if 'X-No-Archive' in keys:
-            return True
-        value = self.message_wrapper.email_message.get('X-Archive', '')
-        if value.lower() == 'no':
-            return True
-        return False
+        return is_no_archive(self.message_wrapper.email_message)
 
     def handle_file(self):
         '''Don't do anything. Drop file'''

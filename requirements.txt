@@ -1,12 +1,12 @@
 # -*- conf-mode -*-
 #
-beautifulsoup4==4.14.3
-boto3>=1.39.15
+beautifulsoup4==4.15.0
+boto3>=1.43.42
 boto3-stubs[s3]>=1.39.15
-botocore>=1.39.15
+botocore>=1.43.29
 celery==5.5.3
 cloudflare==4.3.1
-cryptography==46.0.6
+cryptography==49.0.0
 Django>=5.2.5,<6.0
 django-admin-rangefilter>=0.13.5
 django-appconf==1.2.0
@@ -19,7 +19,7 @@ django-storages==1.14.6
 elasticsearch>=7.0.0,<8.0.0
 elasticsearch-dsl>=7.0.0,<8.0.0
 factory-boy>=3.3.3
-flower>=1.0.0
+flower>=2.0.1
 gunicorn==25.3.0
 html5lib==1.1
 jedi==0.19.2
@@ -31,7 +31,7 @@ mozilla-django-oidc==5.0.2
 passlib==1.7.4
 psycopg==3.3.3
 pymemcache==4.0.0
-python-json-logger>=2.0.7
+python-json-logger>=4.1.0
 pyopenssl
 pyquery
 pytest
@@ -39,7 +39,7 @@ pytest-cov>=7.1.0
 pytest-flakes
 pytest-pycodestyle
 pytest-django>=2.9.1
-pytest-playwright==0.7.2
+pytest-playwright==0.8.0
 python-dateutil>=2.9.0.post0
 scout-apm>=2.23.0
 selenium

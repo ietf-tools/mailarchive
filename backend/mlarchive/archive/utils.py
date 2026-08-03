@@ -34,8 +34,9 @@ from django.urls import reverse
 from mlarchive.archive.models import (EmailList, Subscriber, Redirect, UserEmail, MailmanMember,
     User, Message)
 from mlarchive.archive.mail import MessageWrapper, archive_message
+from mlarchive.archive.storage_utils import (retrieve_bytes, store_bytes, exists_in_storage,
+    remove_from_storage)
 from mlarchive.archive.inspectors import is_no_archive
-from mlarchive.archive.storage_utils import retrieve_bytes, exists_in_storage, remove_from_storage
 from mlarchive.blobdb.models import Blob
 
 
@@ -582,6 +583,95 @@ def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False, verbosi
             f'Purge completed: {removed_count} duplicates removed, {error_count} errors encountered'
         )
     return {'removed': removed_count, 'errors': error_count}
+
+
+def load_hidden_messages(directory, listname=None, verbosity=1):
+    """Load message files from each list's _[directory]/ directory into blob storage.
+
+    Walks settings.ARCHIVE_DIR/[listname]/_[directory]/ for every EmailList (or a
+    single list if listname is given) and stores each file's contents in the
+    'ml-messages-[directory]' bucket under the blob name '[listname]/[hashcode]'. The
+    filenames on disk are the padded hashcodes, so the blob name is derived by
+    stripping trailing '=' padding to match Message.get_blob_name().
+
+    Blobs that already exist in the bucket are skipped, so the task is safe to re-run.
+
+    Args:
+        directory: Name of the hidden subdirectory (without leading '_'), e.g. 'removed'
+            or 'dupes'. Selects both the NFS source directory and the target bucket.
+            Raises ValueError if 'ml-messages-[directory]' is not a configured bucket.
+        listname: Optional name of a specific list to process. If None, processes all lists.
+        verbosity: Controls logging output level (0-3). 0=totals only, 1=+list names and
+            errors, 2=+skipped (already present), 3=+each loaded file.
+
+    Returns:
+        dict with 'loaded', 'skipped', and 'errors' counts.
+    """
+    subdir = f'_{directory}'
+    bucket = f'ml-messages-{directory}'
+    if bucket not in settings.ARTIFACT_STORAGE_NAMES:
+        raise ValueError(
+            f'No storage bucket configured for directory {directory!r} '
+            f'(expected {bucket} in settings.ARTIFACT_STORAGE_NAMES)'
+        )
+    loaded_count = 0
+    skipped_count = 0
+    error_count = 0
+
+    if listname:
+        email_lists = EmailList.objects.filter(name=listname)
+    else:
+        email_lists = EmailList.objects.all().order_by('name')
+
+    for elist in email_lists:
+        source_dir = os.path.join(settings.ARCHIVE_DIR, elist.name, subdir)
+
+        if not os.path.isdir(source_dir):
+            continue
+
+        if verbosity >= 1:
+            logger.info(f'Processing {subdir} directory for list: {elist.name}')
+
+        for filename in os.listdir(source_dir):
+            file_path = os.path.join(source_dir, filename)
+
+            if not os.path.isfile(file_path):
+                continue
+
+            blob_name = os.path.join(elist.name, filename).rstrip('=')
+
+            try:
+                if exists_in_storage(bucket, blob_name):
+                    if verbosity >= 2:
+                        logger.info(f'Already in {bucket}, skipping: {blob_name}')
+                    skipped_count += 1
+                    continue
+
+                with open(file_path, 'rb') as f:
+                    content = f.read()
+                mtime = datetime.datetime.fromtimestamp(
+                    os.path.getmtime(file_path), tz=datetime.UTC)
+                store_bytes(
+                    bucket,
+                    blob_name,
+                    content,
+                    content_type='message/rfc822',
+                    mtime=mtime,
+                )
+                if verbosity >= 3:
+                    logger.info(f'Loaded hidden message: bucket={bucket}, blob={blob_name}')
+                loaded_count += 1
+            except Exception as e:
+                if verbosity >= 1:
+                    logger.error(f'Error loading file {file_path}: {e}')
+                error_count += 1
+                continue
+
+    logger.info(
+        f'load_hidden_messages ({subdir}) completed: {loaded_count} loaded, '
+        f'{skipped_count} skipped, {error_count} errors'
+    )
+    return {'loaded': loaded_count, 'skipped': skipped_count, 'errors': error_count}
 
 
 def _export_lists():

@@ -850,6 +850,8 @@ def detail(request, list_name, id, msg):
 
     if msg.email_list.private:
         add_never_cache_headers(response)
+    else:
+        response['Cache-Tag'] = msg.get_cache_tag()
     return response
 
 

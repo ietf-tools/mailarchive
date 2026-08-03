@@ -610,6 +610,7 @@ def test_detail_cache_headers_public(client):
     assert response.status_code == 200
     cache_control = response.get('Cache-Control')
     assert cache_control is None or 'no-cache' not in cache_control
+    assert response.get('Cache-Tag') == msg.get_cache_tag()
 
 
 @pytest.mark.django_db(transaction=True)
@@ -620,6 +621,8 @@ def test_detail_cache_headers_private(admin_client):
     response = admin_client.get(url)
     assert response.status_code == 200
     assert 'no-cache' in response.get('Cache-Control')
+    # private messages must not be taggable/cacheable
+    assert response.get('Cache-Tag') is None
 
 
 @pytest.mark.django_db(transaction=True)

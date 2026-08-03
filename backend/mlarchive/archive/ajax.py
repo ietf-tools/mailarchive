@@ -49,6 +49,7 @@ def ajax_get_msg(request, msg, **kwargs):
         add_never_cache_headers(response)
     else:
         patch_cache_control(response, max_age=86400)
+        response['Cache-Tag'] = msg.get_cache_tag()
     return response
 
 

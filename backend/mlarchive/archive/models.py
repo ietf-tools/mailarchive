@@ -312,6 +312,14 @@ class Message(models.Model):
             'list_name': self.email_list.name,
             'id': self.hashcode.rstrip('=')})
 
+    def get_cache_tag(self):
+        """Returns the Cloudflare Cache-Tag value for this message's pages.
+
+        All message pages (detail, ajax) in a thread share the same tag so
+        the whole thread can be purged in one call.
+        """
+        return 'thread-{}'.format(self.thread_id)
+
     def get_admin_url(self):
         return reverse('archive_admin') + '?' + urlencode(dict(msgid=self.msgid))
 

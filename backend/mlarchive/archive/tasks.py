@@ -22,6 +22,7 @@ from mlarchive.archive.utils import remove_selected
 from mlarchive.archive.utils import mark_not_spam
 from mlarchive.archive.utils import purge_confirmed_dupes
 from mlarchive.archive.utils import import_message_blob
+from mlarchive.archive.utils import load_hidden_messages
 from mlarchive.archive.models import EmailList, Message, User
 from mlarchive.archive.mail import Loader
 
@@ -278,3 +279,13 @@ def purge_confirmed_dupes_task():
         purge_confirmed_dupes()
     except Exception as err:
         logger.error(f"Error in purge_confirmed_dupes_task: {err}")
+
+
+@shared_task
+def load_hidden_messages_task(directory, listname=None):
+    '''Crawl [listname]/_[directory] directories in archive and load message files
+    into the ml-messages-[directory] blob storage bucket'''
+    try:
+        load_hidden_messages(directory, listname=listname)
+    except Exception as err:
+        logger.error(f"Error in load_hidden_messages_task: {err}")

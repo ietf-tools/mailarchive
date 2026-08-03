@@ -1,6 +1,6 @@
 import datetime
-import random
 import re
+import secrets
 
 from django.conf import settings
 from django.core.cache import cache
@@ -9,7 +9,7 @@ from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
 from elasticsearch_dsl import Q, Search
 
-from mlarchive.archive.utils import get_lists
+from mlarchive.archive.utils import get_lists, get_noauth
 
 import logging
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ IDX_THREAD_SORT_FIELDS = ('-thread_date', 'thread_id', 'thread_order')
 
 
 def generate_queryid():
-    return '%032x' % random.getrandbits(128)
+    return secrets.token_hex(16)
 
 
 def get_base_query(querydict):
@@ -67,6 +67,11 @@ def get_cached_query(request):
             **connection_options.get('KWARGS', {}))
         search = Search(using=client, index=settings.ELASTICSEARCH_INDEX_NAME)
         search = search.update_from_dict(search_dict)
+        # Apply the *current* user's private-list exclusion. The cached query is
+        # user-neutral (the exclusion is not cached), and a qid travels in URLs,
+        # so it may be replayed by a different or anonymous user; filtering here
+        # ensures results are scoped to whoever is making this request. (S2)
+        search = search.exclude('terms', email_list=get_noauth(request.user))
         logger.debug('Built search object from cache: {}'.format(search))
         return (queryid, search)
     else:

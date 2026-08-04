@@ -20,7 +20,7 @@ elasticsearch>=7.0.0,<8.0.0
 elasticsearch-dsl>=7.0.0,<8.0.0
 factory-boy>=3.3.3
 flower>=2.0.1
-gunicorn==25.3.0
+gunicorn==26.0.0
 html5lib==1.1
 jedi==0.19.2
 jsonschema[format]>=4.26.0

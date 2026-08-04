@@ -280,6 +280,8 @@ class ElasticsearchQuery():
         if not self.skip_facets:
             self.add_aggregates()
         self.handle_sort()
+        self.exclude_source_fields()
+
         # Cache the *user-neutral* query, then apply the current user's
         # private-list exclusion. The exclusion is deliberately NOT part of the
         # cached query: a qid travels in URLs and may be replayed by a different
@@ -306,6 +308,14 @@ class ElasticsearchQuery():
         self.search = self.search.exclude(
             'terms',
             email_list=get_noauth(self.request.user))
+
+    def exclude_source_fields(self):
+        '''Limit the returned _source to the fields actually displayed/used.
+        The large indexed body ("text") is never read from search hits, so
+        excluding it dramatically reduces the fetch-phase payload for results
+        and infinite-scroll batches. Applied before post_process() so the
+        cached query (qid) inherits the same exclusion.'''
+        self.search = self.search.source(excludes=['text'])
 
     def handle_sort(self):
         fields = get_order_fields(self.request.GET)

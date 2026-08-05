@@ -588,9 +588,11 @@ def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False, verbosi
 def load_hidden_messages(directory, listname=None, verbosity=1):
     """Load message files from each list's _[directory]/ directory into blob storage.
 
-    Walks settings.ARCHIVE_DIR/[listname]/_[directory]/ for every EmailList (or a
-    single list if listname is given) and stores each file's contents in the
-    'ml-messages-[directory]' bucket under the blob name '[listname]/[hashcode]'. The
+    Walks settings.ARCHIVE_DIR/[listname]/_[directory]/ for every directory found in
+    settings.ARCHIVE_DIR (or a single list if listname is given) and stores each file's
+    contents in the 'ml-messages-[directory]' bucket under the blob name
+    '[listname]/[hashcode]'. Archive directories are used rather than EmailList records
+    because some archive directories have no corresponding EmailList object. The
     filenames on disk are the padded hashcodes, so the blob name is derived by
     stripping trailing '=' padding to match Message.get_blob_name().
 
@@ -600,7 +602,8 @@ def load_hidden_messages(directory, listname=None, verbosity=1):
         directory: Name of the hidden subdirectory (without leading '_'), e.g. 'removed'
             or 'dupes'. Selects both the NFS source directory and the target bucket.
             Raises ValueError if 'ml-messages-[directory]' is not a configured bucket.
-        listname: Optional name of a specific list to process. If None, processes all lists.
+        listname: Optional name of a specific list to process. If None, processes all
+            archive directories.
         verbosity: Controls logging output level (0-3). 0=totals only, 1=+list names and
             errors, 2=+skipped (already present), 3=+each loaded file.
 
@@ -619,18 +622,23 @@ def load_hidden_messages(directory, listname=None, verbosity=1):
     error_count = 0
 
     if listname:
-        email_lists = EmailList.objects.filter(name=listname)
+        list_names = [listname]
+    elif os.path.isdir(settings.ARCHIVE_DIR):
+        list_names = sorted(
+            entry.name for entry in os.scandir(settings.ARCHIVE_DIR) if entry.is_dir()
+        )
     else:
-        email_lists = EmailList.objects.all().order_by('name')
+        logger.error(f'Archive directory does not exist: {settings.ARCHIVE_DIR}')
+        list_names = []
 
-    for elist in email_lists:
-        source_dir = os.path.join(settings.ARCHIVE_DIR, elist.name, subdir)
+    for name in list_names:
+        source_dir = os.path.join(settings.ARCHIVE_DIR, name, subdir)
 
         if not os.path.isdir(source_dir):
             continue
 
         if verbosity >= 1:
-            logger.info(f'Processing {subdir} directory for list: {elist.name}')
+            logger.info(f'Processing {subdir} directory for list: {name}')
 
         for filename in os.listdir(source_dir):
             file_path = os.path.join(source_dir, filename)
@@ -638,7 +646,7 @@ def load_hidden_messages(directory, listname=None, verbosity=1):
             if not os.path.isfile(file_path):
                 continue
 
-            blob_name = os.path.join(elist.name, filename).rstrip('=')
+            blob_name = os.path.join(name, filename).rstrip('=')
 
             try:
                 if exists_in_storage(bucket, blob_name):

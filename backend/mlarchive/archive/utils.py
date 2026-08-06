@@ -1064,6 +1064,68 @@ def purge_incoming_dir():
     return dict(stats)
 
 
+def purge_nfs_incoming():
+    '''Purge files from settings.INCOMING_DIR on disk, verifying each message by hashcode.
+
+    A file is removed if that blob exists in a raw message archive bucket, or if the message
+    requested not to be archived (NoArchiveInspector drops those without storing them). The
+    incoming bucket is excluded since it names blobs by incoming filename, not hashcode, and
+    the json bucket holds derived representations. Anything unverified is kept and logged.
+    Returns a dict of run statistics.
+    '''
+    stats = defaultdict(int)
+    buckets = [b for b in settings.ARTIFACT_STORAGE_NAMES
+               if b not in ('ml-messages-incoming', 'ml-messages-json')]
+
+    for entry in os.scandir(settings.INCOMING_DIR):
+        if not entry.is_file():
+            continue
+        stats['scanned'] += 1
+        try:
+            # rsplit so a listname may contain dots
+            parts = entry.name.rsplit('.', 2)
+            if len(parts) != 3:
+                stats['kept_bad_filename'] += 1
+                logger.error(f'purge_nfs_incoming: cannot derive listname, keeping {entry.name}')
+                continue
+            listname = parts[0]
+
+            with open(entry.path, 'rb') as f:
+                content = f.read()
+            mw = MessageWrapper.from_bytes(content, listname=listname)
+
+            # header-only test, so check before anything that needs the hash.
+            # NoArchiveInspector drops these without storing, so no blob is expected
+            if is_no_archive(mw.email_message):
+                os.remove(entry.path)
+                stats['purged_no_archive'] += 1
+                continue
+
+            if mw.created_id:
+                # get_msgid() minted a random id, so this hashcode isn't the archived one
+                stats['kept_no_msgid'] += 1
+                logger.error(f'purge_nfs_incoming: message has no Message-ID, keeping {entry.name}')
+                continue
+
+            blob_name = f'{listname}/{mw.get_hash()}'.rstrip('=')
+            if Blob.objects.filter(bucket__in=buckets, name=blob_name).exists():
+                os.remove(entry.path)
+                stats['purged'] += 1
+                continue
+
+            stats['kept'] += 1
+            logger.error(
+                f'purge_nfs_incoming: no blob found for message, keeping {entry.name} '
+                f'(blob={blob_name})')
+        except Exception as e:
+            stats['errors'] += 1
+            logger.warning(f'purge_nfs_incoming: error processing {entry.name}: {e}')
+
+    stats = dict(stats)
+    logger.info(f'purge_nfs_incoming: {stats}')
+    return stats
+
+
 def move_list(source, target):
     '''Move messages from source list to target list. Includes:
     - create the new list if it doesn't exist

@@ -588,9 +588,11 @@ def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False, verbosi
 def load_hidden_messages(directory, listname=None, verbosity=1):
     """Load message files from each list's _[directory]/ directory into blob storage.
 
-    Walks settings.ARCHIVE_DIR/[listname]/_[directory]/ for every EmailList (or a
-    single list if listname is given) and stores each file's contents in the
-    'ml-messages-[directory]' bucket under the blob name '[listname]/[hashcode]'. The
+    Walks settings.ARCHIVE_DIR/[listname]/_[directory]/ for every directory found in
+    settings.ARCHIVE_DIR (or a single list if listname is given) and stores each file's
+    contents in the 'ml-messages-[directory]' bucket under the blob name
+    '[listname]/[hashcode]'. Archive directories are used rather than EmailList records
+    because some archive directories have no corresponding EmailList object. The
     filenames on disk are the padded hashcodes, so the blob name is derived by
     stripping trailing '=' padding to match Message.get_blob_name().
 
@@ -600,7 +602,8 @@ def load_hidden_messages(directory, listname=None, verbosity=1):
         directory: Name of the hidden subdirectory (without leading '_'), e.g. 'removed'
             or 'dupes'. Selects both the NFS source directory and the target bucket.
             Raises ValueError if 'ml-messages-[directory]' is not a configured bucket.
-        listname: Optional name of a specific list to process. If None, processes all lists.
+        listname: Optional name of a specific list to process. If None, processes all
+            archive directories.
         verbosity: Controls logging output level (0-3). 0=totals only, 1=+list names and
             errors, 2=+skipped (already present), 3=+each loaded file.
 
@@ -619,18 +622,23 @@ def load_hidden_messages(directory, listname=None, verbosity=1):
     error_count = 0
 
     if listname:
-        email_lists = EmailList.objects.filter(name=listname)
+        list_names = [listname]
+    elif os.path.isdir(settings.ARCHIVE_DIR):
+        list_names = sorted(
+            entry.name for entry in os.scandir(settings.ARCHIVE_DIR) if entry.is_dir()
+        )
     else:
-        email_lists = EmailList.objects.all().order_by('name')
+        logger.error(f'Archive directory does not exist: {settings.ARCHIVE_DIR}')
+        list_names = []
 
-    for elist in email_lists:
-        source_dir = os.path.join(settings.ARCHIVE_DIR, elist.name, subdir)
+    for name in list_names:
+        source_dir = os.path.join(settings.ARCHIVE_DIR, name, subdir)
 
         if not os.path.isdir(source_dir):
             continue
 
         if verbosity >= 1:
-            logger.info(f'Processing {subdir} directory for list: {elist.name}')
+            logger.info(f'Processing {subdir} directory for list: {name}')
 
         for filename in os.listdir(source_dir):
             file_path = os.path.join(source_dir, filename)
@@ -638,7 +646,7 @@ def load_hidden_messages(directory, listname=None, verbosity=1):
             if not os.path.isfile(file_path):
                 continue
 
-            blob_name = os.path.join(elist.name, filename).rstrip('=')
+            blob_name = os.path.join(name, filename).rstrip('=')
 
             try:
                 if exists_in_storage(bucket, blob_name):
@@ -1054,6 +1062,68 @@ def purge_incoming_dir():
             logger.warning(f'purge_incoming_dir: error processing {entry.name}: {e}')
 
     return dict(stats)
+
+
+def purge_nfs_incoming():
+    '''Purge files from settings.INCOMING_DIR on disk, verifying each message by hashcode.
+
+    A file is removed if that blob exists in a raw message archive bucket, or if the message
+    requested not to be archived (NoArchiveInspector drops those without storing them). The
+    incoming bucket is excluded since it names blobs by incoming filename, not hashcode, and
+    the json bucket holds derived representations. Anything unverified is kept and logged.
+    Returns a dict of run statistics.
+    '''
+    stats = defaultdict(int)
+    buckets = [b for b in settings.ARTIFACT_STORAGE_NAMES
+               if b not in ('ml-messages-incoming', 'ml-messages-json')]
+
+    for entry in os.scandir(settings.INCOMING_DIR):
+        if not entry.is_file():
+            continue
+        stats['scanned'] += 1
+        try:
+            # rsplit so a listname may contain dots
+            parts = entry.name.rsplit('.', 2)
+            if len(parts) != 3:
+                stats['kept_bad_filename'] += 1
+                logger.error(f'purge_nfs_incoming: cannot derive listname, keeping {entry.name}')
+                continue
+            listname = parts[0]
+
+            with open(entry.path, 'rb') as f:
+                content = f.read()
+            mw = MessageWrapper.from_bytes(content, listname=listname)
+
+            # header-only test, so check before anything that needs the hash.
+            # NoArchiveInspector drops these without storing, so no blob is expected
+            if is_no_archive(mw.email_message):
+                os.remove(entry.path)
+                stats['purged_no_archive'] += 1
+                continue
+
+            if mw.created_id:
+                # get_msgid() minted a random id, so this hashcode isn't the archived one
+                stats['kept_no_msgid'] += 1
+                logger.error(f'purge_nfs_incoming: message has no Message-ID, keeping {entry.name}')
+                continue
+
+            blob_name = f'{listname}/{mw.get_hash()}'.rstrip('=')
+            if Blob.objects.filter(bucket__in=buckets, name=blob_name).exists():
+                os.remove(entry.path)
+                stats['purged'] += 1
+                continue
+
+            stats['kept'] += 1
+            logger.error(
+                f'purge_nfs_incoming: no blob found for message, keeping {entry.name} '
+                f'(blob={blob_name})')
+        except Exception as e:
+            stats['errors'] += 1
+            logger.warning(f'purge_nfs_incoming: error processing {entry.name}: {e}')
+
+    stats = dict(stats)
+    logger.info(f'purge_nfs_incoming: {stats}')
+    return stats
 
 
 def move_list(source, target):

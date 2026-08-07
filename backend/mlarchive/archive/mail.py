@@ -20,13 +20,12 @@ from io import StringIO
 
 from django.conf import settings
 from django.core.cache import cache
-from django.core.management.base import CommandError
 
 from mlarchive.archive.models import (Attachment, EmailList, Legacy, Message,
     Thread, get_in_reply_to_message, is_attachment)
 from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES, UNKNOWN_CONTENT_TYPE
 from mlarchive.archive.inspectors import *      # noqa
-from mlarchive.archive.storage_utils import store_file
+from mlarchive.archive.storage_utils import exists_in_storage, store_file
 from mlarchive.archive.thread import compute_thread, reconcile_thread, parse_message_ids
 from mlarchive.utils.decorators import check_datetime
 from mlarchive.utils.encoding import decode_safely, decode_rfc2047_header, get_filename
@@ -93,13 +92,38 @@ subj_leader_regex = re.compile(r'^' + subj_leader_pattern)
 # --------------------------------------------------
 
 
-class DateError(Exception):
+class ArchiveError(Exception):
+    # base class for errors raised while importing a message
+    pass
+
+
+class NotArchived(ArchiveError):
+    # the message was intentionally not archived, no further action needed
+    pass
+
+
+class ArchiveFailure(ArchiveError):
+    # the message could not be archived, it needs review
+    pass
+
+
+class DateError(ArchiveFailure):
     # failed to parse the message date
     pass
 
 
-class DuplicateMessage(Exception):
-    # Duplicate Message-id
+class DuplicateMessageId(NotArchived):
+    # Message-id already used on this list by a message with differing content
+    pass
+
+
+class HashcodeCollision(ArchiveFailure):
+    # hashcode already used on this list by a message with a different message-id
+    pass
+
+
+class NoHeaders(ArchiveFailure):
+    # the message contains no header fields, usually indicates problem with parsing
     pass
 
 
@@ -107,13 +131,8 @@ class GenericWarning(Exception):
     pass
 
 
-class NoHeaders(Exception):
-    # the message contains no header fields, usually indicates problem with parsing
-    pass
-
-
 class UnknownFormat(Exception):
-    # the mail file format is unrecognized
+    # the mail file format is unrecognized, this is a mailbox file, not a message
     pass
 
 
@@ -134,25 +153,26 @@ def archive_message(data, listname, private=False, save_failed=True):
         assert isinstance(data, bytes)
         mw = MessageWrapper.from_bytes(data, listname, private=private)
         mw.save()
-    except DuplicateMessage as error:
-        # if DuplicateMessage it's already been saved to _dupes
-        logger.warning('Archive message failed [{0}]'.format(error.args))
-        return 0
     except InspectorMessage as error:
         # if SpamMessage it's already been saved to _spam
         logger.info('Message not archived. [{0}]'.format(error.args))
         return 0
+    except NotArchived as error:
+        # message intentionally not archived, a copy has already been saved
+        logger.error('Archive message failed [{0}]'.format(error.args))
+        return 0
+    except ArchiveFailure as error:
+        # an anticipated failure, no traceback needed
+        logger.error('Archive message failed [{0}]'.format(error.args))
+        if save_failed:
+            save_failed_msg(data, listname, error)
+        return 1
     except Exception as error:
         traceback.print_exc(file=sys.stdout)
         logger.error('Archive message failed [{0}]'.format(error.args))
-        msg = email.message_from_bytes(data)
-        if not save_failed:
-            return 1
-        if msg:
-            save_failed_msg(msg, listname, error)
-        else:
+        if save_failed:
             save_failed_msg(data, listname, error)
-        return 1    # TODO: other error?
+        return 1
     return 0
 
 
@@ -331,37 +351,39 @@ def get_received_date(msg):
 
 
 def save_failed_msg(data, listname, error):
-    """Called when an attempt to import a message fails.  "data" will typically be an
-    instance of email.message.Message.  In some odd case where message parsing fails
-    "data" will be a string (this should never happen because the email.parser excepts
-    even empty strings).  Log error entry should contain useful information about the
-    error, the message identity and the filename it is being saved under
+    """Called when an attempt to import a message fails.  "data" is the original
+    message as bytes, it is saved unaltered.  Log error entry should contain useful
+    information about the error, the message identity and the filename it is being
+    saved under
     """
-    # get filename
+    assert isinstance(data, bytes)
+    # get filename. Use the first sequence number free in the failed bucket, so
+    # the name doesn't depend on the disk archive. The disk is checked too, so
+    # we don't overwrite files saved before the bucket existed.
     path = EmailList.get_failed_dir(listname)
     basename = datetime.datetime.today().strftime('%Y-%m-%d')
-    files = glob.glob(os.path.join(path, basename + '.*'))
-    if files:
-        files.sort()
-        sequence = str(int(files[-1][-4:]) + 1)
+    for sequence in range(10000):
+        filename = '{}.{}'.format(basename, str(sequence).zfill(4))
+        if (not exists_in_storage('ml-messages-failed', os.path.join(listname, filename))
+                and not os.path.exists(os.path.join(path, filename))):
+            break
     else:
-        sequence = '0'
-    filename = basename + '.' + sequence.zfill(4)
+        # more failures in one day than the sequence allows, fall back to a uuid
+        filename = '{}.{}'.format(basename, uuid.uuid4())
 
     # log entry
-    if isinstance(data, email.message.Message):
-        output = data.as_bytes()
-        identifier = data.get('Message-ID', '')
-        if not identifier:
-            identifier = get_from(data)
-    else:
-        output = data
-        identifier = ''
+    msg = email.message_from_bytes(data)
+    identifier = msg.get('Message-ID', '') or get_from(msg) or ''
     log_msg = "Import Error [{0}, {1}, {2}]".format(
         os.path.join(path, filename), (error.__class__, error.args), identifier)
     logger.error(log_msg)
 
-    write_file(os.path.join(path, filename), output)
+    write_file(os.path.join(path, filename), data)
+
+    # write to the failed bucket as well, mirroring the disk layout
+    blob_path = os.path.join(listname, filename)
+    store_file('ml-messages-failed', blob_path, io.BytesIO(data),
+               content_type='message/rfc822')
 
 
 def call_remote_backup(path):
@@ -601,13 +623,7 @@ class Loader(object):
         """Use MessageWrapper to save a Message to the archive.
         """
         self.stats['count'] += 1
-        try:
-            mw = MessageWrapper.from_message(msg, self.listname, private=self.private)
-        except Exception as e:
-            print(self.filename)
-            raise
-            # import sys
-            # raise e.with_traceback(sys.exc_info()[2])
+        mw = MessageWrapper.from_message(msg, self.listname, private=self.private)
 
         # filter using Legacy archive
         if self.options.get('firstrun') and mw.date < (datetime.datetime.now() - datetime.timedelta(days=30)) and mw.created_id is False:  # noqa
@@ -631,10 +647,10 @@ class Loader(object):
         for m in self.mb:
             try:
                 self._load_message(m)
-            except DuplicateMessage as error:
+            except NotArchived as error:
                 logger.warning("Import Warn [{0}, {1}, {2}]".format(self.filename, error.args, get_from(m)))
             except Exception as error:
-                save_failed_msg(m, self.listname, error)
+                save_failed_msg(m.as_bytes(), self.listname, error)
                 self.stats['errors'] += 1
                 if self.options.get('break'):
                     raise
@@ -924,26 +940,67 @@ class MessageWrapper(object):
                                           name=filename,
                                           sequence=sequence)
 
-    def save(self, test=False):
-        """Ensure message is not duplicate message-id or hash.  Save message to database.
-        Save to disk (if not test mode) and process attachments.
+    def run_inspectors(self):
+        """Runs the configured inspectors, they raise InspectorMessage to reject
+        the message
         """
-        # check for spam
         if hasattr(settings, 'INSPECTORS'):
             for inspector_name in settings.INSPECTORS:
                 inspector_class = eval(inspector_name)
                 inspector = inspector_class(self)
                 inspector.inspect()
 
-        # check for duplicate message id, and skip
-        if Message.objects.filter(msgid=self.msgid, email_list__name=self.listname):
-            self.write_msg(subdir='_dupes')
-            raise DuplicateMessage('Duplicate msgid: %s' % self.msgid)
+    def is_redelivery(self):
+        """Returns True if this message is a redelivery of one already archived on
+        this list, meaning it can be dropped. Returns False if the message-id isn't
+        in use on this list. If the message-id is in use by a message with differing
+        content a copy is saved to _dupes and DuplicateMessageId is raised.
+        """
+        existing_messages = Message.objects.filter(
+            msgid=self.msgid, email_list__name=self.listname)
+        if not existing_messages:
+            return False
 
-        # check for duplicate hash
-        if Message.objects.filter(hashcode=self.hashcode):
-            self.write_msg(subdir='_dupes')
-            raise CommandError('Duplicate hash, msgid: %s' % self.msgid)
+        # import here to avoid circular import, archive.utils imports this module
+        from mlarchive.archive.utils import is_duplicate_message
+        for existing in existing_messages:
+            archived_msg = existing.pymsg
+            if archived_msg is None:
+                # can't read the archived copy, can't confirm it's a duplicate
+                continue
+            if is_duplicate_message(self.email_message, archived_msg):
+                return True
+
+        blob_path = self.write_msg(subdir='_dupes')
+        raise DuplicateMessageId(
+            'Duplicate msgid with differing content. list:{} msgid:{} dupes:{}'.format(
+                self.listname, self.msgid, blob_path))
+
+    def check_hashcode_collision(self):
+        """Raises HashcodeCollision if a different message-id on this list hashes to
+        the same value. These messages would collide in blob storage and in the
+        message URL. NOTE: get_hash() is also called in process(), setting it here so
+        the check has a hashcode to work with.
+        """
+        self.hashcode = self.get_hash()
+        if Message.objects.filter(hashcode=self.hashcode, email_list__name=self.listname).exists():
+            # don't save file here, we might not be saving failed messages
+            raise HashcodeCollision(
+                'Hashcode collision. list:{} msgid:{} hashcode:{}'.format(
+                    self.listname, self.msgid, self.hashcode))
+
+    def save(self, test=False):
+        """Ensure message is not duplicate message-id or hash.  Save message to database.
+        Save to disk (if not test mode) and process attachments.
+        """
+        self.run_inspectors()
+
+        if self.is_redelivery():
+            logger.info('Duplicate message dropped. list:{} msgid:{}'.format(
+                self.listname, self.msgid))
+            return
+
+        self.check_hashcode_collision()
 
         # ensure message has been processed
         _ = self.archive_message    # noqa
@@ -966,6 +1023,7 @@ class MessageWrapper(object):
         """Write a copy of the original email message to the disk archive.
         Use optional argument subdir to specify a subdirectory within the list directory
         ie. "_filtered" or "_failure"
+        Returns the blob name the message was stored under.
         """
         # set filename
         filename = self.hashcode
@@ -1008,3 +1066,5 @@ class MessageWrapper(object):
         # store regular public messages
         else:
             store_file('ml-messages', blob_path, io.BytesIO(self.bytes), content_type='message/rfc822')
+
+        return blob_path

@@ -17,7 +17,7 @@ do_setup(django_settings='mlarchive.settings.noindex')
 
 
 from django.conf import settings
-from mlarchive.archive.mail import MessageWrapper, DuplicateMessage, get_from, save_failed_msg
+from mlarchive.archive.mail import MessageWrapper, NotArchived, get_from, save_failed_msg
 from mlarchive.archive.models import EmailList
 
 import os
@@ -94,12 +94,12 @@ def main():
                 mw.archive_message.spam_score = settings.MARK_LOAD_SPAM
                 if not args.check:
                     mw.save()
-            except DuplicateMessage as error:
+            except NotArchived as error:
                 # if duplicate message has been saved to _dupes
                 logger.warning("Import Warn [{0}, {1}, {2}]".format(file,error.args,get_from(mw)))
             except Exception as error:
                 logger.error("Import Error [{0}, {1}, {2}]".format(file,error.args,get_from(mw)))
-                save_failed_msg(msg,listname,error)
+                save_failed_msg(msg.as_bytes(),listname,error)
 
             # remove from filtered directory
             if not args.check:

@@ -38,7 +38,7 @@ pytest
 pytest-cov>=7.1.0
 pytest-flakes
 pytest-pycodestyle
-pytest-django>=2.9.1
+pytest-django>=4.13.0
 pytest-playwright==0.8.0
 python-dateutil>=2.9.0.post0
 scout-apm>=2.23.0

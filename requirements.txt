@@ -29,7 +29,7 @@ mailmanclient==3.3.5
 mock>=5.2.0
 mozilla-django-oidc==5.0.2
 passlib==1.7.4
-psycopg==3.3.3
+psycopg==3.3.4
 pymemcache==4.0.0
 python-json-logger>=4.1.0
 pyopenssl

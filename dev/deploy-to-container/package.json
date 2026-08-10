@@ -4,7 +4,7 @@
   "dependencies": {
     "dockerode": "^5.0.1",
     "fs-extra": "^11.4.0",
-    "nanoid": "6.0.0",
+    "nanoid": "6.0.1",
     "nanoid-dictionary": "5.0.0",
     "slugify": "1.6.9",
     "tar": "^7.5.22",

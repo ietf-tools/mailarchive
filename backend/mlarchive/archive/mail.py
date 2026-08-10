@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2026, All Rights Reserved
+
 import base64
 import datetime
 import email
@@ -154,20 +156,21 @@ def archive_message(data, listname, private=False, save_failed=True):
         mw = MessageWrapper.from_bytes(data, listname, private=private)
         mw.save()
     except InspectorMessage as error:
-        # if SpamMessage it's already been saved to _spam
-        logger.info('Message not archived. [{0}]'.format(error.args))
+        # a spam message, a copy was saved to spam bucket, no review required
+        logger.info('Message not archived [{0}]'.format(error.args))
         return 0
     except NotArchived as error:
-        # message intentionally not archived, a copy has already been saved
-        logger.error('Archive message failed [{0}]'.format(error.args))
+        # message intentionally not archived, ie. duplicate message-id, a copy has been saved
+        logger.error('Message not archived [{0}]'.format(error.args))
         return 0
     except ArchiveFailure as error:
-        # an anticipated failure, no traceback needed
+        # one of many unexpected conditions, optionally save message (not when doing bulk import)
         logger.error('Archive message failed [{0}]'.format(error.args))
         if save_failed:
             save_failed_msg(data, listname, error)
         return 1
     except Exception as error:
+        # catchall
         traceback.print_exc(file=sys.stdout)
         logger.error('Archive message failed [{0}]'.format(error.args))
         if save_failed:
@@ -350,26 +353,34 @@ def get_received_date(msg):
     return datestring_to_datetime(datestring)
 
 
-def save_failed_msg(data, listname, error):
-    """Called when an attempt to import a message fails.  "data" is the original
-    message as bytes, it is saved unaltered.  Log error entry should contain useful
-    information about the error, the message identity and the filename it is being
-    saved under
+def get_failed_filename(path, listname):
+    """Returns the first name of the form [date].[sequence] not already in use, both
+    on disk and in the failed bucket, so the name doesn't depend on the disk archive.
+    The disk is checked as well so we don't overwrite files saved before the bucket
+    existed.  A blob storage error here is not fatal, the disk copy is what matters.
     """
-    assert isinstance(data, bytes)
-    # get filename. Use the first sequence number free in the failed bucket, so
-    # the name doesn't depend on the disk archive. The disk is checked too, so
-    # we don't overwrite files saved before the bucket existed.
-    path = EmailList.get_failed_dir(listname)
     basename = datetime.datetime.today().strftime('%Y-%m-%d')
     for sequence in range(10000):
         filename = '{}.{}'.format(basename, str(sequence).zfill(4))
-        if (not exists_in_storage('ml-messages-failed', os.path.join(listname, filename))
-                and not os.path.exists(os.path.join(path, filename))):
-            break
-    else:
-        # more failures in one day than the sequence allows, fall back to a uuid
-        filename = '{}.{}'.format(basename, uuid.uuid4())
+        if os.path.exists(os.path.join(path, filename)):
+            continue
+        try:
+            if exists_in_storage('ml-messages-failed', os.path.join(listname, filename)):
+                continue
+        except Exception as error:
+            logger.error('Error checking failed message name [{0}]'.format(error))
+        return filename
+
+    # more failures in one day than the sequence allows, fall back to a uuid
+    return '{}.{}'.format(basename, uuid.uuid4())
+
+
+def save_failed_msg(data, listname, error):
+    """Called when an attempt to import a message fails.  "data" is the original
+    message as bytes, it is saved unaltered.
+    """
+    path = EmailList.get_failed_dir(listname)
+    filename = get_failed_filename(path, listname)
 
     # log entry
     msg = email.message_from_bytes(data)
@@ -378,12 +389,18 @@ def save_failed_msg(data, listname, error):
         os.path.join(path, filename), (error.__class__, error.args), identifier)
     logger.error(log_msg)
 
-    write_file(os.path.join(path, filename), data)
+    try:
+        write_file(os.path.join(path, filename), data)
+    except Exception as err:
+        logger.error('Error saving failed message to disk [{0}, {1}]'.format(filename, err))
 
     # write to the failed bucket as well, mirroring the disk layout
-    blob_path = os.path.join(listname, filename)
-    store_file('ml-messages-failed', blob_path, io.BytesIO(data),
-               content_type='message/rfc822')
+    try:
+        blob_path = os.path.join(listname, filename)
+        store_file('ml-messages-failed', blob_path, io.BytesIO(data),
+                   content_type='message/rfc822')
+    except Exception as err:
+        logger.error('Error saving failed message to bucket [{0}, {1}]'.format(filename, err))
 
 
 def call_remote_backup(path):
@@ -942,19 +959,18 @@ class MessageWrapper(object):
 
     def run_inspectors(self):
         """Runs the configured inspectors, they raise InspectorMessage to reject
-        the message
+        the message.  Inspector names are validated at startup, see
+        archive.apps.ArchiveConfig.
         """
-        if hasattr(settings, 'INSPECTORS'):
-            for inspector_name in settings.INSPECTORS:
-                inspector_class = eval(inspector_name)
-                inspector = inspector_class(self)
-                inspector.inspect()
+        for inspector_name in getattr(settings, 'INSPECTORS', {}):
+            inspector_class = Inspector.registry[inspector_name.lower()]
+            inspector_class(self).inspect()
 
     def is_redelivery(self):
         """Returns True if this message is a redelivery of one already archived on
-        this list, meaning it can be dropped. Returns False if the message-id isn't
-        in use on this list. If the message-id is in use by a message with differing
-        content a copy is saved to _dupes and DuplicateMessageId is raised.
+        this list, meaning it can be dropped. If the message-id is in use by a
+        message with differing content a copy is saved to _dupes and DuplicateMessageId
+        is raised.
         """
         existing_messages = Message.objects.filter(
             msgid=self.msgid, email_list__name=self.listname)
@@ -990,8 +1006,8 @@ class MessageWrapper(object):
                     self.listname, self.msgid, self.hashcode))
 
     def save(self, test=False):
-        """Ensure message is not duplicate message-id or hash.  Save message to database.
-        Save to disk (if not test mode) and process attachments.
+        """Run message checks (spam, duplicate, etc).  Save message metadata
+        to database. Save message to archive (if not test mode) and process attachments.
         """
         self.run_inspectors()
 
@@ -1005,7 +1021,7 @@ class MessageWrapper(object):
         # ensure message has been processed
         _ = self.archive_message    # noqa
 
-        # write message to disk and then save, post_save signal calls indexer
+        # write message to disk and then save to db, post_save signal calls indexer
         # which requires file to be present
         if not test:
             self.write_msg()

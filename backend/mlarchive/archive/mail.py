@@ -389,18 +389,13 @@ def save_failed_msg(data, listname, error):
         os.path.join(path, filename), (error.__class__, error.args), identifier)
     logger.error(log_msg)
 
-    try:
-        write_file(os.path.join(path, filename), data)
-    except Exception as err:
-        logger.error('Error saving failed message to disk [{0}, {1}]'.format(filename, err))
+    # write to disk
+    write_file(os.path.join(path, filename), data)
 
     # write to the failed bucket as well, mirroring the disk layout
-    try:
-        blob_path = os.path.join(listname, filename)
-        store_file('ml-messages-failed', blob_path, io.BytesIO(data),
-                   content_type='message/rfc822')
-    except Exception as err:
-        logger.error('Error saving failed message to bucket [{0}, {1}]'.format(filename, err))
+    blob_path = os.path.join(listname, filename)
+    store_file('ml-messages-failed', blob_path, io.BytesIO(data),
+               content_type='message/rfc822')
 
 
 def call_remote_backup(path):

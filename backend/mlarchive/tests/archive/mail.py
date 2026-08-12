@@ -27,6 +27,7 @@ from mlarchive.archive.mail import (archive_message, clean_spaces, MessageWrappe
     lookup_extension, get_message_from_bytes, make_hash)
 from mlarchive.archive.storage_utils import (exists_in_storage, retrieve_bytes,
     retrieve_str)
+from mlarchive.blobdb.models import Blob
 from mlarchive.utils.test_utils import message_from_file, is_email_message, is_json
 
 
@@ -125,6 +126,57 @@ This is a test email.  database
 
 
 @pytest.mark.django_db(transaction=True)
+def test_archive_message_duplicate(client):
+    '''A redelivery of a message already archived on this list gets dropped'''
+    assert archive_message(SIMPLE_MESSAGE_BYTES, 'test', private=False) == 0
+    assert Message.objects.all().count() == 1
+
+    assert archive_message(SIMPLE_MESSAGE_BYTES, 'test', private=False) == 0
+    # message dropped, not archived and not saved for review
+    assert Message.objects.all().count() == 1
+    assert not Blob.objects.filter(bucket='ml-messages-dupes').exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_archive_message_duplicate_msgid_different_content(client):
+    '''A message reusing a msgid already on this list, with different content,
+    gets saved to the dupes bucket for review'''
+    assert archive_message(SIMPLE_MESSAGE_BYTES, 'test', private=False) == 0
+    assert Message.objects.all().count() == 1
+    other = SIMPLE_MESSAGE_BYTES.replace(b'This is a test email.', b'This is a different email.')
+
+    assert archive_message(other, 'test', private=False) == 0
+    # message not archived, saved to the dupes bucket
+    assert Message.objects.all().count() == 1
+    blobs = Blob.objects.filter(bucket='ml-messages-dupes')
+    assert blobs.count() == 1
+    assert blobs.first().name.startswith('test/')
+
+
+@pytest.mark.django_db(transaction=True)
+def test_archive_message_same_msgid_different_list(client):
+    '''The duplicate check is scoped to the list, the same message on another
+    list gets archived'''
+    assert archive_message(SIMPLE_MESSAGE_BYTES, 'test', private=False) == 0
+    assert archive_message(SIMPLE_MESSAGE_BYTES, 'other', private=False) == 0
+    assert Message.objects.all().count() == 2
+    assert not Blob.objects.filter(bucket='ml-messages-dupes').exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_archive_message_hashcode_collision(client):
+    '''A different msgid on this list hashing to the same value is not archived'''
+    email_list = EmailListFactory.create(name='test')
+    MessageFactory.create(
+        email_list=email_list,
+        msgid='different@example.com',
+        hashcode=make_hash('0000000002@example.com', 'test'))
+
+    assert archive_message(SIMPLE_MESSAGE_BYTES, 'test', private=False) == 1
+    assert not Message.objects.filter(msgid='0000000002@example.com').exists()
+
+
+@pytest.mark.django_db(transaction=True)
 def test_archive_message_fail(client):
     data = b'Hello,\n This is a test email.  With no headers.'
     # remove any existing failed messages
@@ -134,8 +186,13 @@ def test_archive_message_fail(client):
     status = archive_message(data, 'public', private=False)
     assert status == 1
     assert Message.objects.all().count() == 0
-    filename = os.path.join(publist.failed_dir, datetime.datetime.today().strftime('%Y-%m-%d') + '.0000')
-    assert os.path.exists(filename)
+    pattern = datetime.datetime.today().strftime('%Y-%m-%d') + '.*'
+    matches = glob.glob(os.path.join(publist.failed_dir, pattern))
+    assert len(matches) == 1
+    filename = matches[0]
+    # ensure message in the failed bucket
+    basename = os.path.basename(filename)
+    assert exists_in_storage('ml-messages-failed', f'public/{basename}')
     os.remove(filename)                         # cleanup
 
 

@@ -260,6 +260,10 @@ STORAGES = {
         "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
         "OPTIONS": {"bucket_name": 'ml-messages-spam'},
     },
+    'ml-messages-failed': {
+        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "OPTIONS": {"bucket_name": 'ml-messages-failed'},
+    },
     'ml-templates': {
         "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
         "OPTIONS": {"bucket_name": 'ml-templates'},
@@ -276,6 +280,7 @@ ARTIFACT_STORAGE_NAMES: list[str] = [
     "ml-messages-filtered",
     "ml-messages-dupes",
     "ml-messages-spam",
+    "ml-messages-failed",
 ]
 
 ENABLE_BLOBSTORAGE = True
@@ -290,6 +295,7 @@ BLOBDB_REPLICATION = {
         "ml-messages-incoming",
         "ml-messages-filtered",
         "ml-messages-dupes",
+        "ml-messages-failed",
         "ml-messages-spam"],
     "VERBOSE_LOGGING": True,
 }

@@ -186,10 +186,12 @@ def test_archive_message_fail(client):
     status = archive_message(data, 'public', private=False)
     assert status == 1
     assert Message.objects.all().count() == 0
-    basename = datetime.datetime.today().strftime('%Y-%m-%d') + '.0000'
-    filename = os.path.join(publist.failed_dir, basename)
-    assert os.path.exists(filename)
+    pattern = datetime.datetime.today().strftime('%Y-%m-%d') + '.*'
+    matches = glob.glob(os.path.join(publist.failed_dir, pattern))
+    assert len(matches) == 1
+    filename = matches[0]
     # ensure message in the failed bucket
+    basename = os.path.basename(filename)
     assert exists_in_storage('ml-messages-failed', f'public/{basename}')
     os.remove(filename)                         # cleanup
 

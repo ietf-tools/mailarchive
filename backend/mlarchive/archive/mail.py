@@ -27,7 +27,7 @@ from mlarchive.archive.models import (Attachment, EmailList, Legacy, Message,
     Thread, get_in_reply_to_message, is_attachment)
 from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES, UNKNOWN_CONTENT_TYPE
 from mlarchive.archive.inspectors import *      # noqa
-from mlarchive.archive.storage_utils import exists_in_storage, store_file
+from mlarchive.archive.storage_utils import store_file
 from mlarchive.archive.thread import compute_thread, reconcile_thread, parse_message_ids
 from mlarchive.utils.decorators import check_datetime
 from mlarchive.utils.encoding import decode_safely, decode_rfc2047_header, get_filename
@@ -353,34 +353,13 @@ def get_received_date(msg):
     return datestring_to_datetime(datestring)
 
 
-def get_failed_filename(path, listname):
-    """Returns the first name of the form [date].[sequence] not already in use, both
-    on disk and in the failed bucket, so the name doesn't depend on the disk archive.
-    The disk is checked as well so we don't overwrite files saved before the bucket
-    existed.  A blob storage error here is not fatal, the disk copy is what matters.
-    """
-    basename = datetime.datetime.today().strftime('%Y-%m-%d')
-    for sequence in range(10000):
-        filename = '{}.{}'.format(basename, str(sequence).zfill(4))
-        if os.path.exists(os.path.join(path, filename)):
-            continue
-        try:
-            if exists_in_storage('ml-messages-failed', os.path.join(listname, filename)):
-                continue
-        except Exception as error:
-            logger.error('Error checking failed message name [{0}]'.format(error))
-        return filename
-
-    # more failures in one day than the sequence allows, fall back to a uuid
-    return '{}.{}'.format(basename, uuid.uuid4())
-
-
 def save_failed_msg(data, listname, error):
     """Called when an attempt to import a message fails.  "data" is the original
     message as bytes, it is saved unaltered.
     """
     path = EmailList.get_failed_dir(listname)
-    filename = get_failed_filename(path, listname)
+    filename = '{}.{}'.format(
+        datetime.datetime.today().strftime('%Y-%m-%d'), uuid.uuid4())
 
     # log entry
     msg = email.message_from_bytes(data)

@@ -242,7 +242,11 @@ def build_maildir_tar(results, tar, basename):
     """Returns tar file with messages from SearchQuerySet in maildir format"""
     for result in results:
         arcname = os.path.join(basename, result.object.email_list.name, result.object.hashcode)
-        tar.add(result.object.get_file_path(), arcname=arcname)
+        content = result.object.get_raw_message()
+        info = tarfile.TarInfo(name=arcname)
+        info.size = len(content)
+        info.mtime = result.object.date.timestamp()
+        tar.addfile(info, BytesIO(content))
     return tar
 
 
@@ -270,14 +274,13 @@ def build_mbox_tar(results, tar, basename):
             mbox_date = date
             mbox_list = mlist
 
-        with open(result.object.get_file_path(), 'rb') as input:
-            # add envelope header if missing
-            if not input.read(5) == b'From ':
-                from_line = smart_bytes(result.object.get_from_line()) + b'\n'
-                mbox_file.write(from_line)
-            input.seek(0)
-            mbox_file.write(input.read())
-            mbox_file.write(b'\n')
+        content = result.object.get_raw_message()
+        # add envelope header if missing
+        if not content.startswith(b'From '):
+            from_line = smart_bytes(result.object.get_from_line()) + b'\n'
+            mbox_file.write(from_line)
+        mbox_file.write(content)
+        mbox_file.write(b'\n')
 
     mbox_file.close()
     tar.add(temp_path, arcname=os.path.join(basename,

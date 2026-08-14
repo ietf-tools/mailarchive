@@ -1005,7 +1005,7 @@ def message_download(request, list_name, id, msg):
     """Returns the raw message text
     NOTE: the "msg" argument is a Message object added by the check_access decorator
     """
-    content = msg.get_body_raw()
+    content = msg.get_raw_message()
     response = HttpResponse(content, content_type='message/rfc822')
     filename = '{}_{}.eml'.format(msg.email_list.name, msg.msgid[:6])
     response['Content-Disposition'] = 'attachment; filename="{}"'.format(filename)

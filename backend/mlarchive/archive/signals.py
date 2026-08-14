@@ -73,11 +73,7 @@ def _message_remove(sender, instance, **kwargs):
         shutil.move(path, target_dir)
 
     # move blob
-    if instance.email_list.private:
-        source = 'ml-messages-private'
-    else:
-        source = 'ml-messages'
-    move_object(instance.get_blob_name(), source, 'ml-messages-removed')
+    move_object(instance.get_blob_name(), instance.get_blob_bucket(), 'ml-messages-removed')
 
     # delete blob from ml-messages-json bucket
     # Ok if it's not there, a private message wouldn't be

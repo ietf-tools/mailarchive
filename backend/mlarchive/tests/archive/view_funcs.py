@@ -6,7 +6,8 @@ import os
 import pytest
 import tarfile
 from datetime import timezone
-from factories import EmailListFactory, ThreadFactory, MessageFactory, UserFactory
+from factories import (EmailListFactory, ThreadFactory, MessageFactory, UserFactory,
+    store_message_blob)
 
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
@@ -174,15 +175,12 @@ def test_build_mbox_tar_from_sorted(tmpdir):
         thread=thread_jan, thread_order=1, msgid='exp03',
         date=datetime.datetime(2024, 1, 15, tzinfo=timezone.utc))
 
-    # Create the message files that get_file_path() points to
-    list_dir = os.path.join(settings.ARCHIVE_DIR, acme.name)
-    os.makedirs(list_dir, exist_ok=True)
+    # Create the message blobs that get_raw_message() reads
     for msg, subject in [(m1, 'January A'), (m2, 'February B'), (m3, 'January C')]:
-        with open(msg.get_file_path(), 'wb') as f:
-            f.write(
-                f'From sender@example.com Mon Jan  1 00:00:00 2024\n'
-                f'Subject: {subject}\n\nBody\n\n'.encode()
-            )
+        store_message_blob(msg, (
+            f'From sender@example.com Mon Jan  1 00:00:00 2024\n'
+            f'Subject: {subject}\n\nBody\n\n'.encode()
+        ))
 
     class FakeResult:
         def __init__(self, msg):

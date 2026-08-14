@@ -9,10 +9,24 @@ import random
 from datetime import timezone
 
 from mlarchive.archive.mail import get_base_subject
+from mlarchive.archive.storage_utils import store_bytes
 
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for x in range(size))
+
+
+def store_message_blob(message, content):
+    """Store content as the blob for message.  Use with MessageFactory, which
+    creates a Message record without any content, when the test needs to read
+    the message body.
+    """
+    store_bytes(
+        message.get_blob_bucket(),
+        message.get_blob_name(),
+        content,
+        allow_overwrite=True,
+        content_type='message/rfc822')
 
 
 class EmailListFactory(factory.django.DjangoModelFactory):

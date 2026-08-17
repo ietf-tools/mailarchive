@@ -1,0 +1,131 @@
+
+
+
+
+From owner-ietf  Sat Dec 23 17:35:04 1989
+Received: by venera.isi.edu (5.61/5.61+local)
+	id <AA00785>; Sat, 23 Dec 89 16:28:29 -0800
+Received-Date: Sat, 23 Dec 89 16:28:27 -0800
+Received: from CENTRAL.CIS.UPENN.EDU by venera.isi.edu (5.61/5.61+local)
+	id <AA00781>; Sat, 23 Dec 89 16:28:27 -0800
+Received: from PCPOND.CIS.UPENN.EDU by central.cis.upenn.edu
+	id AA16286; Sat, 23 Dec 89 19:28:10 -0500
+Return-Path: <farber@pcpond.cis.upenn.edu>
+Received: by pcpond.cis.upenn.edu
+	id AA02011; Sat, 23 Dec 89 19:27:12 EST
+Date: Sat, 23 Dec 89 19:27:12 EST
+From: farber@pcpond.cis.upenn.edu (David J. Farber)
+Posted-Date: Sat, 23 Dec 89 19:27:12 EST
+Message-Id: <8912240027.AA02011@pcpond.cis.upenn.edu>
+To: ietf@venera.isi.edu
+Subject: Special issue on driving applications
+
+
+
+Begin forwarded message:
+
+Resent-Message-Id: <8912232202.AA21403@linc.cis.upenn.edu>
+Posted-Date: Fri, 22 Dec 89 17:12:04 SET
+Date: Fri, 22 Dec 89 17:12:04 SET
+From: "Harry Rudin" <HR@IBM.COM>
+To: rkahn@nri.reston.va.us, farber@LINC.CIS.UPENN.EDU
+Subject: Special issue on driving applications
+
+As I mentioned on the phone, Peter Heinzmann and I are trying
+to put together a special issue of Computer Networks and
+ISDN Systems aimed at predicting traffic characteristics for
+applications which will drive high-speed networking.All
+contributions will be reviewed.  Contributions should contain
+a description of the application and measured or projected
+characteristics of the traffic.
+
+We'll send prospective authors
+a list of points which we hope they will cover.
+We would be most grateful if you would circulate this request.
+
+Regards and best wishes for the coming holidays,
+Harry
+
+
+
+
+
+
+From owner-ietf  Wed Dec 27 07:40:49 1989
+Received: by venera.isi.edu (5.61/5.61+local)
+	id <AA06518>; Wed, 27 Dec 89 07:18:40 -0800
+Posted-Date: Wed, 27 Dec 89 10:16:27 EST
+Received-Date: Wed, 27 Dec 89 07:18:38 -0800
+Received: from NRI.RESTON.VA.US by venera.isi.edu (5.61/5.61+local)
+	id <AA06514>; Wed, 27 Dec 89 07:18:38 -0800
+Date: Wed, 27 Dec 89 10:16:27 EST
+X-Mailer: Mail User's Shell (6.5 4/17/89)
+From: "Monica L. Hart" <mhart@NRI.Reston.VA.US>
+To: ietf
+Subject: New Version of the SNMP I-D
+Cc: mhart@NRI.Reston.VA.US
+Message-Id:  <8912271016.aa17681@NRI.NRI.Reston.VA.US>
+
+
+A new version of the SNMP Working Group Internet Draft is now
+available at the hosts NIC.DDN.MIL and NNSC.NSF.NET.
+
+	Title:     "Management Information Base for Network 
+		   Management of TCP/IP-based Internets"
+        Editor:    M.T. Rose/NYSERNet, Inc.
+	Filename:  draft-ietf-snmp-mib2-01.txt
+	Date:      December 1989
+
+
+This draft can be obtained via FTP from the above hosts using the
+FILENAME draft-ietf-snmp-mib2-01.txt.  Login with FTP, username 
+ANONYMOUS and password GUEST.  Once connected to the NIC cd
+"internet-drafts:" and when connected to NNSC cd "internet-drafts".
+
+If you encounter any problems please let me know.
+
+Monica Hart/NRI
+
+
+
+
+
+From owner-ietf  Wed Dec 27 09:41:02 1989
+Received: by venera.isi.edu (5.61/5.61+local)
+	id <AA06499>; Wed, 27 Dec 89 07:18:00 -0800
+Posted-Date: Wed, 27 Dec 89 10:15:48 EST
+Received-Date: Wed, 27 Dec 89 07:17:58 -0800
+Received: from NRI.RESTON.VA.US by venera.isi.edu (5.61/5.61+local)
+	id <AA06495>; Wed, 27 Dec 89 07:17:58 -0800
+Date: Wed, 27 Dec 89 10:15:48 EST
+X-Mailer: Mail User's Shell (6.5 4/17/89)
+From: "Monica L. Hart" <mhart@NRI.Reston.VA.US>
+To: ietf
+Subject: New version of the Alert Management I-D
+Cc: mhart@NRI.Reston.VA.US
+Message-Id:  <8912271015.aa17660@NRI.NRI.Reston.VA.US>
+
+
+A new version of the Alert Management Working Group Internet-Draft
+is now available at the hosts NIC.DDN.MIL and NNSC.NSF.NET via
+FTP.
+
+		Editor:    Louis Steinberg/IBM Corporation
+		Title:     "Managing Asynchronously Generated Alerts"
+		Filename:  draft-ietf-alertman-asyncalertman-01.txt
+		Date:      December 1989
+
+This draft can be obtained via FTP from NIC.DDN.MIL and NNSC.NSF.NET,
+with the FILENAME draft-ietf-alertman-asyncalertman-01.txt.  Login
+with FTP, username ANONYMOUS and password GUEST.  Once connected at the 
+NIC cd "internet-drafts:" and when you are connected at NNSC cd 
+"internet-drafts".
+
+If you encounter any problems please let me know.
+
+Monica Hart/NRI
+
+
+
+
+

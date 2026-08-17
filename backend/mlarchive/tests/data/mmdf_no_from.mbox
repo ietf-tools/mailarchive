@@ -1,0 +1,230 @@
+
+Received: from nri.nri.reston.va.us by ietf.NRI.Reston.VA.US id aa03187;
+          8 Apr 92 21:51 EDT
+Received: from venera.isi.edu by NRI.Reston.VA.US id aa08348; 8 Apr 92 21:54 EDT
+Received: by venera.isi.edu (5.65c/5.65+local-4)
+	id <AA01075>; Wed, 8 Apr 1992 10:32:55 -0700
+Received: from TIS.COM by venera.isi.edu (5.65c/5.65+local-4)
+	id <AA01068>; Wed, 8 Apr 1992 10:32:49 -0700
+Received: from TIS.COM by TIS.COM (4.1/SUN-5.64)
+	id AA10244; Wed, 8 Apr 92 13:31:31 EDT
+Message-Id: <9204081731.AA10244@TIS.COM>
+Reply-To: James M Galvin <galvin@tis.com>
+To: Jordan Brown <jbrown@qdeck.com>
+Cc: ietf@isi.edu
+Subject: Re: MD2, MD5, etc 
+In-Reply-To: Jordan Brown's message
+             of Tue, 07 Apr 92 12:15:18 PDT.
+             <9204071215.aa10825@sco1.qdeck.com> 
+Date: Wed, 08 Apr 92 13:31:28 -0400
+From: James M Galvin <galvin@tis.com>
+
+	Why do we need two (three?  five?) such algorithms?  I will
+	admit to almost complete ignorance of the topic, but when the
+	algorithms can be described by exactly the same paragraph, it
+	seems like endorsing more than one algorithm is a road to
+	confusion, excess work, and so on.
+
+Well, speaking for myself, the publication of the documents as
+informational RFCs is not an endorsement per se, it is a distribution of
+the specification of each algorithm.
+
+As to why there is more than one, no single algorithm is suitable for
+all situations.  In particular, each has different performance and design
+characteristics.  In order from slowest to fastest we have MD2, MD5, and
+MD4.
+
+Check out the security considerations sections of MD4 for a statement
+about its usage and design characteristics.  MD5 was created to balance
+the performance of MD4 with the traditional design characteristics of
+MD2.
+
+MD2 is required for PEM while MD5 is required for SNMP Security and PPP
+Authentication.  MD4 was considered for SNMP Security and PEM, but its
+security is still being reviewed.  Keep in mind it is on the leading
+edge of design characteristics for such algorithms.
+
+Jim
+
+
+Received: from nri.nri.reston.va.us by ietf.NRI.Reston.VA.US id aa03194;
+          8 Apr 92 21:55 EDT
+Received: from venera.isi.edu by NRI.Reston.VA.US id aa08433; 8 Apr 92 21:58 EDT
+Received: by venera.isi.edu (5.65c/5.65+local-4)
+	id <AA00429>; Wed, 8 Apr 1992 10:20:27 -0700
+From: Joyce Reynolds <jkrey@isi.edu>
+Received: from akamai.isi.edu by venera.isi.edu (5.65c/5.65+local-4)
+	id <AA00408>; Wed, 8 Apr 1992 10:20:10 -0700
+Date: Wed, 8 Apr 92 10:19:44 PDT
+Posted-Date: Wed, 8 Apr 92 10:19:44 PDT
+Message-Id: <9204081719.AA01221@akamai.isi.edu>
+Received: by akamai.isi.edu (4.1/4.0.3-4)
+	id <AA01221>; Wed, 8 Apr 92 10:19:44 PDT
+To: ietf@isi.edu, rfc-dist@nic.ddn.mil
+Subject: RFC1305 on Network Time Protocol (Version 3)
+Cc: jkrey@isi.edu
+
+
+
+
+A new Request for Comments is now available in the online RFC
+libraries.
+
+	RFC 1305:
+
+        Title:      Network Time Protocol (v3)
+       	Author:     D. Mills
+	Mailbox:    mills@udel.edu
+	Pages:      120
+	Characters: too many to count
+	Obsoletes:  RFC 1119
+
+Note: This is a PostScript RFC, a secondary version is available in
+ASCII.  The secondary ASCII version may lack figures and the
+information encoded in typographic variation (italics, boldface,
+etc.).  Since this information often provides essential context, the
+ASCII version is at best incomplete and at worst misleading.  Anyone
+expecting to understand this document is strongly encouraged to obtain
+the PostScript version.
+
+SPECIAL NOTICE:  The PostScript version is three files.  The file
+made available here is a compressed tar file of those three files.
+
+ANY PROBLEMS WITH THIS RFC DISTRIBUTION SHOULD BE REFERRED TO
+
+		Dave Mills (mills@udel.edu)
+
+
+This document describes the Network Time Protocol (NTP), specifies its
+formal structure and summarizes information useful for its
+implementation. NTP provides the mechanisms to synchronize time and
+coordinate time distribution in a large, diverse internet operating at
+rates from mundane to lightwave. It uses a returnable-time design in
+which a distributed subnet of time servers operating in a self-
+organizing, hierarchical-master-slave configuration synchronizes local
+clocks within the subnet and to national time standards via wire or
+radio. The servers can also redistribute reference time via local
+routing algorithms and time daemons.
+
+This is now a Proposed Standard Protocol.
+
+This RFC specifies an IAB standards track protocol for the Internet
+community, and requests discussion and suggestions for improvements.
+Please refer to the current edition of the "IAB Official Protocol
+Standards" for the standardization state and status of this protocol.
+Distribution of this memo is unlimited.
+
+Requests to be added to or deleted from this RFC-DIST distribution
+list should be sent to RFC-REQUEST@NIC.DDN.MIL.
+
+RFCs can be obtained via FTP from FTP.NISC.SRI.COM, NIS.NSF.NET,
+NISC.JVNC.NET, VENERA.ISI.EDU, WUARCHIVE.WUSTL.EDU, SRC.DOC.IC.AC.UK,
+FTP.CONCERT.NET, or NIC.DDN.MIL.
+
+Details on obtaining RFCs via FTP or EMAIL may be obtained by sending
+an EMAIL message to "rfc-info@ISI.EDU" with the message body 
+"help: ways_to_get_rfcs".  For example:
+
+	To: rfc-info@ISI.EDU
+	Subject: getting rfcs
+
+	help: ways_to_get_rfcs
+
+Requests for special distribution should be addressed to either the
+author of the RFC in question, or to NIC@NIC.DDN.MIL.  Unless
+specifically noted otherwise on the RFC itself, all RFCs are for
+unlimited distribution.
+
+Submissions for Requests for Comments should be sent to
+RFC-EDITOR@ISI.EDU.  Please consult RFC 1111, "Instructions to RFC
+Authors", for further information.
+
+ANY PROBLEMS WITH THIS RFC DISTRIBUTION SHOULD BE REFERRED TO
+
+		Dave Mills (mills@udel.edu)
+
+
+Joyce K. Reynolds
+USC/Information Sciences Institute
+
+
+
+Received: from nri.nri.reston.va.us by ietf.NRI.Reston.VA.US id aa03201;
+          8 Apr 92 21:56 EDT
+Received: from venera.isi.edu by NRI.Reston.VA.US id aa08451; 8 Apr 92 21:59 EDT
+Received: by venera.isi.edu (5.65c/5.65+local-4)
+	id <AA29895>; Wed, 8 Apr 1992 10:14:54 -0700
+Received: from sabre.bellcore.com by venera.isi.edu (5.65c/5.65+local-4)
+	id <AA29885>; Wed, 8 Apr 1992 10:14:48 -0700
+Return-Path: <dave@sabre.bellcore.com@sabre.bellcore.com>
+Received: by sabre.bellcore.com (5.57/Ultrix2.4-C)
+	id AA03481; Wed, 8 Apr 92 13:09:03 EDT
+Received: by sword.bellcore.com;id 9204081713.AA21950
+Message-Id: <9204081713.AA21950@sword.bellcore.com>
+Date: Wed, 8 Apr 1992 12:23:45 -0500
+To: ietf@isi.edu
+From: dave@sabre.bellcore.com
+Subject: By popular demand--sins/layers
+
+I should know better--I received no less than 38 requests for
+the seven deadly sins/seven layers. In the interest of reducing
+the influx of mail to bellcore, I'm posting this to IETF general;
+apologies to all who don't find this appropriate, and please
+don't express your disdain by sending mail:-)
+
+I can't find the original document; if I do so in time, I'll
+publish it in my book as an appendix.  What I do have is more
+recent correspondence to someone who attended a course I offered
+where I used the material (if you teach OSI, you gotta offer
+comic relief):
+
+ISO Layer       Corresponding Sin       Rationale
+
+Application     Wrath                   Application is forever angry at
+                                        the mess it sees below (it should
+                                        point fingers?)
+
+Presentation    Sloth                   Presentation is too lazy to do 
+                                        anything productive itself
+
+Session         Lust                    Session always lusted after what
+                                        truly was Application functionality
+
+
+Transport       Avarice                 Transport always wanted all of the 
+
+                                        end-to-end functionality (of
+course,
+                                        it deserved it, but life ain't
+fair)
+
+Network         Gluttony                Network, more precisely Connection-
+                
+                                        Oriented Network, was always       
+      
+                                        overweight & overbearing, the
+result
+                                        of trying too often to eat
+Transport's
+                                        lunch
+
+Data Link       Envy                    Poor DLL, always starved for
+attention
+                                        (with ATM, maybe it is finally
+                                         feeling less neglected)
+
+Physical        Pride                   Phy roudly averted much of the 
+                                        controversy & nearly all of
+                                        the embarrassment  
+
+enjoy, but don't look for an Informational RFC for some time:-)
+---------
+David M. Piscitello
+Bellcore NVC 1C322
+331 Newman Springs Road
+Red Bank, NJ 07701
+(908)-758-2286
+(908)-785-4177 (Fax)
+
+
+

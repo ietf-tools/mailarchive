@@ -21,10 +21,11 @@ from django.utils.timezone import is_aware
 from factories import EmailListFactory, MessageFactory, ThreadFactory
 
 from mlarchive.archive.models import Message, EmailList
-from mlarchive.archive.mail import (archive_message, clean_spaces, MessageWrapper,
-    get_base_subject, get_envelope_date, get_from, get_header_date, get_mb,
-    get_received_date, parsedate_to_datetime, subject_is_reply,
-    lookup_extension, get_message_from_bytes, make_hash)
+from mlarchive.archive.mail import (archive_message, clean_spaces, CustomMMDF,
+    MessageWrapper, get_base_subject, get_envelope_date, get_from,
+    get_header_date, get_mb, get_received_date, parsedate_to_datetime,
+    subject_is_reply, lookup_extension, get_message_from_bytes, make_hash,
+    UnknownFormat)
 from mlarchive.archive.storage_utils import (exists_in_storage, retrieve_bytes,
     retrieve_str)
 from mlarchive.blobdb.models import Blob
@@ -392,6 +393,63 @@ def test_get_mb():
         assert len(mb) > 0
 
 
+def test_get_mb_mmdf():
+    """MMDF messages that lead with a "From " envelope line, ietf/1990-all style.
+    The fixture also leads with the stray postmarks these legacy files carry, which
+    must not appear as messages.
+    """
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mmdf.mbox')
+    mb = get_mb(path)
+    assert isinstance(mb, CustomMMDF)
+    messages = list(mb)
+    assert len(messages) == 3
+    for message in messages:
+        assert message.items()
+        assert message.get('Message-ID')
+    assert messages[0].get('Message-ID') == '<8912240027.AA02011@pcpond.cis.upenn.edu>'
+    assert messages[0].get('Subject') == 'Special issue on driving applications'
+    # the envelope line becomes the envelope header, not a header field
+    assert messages[0].items()[0][0] == 'Received'
+    assert messages[0].get_unixfrom() == 'From owner-ietf  Sat Dec 23 17:35:04 1989'
+    assert messages[0].get_from() == 'owner-ietf  Sat Dec 23 17:35:04 1989'
+    assert get_from(messages[0]) == 'owner-ietf  Sat Dec 23 17:35:04 1989'
+    assert get_envelope_date(messages[0]) == datetime.datetime(1989, 12, 23, 17, 35, 4)
+    # the envelope line is not part of the message content
+    assert not messages[0].as_bytes().startswith(b'From ')
+    mb.close()
+
+
+def test_get_mb_mmdf_no_from():
+    """MMDF messages that have no "From " envelope line, ietf/1992-04 style.  The
+    first line of the message is a header field and must be kept.
+    """
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mmdf_no_from.mbox')
+    mb = get_mb(path)
+    assert isinstance(mb, CustomMMDF)
+    messages = list(mb)
+    assert len(messages) == 3
+    for message in messages:
+        assert message.items()
+        assert message.get('Message-ID')
+    assert messages[0].get('Message-ID') == '<9204081731.AA10244@TIS.COM>'
+    # the first header field is intact, not consumed as the envelope line
+    assert messages[0].items()[0][0] == 'Received'
+    assert messages[0].items()[0][1].startswith('from nri.nri.reston.va.us')
+    # with no envelope line there is no envelope date, and no MAILER-DAEMON stand in
+    assert messages[0].get_unixfrom() is None
+    assert get_from(messages[0]) is None
+    assert get_envelope_date(messages[0]) is None
+    mb.close()
+
+
+def test_get_mb_empty_file(tmp_path):
+    """An empty file has no format to detect, it must not be read forever."""
+    path = tmp_path / 'empty.mbox'
+    path.write_bytes(b'\n\n\n')
+    with pytest.raises(UnknownFormat):
+        get_mb(str(path))
+
+
 def test_get_received_date():
     data = '''Received: from mail.ietf.org ([64.170.98.30]) by localhost \
 (ietfa.amsl.com [127.0.0.1]) (amavisd-new, port 10024) with ESMTP id oE4MnXBb8IJ9 \
@@ -446,6 +504,30 @@ def test_MessageWrapper_from_message():
     msg = email.message_from_bytes(SIMPLE_MESSAGE_BYTES)
     mw = MessageWrapper.from_message(msg, 'acme')
     assert isinstance(mw, MessageWrapper)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_MessageWrapper_from_line():
+    """from_line holds the envelope line without the leading "From ", which
+    get_from_line() adds back.  mailbox objects have already dropped it, only a
+    message parsed from raw bytes still carries it.
+    """
+    EmailListFactory.create(name='acme')
+    data = [
+        # mailbox.mbox, envelope line already stripped by set_from()
+        (mailbox.mbox(os.path.join(settings.BASE_DIR, 'tests', 'data', 'mbox.1'))[0],
+         'internet-drafts@ietf.org Wed Aug 21 16:20:36 2013'),
+        # CustomMMDF, same, see CustomMMDF.get_message()
+        (get_mb(os.path.join(settings.BASE_DIR, 'tests', 'data', 'mmdf.mbox'))[0],
+         'owner-ietf Sat Dec 23 17:35:04 1989'),
+        # no envelope line at all
+        (get_mb(os.path.join(settings.BASE_DIR, 'tests', 'data', 'mmdf_no_from.mbox'))[0],
+         ''),
+    ]
+    for message, expected in data:
+        mw = MessageWrapper.from_message(message, 'acme')
+        mw.process()
+        assert mw.from_line == expected
 
 
 def test_MessageWrapper_get_addresses():

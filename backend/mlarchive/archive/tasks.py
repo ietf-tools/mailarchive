@@ -212,7 +212,7 @@ def import_mbox_url_task(list_name, list_visibility, url):
         loader.process()
         logger.info(f'import_mbox_url_task: imported {url} into {list_name}, stats={loader.stats}')
     except Exception as err:
-        logger.error(f'import_mbox_url_task: failed for {url}: {err}')
+        logger.exception(f'import_mbox_url_task: failed for {url}: {err}')
     finally:
         response.close()
         for path in temp_files:

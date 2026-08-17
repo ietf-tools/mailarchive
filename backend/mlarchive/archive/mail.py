@@ -65,6 +65,8 @@ date_formats = ["%a %b %d %H:%M:%S %Y",
                 "%a %b %d %H:%M:%S %Y %Z"]
 
 MBOX_SEPARATOR_PATTERN = re.compile(r'^From .* (Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+')
+LINESEP = os.linesep.encode('ascii')
+MMDF_POSTMARK = b'\x01\x01\x01\x01\n'
 SEPARATOR_PATTERNS = [re.compile(b'^Return-[Pp]ath:'),
                       re.compile(b'^Envelope-to:'),
                       re.compile(b'^Received:'),
@@ -277,10 +279,16 @@ def get_envelope_date(msg):
 
 
 def get_from(msg):
-    """Returns the 'from' line of message.  This function is required because of the
-    disparity between different message objects.  email.message.Message has a
-    get_unixfrom() method while mailbox.mboxMessage has both get_unixfrom() and
-    a get_from() method, but the get_unixfrom() returns None
+    """Returns the "From " envelope line of the message, or None.  This function is
+    required because of the disparity between different message objects.
+    email.message.Message has only a get_unixfrom() method, which keeps the leading
+    "From ".  mailbox.mboxMessage and mailbox.MMDFMessage have both, and their
+    get_from() drops the leading "From ".  So the caller can't assume the returned
+    line is prefixed, see MessageWrapper.process().
+
+    NOTE: get_from() of a mailbox message built from raw bytes, rather than read from
+    a mailbox file, is the "MAILER-DAEMON <now>" placeholder that mailbox seeds,
+    which is not an envelope line at all, see CustomMMDF.get_message().
     """
     if hasattr(msg, 'get_from'):
         frm = msg.get_from()
@@ -317,19 +325,17 @@ def get_incr_path(path):
 
 
 def get_mb(path):
-    """Returns a mailbox object based on the first line of the file.
-    "From " -> Custom Type
-    "^A^A^A^A" -> MMDF
-    [another header line] -> Custom Type
+    """Returns a mailbox object based on the first not empty line of the file.
+    "From " -> standard mbox
+    "^A^A^A^A" -> CustomMMDF
     """
     with open(path, 'rb') as f:
         line = f.readline()
-        while not line or line == b'\n':
+        while line == b'\n':
             line = f.readline()
         if line.startswith(b'From '):                # most common mailbox type, MBOX
-            # return CustomMbox(path, separator=MBOX_SEPARATOR_PATTERN)
             return mailbox.mbox(path)
-        elif line == b'\x01\x01\x01\x01\n':          # next most common type, MMDF
+        elif line == MMDF_POSTMARK:                  # next most common type, MMDF
             return CustomMMDF(path)
         # TODO currently not supported
         # for pattern in SEPARATOR_PATTERNS:          # less common types
@@ -503,18 +509,46 @@ def make_hash(msgid, listname):
 class CustomMMDF(mailbox.MMDF):
     """Custom implementation of mailbox.MMDF.  The original class from the standard
     library is flawed in that it uses the same get_message() function as mailbox.mbox,
-    which consumes the first line of the message as the "From " line envelope header.
-    The MMDF format has "^A^A^A^A" postmark that separates messages, but these are
-    already excluded in the _toc.
+    which unconditionally consumes the first line of the message as the "From " line
+    envelope header.  The MMDF format has "^A^A^A^A" postmarks that separate messages,
+    and these are already excluded from the _toc, so whether a message leads with an
+    envelope line varies by file, see get_message().
     """
+    def _generate_toc(self):
+        """Generate the table of contents, discarding zero length entries.
+
+        Stray postmarks, which these legacy files often carry at the top of the
+        file, otherwise yield empty "messages" that can only fail to import.  They
+        are worse than that in the standard library get_message(), which reads a
+        negative length for such an entry and so returns the rest of the file.
+        """
+        super()._generate_toc()
+        entries = [(start, stop) for start, stop in self._toc.values() if stop > start]
+        self._toc = dict(enumerate(entries))
+        self._next_key = len(self._toc)
+
     def get_message(self, key):
-        """Return a Message representation or raise a KeyError."""
+        """Return a Message representation or raise a KeyError.
+
+        Both styles of MMDF file appear in the archive: messages that lead with a
+        "From " envelope line, ietf/1990-all, and messages that lead with a header
+        field, the ietf 1992 through 1998 files.  So check for the envelope line
+        instead of assuming it, dropping the first line of the second style would
+        discard a real header field.  A header field can't be mistaken for an
+        envelope line, header field names are followed by a colon, "From:" not
+        "From ".
+        """
         start, stop = self._lookup(key)
         self._file.seek(start)
-        # from_line = self._file.readline().replace(os.linesep, '')
-        string = self._file.read(stop - self._file.tell())
-        msg = self._message_factory(string.replace(os.linesep, '\n'))
-        # msg.set_from(from_line[5:])
+        string = self._file.read(stop - start).replace(LINESEP, b'\n')
+        from_line = b''
+        if string.startswith(b'From '):
+            from_line, _, string = string.partition(b'\n')
+        msg = self._message_factory(string)
+        from_line = from_line.decode('ascii', errors='replace')
+        if from_line:
+            msg.set_unixfrom(from_line)      # stays None when there is no envelope line
+        msg.set_from(from_line[5:])
         return msg
 
 
@@ -537,7 +571,7 @@ class CustomMbox(mailbox.mbox):
     """
     def __init__(self, *args, **kwargs):
         self._separator = kwargs.pop('separator')
-        self._false_separator = re.compile(b'^From .* message (Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+')
+        self._false_separator = re.compile(rb'^From .* message (Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s.+')
         # can't use super because mbox is old style class
         mailbox.mbox.__init__(self, *args, **kwargs)
 
@@ -883,9 +917,12 @@ class MessageWrapper(object):
         self.subject = self.get_subject()
         self.base_subject = get_base_subject(self.subject)
         self.thread = self.get_thread()
-        self.from_line = self.normalize(get_from(self.email_message)) or ''
-        if self.from_line:
-            self.from_line = self.from_line[5:].lstrip()    # we only need the unique part
+        # we only need the unique part of the envelope line, and Message.get_from_line() adds
+        # the "From " back.  mailbox objects have already dropped it, see set_from()
+        from_line = self.normalize(get_from(self.email_message)) or ''
+        if from_line.startswith('From '):
+            from_line = from_line[5:]
+        self.from_line = from_line.lstrip()
         self.frm = self.normalize(self.email_message.get('From', ''))
         self._archive_message = Message(base_subject=self.base_subject,
                                         cc=self.get_cc(),

@@ -36,6 +36,8 @@ env = environ.Env(
     DATABASES_USER=(str, 'mailarch'),
     DATABASES_PASSWORD=(str, ''),
     DATABASES_OPTS_JSON=(str, '{}'),
+    DATABASES_CONN_MAX_AGE=(int, '300'),
+    DATABASES_CONN_HEALTH_CHECKS=(bool, True),
     BLOB_STORE_ENDPOINT_URL=(str, 'http://blobstore:9000'),
     BLOB_STORE_SECRET_KEY=(str, 'minio_pass'),
     BLOB_STORE_ACCESS_KEY=(str, 'minio_root'),
@@ -52,6 +54,8 @@ env = environ.Env(
     BLOBDB_USER=(str, 'mailarch'),
     BLOBDB_PASSWORD=(str, ''),
     BLOBDB_OPTS_JSON=(str, '{}'),
+    BLOBDB_CONN_MAX_AGE=(int, '300'),
+    BLOBDB_CONN_HEALTH_CHECKS=(bool, True),
     BLOBDB_REPLICATION_ENABLED=(bool, True),
     DATATRACKER_API_BASE_URL=(str, ''),
     DATATRACKER_PERSON_ENDPOINT_API_KEY=(str, ''),
@@ -112,6 +116,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'USER': env("DATABASES_USER"),
         'PASSWORD': env("DATABASES_PASSWORD"),
+        'CONN_MAX_AGE': env("DATABASES_CONN_MAX_AGE"),
+        'CONN_HEALTH_CHECKS': env("DATABASES_CONN_HEALTH_CHECKS"),
         'OPTIONS': json.loads(env("DATABASES_OPTS_JSON")),
     },
     'blobdb': {
@@ -121,6 +127,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'USER': env("BLOBDB_USER"),
         'PASSWORD': env("BLOBDB_PASSWORD"),
+        'CONN_MAX_AGE': env("BLOBDB_CONN_MAX_AGE"),
+        'CONN_HEALTH_CHECKS': env("BLOBDB_CONN_HEALTH_CHECKS"),
         'OPTIONS': json.loads(env("BLOBDB_OPTS_JSON")),
     }
 }

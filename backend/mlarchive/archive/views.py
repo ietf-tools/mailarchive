@@ -40,7 +40,8 @@ from mlarchive.archive.query_utils import (get_qdr_kwargs,
     get_cached_query, get_browse_equivalent, parse_query_string, get_order_fields,
     is_static_on, get_count, CustomPaginator)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
-    get_query_neighbors, get_query_string, get_lists_for_user, get_random_token)
+    get_query_neighbors, get_query_string, get_lists_for_user, get_random_token,
+    get_thread_page_ids)
 
 from mlarchive.archive.models import (EmailList, Message, Thread, Attachment,
     Subscriber)
@@ -456,20 +457,22 @@ class CustomBrowseView(CustomSearchView):
         self.index = self.request.GET.get('index')
         if self.index:
             try:
-                index_message = Message.objects.get(email_list=self.email_list, hashcode=self.index + '=')
+                index_message = Message.objects.select_related('thread').get(
+                    email_list=self.email_list, hashcode=self.index + '=')
             except Message.DoesNotExist:
                 raise Http404("No such message!")
 
             if 'gbt' in self.request.GET:
-                results = []
-                thread = index_message.thread
-                while len(results) < self.results_per_page and thread:
-                    results.extend(thread.message_set.order_by('thread_order'))
-                    thread = thread.get_previous()  # default ordering is descending by thread date
+                # get the ids of the index message's thread and the threads
+                # preceding it, then all their messages in one query
+                thread_ids = get_thread_page_ids(index_message.thread, self.results_per_page)
+                results = Message.objects.filter(
+                    thread_id__in=thread_ids).select_related('email_list').order_by(*fields)
             else:
                 results = Message.objects.filter(
                     email_list=self.email_list,
-                    date__lte=index_message.date).order_by('-date').select_related()[:self.results_per_page]
+                    date__lte=index_message.date).order_by('-date').select_related(
+                    'email_list')[:self.results_per_page]
 
         return results
 

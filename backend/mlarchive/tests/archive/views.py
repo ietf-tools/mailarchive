@@ -16,7 +16,8 @@ from django.test import RequestFactory
 from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils.encoding import smart_str
-from factories import EmailListFactory, MessageFactory, UserFactory, SubscriberFactory
+from factories import (EmailListFactory, MessageFactory, ThreadFactory, UserFactory,
+    SubscriberFactory)
 from mlarchive.archive.models import Message, Attachment, Redirect, EmailList
 from mlarchive.archive.views import (TimePeriod, add_nav_urls, is_small_year,
     get_this_next_periods, get_date_endpoints, get_thread_endpoints, DateStaticIndexView,
@@ -331,6 +332,35 @@ def test_browse_index_gbt(client, messages):
     response = client.get(url)
     assert response.status_code == 200
     assert len(response.context['results']) == 5
+
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_index_gbt_query_count(client, messages, django_assert_max_num_queries):
+    '''The page is built with a fixed number of queries, rather than walking
+    the list one thread at a time
+    '''
+    message = messages.get(msgid='a02')
+    url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?gbt=1&index={}'.format(message.hashcode.strip('='))
+    with django_assert_max_num_queries(10):
+        response = client.get(url)
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_index_gbt_same_thread_date(client):
+    '''Threads sharing a date must not be skipped'''
+    elist = EmailListFactory.create(name='gbtdate')
+    date = datetime.datetime(2020, 1, 1, tzinfo=timezone.utc)
+    threads = []
+    for _ in range(3):
+        thread = ThreadFactory.create(email_list=elist, date=date)
+        MessageFactory.create(email_list=elist, thread=thread, date=date)
+        threads.append(thread)
+    first = Message.objects.get(thread=threads[0])
+    url = reverse('archive_browse_list', kwargs={'list_name': 'gbtdate'}) + '?gbt=1&index={}'.format(first.hashcode.strip('='))
+    response = client.get(url)
+    assert response.status_code == 200
+    assert len(response.context['results']) == 3
 
 
 @pytest.mark.django_db(transaction=True)

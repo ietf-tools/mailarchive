@@ -86,6 +86,11 @@ class Thread(models.Model):
     # first message in thread, by date
     first = models.ForeignKey('Message', on_delete=models.SET_NULL, related_name='thread_key', blank=True, null=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['email_list', 'date']),
+        ]
+
     def __str__(self):
         return str(self.id)
 

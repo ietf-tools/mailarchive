@@ -17,6 +17,7 @@ from io import StringIO
 
 from django.conf import settings
 from django.contrib import messages
+from django.db.models import Count, Exists, OuterRef
 from django.forms.formsets import formset_factory
 from django.http import HttpResponse
 from django.shortcuts import redirect
@@ -24,7 +25,7 @@ from django.urls import reverse
 from django.utils.encoding import smart_bytes
 
 from mlarchive.archive.forms import RulesForm
-from mlarchive.archive.models import EmailList, Message
+from mlarchive.archive.models import EmailList, Message, Thread
 from mlarchive.archive.utils import get_lists_for_user
 
 
@@ -326,3 +327,55 @@ def get_query_neighbors(search, message):
 def get_query_string(request):
     """Returns the query string from the request, including '?' """
     return '?' + request.META['QUERY_STRING']
+
+
+def get_thread_page_ids(thread, limit, direction='previous', include_thread=True):
+    """Returns a list of thread ids, starting with thread (unless include_thread
+    is False) and continuing in direction, "previous" for older threads or
+    "next" for newer ones.  Only as many threads as are needed to provide limit
+    messages are returned, and a thread is never split.
+
+    Gathering the ids up front lets the caller retrieve the messages with one
+    query, rather than walking the list one thread at a time.
+    """
+    # Threads sharing a date are ordered by id, matching THREAD_SORT_FIELDS,
+    # so the ties on the near side of thread are excluded rather than the
+    # whole date being skipped. Filtering on date first keeps the query
+    # bounded by the (email_list, date) index.
+    if direction == 'previous':
+        candidates = Thread.objects.filter(
+            email_list_id=thread.email_list_id,
+            date__lte=thread.date).exclude(
+            date=thread.date, id__lt=thread.id).order_by('-date', 'id')
+    else:
+        candidates = Thread.objects.filter(
+            email_list_id=thread.email_list_id,
+            date__gte=thread.date).exclude(
+            date=thread.date, id__gt=thread.id).order_by('date', '-id')
+
+    if not include_thread:
+        candidates = candidates.exclude(id=thread.id)
+
+    # skip threads left empty by message removal, so that limit threads
+    # are always enough to provide limit messages
+    candidates = candidates.filter(
+        Exists(Message.objects.filter(thread_id=OuterRef('pk'))))
+
+    # nearest thread first
+    candidates = list(candidates.values_list('id', flat=True)[:limit])
+    if not candidates:
+        return []
+
+    counts = dict(Message.objects.filter(thread_id__in=candidates)
+                                 .values_list('thread_id')
+                                 .annotate(count=Count('thread_id')))
+
+    ids = []
+    total = 0
+    for thread_id in candidates:
+        ids.append(thread_id)
+        total += counts.get(thread_id, 0)
+        if total >= limit:
+            break
+
+    return ids

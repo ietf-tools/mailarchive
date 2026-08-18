@@ -2,6 +2,7 @@ from email.utils import parseaddr
 from email import policy as email_policy
 import datetime
 import email
+import io
 import json
 import logging
 import os
@@ -151,6 +152,11 @@ class EmailList(models.Model):
     def removed_dir(self):
         return self.get_removed_dir(self.name)
 
+    @property
+    def blob_bucket(self):
+        """Returns the name of the blob storage bucket holding this list's messages"""
+        return 'ml-messages-private' if self.private else 'ml-messages'
+
 
 class Message(models.Model):
     base_subject = models.CharField(max_length=512, blank=True, db_index=True)
@@ -190,8 +196,7 @@ class Message(models.Model):
         """Returns the message formated as HTML.  Uses MHonarc standalone
         Not used as of v1.00
         """
-        with open(self.get_file_path()) as f:
-            mhout = subprocess.check_output(TXT2HTML, stdin=f)
+        mhout = subprocess.check_output(TXT2HTML, input=self.get_raw_message())
 
         # extract body
         within = False
@@ -283,14 +288,14 @@ class Message(models.Model):
         if hasattr(self, '_pymsg'):
             return self._pymsg
         else:
-            try:
-                with open(self.get_file_path(), 'rb') as f:
-                    self._pymsg = get_message_from_binary_file(f, policy=custom_policy)
-                    self._pymsg_error = ''
-            except IOError:
-                logger.error('Error reading message file: %s' % self.get_file_path())
+            content = self.get_raw_message()
+            if content:
+                self._pymsg = get_message_from_binary_file(
+                    io.BytesIO(content), policy=custom_policy)
+                self._pymsg_error = ''
+            else:
                 self._pymsg = None
-                self._pymsg_error = 'Error reading message file'
+                self._pymsg_error = 'Error reading message'
             return self._pymsg
     
     @property
@@ -343,17 +348,26 @@ class Message(models.Model):
         gen = Generator(self)
         return gen.as_html(request=request)
 
-    def get_body_raw(self):
-        """Returns the raw contents of the message file.
+    def get_raw_message(self):
+        """Returns the original message, unparsed, read from blob storage.
+        Returns an empty bytestring if the blob can't be read.
         NOTE: this will include encoded attachments
         """
+        if hasattr(self, '_raw_message'):
+            return self._raw_message
+        from mlarchive.archive.storage_utils import retrieve_bytes
+        bucket = self.get_blob_bucket()
+        name = self.get_blob_name()
         try:
-            with open(self.get_file_path(), 'rb') as f:
-                return f.read()
-        except IOError:
-            msg = 'Error reading message file: %s' % self.get_file_path()
-            logger.error(msg)
-            return msg
+            content = retrieve_bytes(bucket, name)
+        except Exception as err:
+            # exception is already logged
+            content = b''
+        else:
+            if not content:
+                logger.error('Empty message blob {}:{}'.format(bucket, name))
+        self._raw_message = content
+        return self._raw_message
 
     def get_date_index_url(self):
         base = reverse('archive_browse_list', kwargs={'list_name': self.email_list.name})
@@ -413,6 +427,9 @@ class Message(models.Model):
     def get_absolute_static_index_urls(self):
         host_url = settings.ARCHIVE_HOST_URL
         return [host_url + self.get_static_date_page_url(), host_url + self.get_static_thread_page_url()]
+
+    def get_blob_bucket(self):
+        return self.email_list.blob_bucket
 
     def get_blob_name(self):
         return f'{self.email_list.name}/{self.hashcode}'.rstrip('=')
@@ -561,7 +578,7 @@ class Attachment(models.Model):
 
     def get_sub_message(self):
         """Returns a email.message, that is the attachment"""
-        msg = email.message_from_bytes(self.message.get_body_raw())
+        msg = email.message_from_bytes(self.message.get_raw_message())
         parts = list(msg.walk())
         return parts[self.sequence]
 

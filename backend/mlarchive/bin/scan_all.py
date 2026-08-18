@@ -136,7 +136,7 @@ def archived_at():
         if count % 1000 == 0:
             print('Processed: {}'.format(count))
         count = count + 1
-        msg = parser.parsebytes(message.get_body_raw(), headersonly=True)
+        msg = parser.parsebytes(message.get_raw_message(), headersonly=True)
         archives = msg.get_all('archived-at')
         if not archives:
             print('No archived-at: {}'.format(message.get_absolute_url()))
@@ -172,7 +172,7 @@ def archived_at_report(start='2013-01-01', fix=False):
     start_date = parse(start).replace(tzinfo=datetime.timezone.utc)
     print("start: {}    fix: {}".format(start, fix))
     for message in Message.objects.filter(date__gte=start_date).order_by('-date'):
-        msg = parser.parsebytes(message.get_body_raw(), headersonly=True)
+        msg = parser.parsebytes(message.get_raw_message(), headersonly=True)
         archives = msg.get_all('archived-at')
         hashcode = message.hashcode.strip('=')
         # problem messages will have one mailarchive archived-at header that does not match
@@ -206,7 +206,7 @@ def attachments():
         print("Scanning {}".format(elist.name))
 
         for msg in Message.objects.filter(email_list=elist).order_by('date'):
-            message = email.message_from_string(msg.get_body_raw())
+            message = email.message_from_string(msg.get_raw_message())
             count = 0
             for part in message.walk():
                 if is_attachment(part):
@@ -243,7 +243,7 @@ def bad_transfer_encoding():
     for elist in EmailList.objects.all().order_by('name'):
         print("Scanning {}".format(elist.name))
         for msg in Message.objects.filter(email_list=elist).order_by('date'):
-            message = email.message_from_bytes(msg.get_body_raw())
+            message = email.message_from_bytes(msg.get_raw_message())
             for part in message.walk():
                 if not part.is_multipart():
                     if part['Content-Transfer-Encoding'] == 'base64 ':
@@ -443,7 +443,7 @@ def find_mime(mime_type):
     for elist in EmailList.objects.all().order_by('name'):
         print("Scanning {}".format(elist.name))
         for msg in Message.objects.filter(email_list=elist).order_by('date'):
-            message = email.message_from_string(msg.get_body_raw())
+            message = email.message_from_string(msg.get_raw_message())
             for part in message.walk():
                 if part.get_content_type() == mime_type:
                     print("MSG:{}".format(msg.pk))
@@ -478,7 +478,7 @@ def fix_encoded_words(fix=False):
     for pk in pks:
         message = Message.objects.get(pk=pk)
         for db_header, header in (('frm', 'from'), ('subject', 'subject')):
-            msg = email.message_from_string(message.get_body_raw())
+            msg = email.message_from_string(message.get_raw_message())
             mw = MessageWrapper.from_message(msg, message.email_list.name)
             if msg[header] and '=?' in msg[header]:
                 text = mw.normalize(msg[header])
@@ -504,7 +504,7 @@ def get_encoded_words():
 
         for msg in Message.objects.filter(email_list=elist).order_by('date'):
             try:
-                message = email.message_from_string(msg.get_body_raw())
+                message = email.message_from_string(msg.get_raw_message())
             except IOError:
                 continue
 
@@ -721,7 +721,7 @@ def message_rfc822():
         print("Scanning {}".format(elist.name))
 
         for msg in Message.objects.filter(email_list=elist).order_by('date'):
-            message = email.message_from_string(msg.get_body_raw())
+            message = email.message_from_string(msg.get_raw_message())
             count = 0
             for part in message.walk():
                 if part.get_content_type() == 'message/rfc822':
@@ -740,7 +740,7 @@ def message_rfc822_xml():
         print("Scanning {}".format(elist.name), file=sys.stderr)
 
         for msg in Message.objects.filter(email_list=elist).order_by('date'):
-            message = email.message_from_bytes(msg.get_body_raw())
+            message = email.message_from_bytes(msg.get_raw_message())
             count = 0
             for part in message.walk():
                 if part.get_content_type() == 'message/rfc822':
@@ -762,7 +762,7 @@ def mime_encoded_word(start):
 
         for msg in Message.objects.filter(email_list=elist).order_by('date'):
             try:
-                message = email.message_from_string(msg.get_body_raw())
+                message = email.message_from_string(msg.get_raw_message())
             except IOError:
                 continue
 
@@ -864,7 +864,7 @@ def multipart():
         print("Scanning {}".format(elist.name))
 
         for msg in Message.objects.filter(email_list=elist).order_by('date'):
-            message = email.message_from_string(msg.get_body_raw())
+            message = email.message_from_string(msg.get_raw_message())
             for part in message.walk():
                 if part.is_multipart():
                     types[part.get_content_type()] = types.get(part.get_content_type(), 0) + 1
@@ -880,7 +880,7 @@ def no_archive(fix=False):
         print("Scanning {}".format(elist.name))
 
         for msg in Message.objects.filter(email_list=elist).order_by('date'):
-            message = email.message_from_bytes(msg.get_body_raw())
+            message = email.message_from_bytes(msg.get_raw_message())
 
             keys = message.keys()
             if 'X-No-Archive' in keys:
@@ -906,7 +906,7 @@ def non_ascii():
         print("Scanning {}".format(elist.name))
 
         for msg in Message.objects.filter(email_list=elist).order_by('date'):
-            message = email.message_from_string(msg.get_body_raw())
+            message = email.message_from_string(msg.get_raw_message())
 
             for header in ('from', 'subject'):
                 if not is_ascii(message[header]):
@@ -1065,7 +1065,7 @@ def test_headers():
     for elist in EmailList.objects.all().order_by('name'):
         print("Scanning {}".format(elist.name))
         for msg in Message.objects.filter(email_list=elist).order_by('date'):
-            message = email.message_from_bytes(msg.get_body_raw(), policy=policy.default)
+            message = email.message_from_bytes(msg.get_raw_message(), policy=policy.default)
             assert isinstance(message, email.message.EmailMessage)
             try:
                 headers = list(message.items())

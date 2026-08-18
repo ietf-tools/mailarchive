@@ -69,9 +69,6 @@ def build_blob_batch(messages):
     """
     from mlarchive.blobdb.models import Blob
 
-    def bucket_for(message):
-        return 'ml-messages-private' if message.email_list.private else 'ml-messages'
-
     batch = []
     for message in messages:
         try:
@@ -82,7 +79,7 @@ def build_blob_batch(messages):
             continue
         batch.append(Blob(
             name=message.get_blob_name(),
-            bucket=bucket_for(message),
+            bucket=message.get_blob_bucket(),
             content=content,
             content_type='message/rfc822',
         ))
@@ -968,9 +965,7 @@ def create_mbox_file(month, year, elist):
         os.makedirs(os.path.dirname(path))
     mbox = mailbox.mbox(path)
     for message in messages:
-        with open(message.get_file_path(), 'rb') as f:
-            msg = email.message_from_binary_file(f)
-        mbox.add(msg)
+        mbox.add(email.message_from_bytes(message.get_raw_message()))
     mbox.close()
 
 
@@ -1130,6 +1125,7 @@ def move_list(source, target):
     '''Move messages from source list to target list. Includes:
     - create the new list if it doesn't exist
     - moving files on disk
+    - moving blobs, the hashcode, hence the blob name, changes with the list
     - updating database and search index
     - creating entries in the Redirect table to map original urls
     to new urls
@@ -1152,7 +1148,10 @@ def move_list(source, target):
     # move message files
     for msg in source_list.message_set.all():
         _ = len(msg.pymsg)  # evaluate msg.pymsg
+        content = msg.get_raw_message()
         source_path = msg.get_file_path()
+        source_bucket = msg.get_blob_bucket()
+        source_blob_name = msg.get_blob_name()
         old_url = msg.get_absolute_url()
         # get new hashcode
         mw = MessageWrapper(message=msg.pymsg, listname=target)
@@ -1163,6 +1162,11 @@ def move_list(source, target):
         # move file on disk
         target_path = msg.get_file_path()
         shutil.move(source_path, target_path)
+        # move blob. move_object() can't be used, the name changes as well as the bucket
+        store_bytes(msg.get_blob_bucket(), msg.get_blob_name(), content,
+                    content_type='message/rfc822')
+        remove_from_storage(source_bucket, source_blob_name)
+        remove_from_storage('ml-messages-json', source_blob_name, warn_if_missing=False)
         # create redirect
         new_url = msg.get_absolute_url()
         Redirect.objects.create(old=old_url, new=new_url)
@@ -1478,10 +1482,7 @@ def create_cf_worker_templates():
 
 def audit_blobdb():
     for elist in EmailList.objects.order_by('name'):
-        if elist.private:
-            bucket = 'ml-messages-private'
-        else:
-            bucket = 'ml-messages'
+        bucket = elist.blob_bucket
         messages = Message.objects.filter(email_list=elist)
         blobs = Blob.objects.filter(bucket=bucket, name__startswith=f'{elist.name}/')
         if messages.count() != blobs.count():

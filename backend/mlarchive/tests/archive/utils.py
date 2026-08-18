@@ -510,11 +510,15 @@ def test_move_list(rf, search_api_messages):
     msg = Message.objects.filter(email_list__name=source).last()
     path = msg.get_file_path()
     old_url = msg.get_absolute_url()
+    old_blob_name = msg.get_blob_name()
+    old_bucket = msg.get_blob_bucket()
+    content = msg.get_raw_message()
     list_dir = os.path.dirname(path)
     new_list_dir = os.path.join(os.path.dirname(list_dir), target)
     # assert pre-conditions
     assert os.path.exists(path)
     assert len(list_only_files(list_dir)) == 4
+    assert content
     assert not os.path.exists(os.path.join(list_dir, target))
     assert Message.objects.filter(email_list__name=source).count() == 4
     assert Message.objects.filter(email_list__name=target).count() == 0
@@ -542,6 +546,10 @@ def test_move_list(rf, search_api_messages):
     new_path = msg.get_file_path()
     assert new_hash in new_path
     assert os.path.exists(new_path)
+    # check blob moved
+    assert not exists_in_storage(old_bucket, old_blob_name)
+    assert msg.get_blob_name() != old_blob_name
+    assert Message.objects.get(pk=msg.pk).get_raw_message() == content
     # check redirect table
     new_url = msg.get_absolute_url()
     assert new_url != old_url

@@ -68,7 +68,7 @@ def test_message_pymsg(client):
 def test_message_pymsg_error(client):
     elist = EmailListFactory.create(name='public')
     msg = MessageFactory.create(email_list=elist)
-    assert msg.pymsg_error == 'Error reading message file'
+    assert msg.pymsg_error == 'Error reading message'
 
 
 @pytest.mark.django_db(transaction=True)

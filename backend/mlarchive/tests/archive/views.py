@@ -934,7 +934,7 @@ def test_message_download(client):
     url = reverse('archive_message_download', kwargs={'list_name': listname, 'id': msg.hashcode})
     response = client.get(url)
     assert response.status_code == 200
-    assert response.content == msg.get_body_raw()
+    assert response.content == msg.get_raw_message()
 
 
 @pytest.mark.django_db(transaction=True)

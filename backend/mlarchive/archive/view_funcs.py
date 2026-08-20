@@ -12,6 +12,7 @@ import re
 import string
 import tarfile
 import tempfile
+from email.utils import parsedate_to_datetime
 from io import BytesIO
 from io import StringIO
 
@@ -24,9 +25,14 @@ from django.urls import reverse
 from django.utils.encoding import smart_bytes
 
 from mlarchive.archive.forms import RulesForm
-from mlarchive.archive.models import EmailList, Message
+from mlarchive.archive.generator import Generator
+from mlarchive.archive.models import EmailList, Message, get_message_from_binary_file
+from mlarchive.archive.storage_utils import retrieve_bytes
 from mlarchive.archive.utils import get_lists_for_user
+from mlarchive.utils.encoding import custom_policy, decode_safely
 
+import logging
+logger = logging.getLogger(__name__)
 
 contain_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\((?P<value>[^\)]+)\)')
 exact_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\"(?P<value>[^\"]+)\"')
@@ -53,6 +59,70 @@ class SearchResult(object):
     def date(self):
         return self.object.date
 '''
+
+
+class BlobMessage:
+    """A read only stand-in for a Message, built from raw blob content.
+
+    Provides the minimal interface Generator and the message template require,
+    so blob content can be displayed without a corresponding Message record,
+    ie. for blobs in the removed or spam buckets.
+    """
+
+    def __init__(self, bucket, name, content):
+        self.bucket = bucket
+        self.name = name
+        self.content = content
+        # blob names have the form "listname/hashcode"
+        self.email_list = name.split('/')[0]
+        try:
+            self.pymsg = get_message_from_binary_file(
+                BytesIO(content), policy=custom_policy)
+            self.pymsg_error = ''
+        except Exception as error:
+            logger.warning('Error parsing blob {}:{} ({})'.format(
+                bucket, name, error))
+            self.pymsg = None
+            self.pymsg_error = 'Error reading message'
+
+    def _get_header(self, name):
+        """Returns the named header as a string, empty string if not found."""
+        if not self.pymsg:
+            return ''
+        return str(self.pymsg.get(name, ''))
+
+    @property
+    def msgid(self):
+        return self._get_header('Message-ID').strip('<>')
+
+    @property
+    def subject(self):
+        return self._get_header('Subject')
+
+    @property
+    def frm(self):
+        return self._get_header('From')
+
+    @property
+    def date(self):
+        """Returns the message Date header as a datetime, None if unparsable."""
+        value = self._get_header('Date')
+        if not value:
+            return None
+        try:
+            return parsedate_to_datetime(value)
+        except (TypeError, ValueError):
+            return None
+
+    def get_body_html(self, request=None):
+        """Returns the contents of the message body as HTML, for display."""
+        gen = Generator(self)
+        return gen.as_html(request=request)
+
+    def get_raw_source(self):
+        """Returns the unparsed blob content, decoded for display as text."""
+        return decode_safely(self.content, charset='utf-8')
+
 
 # --------------------------------------------------
 # Helper Functions
@@ -82,6 +152,18 @@ def apply_objects(hits):
     for hit in hits:
         hit.object = objects.get(int(hit.django_id))
     return hits
+
+
+def get_blob_content(bucket, name):
+    """Returns the contents of the named blob as bytes.
+
+    Returns an empty bytestring if the blob does not exist or can't be read.
+    """
+    try:
+        return retrieve_bytes(bucket, name)
+    except Exception:
+        # exception is already logged
+        return b''
 
 # --------------------------------------------------
 # View Functions

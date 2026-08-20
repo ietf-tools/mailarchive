@@ -40,11 +40,12 @@ from mlarchive.archive.query_utils import (get_qdr_kwargs,
     get_cached_query, get_browse_equivalent, parse_query_string, get_order_fields,
     is_static_on, get_count, CustomPaginator)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
-    get_query_neighbors, get_query_string, get_lists_for_user, get_random_token)
+    get_query_neighbors, get_query_string, get_lists_for_user, get_random_token,
+    BlobMessage, get_blob_content)
 
 from mlarchive.archive.models import (EmailList, Message, Thread, Attachment,
     Subscriber)
-from mlarchive.archive.forms import (AdminForm, AdminActionForm, 
+from mlarchive.archive.forms import (AdminForm, AdminActionForm, BlobForm,
     AdvancedSearchForm, BrowseForm, RulesForm, SearchForm, DateForm)
 
 import logging
@@ -669,6 +670,43 @@ def admin(request):
         'results': results,
         'form': form,
         'action_form': action_form,
+    })
+
+
+@superuser_only
+def admin_blob(request):
+    """Displays the message stored in a blob, given its bucket and name.
+
+    The message is rendered like the detail view, which allows inspection of
+    blobs that have no corresponding Message record, ie. removed or spam
+    messages.  With "raw" in the query string the unparsed message source is
+    shown instead of the rendered body.
+    """
+    msg = None
+    message_url = ''
+    raw_url = ''
+    show_raw = 'raw' in request.GET
+    form = BlobForm(request.GET) if request.GET else BlobForm()
+
+    if request.GET and form.is_valid():
+        bucket = form.cleaned_data['bucket']
+        name = form.cleaned_data['name']
+        content = get_blob_content(bucket, name)
+        if not content:
+            messages.error(request, 'Blob not found: {}:{}'.format(bucket, name))
+        else:
+            msg = BlobMessage(bucket, name, content)
+            base_url = reverse('archive_admin_blob')
+            params = {'bucket': bucket, 'name': name}
+            message_url = '{}?{}'.format(base_url, urlencode(params))
+            raw_url = '{}?{}'.format(base_url, urlencode(dict(params, raw=1)))
+
+    return render(request, 'archive/admin_blob.html', {
+        'form': form,
+        'msg': msg,
+        'show_raw': show_raw,
+        'message_url': message_url,
+        'raw_url': raw_url,
     })
 
 

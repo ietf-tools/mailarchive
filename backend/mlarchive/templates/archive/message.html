@@ -1,11 +1,17 @@
 <div id="msg-body" data-message-url="{{ msg.get_absolute_url_with_host }}">
+    {% if msg.get_reply_url or msg.get_download_url or msg.get_absolute_url_with_host %}
     <div id="message-links">
       {% if msg.get_reply_url %}
         <a href="{{ msg.get_reply_url }}" class="reply-link" title="Reply"><i class="fas fa-reply fa-lg"></i></a>
       {% endif %}
-      <a href="{{ msg.get_download_url }}" class="download-link" rel="nofollow" title="Message Download"><i class="fa fa-download fa-lg"></i></a>
-      <a href="{{ msg.get_absolute_url_with_host }}" class="detail-link" title="Message Detail"><i class="fa fa-link fa-lg"></i></a>
+      {% if msg.get_download_url %}
+        <a href="{{ msg.get_download_url }}" class="download-link" rel="nofollow" title="Message Download"><i class="fa fa-download fa-lg"></i></a>
+      {% endif %}
+      {% if msg.get_absolute_url_with_host %}
+        <a href="{{ msg.get_absolute_url_with_host }}" class="detail-link" title="Message Detail"><i class="fa fa-link fa-lg"></i></a>
+      {% endif %}
     </div>
+    {% endif %}
     <h3>{{ msg.subject }}</h3>
     <p id="msg-info" class="msg-header">
       <span id="msg-from" class="pipe">{{ msg.frm }}</span>

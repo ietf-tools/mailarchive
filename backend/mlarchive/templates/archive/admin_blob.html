@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load static django_bootstrap5 %}
+
+{% block title %}Mail Archive - View Blobs{% endblock %}
+
+{% block header %}{{ block.super }} - View Blobs{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid blob-page">
+  <div class="mt-4">
+    <form id="id_blob_form" name="blob-form" action="." method="get">
+      <div class="row mb-3">
+        <div class="col-md-3 offset-md-2">
+          {% bootstrap_field form.bucket show_label=False wrapper_class="" %}
+        </div>
+        <div class="col-md-4">
+          {% bootstrap_field form.name placeholder="Blob Name (listname/hashcode)" show_label=False wrapper_class="" show_help=False %}
+        </div>
+        <div class="col-md-1">
+          <button class="btn btn-secondary" type="submit">View</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  {% if msg %}
+  <div class="row">
+    <div class="msg-detail col-md-8 offset-md-2 pt-3">
+
+      <div class="btn-group mb-3" role="group" aria-label="Blob view mode">
+        <a class="btn btn-outline-secondary{% if not show_raw %} active{% endif %}"
+           href="{{ message_url }}"{% if not show_raw %} aria-current="true"{% endif %}>Message</a>
+        <a class="btn btn-outline-secondary{% if show_raw %} active{% endif %}"
+           href="{{ raw_url }}"{% if show_raw %} aria-current="true"{% endif %}>Raw Source</a>
+      </div>
+
+      {% if show_raw %}
+        <pre class="raw-source wordwrap">{{ msg.get_raw_source }}</pre>
+      {% else %}
+        {{ msg.get_body_html|safe }}
+      {% endif %}
+
+    </div> <!-- msg-detail -->
+  </div> <!-- row -->
+  {% endif %}
+</div> <!-- blob-page -->
+
+{% endblock %}
+
+{% block footer %}
+  {% include "includes/footer.html" %}
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{% static 'mlarchive/js/blob.js' %}"></script>
+{% endblock %}

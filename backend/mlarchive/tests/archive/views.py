@@ -16,7 +16,8 @@ from django.test import RequestFactory
 from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils.encoding import smart_str
-from factories import EmailListFactory, MessageFactory, UserFactory, SubscriberFactory
+from factories import (EmailListFactory, MessageFactory, UserFactory, SubscriberFactory,
+    store_message_blob)
 from mlarchive.archive.models import Message, Attachment, Redirect, EmailList
 from mlarchive.archive.views import (TimePeriod, add_nav_urls, is_small_year,
     get_this_next_periods, get_date_endpoints, get_thread_endpoints, DateStaticIndexView,
@@ -201,6 +202,75 @@ def test_admin_console(client, admin_client):
     assert response.status_code == 302
     response = admin_client.get(url)
     assert response.status_code == 200
+
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_blob(client, admin_client):
+    url = reverse('archive_admin_blob')
+    response = client.get(url)
+    assert response.status_code == 403
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    assert 'id_bucket' in smart_str(response.content)
+    assert 'id_name' in smart_str(response.content)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_blob_message(admin_client):
+    elist = EmailListFactory.create(name='public')
+    message = MessageFactory.create(email_list=elist, subject='Blob Test')
+    store_message_blob(message, (
+        b'From: joe@example.com\n'
+        b'To: public@example.com\n'
+        b'Subject: Blob Test\n'
+        b'Date: Thu, 7 Nov 2013 17:54:55 +0000\n'
+        b'Message-ID: <blob-test@example.com>\n'
+        b'\n'
+        b'This is the blob body.\n'))
+    url = reverse('archive_admin_blob') + '?' + urlencode({
+        'bucket': message.get_blob_bucket(),
+        'name': message.get_blob_name()})
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    content = smart_str(response.content)
+    assert 'This is the blob body.' in content
+    assert 'Blob Test' in content
+    assert 'id="msg-header"' in content
+    # toggle to the raw source view
+    assert_href(content, '.btn-group a:last-child', reverse('archive_admin_blob') + '?' + urlencode({
+        'bucket': message.get_blob_bucket(),
+        'name': message.get_blob_name(),
+        'raw': 1}))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_blob_raw(admin_client):
+    elist = EmailListFactory.create(name='public')
+    message = MessageFactory.create(email_list=elist)
+    store_message_blob(message, b'Subject: Raw Test\n\nRaw body.\n')
+    params = {
+        'bucket': message.get_blob_bucket(),
+        'name': message.get_blob_name()}
+    url = reverse('archive_admin_blob') + '?' + urlencode(dict(params, raw=1))
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    content = smart_str(response.content)
+    # raw source shown in place of the rendered body, headers and all
+    assert 'Subject: Raw Test' in content
+    assert 'Raw body.' in content
+    assert 'id="msg-body"' not in content
+    # toggle back to the rendered view
+    assert_href(content, '.btn-group a:first-child', reverse('archive_admin_blob') + '?' + urlencode(params))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_blob_not_found(admin_client):
+    url = reverse('archive_admin_blob') + '?' + urlencode({
+        'bucket': 'ml-messages',
+        'name': 'public/bogus'})
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    assert 'Blob not found' in smart_str(response.content)
 
 
 @pytest.mark.django_db(transaction=True)

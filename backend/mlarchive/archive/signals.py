@@ -1,4 +1,3 @@
-import io
 import logging
 import os
 import requests
@@ -18,7 +17,7 @@ from django.db import models, connection, transaction
 
 from mlarchive.archive.models import Message, EmailList
 from mlarchive.archive.backends.elasticsearch import ESBackend, get_identifier
-from mlarchive.archive.storage_utils import store_file, remove_from_storage, move_object
+from mlarchive.archive.storage_utils import remove_from_storage, move_object
 from mlarchive.archive.utils import _export_lists
 from mlarchive.celeryapp import app
 
@@ -28,22 +27,6 @@ logger = logging.getLogger(__name__)
 # --------------------------------------------------
 # Signal Handlers
 # --------------------------------------------------
-
-@receiver(post_save, sender=Message)
-def _save_message_json(sender, instance, created, **kwargs):
-    '''Save ml-messages-json blob for use in Cloudflare worker edge response'''
-    if not instance.email_list.private and created:
-        store_file(
-            kind='ml-messages-json',
-            name=instance.get_blob_name(),
-            file=io.BytesIO(instance.as_json().encode('utf-8')),
-            allow_overwrite=True,
-            content_type='application/json'
-        )
-        if instance.thread_order > 0:
-            update_message_json_thread(instance)
-        update_message_json_list(instance)
-
 
 @receiver([post_save, post_delete], sender=EmailList)
 def _clear_lists_cache(sender, instance, **kwargs):
@@ -186,34 +169,6 @@ def _flush_noauth_cache(email_list):
     keys = ['{:04d}-noauth'.format(user.id) for user in email_list.members.all()]
     cache.delete_many(keys)
 
-
-def update_message_json_thread(message):
-    '''Write ml-messages-json for all other messages in thread
-    TODO: consider alternatives like client retrieving thread instead of computing
-    '''
-    for msg in message.thread.message_set.exclude(pk=message.pk):
-        store_file(
-            kind='ml-messages-json',
-            name=msg.get_blob_name(),
-            file=io.BytesIO(msg.as_json().encode('utf-8')),
-            allow_overwrite=True,
-            content_type='application/json'
-        )
-
-
-def update_message_json_list(message):
-    '''Write ml-messages-json for the previous message in list order.
-    Its next_in_list link becomes stale when a new message is added after it.
-    '''
-    prev_msg = message.previous_in_list()
-    if prev_msg:
-        store_file(
-            kind='ml-messages-json',
-            name=prev_msg.get_blob_name(),
-            file=io.BytesIO(prev_msg.as_json().encode('utf-8')),
-            allow_overwrite=True,
-            content_type='application/json'
-        )
 
 # --------------------------------------------------
 # Classes

@@ -2,6 +2,7 @@
 import datetime
 import email
 import email.message
+import json
 from email import policy
 import glob
 import io
@@ -91,6 +92,68 @@ This is a test email.  database
     # test that thread date is correct in index
     url = reverse('archive_search') + '?q=tdate:20131107175455'
     assert len(response.context['results']) == 1
+
+
+@pytest.mark.django_db(transaction=True)
+def test_archive_message_json_attachments():
+    """Test the JSON blob body includes links to the attachments.
+
+    The ml-messages-json blob contains the rendered message body, which
+    includes links to the message's attachments, so it must be written after
+    the Attachment records are created.  See MessageWrapper.save().
+    """
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'attachment.mail')
+    with open(path, 'rb') as f:
+        data = f.read()
+    assert archive_message(data, 'test', private=False) == 0
+    message = Message.objects.get()
+    assert message.attachment_set.count() == 1
+    attachment = message.attachment_set.first()
+    msg_json = json.loads(retrieve_str('ml-messages-json', message.get_blob_name()))
+    assert attachment.name in msg_json['body']
+    assert attachment.get_absolute_url() in msg_json['body']
+
+
+@pytest.mark.django_db(transaction=True)
+def test_archive_message_json_neighbors():
+    """Test a new message refreshes the JSON blobs of its neighbors.
+
+    A new message invalidates the navigation links of its thread siblings and
+    of the message before it in list order, so their JSON blobs are rewritten
+    too.  See write_message_json().
+
+    The third message replies to the first, but follows the second in list
+    order, so each of the two refresh paths updates a different blob.
+    """
+    def make(msgid, subject, day, in_reply_to=None):
+        headers = ['From: Joe <joe@example.com>',
+                   'To: list@example.com',
+                   f'Date: Thu, {day} Nov 2013 17:54:55 +0000',
+                   f'Message-ID: <{msgid}>',
+                   f'Subject: {subject}']
+        if in_reply_to:
+            headers.append(f'In-Reply-To: <{in_reply_to}>')
+            headers.append(f'References: <{in_reply_to}>')
+        return ('\n'.join(headers) + '\n\nbody\n').encode('ASCII')
+
+    def get_json(message):
+        return json.loads(retrieve_str('ml-messages-json', message.get_blob_name()))
+
+    assert archive_message(make('one@example.com', 'First', 7), 'test') == 0
+    assert archive_message(make('two@example.com', 'Second', 8), 'test') == 0
+    assert archive_message(
+        make('three@example.com', 'Re: First', 9, in_reply_to='one@example.com'), 'test') == 0
+
+    first = Message.objects.get(msgid='one@example.com')
+    second = Message.objects.get(msgid='two@example.com')
+    third = Message.objects.get(msgid='three@example.com')
+    assert third.thread == first.thread
+    assert third.thread_order > 0
+
+    # thread sibling refreshed, though it is not the previous message in list order
+    assert get_json(first)['next_in_thread'] == third.get_absolute_url()
+    # previous message in list order refreshed, though it is in another thread
+    assert get_json(second)['next_in_list'] == third.get_absolute_url()
 
 
 @pytest.mark.django_db(transaction=True)

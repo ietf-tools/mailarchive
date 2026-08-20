@@ -22,6 +22,7 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     get_mailman_lists, get_membership, get_subscriber_counts, get_fqdn,
     update_mbox_files, _export_lists, move_list, remove_selected, mark_not_spam,
     is_duplicate_message, is_mailman_footer, import_message_blob,
+    strip_mailman_footer, get_footer_tokens,
     create_cf_worker_templates, rebuild_json_blobs, _get_removed_message)
 from mlarchive.archive.models import User, Message, Redirect, MailmanMember, UserEmail
 from mlarchive.archive.mail import make_hash, archive_message, MessageWrapper
@@ -424,6 +425,18 @@ def test_purge_incoming(settings):
     noarchive_blob.modified = old_time
     noarchive_blob.save()
 
+    # Case 6: old blob holding a redelivery of the message archived in case 1 → should be
+    # purged. The extra header makes the bytes, and so the checksum, differ from the
+    # archived copy, so no blob matches it. It is dropped as a redelivery without a copy
+    # being stored anywhere, so purge_incoming() identifies it with the same check.
+    redelivery_bytes = b'Received: from example.com by example.net\n' + message_bytes
+    archive_message(data=redelivery_bytes, listname='apple', private=False)
+    redelivery_blob_name = get_unique_blob_name(prefix='apple.public.', bucket=bucket)
+    store_file(bucket, redelivery_blob_name, io.BytesIO(redelivery_bytes), content_type='message/rfc822')
+    redelivery_blob = Blob.objects.get(bucket=bucket, name=redelivery_blob_name)
+    redelivery_blob.modified = old_time
+    redelivery_blob.save()
+
     purge_incoming()
 
     assert not Blob.objects.filter(bucket=bucket, name=archived_blob_name).exists()
@@ -431,6 +444,9 @@ def test_purge_incoming(settings):
     assert Blob.objects.filter(bucket=bucket, name=recent_blob_name).exists()
     assert not Blob.objects.filter(bucket=bucket, name=removed_blob_name_incoming).exists()
     assert not Blob.objects.filter(bucket=bucket, name=noarchive_blob_name).exists()
+    assert not Blob.objects.filter(bucket=bucket, name=redelivery_blob_name).exists()
+    # dropped without a copy, so nothing was written to the dupes bucket
+    assert not Blob.objects.filter(bucket='ml-messages-dupes').exists()
 
 
 @pytest.mark.django_db(transaction=True)
@@ -713,6 +729,122 @@ def test_is_mailman_footer_detection():
     parts = [part for part in msg10.walk()]
     assert is_mailman_footer(parts[-1]) is False
     mbox.close()
+
+
+MM2_FOOTER = (b'_______________________________________________\n'
+              b'testlist mailing list\n'
+              b'testlist@ietf.org\n'
+              b'https://www.ietf.org/mailman/listinfo/testlist\n')
+
+MM3_FOOTER = (b'_______________________________________________\n'
+              b'testlist mailing list -- testlist@ietf.org\n'
+              b'To unsubscribe send an email to testlist-leave@ietf.org\n')
+
+
+def build_message(body, extra_headers=b'', msgid=b'<control@example.com>'):
+    """Build an email.message.Message with the given body"""
+    return email.message_from_bytes(
+        b'From: Joe <joe@example.com>\n'
+        b'To: testlist@ietf.org\n'
+        b'Subject: This is a test\n'
+        b'Message-ID: ' + msgid + b'\n'
+        + extra_headers
+        + b'Content-Type: text/plain; charset="us-ascii"\n'
+        b'\n' + body)
+
+
+def test_strip_mailman_footer_mailman2():
+    assert strip_mailman_footer(b'Hello.\n\n' + MM2_FOOTER) == b'Hello.\n\n'
+
+
+def test_strip_mailman_footer_mailman3():
+    """Mailman 3 uses the same separator but different wording, no listinfo URL"""
+    assert strip_mailman_footer(b'Hello.\n\n' + MM3_FOOTER) == b'Hello.\n\n'
+
+
+def test_strip_mailman_footer_leaves_underscore_rule_in_body():
+    """A rule of underscores is common in ordinary mail. Truncating there would make two
+    different messages compare equal, dropping a message that should have been archived
+    """
+    body = (b'Hello.\n'
+            b'____________________\n'
+            b'Name:  ____________\n'
+            b'Date:  ____________\n'
+            b'Return the form above to the secretariat.\n'
+            b'Thanks.\n')
+    assert strip_mailman_footer(body) == body
+
+
+def test_is_duplicate_message_differs_after_underscore_rule():
+    """The consequence of the above: content below a rule of underscores is compared"""
+    msg1 = build_message(b'Hello.\n____________________\nOption A please.\n')
+    msg2 = build_message(b'Hello.\n____________________\nOption B please.\n')
+    assert is_duplicate_message(msg1, msg2) is False
+
+
+def test_strip_mailman_footer_last_separator_only():
+    """Only the block below the last separator is a candidate footer"""
+    body = b'Hello.\n____________________\nstill body\n\n' + MM2_FOOTER
+    assert strip_mailman_footer(body) == b'Hello.\n____________________\nstill body\n\n'
+
+
+def test_strip_mailman_footer_size_bound():
+    """A large block below a separator is content, whatever wording it contains"""
+    body = b'Hello.\n' + b'_' * 47 + b'\n' + b'x' * 600 + b'\n/listinfo/testlist\n'
+    assert strip_mailman_footer(body) == body
+
+
+def test_strip_mailman_footer_identified_by_list_headers():
+    """A footer whose wording is not recognised is still identified by the list address
+    taken from the message's List-* headers"""
+    footer = (b'_______________________________________________\n'
+              b'testlist discussion group\n'
+              b'testlist@ietf.org\n')
+    body = b'Hello.\n\n' + footer
+    msg = build_message(body, extra_headers=b'List-Post: <mailto:testlist@ietf.org>\n')
+    assert strip_mailman_footer(body, msg) == b'Hello.\n\n'
+    # with no headers to go on there is nothing identifying it as a footer
+    assert strip_mailman_footer(body) == body
+
+
+def test_get_footer_tokens():
+    msg = build_message(
+        b'Hello.\n',
+        extra_headers=b'List-Post: <mailto:testlist@ietf.org>\n'
+                      b'List-Unsubscribe: <https://example.com/lists/testlist>,\n'
+                      b' <mailto:testlist-leave@ietf.org?subject=unsubscribe>\n')
+    tokens = get_footer_tokens(msg)
+    assert b'testlist@ietf.org' in tokens
+    assert b'testlist-leave@ietf.org' in tokens
+    assert b'https://example.com/lists/testlist' in tokens
+    assert get_footer_tokens(None) == []
+
+
+def test_is_mailman_footer_mailman3_part():
+    """A Mailman 3 footer carried as its own part has no listinfo URL"""
+    raw = (b'From: Joe <joe@example.com>\n'
+           b'Message-ID: <control@example.com>\n'
+           b'Content-Type: multipart/mixed; boundary="BOUND"\n'
+           b'\n'
+           b'--BOUND\n'
+           b'Content-Type: text/plain\n'
+           b'\n'
+           b'Hello.\n'
+           b'--BOUND\n'
+           b'Content-Type: text/plain\n'
+           b'\n' + MM3_FOOTER +
+           b'--BOUND--\n')
+    msg = email.message_from_bytes(raw)
+    parts = [part for part in msg.walk() if not part.is_multipart()]
+    assert is_mailman_footer(parts[-1]) is True
+    assert is_mailman_footer(parts[0]) is False
+
+
+def test_is_duplicate_message_leading_whitespace_is_content():
+    """Only trailing whitespace is trimmed, indentation is part of the body"""
+    msg1 = build_message(b'    indented\nbody\n')
+    msg2 = build_message(b'indented\nbody\n')
+    assert is_duplicate_message(msg1, msg2) is False
 
 
 def test_create_cf_worker_templates():

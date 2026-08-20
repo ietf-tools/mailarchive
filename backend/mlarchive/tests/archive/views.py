@@ -336,9 +336,10 @@ def test_browse_index_gbt(client, messages):
 
 @pytest.mark.django_db(transaction=True)
 def test_browse_index_gbt_query_count(client, messages, django_assert_max_num_queries):
-    '''The page is built with a fixed number of queries, rather than walking
-    the list one thread at a time
-    '''
+    """The page is built with a fixed number of queries.
+
+    The view does not walk the thread list one thread at a time.
+    """
     message = messages.get(msgid='a02')
     url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?gbt=1&index={}'.format(message.hashcode.strip('='))
     with django_assert_max_num_queries(10):
@@ -348,7 +349,7 @@ def test_browse_index_gbt_query_count(client, messages, django_assert_max_num_qu
 
 @pytest.mark.django_db(transaction=True)
 def test_browse_index_gbt_same_thread_date(client):
-    '''Threads sharing a date must not be skipped'''
+    """Threads sharing a date must not be skipped."""
     elist = EmailListFactory.create(name='gbtdate')
     date = datetime.datetime(2020, 1, 1, tzinfo=timezone.utc)
     threads = []

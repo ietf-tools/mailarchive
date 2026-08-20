@@ -304,7 +304,7 @@ def test_get_query_neighbors(messages):
 # --------------------------------------------------
 
 def build_thread(email_list, date, message_count=1):
-    """Creates a thread with message_count messages, all dated date"""
+    """Create a thread with message_count messages, all dated date."""
     thread = ThreadFactory.create(email_list=email_list, date=date)
     for order in range(message_count):
         MessageFactory.create(email_list=email_list, thread=thread,
@@ -325,7 +325,7 @@ def test_get_thread_page_ids():
 
 @pytest.mark.django_db(transaction=True)
 def test_get_thread_page_ids_whole_threads():
-    '''A thread is never split, so a page may hold more than limit messages'''
+    """A thread is never split, so a page may hold more than limit messages."""
     elist = EmailListFactory.create(name='pageids')
     start = datetime.datetime(2020, 1, 1, tzinfo=timezone.utc)
     older = build_thread(elist, start, message_count=1)
@@ -336,9 +336,11 @@ def test_get_thread_page_ids_whole_threads():
 
 @pytest.mark.django_db(transaction=True)
 def test_get_thread_page_ids_same_date():
-    '''Threads sharing a date must not be skipped. They sort by id, so the
-    threads following the given one are included and those before are not
-    '''
+    """Threads sharing a date must not be skipped.
+
+    They sort by id, so the threads following the given one are included and
+    those before are not.
+    """
     elist = EmailListFactory.create(name='pageids')
     date = datetime.datetime(2020, 1, 1, tzinfo=timezone.utc)
     first = build_thread(elist, date)
@@ -351,10 +353,11 @@ def test_get_thread_page_ids_same_date():
 
 @pytest.mark.django_db(transaction=True)
 def test_get_thread_page_ids_same_date_exclude_thread():
-    '''include_thread=False drops only the given thread, not the rest of its
-    date. This is the infinite scroll case: get_browse_results_gbt asks for the
-    threads either side of one already on the page
-    '''
+    """include_thread=False drops only the given thread, not its whole date.
+
+    This is the infinite scroll case: get_browse_results_gbt asks for the
+    threads either side of one already on the page.
+    """
     elist = EmailListFactory.create(name='pageids')
     date = datetime.datetime(2020, 1, 1, tzinfo=timezone.utc)
     newer = build_thread(elist, date + datetime.timedelta(days=1))
@@ -379,9 +382,11 @@ def test_get_thread_page_ids_same_date_exclude_thread():
 
 @pytest.mark.django_db(transaction=True)
 def test_get_thread_page_ids_same_date_page_seam():
-    '''A page and its continuation neither repeat nor skip a thread when the
-    seam falls inside a group of threads sharing a date
-    '''
+    """A page and its continuation neither repeat nor skip a thread.
+
+    This covers the case where the seam falls inside a group of threads
+    sharing a date.
+    """
     elist = EmailListFactory.create(name='pageids')
     date = datetime.datetime(2020, 1, 1, tzinfo=timezone.utc)
     tied = [build_thread(elist, date) for _ in range(4)]
@@ -398,7 +403,7 @@ def test_get_thread_page_ids_same_date_page_seam():
 
 @pytest.mark.django_db(transaction=True)
 def test_get_thread_page_ids_skips_empty_threads():
-    '''Threads left empty by message removal must not shorten the page'''
+    """Threads left empty by message removal must not shorten the page."""
     elist = EmailListFactory.create(name='pageids')
     start = datetime.datetime(2020, 1, 1, tzinfo=timezone.utc)
     oldest = build_thread(elist, start)
@@ -411,7 +416,7 @@ def test_get_thread_page_ids_skips_empty_threads():
 
 @pytest.mark.django_db(transaction=True)
 def test_get_thread_page_ids_other_lists():
-    '''Threads of other lists are never included'''
+    """Threads of other lists are never included."""
     elist = EmailListFactory.create(name='pageids')
     other = EmailListFactory.create(name='otherlist')
     start = datetime.datetime(2020, 1, 1, tzinfo=timezone.utc)
@@ -423,7 +428,7 @@ def test_get_thread_page_ids_other_lists():
 
 @pytest.mark.django_db(transaction=True)
 def test_get_thread_page_ids_next():
-    '''direction "next" walks toward newer threads'''
+    """The direction "next" walks toward newer threads."""
     elist = EmailListFactory.create(name='pageids')
     start = datetime.datetime(2020, 1, 1, tzinfo=timezone.utc)
     threads = [build_thread(elist, start + datetime.timedelta(days=n)) for n in range(5)]
@@ -437,7 +442,7 @@ def test_get_thread_page_ids_next():
 
 @pytest.mark.django_db(transaction=True)
 def test_get_thread_page_ids_query_count(django_assert_num_queries):
-    '''The number of queries does not grow with the size of the page'''
+    """The number of queries does not grow with the size of the page."""
     elist = EmailListFactory.create(name='pageids')
     start = datetime.datetime(2020, 1, 1, tzinfo=timezone.utc)
     threads = [build_thread(elist, start + datetime.timedelta(days=n)) for n in range(30)]

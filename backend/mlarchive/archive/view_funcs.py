@@ -330,10 +330,12 @@ def get_query_string(request):
 
 
 def get_thread_page_ids(thread, limit, direction='previous', include_thread=True):
-    """Returns a list of thread ids, starting with thread (unless include_thread
-    is False) and continuing in direction, "previous" for older threads or
-    "next" for newer ones.  Only as many threads as are needed to provide limit
-    messages are returned, and a thread is never split.
+    """Return the ids of the threads making up a page of messages.
+
+    The list starts with thread, unless include_thread is False, and continues
+    in direction, "previous" for older threads or "next" for newer ones.  Only
+    as many threads as are needed to provide limit messages are returned, and a
+    thread is never split.
 
     Gathering the ids up front lets the caller retrieve the messages with one
     query, rather than walking the list one thread at a time.

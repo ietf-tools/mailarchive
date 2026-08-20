@@ -144,10 +144,11 @@ def get_browse_results(reference_message, direction, gbt):
 
 
 def get_browse_results_gbt(reference_message, direction):
-    '''Returns a set of messages grouped by thread.  Because default ordering
-    is date descending, direction "next" means the preceding threads and
-    "previous" vice versa.
-    '''
+    """Return a set of messages grouped by thread.
+
+    Because default ordering is date descending, direction "next" means the
+    preceding threads and "previous" vice versa.
+    """
     buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
     thread_direction = 'previous' if direction == 'next' else 'next'
     thread_ids = get_thread_page_ids(

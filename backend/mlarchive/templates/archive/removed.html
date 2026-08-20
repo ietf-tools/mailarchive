@@ -1,14 +1,16 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block extrahead %}
-{% endblock %} 
-
-{% block title %}Mail Archive{% endblock %}
+{% block title %}Message Removed - Mail Archive{% endblock %}
 
 {% block content %}
 
-<h3>This message has been removed from the archive.</h3>
+<div class="my-5 mx-auto text-center" style="max-width: 600px;">
+    <img src="{% static 'mlarchive/images/message-removed.png' %}"
+         alt="This message has been removed from the archive"
+         class="img-fluid message-removed-graphic"
+         style="width: 100%; height: auto;"
+         width="800" height="436">
+</div>
 
 {% endblock %}
-
-

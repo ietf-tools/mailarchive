@@ -864,20 +864,18 @@ def test_rebuild_json_blobs():
     messages = [msg1, msg2]
     names = [m.get_blob_name() for m in messages]
 
-    # signal creates JSON blobs on message save
-    assert Blob.objects.filter(bucket='ml-messages-json', name__in=names).count() == 2
+    # JSON blobs are written by MessageWrapper.save(), not on Message save,
+    # so messages created directly have none
+    assert Blob.objects.filter(bucket='ml-messages-json', name__in=names).count() == 0
 
-    # update path: existing blobs get re-written
+    # create path: missing blobs get created
     with patch('mlarchive.archive.utils.replicate_batch', return_value=[]):
         failures = rebuild_json_blobs(messages)
 
     assert failures == []
     assert Blob.objects.filter(bucket='ml-messages-json', name__in=names).count() == 2
 
-    # create path: a missing blob is re-created
-    Blob.objects.get(bucket='ml-messages-json', name=names[0]).delete()
-    assert Blob.objects.filter(bucket='ml-messages-json', name__in=names).count() == 1
-
+    # update path: existing blobs get re-written
     with patch('mlarchive.archive.utils.replicate_batch', return_value=[]):
         failures = rebuild_json_blobs(messages)
 

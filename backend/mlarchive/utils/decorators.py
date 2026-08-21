@@ -172,8 +172,8 @@ def staff_only(function):
 
 
 def is_valid_token(endpoint, token):
-    if hasattr(settings, "API_KEYS"):
-        token_store = settings.API_KEYS
+    if hasattr(settings, "MAILARCHIVE_APP_API_KEYS"):
+        token_store = settings.MAILARCHIVE_APP_API_KEYS
         if endpoint in token_store:
             endpoint_tokens = token_store[endpoint]
             # Be sure endpoints is a list or tuple so we don't accidentally use substring matching!

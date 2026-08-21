@@ -317,63 +317,125 @@ def migrate_messages_to_blobdb(messages, max_workers=50):
     return all_failures
 
 
-def is_mailman_footer(part):
-    """Check if a message part is a Mailman footer.
+# Mailman appends a footer below a separator line of underscores. Both generations use
+# the separator, the block below it differs:
+#   MM2: "<name> mailing list" / "<list>@<host>" / "<...>/mailman/listinfo/<list>"
+#   MM3: "<name> mailing list -- <addr>" / "To unsubscribe send an email to <list>-leave@<domain>"
+_MAILMAN_FOOTER_SEP_RE = re.compile(rb'(?m)^_{10,}[ \t]*$')
 
-    Mailman footers are identified by:
-    - Content type is text/plain
-    - After removing leading whitespace, starts with "___"
-    - Contains the text "listinfo"
+# a footer is a handful of short lines. A larger block below a separator is real content
+# that happens to follow a rule of underscores, which is common in ordinary mail
+_MAILMAN_FOOTER_MAX_LINES = 6
+_MAILMAN_FOOTER_MAX_BYTES = 500
+
+# wording that identifies the block below the separator as a Mailman footer
+_MAILMAN_FOOTER_SIGNATURES = (
+    b'/listinfo/',                          # MM2 list info URL
+    b'/mailman/options/',                   # MM2 options URL
+    b'mailing list --',                     # MM3 first line
+    b'-leave@',                             # MM3 unsubscribe address
+    b'To unsubscribe send an email to',     # MM3 second line
+)
+
+# values in List-* headers are wrapped in angle brackets, possibly several per header
+_LIST_HEADER_VALUE_RE = re.compile(r'<([^>]+)>')
+
+
+def get_footer_tokens(message):
+    """Returns byte strings taken from a message's List-* headers that Mailman writes
+    into its footer, ie. the list posting address and the unsubscribe address or URL.
+
+    Matching on these identifies the footer of the list this message was sent to, so
+    footer detection does not depend on the wording of a particular Mailman version.
+    """
+    tokens = []
+    if message is None:
+        return tokens
+    for header in ('List-Post', 'List-Unsubscribe', 'List-Subscribe'):
+        value = message.get(header, '')
+        if not value:
+            continue
+        for item in _LIST_HEADER_VALUE_RE.findall(str(value)):
+            item = item.strip()
+            if item.lower().startswith('mailto:'):
+                item = item[len('mailto:'):]
+            item = item.split('?')[0].strip()
+            # anything shorter is not distinctive enough to identify a footer
+            if len(item) >= 8:
+                tokens.append(item.encode('utf-8', errors='ignore'))
+    return tokens
+
+
+def strip_mailman_footer(data, message=None):
+    """Returns data with a trailing Mailman footer removed, or data unchanged.
+
+    Only the last separator line is considered, and the block below it is removed only
+    if it is small enough to be a footer and is identifiable as one, either by the
+    wording Mailman 2 or 3 uses or by an address taken from the message's List-*
+    headers. Everything else is left alone. Removing real content would make two
+    different messages compare equal in is_duplicate_message(), which drops a message
+    that should have been archived, so the bias here is to strip nothing when unsure.
+
+    Args:
+        data: the decoded payload, as bytes, with line endings already normalised
+        message: the message the payload came from, used for its List-* headers
+
+    Returns:
+        bytes: data, with any trailing Mailman footer removed
+    """
+    matches = list(_MAILMAN_FOOTER_SEP_RE.finditer(data))
+    if not matches:
+        return data
+
+    separator = matches[-1]
+    tail = data[separator.end():]
+    if (len(tail) > _MAILMAN_FOOTER_MAX_BYTES
+            or tail.count(b'\n') > _MAILMAN_FOOTER_MAX_LINES):
+        return data
+
+    if not (any(signature in tail for signature in _MAILMAN_FOOTER_SIGNATURES)
+            or any(token in tail for token in get_footer_tokens(message))):
+        return data
+
+    return data[:separator.start()]
+
+
+def is_mailman_footer(part, message=None):
+    """Check if a message part holds nothing but a Mailman footer.
+
+    A multipart message may carry the footer as a part of its own, which is dropped
+    before comparing content, see is_duplicate_message(). Defined in terms of
+    strip_mailman_footer() so both share one definition of what a footer is.
 
     Args:
         part: An email message part
+        message: the message the part came from, used for its List-* headers
 
     Returns:
-        bool: True if this is a Mailman footer, False otherwise
+        bool: True if this part is a Mailman footer, False otherwise
     """
-    # Check content type
     if part.get_content_type() != 'text/plain':
         return False
 
-    # Get the payload
-    payload = part.get_payload(decode=True)
-    if payload is None:
+    data = part.get_payload(decode=True)
+    if data is None:
+        return False
+    data = data.replace(b"\r\n", b"\n").strip()
+    if not data:
         return False
 
-    # Decode to string if bytes
-    if isinstance(payload, bytes):
-        try:
-            payload = payload.decode('utf-8', errors='ignore')
-        except Exception:
-            return False
-
-    # Check if starts with ___ after stripping leading whitespace
-    stripped = payload.lstrip()
-    if not stripped.startswith('___'):
-        return False
-
-    # Check if contains "listinfo"
-    if 'listinfo' not in payload:
-        return False
-
-    return True
+    return strip_mailman_footer(data, message).strip() == b''
 
 
-# Matches the Mailman footer separator (10+ underscores on its own line)
-# so it can be stripped before payload comparison.
-_MAILMAN_FOOTER_SEP_RE = re.compile(rb'\n_{10,}\n')
-
-
-def _normalized_payload(part):
-    """Return decoded payload with CRLF normalised to LF and inline Mailman footer stripped."""
+def _normalized_payload(part, message=None):
+    """Return decoded payload with CRLF normalised to LF and a trailing Mailman footer
+    stripped. Trailing whitespace only is trimmed, leading whitespace is content.
+    """
     data = part.get_payload(decode=True)
     if data is None:
         return b""
     data = data.replace(b"\r\n", b"\n")
-    m = _MAILMAN_FOOTER_SEP_RE.search(data)
-    if m:
-        data = data[:m.start()]
-    return data.strip()
+    return strip_mailman_footer(data, message).rstrip()
 
 
 def is_duplicate_message(msg1, msg2):
@@ -401,19 +463,19 @@ def is_duplicate_message(msg1, msg2):
         # so we need to skip the container parts and only compare leaf parts
         # Also exclude Mailman footers from comparison
         parts1 = [part for part in msg1.walk()
-                  if not part.is_multipart() and not is_mailman_footer(part)]
+                  if not part.is_multipart() and not is_mailman_footer(part, msg1)]
         parts2 = [part for part in msg2.walk()
-                  if not part.is_multipart() and not is_mailman_footer(part)]
+                  if not part.is_multipart() and not is_mailman_footer(part, msg2)]
 
         if len(parts1) != len(parts2):
             return False
 
         for part1, part2 in zip(parts1, parts2):
-            if _normalized_payload(part1) != _normalized_payload(part2):
+            if _normalized_payload(part1, msg1) != _normalized_payload(part2, msg2):
                 return False
         return True
     elif not msg1.is_multipart() and not msg2.is_multipart():
-        return _normalized_payload(msg1) == _normalized_payload(msg2)
+        return _normalized_payload(msg1, msg1) == _normalized_payload(msg2, msg2)
     else:
         return False
 
@@ -979,6 +1041,28 @@ def update_mbox_files():
             create_mbox_file(month=month, year=year, elist=elist)
 
 
+def is_redelivery_of_archived(content, name):
+    '''Returns True if content is a redelivery of a message already archived on the
+    list named by an incoming blob or file name, "{list_name}.{visibility}.{hex_id}".
+
+    A redelivery is dropped by MessageWrapper.check_redelivery() without being stored
+    anywhere, since it is a known duplicate needing no review. That leaves its incoming
+    copy with nothing to match against, so purge_incoming() identifies it here instead.
+    '''
+    parts = name.rsplit('.', 2)
+    if len(parts) != 3:
+        return False
+    try:
+        mw = MessageWrapper.from_bytes(content, listname=parts[0])
+    except Exception as e:
+        logger.warning(f'is_redelivery_of_archived: cannot read message {name}: {e}')
+        return False
+    if mw.created_id:
+        # get_msgid() minted a random id, there is no message-id to match on
+        return False
+    return mw.find_duplicate() is not None
+
+
 def purge_incoming():
     '''Purge messages older than settings.INCOMING_DAYS_TO_KEEP days from incoming bucket.
 
@@ -1009,12 +1093,19 @@ def purge_incoming():
             blob.delete()
             continue
 
+        # no stored copy: a redelivery is also dropped without being stored anywhere,
+        # so confirm it duplicates an archived message and purge it
+        if is_redelivery_of_archived(content, blob.name):
+            blob.delete()
+            continue
+
         logger.error(
             f'purge_incoming: no matching blob found outside incoming bucket, skipping: '
             f'blob={blob.name}, checksum={blob.checksum}'
         )
 
 
+# NOTE: this function was run in production Aug 2026 and is no longer needed.
 def purge_incoming_dir():
     '''Purge files from settings.INCOMING_DIR on disk, using the same verification as
     purge_incoming().

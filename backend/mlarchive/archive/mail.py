@@ -121,6 +121,11 @@ class DuplicateMessageId(NotArchived):
     pass
 
 
+class Redelivery(NotArchived):
+    # a redelivery of a message already archived on this list
+    pass
+
+
 class HashcodeCollision(ArchiveFailure):
     # hashcode already used on this list by a message with a different message-id
     pass
@@ -159,6 +164,10 @@ def archive_message(data, listname, private=False, save_failed=True):
         mw.save()
     except InspectorMessage as error:
         # a spam message, a copy was saved to spam bucket, no review required
+        logger.info('Message not archived [{0}]'.format(error.args))
+        return 0
+    except Redelivery as error:
+        # a redelivery of an archived message, routine, dropped without being stored
         logger.info('Message not archived [{0}]'.format(error.args))
         return 0
     except NotArchived as error:
@@ -977,26 +986,41 @@ class MessageWrapper(object):
             inspector_class = Inspector.registry[inspector_name.lower()]
             inspector_class(self).inspect()
 
-    def is_redelivery(self):
-        """Returns True if this message is a redelivery of one already archived on
-        this list, meaning it can be dropped. If the message-id is in use by a
-        message with differing content a copy is saved to _dupes and DuplicateMessageId
-        is raised.
+    def find_duplicate(self):
+        """Returns the archived Message this message is a duplicate of, or None. A
+        duplicate has the same message-id on the same list and the same normalized
+        content, see utils.is_duplicate_message(). Has no side effects, so it can be
+        used to identify a redelivery outside the archiving path, see
+        utils.purge_incoming().
         """
-        existing_messages = Message.objects.filter(
-            msgid=self.msgid, email_list__name=self.listname)
-        if not existing_messages:
-            return False
-
         # import here to avoid circular import, archive.utils imports this module
         from mlarchive.archive.utils import is_duplicate_message
-        for existing in existing_messages:
+        for existing in Message.objects.filter(
+                msgid=self.msgid, email_list__name=self.listname):
             archived_msg = existing.pymsg
             if archived_msg is None:
                 # can't read the archived copy, can't confirm it's a duplicate
                 continue
             if is_duplicate_message(self.email_message, archived_msg):
-                return True
+                return existing
+        return None
+
+    def check_redelivery(self):
+        """Raises Redelivery if this message is a redelivery of one already archived on
+        this list, meaning it can be dropped. A redelivery is a known duplicate that
+        needs no review, so no copy is kept, utils.purge_incoming() identifies the
+        incoming copy the same way and purges it. If the message-id is in use by a
+        message with differing content a copy is saved to dupes and DuplicateMessageId
+        is raised.
+        """
+        if not Message.objects.filter(
+                msgid=self.msgid, email_list__name=self.listname).exists():
+            return
+
+        if self.find_duplicate():
+            raise Redelivery(
+                'Redelivery of an archived message. list:{} msgid:{}'.format(
+                    self.listname, self.msgid))
 
         blob_path = self.write_msg(subdir='_dupes')
         raise DuplicateMessageId(
@@ -1021,12 +1045,7 @@ class MessageWrapper(object):
         to database. Save message to archive (if not test mode) and process attachments.
         """
         self.run_inspectors()
-
-        if self.is_redelivery():
-            logger.info('Duplicate message dropped. list:{} msgid:{}'.format(
-                self.listname, self.msgid))
-            return
-
+        self.check_redelivery()
         self.check_hashcode_collision()
 
         # ensure message has been processed

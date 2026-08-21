@@ -6,7 +6,9 @@ from django.utils.cache import add_never_cache_headers, patch_cache_control
 from mlarchive.archive import actions
 from mlarchive.archive.utils import jsonapi
 from mlarchive.archive.models import Message
-from mlarchive.archive.query_utils import get_cached_query, get_order_fields, get_qdr_kwargs
+from mlarchive.archive.query_utils import (get_cached_query, get_order_fields,
+    get_qdr_kwargs, DB_THREAD_SORT_FIELDS)
+from mlarchive.archive.view_funcs import get_thread_page_ids
 from mlarchive.utils.decorators import check_access, superuser_only, check_ajax_list_access, pad_id
 
 
@@ -142,24 +144,20 @@ def get_browse_results(reference_message, direction, gbt):
 
 
 def get_browse_results_gbt(reference_message, direction):
-    '''Returns a set of messages grouped by thread.  Because default ordering
-    is date descending, direction "next" calls get_previous() and "previous"
-    vice versa.
-    '''
+    """Return a set of messages grouped by thread.
+
+    Because default ordering is date descending, direction "next" means the
+    preceding threads and "previous" vice versa.
+    """
     buffer = settings.SEARCH_SCROLL_BUFFER_SIZE
-    results = []
-    if direction == 'next':
-        thread = reference_message.thread.get_previous()
-        while len(results) < buffer and thread:
-            results.extend(thread.message_set.order_by('thread_order'))
-            thread = thread.get_previous()
-    elif direction == 'previous':
-        thread = reference_message.thread.get_next()
-        while len(results) < buffer and thread:
-            # prepend to results
-            results = list(thread.message_set.order_by('thread_order')) + results
-            thread = thread.get_next()
-    return results
+    thread_direction = 'previous' if direction == 'next' else 'next'
+    thread_ids = get_thread_page_ids(
+        reference_message.thread,
+        buffer,
+        direction=thread_direction,
+        include_thread=False)
+    return Message.objects.filter(
+        thread_id__in=thread_ids).select_related('email_list').order_by(*DB_THREAD_SORT_FIELDS)
 
 
 def get_browse_results_date(reference_message, direction):
@@ -169,12 +167,12 @@ def get_browse_results_date(reference_message, direction):
         results = Message.objects.filter(
             email_list=reference_message.email_list,
             date__lt=reference_message.date,
-        ).order_by('-date')[:buffer]
+        ).select_related('email_list').order_by('-date')[:buffer]
     elif direction == 'previous':
         query = Message.objects.filter(
             email_list=reference_message.email_list,
             date__gt=reference_message.date,
-        ).order_by('date')[:buffer]
+        ).select_related('email_list').order_by('date')[:buffer]
         results = list(query)
         results.reverse()
     return results

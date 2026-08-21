@@ -2,6 +2,7 @@
 import datetime
 import email
 import email.message
+import json
 from email import policy
 import glob
 import io
@@ -25,9 +26,10 @@ from mlarchive.archive.mail import (archive_message, clean_spaces, CustomMMDF,
     MessageWrapper, get_base_subject, get_envelope_date, get_from,
     get_header_date, get_mb, get_received_date, parsedate_to_datetime,
     subject_is_reply, lookup_extension, get_message_from_bytes, make_hash,
-    UnknownFormat)
+    NotArchived, Redelivery, UnknownFormat)
 from mlarchive.archive.storage_utils import (exists_in_storage, retrieve_bytes,
     retrieve_str)
+from mlarchive.archive.utils import is_redelivery_of_archived
 from mlarchive.blobdb.models import Blob
 from mlarchive.utils.test_utils import message_from_file, is_email_message, is_json
 
@@ -94,6 +96,68 @@ This is a test email.  database
 
 
 @pytest.mark.django_db(transaction=True)
+def test_archive_message_json_attachments():
+    """Test the JSON blob body includes links to the attachments.
+
+    The ml-messages-json blob contains the rendered message body, which
+    includes links to the message's attachments, so it must be written after
+    the Attachment records are created.  See MessageWrapper.save().
+    """
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'attachment.mail')
+    with open(path, 'rb') as f:
+        data = f.read()
+    assert archive_message(data, 'test', private=False) == 0
+    message = Message.objects.get()
+    assert message.attachment_set.count() == 1
+    attachment = message.attachment_set.first()
+    msg_json = json.loads(retrieve_str('ml-messages-json', message.get_blob_name()))
+    assert attachment.name in msg_json['body']
+    assert attachment.get_absolute_url() in msg_json['body']
+
+
+@pytest.mark.django_db(transaction=True)
+def test_archive_message_json_neighbors():
+    """Test a new message refreshes the JSON blobs of its neighbors.
+
+    A new message invalidates the navigation links of its thread siblings and
+    of the message before it in list order, so their JSON blobs are rewritten
+    too.  See write_message_json().
+
+    The third message replies to the first, but follows the second in list
+    order, so each of the two refresh paths updates a different blob.
+    """
+    def make(msgid, subject, day, in_reply_to=None):
+        headers = ['From: Joe <joe@example.com>',
+                   'To: list@example.com',
+                   f'Date: Thu, {day} Nov 2013 17:54:55 +0000',
+                   f'Message-ID: <{msgid}>',
+                   f'Subject: {subject}']
+        if in_reply_to:
+            headers.append(f'In-Reply-To: <{in_reply_to}>')
+            headers.append(f'References: <{in_reply_to}>')
+        return ('\n'.join(headers) + '\n\nbody\n').encode('ASCII')
+
+    def get_json(message):
+        return json.loads(retrieve_str('ml-messages-json', message.get_blob_name()))
+
+    assert archive_message(make('one@example.com', 'First', 7), 'test') == 0
+    assert archive_message(make('two@example.com', 'Second', 8), 'test') == 0
+    assert archive_message(
+        make('three@example.com', 'Re: First', 9, in_reply_to='one@example.com'), 'test') == 0
+
+    first = Message.objects.get(msgid='one@example.com')
+    second = Message.objects.get(msgid='two@example.com')
+    third = Message.objects.get(msgid='three@example.com')
+    assert third.thread == first.thread
+    assert third.thread_order > 0
+
+    # thread sibling refreshed, though it is not the previous message in list order
+    assert get_json(first)['next_in_thread'] == third.get_absolute_url()
+    # previous message in list order refreshed, though it is in another thread
+    assert get_json(second)['next_in_list'] == third.get_absolute_url()
+
+
+@pytest.mark.django_db(transaction=True)
 def test_archive_message_private(client):
     data = '''From: Joe <joe@example.com>
 To: Joe <joe@example.com>
@@ -133,9 +197,42 @@ def test_archive_message_duplicate(client):
     assert Message.objects.all().count() == 1
 
     assert archive_message(SIMPLE_MESSAGE_BYTES, 'test', private=False) == 0
-    # message dropped, not archived and not saved for review
+    # message dropped, not archived and not saved for review. The bytes match the
+    # archived copy, so purge_incoming() can already account for the incoming copy
     assert Message.objects.all().count() == 1
     assert not Blob.objects.filter(bucket='ml-messages-dupes').exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_check_redelivery_raises(client):
+    '''check_redelivery() aborts save() by raising, like run_inspectors() and
+    check_hashcode_collision() do. Redelivery is a NotArchived, so archive_message()
+    reports success and no copy is kept'''
+    assert archive_message(SIMPLE_MESSAGE_BYTES, 'test', private=False) == 0
+
+    mw = MessageWrapper.from_bytes(SIMPLE_MESSAGE_BYTES, 'test')
+    with pytest.raises(Redelivery):
+        mw.save()
+    assert isinstance(Redelivery(), NotArchived)
+    assert Message.objects.all().count() == 1
+    assert not Blob.objects.filter(bucket='ml-messages-dupes').exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_archive_message_duplicate_differing_bytes(client):
+    '''A redelivery whose bytes differ from the archived copy is still a known duplicate
+    needing no review, so it is dropped without a copy being saved anywhere. Its incoming
+    copy is identified and purged by utils.purge_incoming()'''
+    assert archive_message(SIMPLE_MESSAGE_BYTES, 'test', private=False) == 0
+    assert Message.objects.all().count() == 1
+    # an extra header, which is_duplicate_message() ignores, so this is still a
+    # redelivery, but the bytes and hence the checksum differ from the archived copy
+    redelivery = b'Received: from example.com by example.net\n' + SIMPLE_MESSAGE_BYTES
+
+    assert archive_message(redelivery, 'test', private=False) == 0
+    assert Message.objects.all().count() == 1
+    assert not Blob.objects.filter(bucket='ml-messages-dupes').exists()
+    assert is_redelivery_of_archived(redelivery, 'test.public.aaaaaaaaaaaaaaaa')
 
 
 @pytest.mark.django_db(transaction=True)
@@ -152,6 +249,9 @@ def test_archive_message_duplicate_msgid_different_content(client):
     blobs = Blob.objects.filter(bucket='ml-messages-dupes')
     assert blobs.count() == 1
     assert blobs.first().name.startswith('test/')
+    # this path leaves the hashcode unset, so the copy is uuid named and cannot
+    # collide with the hashcode named copy a redelivery saves
+    assert blobs.first().name != f'test/{make_hash("0000000002@example.com", "test")}'.rstrip('=')
 
 
 @pytest.mark.django_db(transaction=True)

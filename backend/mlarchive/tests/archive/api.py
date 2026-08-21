@@ -208,7 +208,7 @@ def get_error_message(response):
 def test_import_message(client, settings):
     settings.CELERY_TASK_ALWAYS_EAGER = True
     url = reverse('api_import_message')
-    settings.API_KEYS = {url: 'valid_token'}
+    settings.MAILARCHIVE_APP_API_KEYS = {url: 'valid_token'}
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
     with open(path, 'rb') as f:
         message = f.read()
@@ -272,7 +272,7 @@ def test_import_message_private(client, settings):
     '''Ensure list_type variable is respected'''
     settings.CELERY_TASK_ALWAYS_EAGER = True
     url = reverse('api_import_message')
-    settings.API_KEYS = {url: 'valid_token'}
+    settings.MAILARCHIVE_APP_API_KEYS = {url: 'valid_token'}
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
     with open(path, 'rb') as f:
         message = f.read()
@@ -301,7 +301,7 @@ def test_import_message_integration(client, settings):
     # skip sending task to broker and execute immediately
     settings.CELERY_TASK_ALWAYS_EAGER = True
     url = reverse('api_import_message')
-    settings.API_KEYS = {url: 'valid_token'}
+    settings.MAILARCHIVE_APP_API_KEYS = {url: 'valid_token'}
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
     with open(path, 'rb') as f:
         message = f.read()
@@ -356,7 +356,7 @@ def test_msg_search(client, search_api_messages, settings):
     print('indexed items: {}'.format(len(response.hits)))
     # ---------------------------------------
     url = reverse('api_search_message')
-    settings.API_KEYS = {url: 'valid_token'}
+    settings.MAILARCHIVE_APP_API_KEYS = {url: 'valid_token'}
     data = {
         'email_list': 'acme',
         'query': 'bananas'
@@ -406,7 +406,7 @@ def test_msg_search(client, search_api_messages, settings):
 @pytest.mark.django_db(transaction=True)
 def test_msg_search_private(client, search_api_messages, settings):
     url = reverse('api_search_message')
-    settings.API_KEYS = {url: 'valid_token'}
+    settings.MAILARCHIVE_APP_API_KEYS = {url: 'valid_token'}
     acme = EmailList.objects.get(name='acme')
     acme.private = True
     acme.save()
@@ -429,7 +429,7 @@ def test_msg_search_private(client, search_api_messages, settings):
 @pytest.mark.django_db(transaction=True)
 def test_msg_search_start_date(client, search_api_messages, settings):
     url = reverse('api_search_message')
-    settings.API_KEYS = {url: 'valid_token'}
+    settings.MAILARCHIVE_APP_API_KEYS = {url: 'valid_token'}
     data = {
         'email_list': 'acme',
         'start_date': '2013-06-01',
@@ -460,7 +460,7 @@ def test_msg_search_start_date(client, search_api_messages, settings):
 @pytest.mark.django_db(transaction=True)
 def test_msg_search_query(client, search_api_messages, settings):
     url = reverse('api_search_message')
-    settings.API_KEYS = {url: 'valid_token'}
+    settings.MAILARCHIVE_APP_API_KEYS = {url: 'valid_token'}
     # field query
     data = {
         'email_list': 'acme',
@@ -521,7 +521,7 @@ def _make_mock_response(content, content_type='application/mbox'):
 @pytest.mark.django_db(transaction=True)
 def test_import_mbox_no_api_key(client, settings):
     url = reverse('api_import_mbox')
-    settings.API_KEYS = {url: 'valid_token'}
+    settings.MAILARCHIVE_APP_API_KEYS = {url: 'valid_token'}
     response = client.post(
         url,
         {'list_name': 'ancp', 'list_visibility': 'public', 'url': 'https://example.com/mbox'},
@@ -533,7 +533,7 @@ def test_import_mbox_no_api_key(client, settings):
 @pytest.mark.django_db(transaction=True)
 def test_import_mbox_invalid_api_key(client, settings):
     url = reverse('api_import_mbox')
-    settings.API_KEYS = {url: 'valid_token'}
+    settings.MAILARCHIVE_APP_API_KEYS = {url: 'valid_token'}
     response = client.post(
         url,
         {'list_name': 'ancp', 'list_visibility': 'public', 'url': 'https://example.com/mbox'},
@@ -545,7 +545,7 @@ def test_import_mbox_invalid_api_key(client, settings):
 @pytest.mark.django_db(transaction=True)
 def test_import_mbox_wrong_content_type(client, settings):
     url = reverse('api_import_mbox')
-    settings.API_KEYS = {url: 'valid_token'}
+    settings.MAILARCHIVE_APP_API_KEYS = {url: 'valid_token'}
     response = client.post(
         url,
         'list_name=ancp&list_visibility=public&url=https://example.com/mbox',
@@ -557,7 +557,7 @@ def test_import_mbox_wrong_content_type(client, settings):
 @pytest.mark.django_db(transaction=True)
 def test_import_mbox_missing_field(client, settings):
     url = reverse('api_import_mbox')
-    settings.API_KEYS = {url: 'valid_token'}
+    settings.MAILARCHIVE_APP_API_KEYS = {url: 'valid_token'}
     # missing url
     response = client.post(
         url,
@@ -570,7 +570,7 @@ def test_import_mbox_missing_field(client, settings):
 @pytest.mark.django_db(transaction=True)
 def test_import_mbox_invalid_visibility(client, settings):
     url = reverse('api_import_mbox')
-    settings.API_KEYS = {url: 'valid_token'}
+    settings.MAILARCHIVE_APP_API_KEYS = {url: 'valid_token'}
     response = client.post(
         url,
         {'list_name': 'ancp', 'list_visibility': 'open', 'url': 'https://example.com/mbox'},
@@ -582,7 +582,7 @@ def test_import_mbox_invalid_visibility(client, settings):
 @pytest.mark.django_db(transaction=True)
 def test_import_mbox_queues_task(client, settings):
     url = reverse('api_import_mbox')
-    settings.API_KEYS = {url: 'valid_token'}
+    settings.MAILARCHIVE_APP_API_KEYS = {url: 'valid_token'}
 
     with patch('mlarchive.archive.api.import_mbox_url_task') as mock_task:
         response = client.post(

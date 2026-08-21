@@ -5,6 +5,7 @@ Using django-environ
 https://github.com/joke2k/django-environ
 """
 
+import base64
 import json
 import os
 import sys
@@ -18,6 +19,17 @@ from mlarchive import __version__, __release_hash__
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))
+
+
+# default api keys for reference only
+_default_api_keys = {
+    '/api/v1/message/import/': [],
+    '/api/v1/message/import-mbox/': [],
+    '/api/v1/message/search/': [],
+}
+_api_keys_json_str = json.dumps(_default_api_keys)
+_api_keys_b64_bytes = base64.b64encode(_api_keys_json_str.encode('utf-8'))
+_api_keys_b64_string = _api_keys_b64_bytes.decode('utf-8')
 
 env = environ.Env(
     # set casting, default value
@@ -67,13 +79,11 @@ env = environ.Env(
     ELASTICSEARCH_SIGNAL_PROCESSOR=(str, 'mlarchive.archive.signals.CelerySignalProcessor'),
     EXPORT_LIMIT=(int, 5000),
     HTAUTH_PASSWD_FILENAME=(str, ''),
-    IMPORT_MESSAGE_APIKEY=(str, ''),
-    IMPORT_MBOX_APIKEY=(str, ''),
-    SEARCH_MESSAGE_APIKEY=(str, 'changeme'),
     INTERNAL_IPS=(list, []),
     LOG_DIR=(str, '/var/log/mail-archive'),
     LOG_HANDLERS=(list, ['mlarchive']),
     LOG_LEVEL=(str, 'INFO'),
+    MAILARCHIVE_APP_API_KEYS_JSON_B64=(str, _api_keys_b64_string),
     MAILMAN_API_PASSWORD=(str, ''),
     MAILMAN_API_URL=(str, 'https://mailman-api.ietf.org/3.1'),
     MAILMAN_API_USER=(str, ''),
@@ -445,19 +455,15 @@ MAILMAN_API_USER = env('MAILMAN_API_USER')
 MAILMAN_API_PASSWORD = env('MAILMAN_API_PASSWORD')
 MAILMAN_CF_ACCESS_CLIENT_ID = env('MAILMAN_CF_ACCESS_CLIENT_ID')
 MAILMAN_CF_ACCESS_CLIENT_SECRET = env('MAILMAN_CF_ACCESS_CLIENT_SECRET')
-IMPORT_MESSAGE_APIKEY = env('IMPORT_MESSAGE_APIKEY')
-IMPORT_MBOX_APIKEY = env('IMPORT_MBOX_APIKEY')
 
 # admin import mbox settings
 IMPORT_MBOX_MAX_SIZE = 1_800_000_000  # 1.8 GB
 
 # API KEYS: key=endpoint, value=[api-key,]
-SEARCH_MESSAGE_APIKEY = env('SEARCH_MESSAGE_APIKEY')
-API_KEYS = {
-    '/api/v1/message/import/': [IMPORT_MESSAGE_APIKEY],
-    '/api/v1/message/import-mbox/': [IMPORT_MBOX_APIKEY],
-    '/api/v1/message/search/': [SEARCH_MESSAGE_APIKEY],
-}
+_APP_API_KEYS_JSON = base64.b64decode(
+    env('MAILARCHIVE_APP_API_KEYS_JSON_B64')
+)
+MAILARCHIVE_APP_API_KEYS = json.loads(_APP_API_KEYS_JSON)
 
 # Default timeout for HTTP requests via the requests library
 DEFAULT_REQUESTS_TIMEOUT = 20  # seconds

@@ -39,14 +39,14 @@ def test_check_list_access_ok():
 
 
 def test_is_valid_token(settings):
-    settings.API_KEYS = {'/api/v1/message/import/': 'valid_token'}
+    settings.MAILARCHIVE_APP_API_KEYS = {'/api/v1/message/import/': 'valid_token'}
     assert is_valid_token('/api/v1/message/import/', 'valid_token') is True
     assert is_valid_token('/api/v1/message/import/', 'invvalid_token') is False
     assert is_valid_token('/api/v1/different/endpoint/', 'valid_token') is False
 
 
 def test_require_api_key(settings):
-    settings.API_KEYS = {'/api/v1/message/import/': 'abcdefg'}
+    settings.MAILARCHIVE_APP_API_KEYS = {'/api/v1/message/import/': 'abcdefg'}
     rf = RequestFactory()
     func = Mock()
     rsp = HttpResponse()

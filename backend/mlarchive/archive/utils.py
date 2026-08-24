@@ -31,7 +31,7 @@ from django.template.loader import render_to_string
 from django.test import RequestFactory
 from django.urls import reverse
 
-from mlarchive.archive.models import (EmailList, Subscriber, Redirect, UserEmail, MailmanMember,
+from mlarchive.archive.models import (EmailList, Subscriber, Redirect, MailmanMember,
     User, Message)
 from mlarchive.archive.mail import MessageWrapper, archive_message
 from mlarchive.archive.storage_utils import (retrieve_bytes, store_bytes, exists_in_storage,
@@ -924,13 +924,20 @@ def get_subscriber_counts():
 
 
 def get_membership(quiet=False):
-    '''For all private lists, get membership from mailman 3 API and update
+    """For all private lists, get membership from mailman 3 API and update
     list membership as needed.
 
     Initial plan was to use client.members to get all list memberships rather
     than hitting the API for every private list, but this request fails
     trying to retrieve millions of records.
-    '''
+
+    The member relations are reconciled against all recorded MailmanMembers,
+    not just the newly seen addresses, so a relation that was missed on an
+    earlier run gets added, including for an address that has since
+    unsubscribed. An address can be known to more than one User, when someone
+    changes their Datatracker primary email and OIDC creates a new User for
+    them, in which case all of them get access.
+    """
     has_changed = False
 
     client = mailmanclient.Client(
@@ -950,18 +957,20 @@ def get_membership(quiet=False):
         fqdn = plist.name + '@' + fqdn_map[plist.name]
         mailman_list = client.get_list(fqdn)
         mailman_members = [m.email for m in mailman_list.members]
-        existing_members = plist.mailmanmember_set.values_list('address', flat=True)
+        existing_members = set(plist.mailmanmember_set.values_list('address', flat=True))
         # handle new members
-        for address in set(mailman_members) - set(existing_members):
+        for address in set(mailman_members) - existing_members:
             MailmanMember.objects.create(email_list=plist, address=address)
-            try:
-                user_email = UserEmail.objects.get(address=address)
-            except UserEmail.DoesNotExist:
-                continue
-            plist.members.add(user_email.user)
+        # grant access to every recorded subscriber we know a User for
+        addresses = plist.mailmanmember_set.values_list('address', flat=True)
+        users = list(User.objects.filter(useremail__address__in=addresses)
+                                 .exclude(pk__in=plist.members.values_list('pk', flat=True))
+                                 .distinct())
+        if users:
+            plist.members.add(*users)
             has_changed = True
         # handle deleted members
-        for addresss in set(existing_members) - set(mailman_members):
+        for addresss in existing_members - set(mailman_members):
             # do not delete unsubscribed members
             # one time subscribers retain access to the archives
             pass

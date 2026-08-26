@@ -41,11 +41,11 @@ from mlarchive.archive.query_utils import (get_qdr_kwargs,
     is_static_on, get_count, CustomPaginator)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     get_query_neighbors, get_query_string, get_lists_for_user, get_random_token,
-    get_thread_page_ids)
+    BlobMessage, get_blob_content, get_thread_page_ids)
 
 from mlarchive.archive.models import (EmailList, Message, Thread, Attachment,
     Subscriber)
-from mlarchive.archive.forms import (AdminForm, AdminActionForm, 
+from mlarchive.archive.forms import (AdminForm, AdminActionForm, BlobForm,
     AdvancedSearchForm, BrowseForm, RulesForm, SearchForm, DateForm)
 
 import logging
@@ -673,6 +673,65 @@ def admin(request):
         'form': form,
         'action_form': action_form,
     })
+
+
+@superuser_only
+def admin_blob(request):
+    """Displays the message stored in a blob, given its bucket and name.
+
+    The message is rendered like the detail view, which allows inspection of
+    blobs that have no corresponding Message record, ie. removed or spam
+    messages.  With "raw" in the query string the unparsed message source is
+    shown instead of the rendered body.
+    """
+    msg = None
+    message_url = ''
+    raw_url = ''
+    show_raw = 'raw' in request.GET
+    form = BlobForm(request.GET) if request.GET else BlobForm()
+
+    if request.GET and form.is_valid():
+        bucket = form.cleaned_data['bucket']
+        name = form.cleaned_data['name']
+        content = get_blob_content(bucket, name)
+        if not content:
+            messages.error(request, 'Blob not found: {}:{}'.format(bucket, name))
+        else:
+            msg = BlobMessage(bucket, name, content)
+            base_url = reverse('archive_admin_blob')
+            params = {'bucket': bucket, 'name': name}
+            message_url = '{}?{}'.format(base_url, urlencode(params))
+            raw_url = '{}?{}'.format(base_url, urlencode(dict(params, raw=1)))
+
+    return render(request, 'archive/admin_blob.html', {
+        'form': form,
+        'msg': msg,
+        'show_raw': show_raw,
+        'message_url': message_url,
+        'raw_url': raw_url,
+    })
+
+
+@superuser_only
+def admin_blob_download(request):
+    """Returns the unparsed contents of a blob as a file download.
+
+    Takes the same bucket and name query parameters as admin_blob.  Used for
+    blobs too large to display inline, and for saving a copy of the original
+    message.
+    """
+    form = BlobForm(request.GET)
+    if not form.is_valid():
+        raise Http404('Invalid blob bucket or name')
+    bucket = form.cleaned_data['bucket']
+    name = form.cleaned_data['name']
+    content = get_blob_content(bucket, name)
+    if not content:
+        raise Http404('Blob not found: {}:{}'.format(bucket, name))
+    response = HttpResponse(content, content_type='message/rfc822')
+    filename = '{}.eml'.format(name.replace('/', '_'))
+    response['Content-Disposition'] = 'attachment; filename="{}"'.format(filename)
+    return response
 
 
 @csp_exempt()

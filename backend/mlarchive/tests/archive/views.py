@@ -12,12 +12,12 @@ from pyquery import PyQuery
 
 from django.contrib.auth import SESSION_KEY
 from django.contrib.auth.models import User
-from django.test import RequestFactory
+from django.test import RequestFactory, override_settings
 from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils.encoding import smart_str
-from factories import (EmailListFactory, MessageFactory, ThreadFactory, UserFactory,
-    SubscriberFactory)
+from factories import (EmailListFactory, MessageFactory, UserFactory, SubscriberFactory,
+    store_message_blob, ThreadFactory)
 from mlarchive.archive.models import Message, Attachment, Redirect, EmailList
 from mlarchive.archive.storage_utils import exists_in_storage, remove_from_storage
 from mlarchive.archive.views import (TimePeriod, add_nav_urls, is_small_year,
@@ -203,6 +203,147 @@ def test_admin_console(client, admin_client):
     assert response.status_code == 302
     response = admin_client.get(url)
     assert response.status_code == 200
+
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_blob(client, admin_client):
+    url = reverse('archive_admin_blob')
+    response = client.get(url)
+    assert response.status_code == 403
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    assert 'id_bucket' in smart_str(response.content)
+    assert 'id_name' in smart_str(response.content)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_blob_message(admin_client):
+    elist = EmailListFactory.create(name='public')
+    message = MessageFactory.create(email_list=elist, subject='Blob Test')
+    store_message_blob(message, (
+        b'From: joe@example.com\n'
+        b'To: public@example.com\n'
+        b'Subject: Blob Test\n'
+        b'Date: Thu, 7 Nov 2013 17:54:55 +0000\n'
+        b'Message-ID: <blob-test@example.com>\n'
+        b'\n'
+        b'This is the blob body.\n'))
+    url = reverse('archive_admin_blob') + '?' + urlencode({
+        'bucket': message.get_blob_bucket(),
+        'name': message.get_blob_name()})
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    content = smart_str(response.content)
+    assert 'This is the blob body.' in content
+    assert 'Blob Test' in content
+    assert 'id="msg-header"' in content
+    # toggle to the raw source view
+    assert_href(content, '.btn-group a:last-child', reverse('archive_admin_blob') + '?' + urlencode({
+        'bucket': message.get_blob_bucket(),
+        'name': message.get_blob_name(),
+        'raw': 1}))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_blob_raw(admin_client):
+    elist = EmailListFactory.create(name='public')
+    message = MessageFactory.create(email_list=elist)
+    store_message_blob(message, b'Subject: Raw Test\n\nRaw body.\n')
+    params = {
+        'bucket': message.get_blob_bucket(),
+        'name': message.get_blob_name()}
+    url = reverse('archive_admin_blob') + '?' + urlencode(dict(params, raw=1))
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    content = smart_str(response.content)
+    # raw source shown in place of the rendered body, headers and all
+    assert 'Subject: Raw Test' in content
+    assert 'Raw body.' in content
+    assert 'id="msg-body"' not in content
+    # toggle back to the rendered view
+    assert_href(content, '.btn-group a:first-child', reverse('archive_admin_blob') + '?' + urlencode(params))
+
+
+@pytest.mark.django_db(transaction=True)
+@override_settings(BLOB_RAW_DISPLAY_MAX_SIZE=100)
+def test_admin_blob_raw_too_large(admin_client):
+    elist = EmailListFactory.create(name='public')
+    message = MessageFactory.create(email_list=elist)
+    store_message_blob(message, (
+        b'Subject: Big Test\n'
+        b'Message-ID: <big-test@example.com>\n'
+        b'\n'
+        + b'x' * 200 + b'\n'))
+    params = {
+        'bucket': message.get_blob_bucket(),
+        'name': message.get_blob_name()}
+    url = reverse('archive_admin_blob') + '?' + urlencode(dict(params, raw=1))
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    content = smart_str(response.content)
+    # headers shown, body withheld, download offered
+    assert 'Subject: Big Test' in content
+    assert 'x' * 200 not in content
+    assert 'too large to display' in content
+    assert_href(content, '.alert a', reverse('archive_admin_blob_download') + '?' + urlencode(params))
+
+
+@pytest.mark.django_db(transaction=True)
+@override_settings(BLOB_RAW_DISPLAY_MAX_SIZE=100)
+def test_admin_blob_raw_too_large_no_separator(admin_client):
+    """A corrupt blob with no header / body separator is still truncated."""
+    elist = EmailListFactory.create(name='public')
+    message = MessageFactory.create(email_list=elist)
+    store_message_blob(message, b'Subject: Truncated Test\n' + b'y' * 500)
+    url = reverse('archive_admin_blob') + '?' + urlencode({
+        'bucket': message.get_blob_bucket(),
+        'name': message.get_blob_name(),
+        'raw': 1})
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    content = smart_str(response.content)
+    assert 'too large to display' in content
+    assert 'y' * 200 not in content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_blob_download(client, admin_client):
+    elist = EmailListFactory.create(name='public')
+    message = MessageFactory.create(email_list=elist)
+    raw = b'Subject: Download Test\n\nDownload body.\n'
+    store_message_blob(message, raw)
+    url = reverse('archive_admin_blob_download') + '?' + urlencode({
+        'bucket': message.get_blob_bucket(),
+        # provide the hashcode with base64 padding intact, as the database
+        # stores it, to confirm the view strips it like the viewer does
+        'name': '{}/{}'.format(elist.name, message.hashcode)})
+    response = client.get(url)
+    assert response.status_code == 403
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    assert response.content == raw
+    assert response['Content-Type'] == 'message/rfc822'
+    assert 'attachment; filename=' in response['Content-Disposition']
+    assert '/' not in response['Content-Disposition'].split('filename=')[1]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_blob_download_not_found(admin_client):
+    url = reverse('archive_admin_blob_download') + '?' + urlencode({
+        'bucket': 'ml-messages',
+        'name': 'public/bogus'})
+    response = admin_client.get(url)
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_blob_not_found(admin_client):
+    url = reverse('archive_admin_blob') + '?' + urlencode({
+        'bucket': 'ml-messages',
+        'name': 'public/bogus'})
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    assert 'Blob not found' in smart_str(response.content)
 
 
 @pytest.mark.django_db(transaction=True)

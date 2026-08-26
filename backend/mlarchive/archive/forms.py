@@ -4,6 +4,7 @@ from collections import OrderedDict
 from dateutil.parser import isoparse
 
 from django import forms
+from django.conf import settings
 from django.utils.http import urlencode
 
 from mlarchive.archive.query_utils import get_base_query
@@ -161,6 +162,19 @@ class AdminForm(forms.Form):
 
 class AdminActionForm(forms.Form):
     action = forms.CharField(max_length=255)
+
+
+class BlobForm(forms.Form):
+    """Selects a blob from the blob store, by bucket and name."""
+    bucket = forms.ChoiceField(
+        choices=[(name, name) for name in settings.ARTIFACT_STORAGE_NAMES])
+    name = forms.CharField(
+        max_length=255,
+        help_text='Blob name, ie. "listname/hashcode"')
+
+    def clean_name(self):
+        # blob names are stored with the base64 padding, "=", stripped
+        return self.cleaned_data['name'].strip().rstrip('=')
 
 
 class LowerCaseModelMultipleChoiceField(forms.ModelMultipleChoiceField):

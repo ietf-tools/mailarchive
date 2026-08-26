@@ -459,6 +459,10 @@ MAILMAN_CF_ACCESS_CLIENT_SECRET = env('MAILMAN_CF_ACCESS_CLIENT_SECRET')
 # admin import mbox settings
 IMPORT_MBOX_MAX_SIZE = 1_800_000_000  # 1.8 GB
 
+# admin blob viewer settings.  Raw source larger than this is not rendered
+# inline, the headers are shown with a link to download the blob instead
+BLOB_RAW_DISPLAY_MAX_SIZE = 1_048_576  # 1 MB
+
 # API KEYS: key=endpoint, value=[api-key,]
 _APP_API_KEYS_JSON = base64.b64decode(
     env('MAILARCHIVE_APP_API_KEYS_JSON_B64')

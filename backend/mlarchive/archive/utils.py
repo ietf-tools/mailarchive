@@ -969,11 +969,9 @@ def get_membership(quiet=False):
         if users:
             plist.members.add(*users)
             has_changed = True
-        # handle deleted members
-        for addresss in existing_members - set(mailman_members):
-            # do not delete unsubscribed members
-            # one time subscribers retain access to the archives
-            pass
+
+        # no action is taken for deleted members, existing_members - set(mailman_members).
+        # past members retain access to lists
 
     if has_changed:
         _export_lists()

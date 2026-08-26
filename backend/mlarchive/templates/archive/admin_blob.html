@@ -36,7 +36,16 @@
       </div>
 
       {% if show_raw %}
-        <pre class="raw-source wordwrap">{{ msg.get_raw_source }}</pre>
+        {% if msg.is_raw_too_large %}
+          <div class="alert alert-warning" role="alert">
+            This message is {{ msg.size|filesizeformat }}, too large to display.
+            Showing headers only.
+            <a href="{{ msg.get_blob_download_url }}" rel="nofollow">Download the raw message</a>.
+          </div>
+          <pre class="raw-source wordwrap">{{ msg.get_raw_headers }}</pre>
+        {% else %}
+          <pre class="raw-source wordwrap">{{ msg.get_raw_source }}</pre>
+        {% endif %}
       {% else %}
         {{ msg.get_body_html|safe }}
       {% endif %}

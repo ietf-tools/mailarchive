@@ -23,6 +23,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.encoding import smart_bytes
+from django.utils.http import urlencode
 
 from mlarchive.archive.forms import RulesForm
 from mlarchive.archive.generator import Generator
@@ -33,6 +34,8 @@ from mlarchive.utils.encoding import custom_policy, decode_safely
 
 import logging
 logger = logging.getLogger(__name__)
+
+HEADER_BODY_SEPARATOR = re.compile(rb'\r?\n\r?\n')
 
 contain_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\((?P<value>[^\)]+)\)')
 exact_pattern = re.compile(r'(?P<neg>[-]?)(?P<field>[a-z]+):\"(?P<value>[^\"]+)\"')
@@ -122,6 +125,34 @@ class BlobMessage:
     def get_raw_source(self):
         """Returns the unparsed blob content, decoded for display as text."""
         return decode_safely(self.content, charset='utf-8')
+
+    def get_raw_headers(self):
+        """Returns the blob's header block, decoded for display as text.
+
+        Splits on the raw bytes rather than the parsed message so that the
+        header text is returned verbatim, and so this works for blobs the
+        email parser choked on.  The content is truncated to the display limit
+        first, since a corrupt blob may have no header / body separator at all.
+        """
+        head = self.content[:settings.BLOB_RAW_DISPLAY_MAX_SIZE]
+        headers = HEADER_BODY_SEPARATOR.split(head, maxsplit=1)[0]
+        return decode_safely(headers, charset='utf-8')
+
+    @property
+    def size(self):
+        """Returns the size of the blob in bytes."""
+        return len(self.content)
+
+    @property
+    def is_raw_too_large(self):
+        """Returns True if the blob is too large to display raw source inline."""
+        return self.size > settings.BLOB_RAW_DISPLAY_MAX_SIZE
+
+    def get_blob_download_url(self):
+        """Returns the URL to download the unparsed blob content."""
+        return '{}?{}'.format(
+            reverse('archive_admin_blob_download'),
+            urlencode({'bucket': self.bucket, 'name': self.name}))
 
 
 # --------------------------------------------------

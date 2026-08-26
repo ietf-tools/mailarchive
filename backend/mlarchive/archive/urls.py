@@ -14,6 +14,8 @@ urlpatterns = [
     path('', views.main, name='archive'),
     path('admin/', views.admin, name='archive_admin'),
     path('admin/blob/', views.admin_blob, name='archive_admin_blob'),
+    path('admin/blob/download/', views.admin_blob_download,
+         name='archive_admin_blob_download'),
     path('admin/guide/', views.admin_guide, name='archive_admin_guide'),
     path('admin/console/', views.admin_console, name='archive_admin_console'),
     path('advsearch/', views.advsearch, name='archive_advsearch'),

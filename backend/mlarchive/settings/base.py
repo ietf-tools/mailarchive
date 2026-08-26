@@ -451,6 +451,10 @@ IMPORT_MBOX_APIKEY = env('IMPORT_MBOX_APIKEY')
 # admin import mbox settings
 IMPORT_MBOX_MAX_SIZE = 1_800_000_000  # 1.8 GB
 
+# admin blob viewer settings.  Raw source larger than this is not rendered
+# inline, the headers are shown with a link to download the blob instead
+BLOB_RAW_DISPLAY_MAX_SIZE = 1_048_576  # 1 MB
+
 # API KEYS: key=endpoint, value=[api-key,]
 SEARCH_MESSAGE_APIKEY = env('SEARCH_MESSAGE_APIKEY')
 API_KEYS = {

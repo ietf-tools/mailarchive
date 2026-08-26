@@ -710,6 +710,28 @@ def admin_blob(request):
     })
 
 
+@superuser_only
+def admin_blob_download(request):
+    """Returns the unparsed contents of a blob as a file download.
+
+    Takes the same bucket and name query parameters as admin_blob.  Used for
+    blobs too large to display inline, and for saving a copy of the original
+    message.
+    """
+    form = BlobForm(request.GET)
+    if not form.is_valid():
+        raise Http404('Invalid blob bucket or name')
+    bucket = form.cleaned_data['bucket']
+    name = form.cleaned_data['name']
+    content = get_blob_content(bucket, name)
+    if not content:
+        raise Http404('Blob not found: {}:{}'.format(bucket, name))
+    response = HttpResponse(content, content_type='message/rfc822')
+    filename = '{}.eml'.format(name.replace('/', '_'))
+    response['Content-Disposition'] = 'attachment; filename="{}"'.format(filename)
+    return response
+
+
 @csp_exempt()
 @staff_member_required
 def admin_console(request):

@@ -109,6 +109,34 @@ class ListResponse:
         self.lists = lists
 
 
+def _mock_membership_calls(mock_client, members=MAILMAN_MEMBERS):
+    """Queue the mailman API responses get_membership() makes for one private list."""
+    response_lists = requests.Response()
+    response_lists.status_code = 200
+    response_lists._content = json.dumps(MAILMAN_LISTS).encode('ascii')
+    response_list = requests.Response()
+    response_list.status_code = 200
+    response_list._content = json.dumps(MAILMAN_LIST_PRIVATE).encode('ascii')
+    response_members = requests.Response()
+    response_members.status_code = 200
+    response_members._content = json.dumps(members).encode('ascii')
+    mock_client.side_effect = [
+        (response_lists, response_lists.json()),        # get_mailman_lists
+        (response_lists, response_lists.json()),        # get_fqdn_map
+        (response_list, response_list.json()),          # client.get_list
+        (response_members, response_members.json())]    # mailman_list.members
+
+
+def _remove_export_file():
+    """Remove today's list membership export file and return its path."""
+    today_utc = datetime.datetime.now(datetime.timezone.utc).date()
+    date_string = today_utc.strftime('%Y%m%d')
+    path = os.path.join(settings.EXPORT_DIR, 'email_lists.{}.xml'.format(date_string))
+    if os.path.exists(path):
+        os.remove(path)
+    return path
+
+
 # --------------------------------------------------
 # Tests
 # --------------------------------------------------
@@ -190,29 +218,12 @@ def test_get_lists_for_user(admin_user):
 @pytest.mark.django_db(transaction=True)
 def test_get_membership(mock_client):
     # setup
-    today_utc = datetime.datetime.now(datetime.timezone.utc).date()
-    date_string = today_utc.strftime('%Y%m%d')
-    path = os.path.join(settings.EXPORT_DIR, 'email_lists.{}.xml'.format(date_string))
-    if os.path.exists(path):
-        os.remove(path)
+    path = _remove_export_file()
     private = EmailListFactory.create(name='private', private=True)
     user = UserFactory.create()
     _ = UserEmail.objects.create(user=user, address='holden.ford@example.com')
     # prep mock
-    response_lists = requests.Response()
-    response_lists.status_code = 200
-    response_lists._content = json.dumps(MAILMAN_LISTS).encode('ascii')
-    response_list = requests.Response()
-    response_list.status_code = 200
-    response_list._content = json.dumps(MAILMAN_LIST_PRIVATE).encode('ascii')
-    response_members = requests.Response()
-    response_members.status_code = 200
-    response_members._content = json.dumps(MAILMAN_MEMBERS).encode('ascii')
-    mock_client.side_effect = [
-        (response_lists, response_lists.json()),        # get_mailman_lists
-        (response_lists, response_lists.json()),        # get_fqdn_map
-        (response_list, response_list.json()),          # client.get_list
-        (response_members, response_members.json())]    # mailman_list.members
+    _mock_membership_calls(mock_client)
     assert private.members.count() == 0
     assert MailmanMember.objects.count() == 0
     get_membership(quiet=True)
@@ -221,6 +232,33 @@ def test_get_membership(mock_client):
     print(User.objects.all())
     assert private.members.count() == 1
     assert private.members.first().username == 'admin'
+    assert os.path.exists(path)
+
+
+@patch('mailmanclient.restbase.connection.Connection.call')
+@pytest.mark.django_db(transaction=True)
+def test_get_membership_multiple_user_emails(mock_client):
+    """A subscriber address known to more than one User grants access to both.
+
+    This happens when someone changes their Datatracker primary email: OIDC
+    creates a new User and both Users end up with a UserEmail record for the
+    same address.
+    """
+    # setup
+    path = _remove_export_file()
+    private = EmailListFactory.create(name='private', private=True)
+    old_user = UserFactory.create(username='holden.ford@example.com', email='holden.ford@example.com')
+    new_user = UserFactory.create(username='hford@example.com', email='hford@example.com')
+    UserEmail.objects.create(user=old_user, address='holden.ford@example.com')
+    UserEmail.objects.create(user=new_user, address='holden.ford@example.com')
+    # prep mock
+    _mock_membership_calls(mock_client)
+    assert private.members.count() == 0
+    get_membership(quiet=True)
+    assert MailmanMember.objects.filter(email_list=private).count() == 1
+    assert private.members.count() == 2
+    assert set(private.members.values_list('username', flat=True)) == set(
+        ['holden.ford@example.com', 'hford@example.com'])
     assert os.path.exists(path)
 
 

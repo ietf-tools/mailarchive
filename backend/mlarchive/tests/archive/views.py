@@ -17,8 +17,9 @@ from django.urls import reverse
 from django.utils.http import urlencode
 from django.utils.encoding import smart_str
 from factories import (EmailListFactory, MessageFactory, UserFactory, SubscriberFactory,
-    store_message_blob)
+    store_message_blob, ThreadFactory)
 from mlarchive.archive.models import Message, Attachment, Redirect, EmailList
+from mlarchive.archive.storage_utils import exists_in_storage, remove_from_storage
 from mlarchive.archive.views import (TimePeriod, add_nav_urls, is_small_year,
     get_this_next_periods, get_date_endpoints, get_thread_endpoints, DateStaticIndexView,
     CustomBrowseView)
@@ -473,6 +474,36 @@ def test_browse_index_gbt(client, messages):
     response = client.get(url)
     assert response.status_code == 200
     assert len(response.context['results']) == 5
+
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_index_gbt_query_count(client, messages, django_assert_max_num_queries):
+    """The page is built with a fixed number of queries.
+
+    The view does not walk the thread list one thread at a time.
+    """
+    message = messages.get(msgid='a02')
+    url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?gbt=1&index={}'.format(message.hashcode.strip('='))
+    with django_assert_max_num_queries(10):
+        response = client.get(url)
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db(transaction=True)
+def test_browse_index_gbt_same_thread_date(client):
+    """Threads sharing a date must not be skipped."""
+    elist = EmailListFactory.create(name='gbtdate')
+    date = datetime.datetime(2020, 1, 1, tzinfo=timezone.utc)
+    threads = []
+    for _ in range(3):
+        thread = ThreadFactory.create(email_list=elist, date=date)
+        MessageFactory.create(email_list=elist, thread=thread, date=date)
+        threads.append(thread)
+    first = Message.objects.get(thread=threads[0])
+    url = reverse('archive_browse_list', kwargs={'list_name': 'gbtdate'}) + '?gbt=1&index={}'.format(first.hashcode.strip('='))
+    response = client.get(url)
+    assert response.status_code == 200
+    assert len(response.context['results']) == 3
 
 
 @pytest.mark.django_db(transaction=True)
@@ -1062,10 +1093,31 @@ def test_removed_message(client, thread_messages):
     msg = Message.objects.last()
     path = msg.get_file_path()
     assert os.path.exists(path)
+    url = msg.get_absolute_url()
+    blob_name = msg.get_blob_name()
     msg.delete()
-    response = client.get(msg.get_absolute_url())
+    assert exists_in_storage('ml-messages-removed', blob_name)
+    # the removed bucket is the only source consulted, so removing the
+    # filesystem copy must not change the response
+    removed_path = os.path.join(msg.get_removed_dir(), os.path.basename(path))
+    if os.path.exists(removed_path):
+        os.remove(removed_path)
+    response = client.get(url)
     assert response.status_code == 410
-    assert 'This message has been removed' in smart_str(response.content)
+    content = smart_str(response.content)
+    assert 'This message has been removed' in content
+    assert 'mlarchive/images/message-removed.png' in content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_removed_message_not_in_bucket(client, thread_messages):
+    """A message that is gone from the database and the removed bucket is a 404."""
+    msg = Message.objects.last()
+    url = msg.get_absolute_url()
+    blob_name = msg.get_blob_name()
+    msg.delete()
+    remove_from_storage('ml-messages-removed', blob_name)
+    assert client.get(url).status_code == 404
 
 
 @pytest.mark.django_db(transaction=True)

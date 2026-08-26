@@ -1,5 +1,4 @@
 import datetime
-import os
 import time
 
 from django.conf import settings
@@ -9,6 +8,7 @@ from django.http import (Http404, HttpResponse, JsonResponse,
 from django.shortcuts import get_object_or_404, redirect, render
 from functools import wraps
 from mlarchive.archive.models import Message, EmailList, Redirect
+from mlarchive.archive.storage_utils import exists_in_storage
 
 import logging
 logger = logging.getLogger(__name__)
@@ -37,16 +37,11 @@ def check_access(func):
                     return redirect(redir.new, permanent=True)
                 except Redirect.DoesNotExist:
                     pass
-                # look in _removed
-                try:
-                    email_list = EmailList.objects.get(name=kwargs['list_name'])
-                except EmailList.DoesNotExist:
-                    raise Http404
-                hashcode = kwargs['id']
-                if not hashcode.endswith('='):
-                    hashcode = hashcode + '='
-                path = os.path.join(email_list.removed_dir, hashcode)
-                if os.path.exists(path):
+                # look in the removed message bucket. Blob names strip the
+                # trailing '=' padding, matching Message.get_blob_name()
+                blob_name = '{}/{}'.format(
+                    kwargs['list_name'], kwargs['id'].rstrip('='))
+                if exists_in_storage('ml-messages-removed', blob_name):
                     return render(request, 'archive/removed.html', {}, status=410)
                 raise Http404
         else:
@@ -172,8 +167,8 @@ def staff_only(function):
 
 
 def is_valid_token(endpoint, token):
-    if hasattr(settings, "API_KEYS"):
-        token_store = settings.API_KEYS
+    if hasattr(settings, "MAILARCHIVE_APP_API_KEYS"):
+        token_store = settings.MAILARCHIVE_APP_API_KEYS
         if endpoint in token_store:
             endpoint_tokens = token_store[endpoint]
             # Be sure endpoints is a list or tuple so we don't accidentally use substring matching!

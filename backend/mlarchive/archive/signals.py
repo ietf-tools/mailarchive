@@ -1,4 +1,3 @@
-import io
 import logging
 import os
 import requests
@@ -18,7 +17,8 @@ from django.db import models, connection, transaction
 
 from mlarchive.archive.models import Message, EmailList
 from mlarchive.archive.backends.elasticsearch import ESBackend, get_identifier
-from mlarchive.archive.storage_utils import store_file, remove_from_storage, move_object
+from mlarchive.archive.storage_utils import (remove_from_storage,
+    move_object, exists_in_storage)
 from mlarchive.archive.utils import _export_lists
 from mlarchive.celeryapp import app
 
@@ -28,22 +28,6 @@ logger = logging.getLogger(__name__)
 # --------------------------------------------------
 # Signal Handlers
 # --------------------------------------------------
-
-@receiver(post_save, sender=Message)
-def _save_message_json(sender, instance, created, **kwargs):
-    '''Save ml-messages-json blob for use in Cloudflare worker edge response'''
-    if not instance.email_list.private and created:
-        store_file(
-            kind='ml-messages-json',
-            name=instance.get_blob_name(),
-            file=io.BytesIO(instance.as_json().encode('utf-8')),
-            allow_overwrite=True,
-            content_type='application/json'
-        )
-        if instance.thread_order > 0:
-            update_message_json_thread(instance)
-        update_message_json_list(instance)
-
 
 @receiver([post_save, post_delete], sender=EmailList)
 def _clear_lists_cache(sender, instance, **kwargs):
@@ -55,31 +39,39 @@ def _clear_lists_cache(sender, instance, **kwargs):
 
 @receiver(pre_delete, sender=Message)
 def _message_remove(sender, instance, **kwargs):
-    """When messages are removed, via the admin page, we need to move the message
-    archive file to the "_removed" directory and purge the cache
+    """Move a removed message to the removed bucket and purge the cache.
+
+    The message blob is moved to the "ml-messages-removed" bucket. A copy of
+    the message on the filesystem, if there is one, is moved to the list's
+    "_removed" directory.
     """
-    # move file on filesystem
+    # move file on filesystem, if this message still has one
     path = instance.get_file_path()
-    if not os.path.exists(path):
-        return
-    target_dir = instance.get_removed_dir()
-    if not os.path.exists(target_dir):
-        os.mkdir(target_dir)
-        os.chmod(target_dir, 0o2777)
-    target_path = os.path.join(target_dir, os.path.basename(path))
-    if os.path.exists(target_path):
-        os.remove(path)
-    else:
-        shutil.move(path, target_dir)
+    if os.path.exists(path):
+        target_dir = instance.get_removed_dir()
+        if not os.path.exists(target_dir):
+            os.mkdir(target_dir)
+            os.chmod(target_dir, 0o2777)
+        target_path = os.path.join(target_dir, os.path.basename(path))
+        if os.path.exists(target_path):
+            os.remove(path)
+        else:
+            shutil.move(path, target_dir)
+        logger.info('message file moved: {} => {}'.format(path, target_dir))
 
     # move blob
-    move_object(instance.get_blob_name(), instance.get_blob_bucket(), 'ml-messages-removed')
+    blob_name = instance.get_blob_name()
+    source_bucket = instance.get_blob_bucket()
+    if exists_in_storage(source_bucket, blob_name):
+        move_object(blob_name, source_bucket, 'ml-messages-removed')
+        logger.info('message file moved: {} => {}'.format(blob_name, 'ml-messages-removed'))
+    else:
+        logger.warning('no blob to move for removed message [bucket={},name={}]'.format(
+            source_bucket, blob_name))
 
     # delete blob from ml-messages-json bucket
     # Ok if it's not there, a private message wouldn't be
-    remove_from_storage(kind='ml-messages-json', name=instance.get_blob_name(), warn_if_missing=False)
-
-    logger.info('message file moved: {} => {}'.format(path, target_dir))
+    remove_from_storage(kind='ml-messages-json', name=blob_name, warn_if_missing=False)
 
     # if message is first of many in thread, should reset thread.first before
     # deleting
@@ -186,34 +178,6 @@ def _flush_noauth_cache(email_list):
     keys = ['{:04d}-noauth'.format(user.id) for user in email_list.members.all()]
     cache.delete_many(keys)
 
-
-def update_message_json_thread(message):
-    '''Write ml-messages-json for all other messages in thread
-    TODO: consider alternatives like client retrieving thread instead of computing
-    '''
-    for msg in message.thread.message_set.exclude(pk=message.pk):
-        store_file(
-            kind='ml-messages-json',
-            name=msg.get_blob_name(),
-            file=io.BytesIO(msg.as_json().encode('utf-8')),
-            allow_overwrite=True,
-            content_type='application/json'
-        )
-
-
-def update_message_json_list(message):
-    '''Write ml-messages-json for the previous message in list order.
-    Its next_in_list link becomes stale when a new message is added after it.
-    '''
-    prev_msg = message.previous_in_list()
-    if prev_msg:
-        store_file(
-            kind='ml-messages-json',
-            name=prev_msg.get_blob_name(),
-            file=io.BytesIO(prev_msg.as_json().encode('utf-8')),
-            allow_overwrite=True,
-            content_type='application/json'
-        )
 
 # --------------------------------------------------
 # Classes

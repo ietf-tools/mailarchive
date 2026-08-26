@@ -13060,6 +13060,16 @@ ul.navbar-nav a.disabled, ul.navbar-nav a.disabled:hover {
 }
 
 /* ==========================================================================
+   Removed message
+   ========================================================================== */
+/* The graphic is dark line art on a transparent background, which is
+   invisible against a dark page. Invert it in dark mode; hue-rotate puts the
+   red accents back after the inversion. */
+[data-bs-theme=dark] .message-removed-graphic {
+  filter: invert(88%) hue-rotate(180deg);
+}
+
+/* ==========================================================================
    Reports
    ========================================================================== */
 /* ==========================================================================

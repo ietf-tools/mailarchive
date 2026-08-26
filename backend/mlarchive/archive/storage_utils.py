@@ -27,9 +27,9 @@ def _get_storage(kind: str) -> Storage:
 def exists_in_storage(kind: str, name: str) -> bool:
     if settings.ENABLE_BLOBSTORAGE:
         try:
-            store = _get_storage(kind)
-            with store.open(name):
-                return True
+            # Storage.exists() is a metadata-only lookup. Do not use open(),
+            # which reads the entire blob just to answer a yes/no.
+            return _get_storage(kind).exists(name)
         except FileNotFoundError:
             return False
         except Exception as err:

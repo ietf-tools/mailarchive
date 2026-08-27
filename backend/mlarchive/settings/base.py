@@ -247,39 +247,39 @@ STORAGES = {
     'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
     'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
     'ml-messages': {
-        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "BACKEND": "mlarchive.archive.storage.StoredObjectBlobdbStorage",
         "OPTIONS": {"bucket_name": 'ml-messages'},
     },
     'ml-messages-json': {
-        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "BACKEND": "mlarchive.archive.storage.StoredObjectBlobdbStorage",
         "OPTIONS": {"bucket_name": 'ml-messages-json'},
     },
     'ml-messages-private': {
-        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "BACKEND": "mlarchive.archive.storage.StoredObjectBlobdbStorage",
         "OPTIONS": {"bucket_name": 'ml-messages-private'},
     },
     'ml-messages-removed': {
-        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "BACKEND": "mlarchive.archive.storage.StoredObjectBlobdbStorage",
         "OPTIONS": {"bucket_name": 'ml-messages-removed'},
     },
     'ml-messages-incoming': {
-        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "BACKEND": "mlarchive.archive.storage.StoredObjectBlobdbStorage",
         "OPTIONS": {"bucket_name": 'ml-messages-incoming'},
     },
     'ml-messages-filtered': {
-        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "BACKEND": "mlarchive.archive.storage.StoredObjectBlobdbStorage",
         "OPTIONS": {"bucket_name": 'ml-messages-filtered'},
     },
     'ml-messages-dupes': {
-        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "BACKEND": "mlarchive.archive.storage.StoredObjectBlobdbStorage",
         "OPTIONS": {"bucket_name": 'ml-messages-dupes'},
     },
     'ml-messages-spam': {
-        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "BACKEND": "mlarchive.archive.storage.StoredObjectBlobdbStorage",
         "OPTIONS": {"bucket_name": 'ml-messages-spam'},
     },
     'ml-messages-failed': {
-        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "BACKEND": "mlarchive.archive.storage.StoredObjectBlobdbStorage",
         "OPTIONS": {"bucket_name": 'ml-messages-failed'},
     },
     'ml-templates': {

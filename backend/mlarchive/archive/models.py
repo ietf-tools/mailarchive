@@ -636,48 +636,28 @@ class StoredObjectQuerySet(models.QuerySet):
 
 
 class StoredObject(models.Model):
-    """Metadata about an object held in blob storage.
-
-    The bytes themselves live behind a Django Storage, which offers no way to ask
-    questions like "what is in this store under this prefix", "what has not changed
-    since this date" or "does an object with this digest exist anywhere". This table
-    answers those without the application having to know which backend holds the
-    bytes. It deliberately lives in the default database rather than the blobdb, so
-    the index is independent of any one backend's storage.
-
-    Rows are written by StoredObjectBlobdbStorage. Because the metadata and the bytes
-    are in different databases the two writes cannot be atomic, so the reconcile task
-    is what repairs drift.
-    """
+    """Metadata about an object held in blob storage"""
 
     objects = StoredObjectQuerySet.as_manager()
 
-    store = models.CharField(max_length=256, help_text='Name of the store holding this object')
-    name = models.CharField(max_length=1024, help_text='Name of the object within the store')
-    sha384 = models.CharField(max_length=96, help_text='SHA-384 digest of the content')
-    len = models.PositiveBigIntegerField(help_text='Length of the content in bytes')
-    content_type = models.CharField(
-        max_length=1024, blank=True,
-        help_text='content-type header value for the object contents')
-    mtime = models.DateTimeField(
-        default=None, blank=True, null=True,
-        help_text='mtime associated with the object as a filesystem object')
+    store = models.CharField(max_length=256)
+    name = models.CharField(max_length=1024)
+    sha384 = models.CharField(max_length=96)
+    len = models.PositiveBigIntegerField()
     store_created = models.DateTimeField(
         help_text='The instant the object was first placed in the store')
     created = models.DateTimeField(
+        null=False,
         help_text='Instant object became known. May not be the same as the storage\'s '
                   'created value for the instance. It will hold ctime for objects '
                   'imported from older disk storage')
     modified = models.DateTimeField(
+        null=False,
         help_text='Last instant object was modified. May not be the same as the storage\'s '
                   'modified value for the instance. It will hold mtime for objects '
                   'imported from older disk storage unless they have actually been '
                   'overwritten more recently')
-    deleted = models.DateTimeField(
-        default=None, null=True,
-        help_text='Instant the object was removed from the store. Because (store, name) '
-                  'is unique this is a current-state flag, not a delete history: storing '
-                  'the same name again clears it')
+    deleted = models.DateTimeField(default=None, null=True)
 
     class Meta:
         constraints = [

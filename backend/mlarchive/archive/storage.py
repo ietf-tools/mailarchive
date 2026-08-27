@@ -128,12 +128,10 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
             )
             return None
 
-    def _save_stored_object(self, name, content, metadata):
+    def _save_stored_object(self, name, metadata):
         """Create or refresh the StoredObject row describing name."""
         sha384 = metadata['sha384']
         length = int(metadata['len'])
-        content_type = getattr(content, 'content_type', '')
-        mtime = getattr(content, 'mtime', None)
         now = timezone.now()
 
         record, created = StoredObject.objects.get_or_create(
@@ -142,8 +140,6 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
             defaults=dict(
                 sha384=sha384,
                 len=length,
-                content_type=content_type,
-                mtime=mtime,
                 store_created=now,
                 created=now,
                 modified=now,
@@ -152,14 +148,12 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
         if created:
             return record
 
-        # An existing row is refreshed only when something about the object actually
-        # changed, so that re-storing identical content leaves modified alone. A
-        # tombstoned row always counts as changed: the object is back.
+        # An existing row is refreshed only when the object actually changed, so that
+        # re-storing identical content leaves modified alone. A tombstoned row always
+        # counts as changed: the object is back.
         unchanged = (
             record.sha384 == sha384
             and record.len == length
-            and record.content_type == content_type
-            and record.mtime == mtime
             and record.deleted is None
         )
         if unchanged:
@@ -167,8 +161,6 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
 
         record.sha384 = sha384
         record.len = length
-        record.content_type = content_type
-        record.mtime = mtime
         record.modified = now
         record.deleted = None
         record.save()
@@ -196,7 +188,7 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
         if metadata is None:
             return saved_name
         try:
-            self._save_stored_object(saved_name, content, metadata)
+            self._save_stored_object(saved_name, metadata)
         except Exception as err:
             logger.error(
                 f'Blobstore Error: stored {self.bucket_name}:{saved_name} but failed to '

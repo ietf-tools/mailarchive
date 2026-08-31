@@ -17,7 +17,7 @@ from django.core.cache import cache
 from django.contrib.auth.models import AnonymousUser
 from django.http import QueryDict
 from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
-    check_inactive, EmailList, purge_incoming, purge_nfs_incoming,
+    check_inactive, EmailList, purge_incoming,
     create_mbox_file, _get_lists_as_xml, get_subscribers, Subscriber,
     get_mailman_lists, get_membership, get_subscriber_counts, get_fqdn,
     update_mbox_files, _export_lists, move_list, remove_selected, mark_not_spam,
@@ -485,72 +485,6 @@ def test_purge_incoming(settings):
     assert not Blob.objects.filter(bucket=bucket, name=redelivery_blob_name).exists()
     # dropped without a copy, so nothing was written to the dupes bucket
     assert not Blob.objects.filter(bucket='ml-messages-dupes').exists()
-
-
-@pytest.mark.django_db(transaction=True)
-def test_purge_nfs_incoming(settings):
-    def write_incoming(name, content):
-        path = os.path.join(settings.INCOMING_DIR, name)
-        with open(path, 'wb') as f:
-            f.write(content)
-        return path
-
-    # start from a clean directory so the returned stats are unambiguous
-    for name in list_only_files(settings.INCOMING_DIR):
-        os.remove(os.path.join(settings.INCOMING_DIR, name))
-
-    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
-    with open(path, 'rb') as f:
-        message_bytes = f.read()
-    path2 = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.2')
-    with open(path2, 'rb') as f:
-        message2_bytes = f.read()
-
-    # Case 1: message was archived -> should be purged
-    archive_message(data=message_bytes, listname='apple', private=False)
-    archived = write_incoming('apple.public.AAAAAAAA', message_bytes)
-
-    # Case 2: message exists in the removed bucket -> should be purged
-    removed_mw = MessageWrapper.from_bytes(message2_bytes, listname='banana')
-    store_file('ml-messages-removed', f'banana/{removed_mw.get_hash()}'.rstrip('='),
-               io.BytesIO(message2_bytes), content_type='message/rfc822')
-    removed = write_incoming('banana.public.BBBBBBBB', message2_bytes)
-
-    # Case 3: no-archive message with no stored copy -> should be purged
-    noarchive = write_incoming('cherry.public.CCCCCCCC', b'X-No-Archive: yes\n' + message_bytes)
-
-    # Case 4: same message, different list -> hashcode differs, should NOT be purged
-    unarchived = write_incoming('date.public.DDDDDDDD', message_bytes)
-
-    # Case 5: filename the listname can't be derived from -> should NOT be purged
-    bad_name = write_incoming('notamessage', message_bytes)
-
-    # Case 6: no Message-ID, so the hashcode isn't reproducible -> should NOT be purged
-    no_msgid = write_incoming(
-        'elder.public.EEEEEEEE',
-        b'\n'.join(ln for ln in message_bytes.split(b'\n')
-                   if not ln.lower().startswith(b'message-id:')))
-
-    stats = purge_nfs_incoming()
-
-    assert not os.path.exists(archived)
-    assert not os.path.exists(removed)
-    assert not os.path.exists(noarchive)
-    assert os.path.exists(unarchived)
-    assert os.path.exists(bad_name)
-    assert os.path.exists(no_msgid)
-    assert stats == {
-        'scanned': 6,
-        'purged': 2,
-        'purged_no_archive': 1,
-        'kept': 1,
-        'kept_bad_filename': 1,
-        'kept_no_msgid': 1,
-    }
-
-    # tmp_dir is session scoped, don't leave the kept files behind
-    for name in list_only_files(settings.INCOMING_DIR):
-        os.remove(os.path.join(settings.INCOMING_DIR, name))
 
 
 def list_only_files(directory):

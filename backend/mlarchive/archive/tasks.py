@@ -16,7 +16,6 @@ from mlarchive.archive.utils import create_mbox_file
 from mlarchive.archive.utils import get_membership
 from mlarchive.archive.utils import get_subscriber_counts
 from mlarchive.archive.utils import purge_incoming
-from mlarchive.archive.utils import purge_nfs_incoming
 from mlarchive.archive.utils import update_mbox_files
 from mlarchive.archive.utils import init_private_list_members
 from mlarchive.archive.utils import remove_selected
@@ -290,13 +289,3 @@ def load_hidden_messages_task(directory, listname=None):
         load_hidden_messages(directory, listname=listname)
     except Exception as err:
         logger.error(f"Error in load_hidden_messages_task: {err}")
-
-
-@shared_task
-def purge_nfs_incoming_task():
-    '''Purge files from INCOMING_DIR on disk, removing only those confirmed
-    archived in a blobdb bucket or marked no-archive'''
-    try:
-        purge_nfs_incoming()
-    except Exception as err:
-        logger.error(f"Error in purge_nfs_incoming_task: {err}")

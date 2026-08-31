@@ -10,6 +10,9 @@ from django.core.files.base import File
 
 from django.utils import timezone
 
+from mlarchive.archive.models import StoredObject
+from mlarchive.blobdb.storage import BlobdbStorage, MetadataFile
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -82,3 +85,117 @@ class MetadataS3Storage(S3Storage):
         if hasattr(content, "custom_metadata"):
             params["Metadata"].update(content.custom_metadata)
         return params
+
+
+class StoredObjectBlobdbStorage(BlobdbStorage):
+    """BlobdbStorage that also records object metadata in the StoredObject table.
+
+    The bytes are authoritative; the StoredObject row is an index over them. The two
+    live in different databases, so neither write can be made atomic with the other.
+    The ordering of every operation here upholds one invariant: a live StoredObject
+    row never outlives the bytes it describes. Callers such as purge_incoming treat a
+    matching row as proof that content is safely archived, so a row pointing at bytes
+    that are gone would let them delete the last remaining copy.
+
+    That invariant makes the two operations asymmetric:
+
+    - Saving writes the bytes first. If recording the metadata then fails, the result
+      is a missing index entry, which the reconcile task repairs, so the failure is
+      logged and the save still succeeds.
+    - Deleting tombstones the metadata first. If that fails the bytes are left alone
+      and the exception propagates, because continuing would leave a live row
+      describing content that no longer exists.
+    """
+
+    def _metadata_for(self, name, content):
+        """Return the custom metadata dict for content, or None if it cannot be read.
+
+        Anything written through storage_utils is a MetadataFile and already knows how
+        to produce its own digest. A plain Django File does not, so wrap it in one
+        rather than duplicating the computation here. Unseekable content cannot be
+        digested at all, and under the log-and-continue policy that must not stop the
+        bytes from being stored, so failure is reported as None.
+        """
+        try:
+            metadata = getattr(content, 'custom_metadata', None)
+            if metadata is None:
+                metadata = MetadataFile(file=content).custom_metadata
+            return metadata
+        except Exception as err:
+            logger.error(
+                f'Blobstore Error: could not read metadata for {self.bucket_name}:{name}: '
+                f'{repr(err)}'
+            )
+            return None
+
+    def _save_stored_object(self, name, metadata):
+        """Create or refresh the StoredObject row describing name."""
+        sha384 = metadata['sha384']
+        length = int(metadata['len'])
+        now = timezone.now()
+
+        record, created = StoredObject.objects.get_or_create(
+            store=self.bucket_name,
+            name=name,
+            defaults=dict(
+                sha384=sha384,
+                len=length,
+                store_created=now,
+                created=now,
+                modified=now,
+            ),
+        )
+        if created:
+            return record
+
+        # An existing row is refreshed only when the object actually changed, so that
+        # re-storing identical content leaves modified alone. A tombstoned row always
+        # counts as changed: the object is back.
+        unchanged = (
+            record.sha384 == sha384
+            and record.len == length
+            and record.deleted is None
+        )
+        if unchanged:
+            return record
+
+        record.sha384 = sha384
+        record.len = length
+        record.modified = now
+        record.deleted = None
+        record.save()
+        return record
+
+    def _delete_stored_object(self, name):
+        """Tombstone the StoredObject row for name, returning the number updated.
+
+        Zero is not an error. Until the backfill has run most objects predate this
+        table, and detecting that drift is the reconcile task's job, not this one's.
+        """
+        return (
+            StoredObject.objects
+            .filter(store=self.bucket_name, name=name)
+            .exclude_deleted()
+            .update(deleted=timezone.now())
+        )
+
+    def _save(self, name, content):
+        # Digest the content before the save consumes it, while the file position is
+        # still known good. MetadataFile caches its result, so a caller that already
+        # computed the metadata does not pay for it twice.
+        metadata = self._metadata_for(name, content)
+        saved_name = super()._save(name, content)
+        if metadata is None:
+            return saved_name
+        try:
+            self._save_stored_object(saved_name, metadata)
+        except Exception as err:
+            logger.error(
+                f'Blobstore Error: stored {self.bucket_name}:{saved_name} but failed to '
+                f'record its StoredObject: {repr(err)}'
+            )
+        return saved_name
+
+    def delete(self, name):
+        self._delete_stored_object(name)
+        super().delete(name)

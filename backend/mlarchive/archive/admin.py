@@ -1,6 +1,6 @@
 from django.contrib import admin
 from mlarchive.archive.models import (Message, EmailList, Attachment, Thread,
-    Redirect, UserEmail, MailmanMember, Subscriber)
+    Redirect, UserEmail, MailmanMember, Subscriber, StoredObject)
 
 
 class MessageAdmin(admin.ModelAdmin):
@@ -23,6 +23,12 @@ class MailmanMemberAdmin(admin.ModelAdmin):
     search_fields = ['address']
 
 
+class StoredObjectAdmin(admin.ModelAdmin):
+    list_display = ('store', 'name', 'len', 'modified', 'deleted')
+    search_fields = ['name', 'sha384']
+    search_help_text = 'Search by object name or sha384 digest'
+
+
 admin.site.register(Message, MessageAdmin)
 admin.site.register(EmailList, EmailListAdmin)
 admin.site.register(Attachment)
@@ -31,3 +37,4 @@ admin.site.register(Redirect)
 admin.site.register(Subscriber)
 admin.site.register(UserEmail, UserEmailAdmin)
 admin.site.register(MailmanMember, MailmanMemberAdmin)
+admin.site.register(StoredObject, StoredObjectAdmin)

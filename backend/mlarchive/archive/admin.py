@@ -1,4 +1,6 @@
 from django.contrib import admin
+from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
+
 from mlarchive.archive.models import (Message, EmailList, Attachment, Thread,
     Redirect, UserEmail, MailmanMember, Subscriber, StoredObject)
 
@@ -24,7 +26,13 @@ class MailmanMemberAdmin(admin.ModelAdmin):
 
 
 class StoredObjectAdmin(admin.ModelAdmin):
-    list_display = ('store', 'name', 'len', 'modified', 'deleted')
+    list_display = ('store', 'name', 'modified', 'deleted')
+    list_filter = [
+        'store',
+        ('modified', DateRangeQuickSelectListFilterBuilder()),
+        ('deleted', DateRangeQuickSelectListFilterBuilder()),
+    ]
+    list_display_links = ['name']
     search_fields = ['name', 'sha384']
     search_help_text = 'Search by object name or sha384 digest'
 

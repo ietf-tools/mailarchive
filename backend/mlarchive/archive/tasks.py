@@ -17,6 +17,7 @@ from mlarchive.archive.utils import create_mbox_file
 from mlarchive.archive.utils import get_membership
 from mlarchive.archive.utils import get_subscriber_counts
 from mlarchive.archive.utils import purge_incoming
+from mlarchive.archive.utils import reconcile_stored_objects
 from mlarchive.archive.utils import update_mbox_files
 from mlarchive.archive.utils import init_private_list_members
 from mlarchive.archive.utils import remove_selected
@@ -255,6 +256,20 @@ def purge_incoming_task():
         purge_incoming()
     except Exception as err:
         logger.error(f"Error in purge_incoming_task: {err}")
+
+
+@shared_task
+def reconcile_stored_objects_task(bucket=None, repair=False):
+    """Check the StoredObject index against storage, repairing drift if repair is set.
+
+    The scheduled entry in periodic_tasks passes repair=True: the index is only
+    trustworthy because this task keeps it so, and every repair moves a row towards
+    the bytes, never the other way. Run by hand with the default for a report only.
+    """
+    try:
+        reconcile_stored_objects(bucket=bucket, repair=repair)
+    except Exception as err:
+        logger.error(f"Error in reconcile_stored_objects_task: {err}")
 
 
 @shared_task

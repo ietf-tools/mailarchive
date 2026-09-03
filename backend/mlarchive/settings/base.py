@@ -283,7 +283,7 @@ STORAGES = {
         "OPTIONS": {"bucket_name": 'ml-messages-failed'},
     },
     'ml-templates': {
-        "BACKEND": "mlarchive.blobdb.storage.BlobdbStorage",
+        "BACKEND": "mlarchive.archive.storage.StoredObjectBlobdbStorage",
         "OPTIONS": {"bucket_name": 'ml-templates'},
     }
 }
@@ -299,6 +299,7 @@ ARTIFACT_STORAGE_NAMES: list[str] = [
     "ml-messages-dupes",
     "ml-messages-spam",
     "ml-messages-failed",
+    "ml-templates",
 ]
 
 ENABLE_BLOBSTORAGE = True
@@ -314,7 +315,10 @@ BLOBDB_REPLICATION = {
         "ml-messages-filtered",
         "ml-messages-dupes",
         "ml-messages-failed",
-        "ml-messages-spam"],
+        "ml-messages-spam",
+        # The worker bundles its template at build time and does not read this bucket
+        # from R2. Remove this entry when it does.
+        "ml-templates"],
     "VERBOSE_LOGGING": True,
 }
 

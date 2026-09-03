@@ -36,7 +36,7 @@ from mlarchive.archive.mail import MessageWrapper, archive_message
 from mlarchive.archive.storage import (DriftReport, RECONCILE_MAX_MISSING_REPAIRS,
     reconcile_bucket)
 from mlarchive.archive.storage_utils import (retrieve_bytes, store_bytes, exists_in_storage,
-    remove_from_storage, list_names)
+    remove_from_storage, list_names, get_metadata, find_by_checksum)
 from mlarchive.archive.inspectors import is_no_archive
 from mlarchive.blobdb.models import Blob
 
@@ -1072,45 +1072,66 @@ def is_redelivery_of_archived(content, name):
 
 
 def purge_incoming():
-    '''Purge messages older than settings.INCOMING_DAYS_TO_KEEP days from incoming bucket.
+    """Purge objects older than settings.INCOMING_DAYS_TO_KEEP days from the incoming store.
 
-    Before purging each blob, verifies that its content was processed by confirming an
-    identical blob (same checksum and bytes) exists in some other bucket. The archived
-    message is stored byte-for-byte, so a match in ml-messages, ml-messages-private,
-    ml-messages-removed, etc. means the message is accounted for. The match is intentionally
-    content-based and list-agnostic.
+    Before purging each object, verifies that its content was processed by confirming
+    an object with the same sha384 digest exists in some other raw message store. The
+    archived message is stored byte-for-byte, so a match in ml-messages,
+    ml-messages-private, ml-messages-removed, etc. means the message is accounted for.
+    The match is intentionally content-based and list-agnostic.
 
-    Messages that requested not to be archived (NoArchiveInspector) are deliberately dropped
-    without being stored anywhere, so they have no matching blob; these are confirmed by
-    re-checking the no-archive headers and purged. Anything else with no match is left in
-    place and logged.
-    '''
+    Messages that requested not to be archived (NoArchiveInspector) are deliberately
+    dropped without being stored anywhere, so they have no matching object; these are
+    confirmed by re-checking the no-archive headers and purged. A redelivery of an
+    already archived message is likewise dropped without a copy and confirmed against
+    the archive. Anything else with no match is left in place and logged.
+
+    Returns a dict of counts: purged, skipped (no match found) and errors.
+    """
+    kind = 'ml-messages-incoming'
     cutoff_date = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=settings.INCOMING_DAYS_TO_KEEP)
-    blobs = Blob.objects.filter(bucket='ml-messages-incoming', modified__lt=cutoff_date)
-    for blob in blobs:
-        content = bytes(blob.content)
-        # find an identical blob in any other raw message archive bucket
-        candidates = Blob.objects.filter(checksum=blob.checksum).exclude(bucket__in=['ml-messages-incoming', 'ml-messages-json'])
-        if any(bytes(candidate.content) == content for candidate in candidates):
-            blob.delete()
-            continue
+    stats = {'purged': 0, 'skipped': 0, 'errors': 0}
+    for name in list(list_names(kind, modified_before=cutoff_date)):
+        try:
+            metadata = get_metadata(kind, name)
+            if metadata is None:
+                # deleted since the listing was taken
+                continue
 
-        # no stored copy: a no-archive message is dropped without being stored anywhere,
-        # so confirm it asked not to be archived and purge it
-        if is_no_archive(email.message_from_bytes(content)):
-            blob.delete()
-            continue
+            # find an identical object in any other raw message archive store
+            if find_by_checksum(metadata.sha384, exclude_kinds=(kind, 'ml-messages-json')):
+                remove_from_storage(kind, name)
+                stats['purged'] += 1
+                continue
 
-        # no stored copy: a redelivery is also dropped without being stored anywhere,
-        # so confirm it duplicates an archived message and purge it
-        if is_redelivery_of_archived(content, blob.name):
-            blob.delete()
-            continue
+            content = retrieve_bytes(kind, name)
 
-        logger.error(
-            f'purge_incoming: no matching blob found outside incoming bucket, skipping: '
-            f'blob={blob.name}, checksum={blob.checksum}'
-        )
+            # no stored copy: a no-archive message is dropped without being stored
+            # anywhere, so confirm it asked not to be archived and purge it
+            if is_no_archive(email.message_from_bytes(content)):
+                remove_from_storage(kind, name)
+                stats['purged'] += 1
+                continue
+
+            # no stored copy: a redelivery is also dropped without being stored
+            # anywhere, so confirm it duplicates an archived message and purge it
+            if is_redelivery_of_archived(content, name):
+                remove_from_storage(kind, name)
+                stats['purged'] += 1
+                continue
+
+            stats['skipped'] += 1
+            logger.error(
+                f'purge_incoming: no matching object found outside incoming store, skipping: '
+                f'name={name}, sha384={metadata.sha384}'
+            )
+        except Exception as err:
+            # the object is left in place; one bad object must not stop the run
+            stats['errors'] += 1
+            logger.error(f'purge_incoming: error processing {kind}:{name}: {repr(err)}')
+
+    logger.info(f'purge_incoming: {stats}')
+    return stats
 
 
 def move_list(source, target):

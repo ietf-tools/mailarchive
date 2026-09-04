@@ -7,7 +7,6 @@ import requests
 from celery import Task, shared_task
 from django.apps import apps
 from django.conf import settings
-from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
 
@@ -27,11 +26,10 @@ from mlarchive.archive.utils import import_message_blob
 from mlarchive.archive.utils import load_hidden_messages
 from mlarchive.archive.models import EmailList, Message, User
 from mlarchive.archive.mail import Loader
-from mlarchive.archive.storage import backfill_stored_objects
+# Registers the one-time backfill task; autodiscovery only scans <app>.tasks.
+from mlarchive.archive.stored_object_backfill import backfill_stored_objects_task  # noqa: F401
 
 logger = logging.getLogger(__name__)
-
-BACKFILL_STORED_OBJECTS_STOP_KEY = 'backfill_stored_objects_stop'
 
 
 class CelerySignalHandler(Task):
@@ -308,43 +306,3 @@ def load_hidden_messages_task(directory, listname=None):
         load_hidden_messages(directory, listname=listname)
     except Exception as err:
         logger.error(f"Error in load_hidden_messages_task: {err}")
-
-
-@shared_task
-def backfill_stored_objects_task(start_after_pk=0, batch_size=5000, countdown=5):
-    """Index one batch of pre-existing blobs as StoredObject rows, then self-chain.
-
-    One-time work to bring the historical corpus into the StoredObject table; new
-    writes are tracked by the storage itself. Dispatched by hand rather than by Beat,
-    on the blobdb queue so it never competes with indexing on the default queue.
-
-    To kick off:   backfill_stored_objects_task.apply_async(queue='blobdb')
-    To stop:       cache.set('backfill_stored_objects_stop', True, timeout=None)
-    To resume:     cache.delete('backfill_stored_objects_stop')
-                   backfill_stored_objects_task.apply_async(
-                       queue='blobdb', kwargs={'start_after_pk': <last logged pk>})
-    """
-    if cache.get(BACKFILL_STORED_OBJECTS_STOP_KEY):
-        logger.info(
-            'backfill_stored_objects: halted by stop flag, resume with start_after_pk=%d',
-            start_after_pk)
-        return
-
-    result = backfill_stored_objects(start_after_pk=start_after_pk, batch_size=batch_size)
-    if result is None:
-        logger.info('backfill_stored_objects: complete, last_pk=%d', start_after_pk)
-        return
-
-    logger.info(
-        'backfill_stored_objects: batch done, last_pk=%d, created=%d, skipped=%d',
-        result['last_pk'], result['created'], result['skipped'])
-
-    backfill_stored_objects_task.apply_async(
-        kwargs=dict(
-            start_after_pk=result['last_pk'],
-            batch_size=batch_size,
-            countdown=countdown,
-        ),
-        countdown=countdown,
-        queue='blobdb',
-    )

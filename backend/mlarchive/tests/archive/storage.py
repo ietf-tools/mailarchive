@@ -491,14 +491,15 @@ def test_reconcile_indexes_untracked_object():
 
 @pytest.mark.django_db
 def test_reconcile_refreshes_mismatched_row():
-    """A bulk update rewrites the bytes and checksum but not the row."""
+    """Bytes rewritten behind the storage's back leave the row's digest stale."""
     storage = storages[BUCKET]
     storage.save('acme/one', BlobFile(content=CONTENT))
     original = StoredObject.objects.get(store=BUCKET, name='acme/one')
-    changed = b'These bytes were rewritten in bulk.'
+    changed = b'These bytes were rewritten directly.'
     blob = Blob.objects.get(bucket=BUCKET, name='acme/one')
     blob.content = changed
-    Blob.bulk_objects.bulk_update([blob], ['content'])
+    blob.modified = datetime.datetime.now(datetime.timezone.utc)
+    blob.save()
 
     stats = reconcile_bucket(BUCKET)
     assert stats == CLEAN | {'rows': 1, 'objects': 1, 'mismatched': 1}

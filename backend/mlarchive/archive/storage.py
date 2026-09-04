@@ -393,9 +393,8 @@ def _reconcile_rows(storage, repair, batch_size, max_missing_repairs, stats):
 def _reconcile_objects(storage, repair, batch_size, stats, drift):
     """Check that every object in storage has a live, accurate StoredObject row.
 
-    Drift found here comes from writes that bypass the storage, chiefly the bulk
-    paths (bulk_create, bulk_update) that rebuild_json_blobs and the migration tasks
-    use, and from the bytes-first write window when recording the row fails. Three
+    Drift found here comes from the bytes-first write window, when the bytes land but
+    recording the row fails, and from any write that bypasses the storage. Three
     states are repaired from the storage's own inventory, exactly as the backfill
     does: no row at all, a live row whose digest or length differ, and a tombstoned
     row whose bytes were written after the tombstone.

@@ -2,9 +2,6 @@ from builtins import input
 
 import datetime
 import email
-import functools
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from io import BytesIO
 import json
 import logging
 import mailbox
@@ -14,7 +11,6 @@ import requests
 import shutil
 import subprocess
 import sys
-import time
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -38,7 +34,6 @@ from mlarchive.archive.storage import (DriftReport, RECONCILE_MAX_MISSING_REPAIR
 from mlarchive.archive.storage_utils import (retrieve_bytes, store_bytes, exists_in_storage,
     remove_from_storage, list_names, get_metadata, find_by_checksum)
 from mlarchive.archive.inspectors import is_no_archive
-from mlarchive.blobdb.models import Blob
 
 
 logger = logging.getLogger(__name__)
@@ -49,81 +44,6 @@ MAILMAN_LISTID_PATTERN = re.compile(r'(.*)\.(ietf|irtf|iab|iesg|rfc-editor)\.org
 # --------------------------------------------------
 # Helper Functions
 # --------------------------------------------------
-
-
-def timed(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        start = time.perf_counter()
-        result = func(*args, **kwargs)
-        elapsed = time.perf_counter() - start
-        logger.debug('%s took %.3fs', func.__qualname__, elapsed)
-        return result
-    return wrapper
-
-
-def build_blob_batch(messages):
-    """Read message content from NFS and return a list of Blob objects ready for bulk_create.
-
-    Skips messages whose files are missing. The returned list may be shorter than
-    the input if any files are not found.
-    """
-    from mlarchive.blobdb.models import Blob
-
-    batch = []
-    for message in messages:
-        try:
-            with open(message.get_file_path(), 'rb') as f:
-                content = f.read()
-        except FileNotFoundError:
-            logger.warning('build_blob_batch: missing file for pk=%d path=%s', message.pk, message.get_file_path())
-            continue
-        batch.append(Blob(
-            name=message.get_blob_name(),
-            bucket=message.get_blob_bucket(),
-            content=content,
-            content_type='message/rfc822',
-        ))
-    return batch
-
-
-def replicate_blob_direct(blob):
-    """Replicate a Blob using content already in memory, skipping the SQL re-fetch."""
-    from mlarchive.blobdb.replication import (
-        destination_storage_for, replication_enabled, ReplicationError, SimpleMetadataFile
-    )
-    if not replication_enabled(blob.bucket):
-        return
-    file_with_metadata = SimpleMetadataFile(file=BytesIO(bytes(blob.content)))
-    file_with_metadata.content_type = blob.content_type
-    file_with_metadata.custom_metadata = {
-        'sha384': blob.checksum,
-        'mtime': (blob.mtime or blob.modified).isoformat(),
-    }
-    try:
-        destination_storage_for(blob.bucket).save(blob.name, file_with_metadata)
-    except Exception as e:
-        raise ReplicationError from e
-
-
-def replicate_batch(blobs, max_workers=50):
-    """Replicate a list of Blob objects to R2 using a thread pool.
-
-    Returns a list of (blob, exception) tuples for any failures.
-    """
-    from mlarchive.blobdb.replication import ReplicationError
-
-    failures = []
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        futures = {pool.submit(replicate_blob_direct, blob): blob for blob in blobs}
-        for future in as_completed(futures):
-            try:
-                future.result()
-            except ReplicationError as e:
-                blob = futures[future]
-                logger.warning('replicate_batch: failed %s:%s: %s', blob.bucket, blob.name, e)
-                failures.append((blob, e))
-    return failures
 
 
 _NAV_SQL = """
@@ -208,114 +128,6 @@ def fetch_nav_for_batch(messages):
             'next_in_thread': _nav_url(nt_hc, nt_ln),
         }
     return result
-
-
-def build_json_blob_batch(messages):
-    """Build JSON blob objects for public messages, ready for bulk_create."""
-    public = [m for m in messages if not m.email_list.private]
-    if not public:
-        return []
-    nav_map = fetch_nav_for_batch(public)
-    batch = []
-    for message in public:
-        batch.append(Blob(
-            name=message.get_blob_name(),
-            bucket='ml-messages-json',
-            content=message.as_json(nav=nav_map.get(message.pk)).encode('utf-8'),
-            content_type='application/json',
-        ))
-    return batch
-
-
-def rebuild_json_blobs(messages, max_workers=50):
-    """Rebuild JSON blobs for a batch of Messages.
-
-    Steps (each timed):
-      1. build_json_blob_batch  — serialise JSON for public messages
-      2. bulk_update/create     — update existing blobs; create any that are new
-      3. replicate              — upload to R2 via thread pool
-    """
-    n = len(messages)
-
-    t0 = time.perf_counter()
-    json_blobs = build_json_blob_batch(messages)
-    logger.info('rebuild step 1/3 build_json_blob_batch: %.3fs, %d/%d blobs built', time.perf_counter() - t0, len(json_blobs), n)
-    if len(json_blobs) < n:
-        logger.info('rebuild step 1/3: %d messages skipped (private or no public content)', n - len(json_blobs))
-
-    if not json_blobs:
-        return []
-
-    t1 = time.perf_counter()
-    names = [b.name for b in json_blobs]
-    existing = {
-        name: pk
-        for name, pk in Blob.objects.filter(bucket='ml-messages-json', name__in=names).values_list('name', 'pk')
-    }
-    to_update, to_create = [], []
-    for blob in json_blobs:
-        if blob.name in existing:
-            blob.pk = existing[blob.name]
-            to_update.append(blob)
-        else:
-            to_create.append(blob)
-    if to_update:
-        Blob.bulk_objects.bulk_update(to_update, ['content', 'content_type'])
-    if to_create:
-        Blob.bulk_objects.bulk_create(to_create, ignore_conflicts=True)
-    logger.info(
-        'rebuild step 2/3 bulk_update/create json: %.3fs, %d updated, %d created',
-        time.perf_counter() - t1, len(to_update), len(to_create),
-    )
-
-    t2 = time.perf_counter()
-    failures = replicate_batch(json_blobs, max_workers=max_workers)
-    logger.info('rebuild step 3/3 replicate json: %.3fs, %d failures', time.perf_counter() - t2, len(failures))
-
-    return failures
-
-
-def migrate_messages_to_blobdb(messages, max_workers=50):
-    """Migrate a batch of Messages to blobdb and replicate to R2.
-
-    Steps (each timed):
-      1. build_blob_batch       — read raw message content from NFS
-      2. bulk_create messages   — insert into blobdb
-      3. replicate messages     — upload to R2 via thread pool
-      4. build_json_blob_batch  — serialise JSON for public messages
-      5. bulk_create json       — insert into blobdb
-      6. replicate json         — upload to R2 via thread pool
-    """
-    n = len(messages)
-    all_failures = []
-
-    t0 = time.perf_counter()
-    blobs = build_blob_batch(messages)
-    logger.info('migrate step 1/6 build_blob_batch: %.3fs, %d/%d blobs built', time.perf_counter() - t0, len(blobs), n)
-
-    t1 = time.perf_counter()
-    Blob.bulk_objects.bulk_create(blobs, ignore_conflicts=True)
-    logger.info('migrate step 2/6 bulk_create messages: %.3fs, %d blobs', time.perf_counter() - t1, len(blobs))
-
-    t2 = time.perf_counter()
-    failures = replicate_batch(blobs, max_workers=max_workers)
-    all_failures.extend(failures)
-    logger.info('migrate step 3/6 replicate messages: %.3fs, %d failures', time.perf_counter() - t2, len(failures))
-
-    t3 = time.perf_counter()
-    json_blobs = build_json_blob_batch(messages)
-    logger.info('migrate step 4/6 build_json_blob_batch: %.3fs, %d blobs', time.perf_counter() - t3, len(json_blobs))
-
-    t4 = time.perf_counter()
-    Blob.bulk_objects.bulk_create(json_blobs, ignore_conflicts=True)
-    logger.info('migrate step 5/6 bulk_create json: %.3fs, %d blobs', time.perf_counter() - t4, len(json_blobs))
-
-    t5 = time.perf_counter()
-    failures = replicate_batch(json_blobs, max_workers=max_workers)
-    all_failures.extend(failures)
-    logger.info('migrate step 6/6 replicate json: %.3fs, %d failures', time.perf_counter() - t5, len(failures))
-
-    return all_failures
 
 
 # Mailman appends a footer below a separator line of underscores. Both generations use

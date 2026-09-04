@@ -26,45 +26,16 @@ class BlobQuerySet(models.QuerySet):
         raise NotImplementedError("Updating BlobQuerySets is not supported")
 
     def bulk_create(self, objs, batch_size=None, ignore_conflicts=False, **kwargs):
-        raise NotImplementedError("Use Blob.bulk_objects.bulk_create() for bulk inserts")
+        # Bulk writes would bypass replication and the StoredObject index; write
+        # objects one at a time through the storage instead.
+        raise NotImplementedError("Bulk inserts of Blobs are not supported")
 
     def bulk_update(self, *args, **kwargs):
-        raise NotImplementedError("Use Blob.bulk_objects.bulk_update() for bulk updates")
-
-
-class BlobBulkQuerySet(models.QuerySet):
-    """QuerySet for bulk Blob operations used in migration and rebuild tasks.
-
-    Computes checksums automatically but does NOT trigger replication.
-    Access via Blob.bulk_objects.
-    """
-
-    def bulk_create(self, objs, batch_size=None, ignore_conflicts=False, **kwargs):
-        """Bulk insert Blobs. Computes checksums; does NOT trigger replication."""
-        now = timezone.now()
-        for obj in objs:
-            obj.checksum = sha384(bytes(obj.content), usedforsecurity=False).hexdigest()
-            if not obj.modified:
-                obj.modified = now
-        return super().bulk_create(objs, batch_size=batch_size, ignore_conflicts=ignore_conflicts, **kwargs)
-
-    def bulk_update(self, objs, fields, batch_size=None, **kwargs):
-        """Bulk update Blobs. Computes checksums; does NOT trigger replication."""
-        now = timezone.now()
-        for obj in objs:
-            obj.checksum = sha384(bytes(obj.content), usedforsecurity=False).hexdigest()
-            obj.modified = now
-        fields = list(fields)
-        if 'checksum' not in fields:
-            fields.append('checksum')
-        if 'modified' not in fields:
-            fields.append('modified')
-        return super().bulk_update(objs, fields, batch_size=batch_size, **kwargs)
+        raise NotImplementedError("Bulk updates of Blobs are not supported")
 
 
 class Blob(models.Model):
     objects = BlobQuerySet.as_manager()
-    bulk_objects = BlobBulkQuerySet.as_manager()
     name = models.CharField(max_length=1024, help_text="Name of the blob")
     bucket = models.CharField(
         max_length=1024, help_text="Name of the bucket containing this blob"

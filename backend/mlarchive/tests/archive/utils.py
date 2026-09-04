@@ -23,7 +23,7 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     update_mbox_files, _export_lists, move_list, remove_selected, mark_not_spam,
     is_duplicate_message, is_mailman_footer, import_message_blob,
     strip_mailman_footer, get_footer_tokens,
-    create_cf_worker_templates, rebuild_json_blobs, _get_removed_message,
+    create_cf_worker_templates, _get_removed_message,
     audit_list_objects, reconcile_stored_objects)
 from mlarchive.archive.models import User, Message, Redirect, MailmanMember, UserEmail
 from mlarchive.archive.mail import make_hash, archive_message, MessageWrapper
@@ -853,34 +853,6 @@ def test_create_cf_worker_templates():
 
 
 @pytest.mark.django_db(transaction=True)
-def test_rebuild_json_blobs():
-    from mock import patch
-
-    public = EmailListFactory(name='rebuild-test', private=False)
-    msg1 = MessageFactory.create(email_list=public)
-    msg2 = MessageFactory.create(email_list=public)
-    messages = [msg1, msg2]
-    names = [m.get_blob_name() for m in messages]
-
-    # JSON blobs are written by MessageWrapper.save(), not on Message save,
-    # so messages created directly have none
-    assert Blob.objects.filter(bucket='ml-messages-json', name__in=names).count() == 0
-
-    # create path: missing blobs get created
-    with patch('mlarchive.archive.utils.replicate_batch', return_value=[]):
-        failures = rebuild_json_blobs(messages)
-
-    assert failures == []
-    assert Blob.objects.filter(bucket='ml-messages-json', name__in=names).count() == 2
-
-    # update path: existing blobs get re-written
-    with patch('mlarchive.archive.utils.replicate_batch', return_value=[]):
-        failures = rebuild_json_blobs(messages)
-
-    assert failures == []
-    assert Blob.objects.filter(bucket='ml-messages-json', name__in=names).count() == 2
-
-
 # Tests for _get_removed_message
 # --------------------------------------------------
 

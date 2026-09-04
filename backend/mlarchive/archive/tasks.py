@@ -27,11 +27,15 @@ from mlarchive.archive.utils import import_message_blob
 from mlarchive.archive.utils import load_hidden_messages
 from mlarchive.archive.models import EmailList, Message, User
 from mlarchive.archive.mail import Loader
-from mlarchive.archive.storage import backfill_stored_objects
+from mlarchive.archive.message_json import store_message_json
+from mlarchive.archive.storage import backfill_stored_objects, reconcile_bucket
+from mlarchive.archive.utils import fetch_nav_for_batch
 
 logger = logging.getLogger(__name__)
 
 BACKFILL_STORED_OBJECTS_STOP_KEY = 'backfill_stored_objects_stop'
+REBUILD_JSON_STOP_KEY = 'rebuild_messages_json_stop'
+BLOBDB_QUEUE = 'blobdb'
 
 
 class CelerySignalHandler(Task):
@@ -348,3 +352,117 @@ def backfill_stored_objects_task(start_after_pk=0, batch_size=5000, countdown=5)
         countdown=countdown,
         queue='blobdb',
     )
+
+
+def queue_depth(queue_name=BLOBDB_QUEUE):
+    """Return the number of messages waiting on the broker in queue_name."""
+    with app.connection_or_acquire() as connection:
+        declared = connection.default_channel.queue_declare(queue=queue_name, passive=True)
+    return declared.message_count
+
+
+@shared_task
+def rebuild_messages_json(
+    start_after_pk=0,
+    batch_size=1000,
+    start_date=None,
+    end_date=None,
+    email_lists=None,
+    countdown=30,
+    max_queue_depth=100,
+):
+    """Rewrite the ml-messages-json object for one batch of messages, then self-chain.
+
+    Each object is written through store_message_json, the same path a newly archived
+    message takes, so the bytes, the StoredObject row and the replication event for R2
+    all follow from one call. The replicator carries the batch to R2 one object at a
+    time. Because this task runs on the same single-consumer queue as those events,
+    its next invocation sits behind the batch's events in FIFO order and cannot start
+    until they are consumed, so the rebuild cannot outrun the replicator and a normal
+    message's replication waits behind at most one batch. Batch size sets that ceiling.
+    As a guard for the cases ordering does not cover, chiefly a burst of normal
+    traffic, an invocation first checks the depth of the blobdb queue and, if more than
+    max_queue_depth messages are waiting, re-schedules itself unchanged after countdown
+    seconds. A failing depth check is left to propagate, ending the chain; resume by
+    hand once the broker answers.
+
+    A message that fails to write is logged and counted, and the batch continues.
+    When the batch is empty the rebuild is complete, and ml-messages-json is
+    reconciled without repair as a check that every rewritten object is indexed.
+
+    Dispatched by hand, on the blobdb queue. Filters narrow the run: start_date and
+    end_date bound Message.date (ISO 8601, end exclusive), email_lists is a list of
+    list names.
+
+    To kick off:   rebuild_messages_json.apply_async(queue='blobdb')
+                   rebuild_messages_json.apply_async(
+                       queue='blobdb', kwargs={'email_lists': ['ietf'], 'batch_size': 500})
+    To stop:       cache.set('rebuild_messages_json_stop', True, timeout=None)
+    To resume:     cache.delete('rebuild_messages_json_stop')
+                   rebuild_messages_json.apply_async(
+                       queue='blobdb', kwargs={'start_after_pk': <last logged pk>})
+    """
+    if cache.get(REBUILD_JSON_STOP_KEY):
+        logger.info(
+            'rebuild_messages_json: halted by stop flag, resume with start_after_pk=%d',
+            start_after_pk)
+        return
+
+    kwargs = dict(
+        start_after_pk=start_after_pk,
+        batch_size=batch_size,
+        start_date=start_date,
+        end_date=end_date,
+        email_lists=email_lists,
+        countdown=countdown,
+        max_queue_depth=max_queue_depth,
+    )
+
+    depth = queue_depth()
+    if depth > max_queue_depth:
+        logger.info(
+            'rebuild_messages_json: %d messages queued on %s, waiting %ds before the batch '
+            'after pk=%d', depth, BLOBDB_QUEUE, countdown, start_after_pk)
+        rebuild_messages_json.apply_async(kwargs=kwargs, countdown=countdown, queue=BLOBDB_QUEUE)
+        return
+
+    filters = {'pk__gt': start_after_pk}
+    if start_date is not None:
+        filters['date__gte'] = start_date
+    if end_date is not None:
+        filters['date__lt'] = end_date
+    if email_lists:
+        filters['email_list__name__in'] = email_lists
+
+    batch = list(
+        Message.objects
+        .select_related('email_list')
+        .filter(**filters)
+        .order_by('pk')[:batch_size]
+    )
+
+    if not batch:
+        logger.info('rebuild_messages_json: complete, last_pk=%d', start_after_pk)
+        stats = reconcile_bucket('ml-messages-json')
+        logger.info('rebuild_messages_json: reconcile ml-messages-json: %s', stats)
+        return
+
+    public = [message for message in batch if not message.email_list.private]
+    nav_map = fetch_nav_for_batch(public)
+    written = failures = 0
+    for message in public:
+        try:
+            store_message_json(message, nav=nav_map.get(message.pk))
+            written += 1
+        except Exception as err:
+            failures += 1
+            logger.error(
+                'rebuild_messages_json: failed to write %s: %r', message.get_blob_name(), err)
+
+    last_pk = batch[-1].pk
+    logger.info(
+        'rebuild_messages_json: batch done, last_pk=%d, written=%d, private=%d, failures=%d',
+        last_pk, written, len(batch) - len(public), failures)
+
+    kwargs['start_after_pk'] = last_pk
+    rebuild_messages_json.apply_async(kwargs=kwargs, countdown=countdown, queue=BLOBDB_QUEUE)

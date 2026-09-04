@@ -14,7 +14,6 @@ from django.db.models.functions import Length
 from django.utils import timezone
 
 from mlarchive.archive.models import StoredObject
-from mlarchive.blobdb.models import Blob
 from mlarchive.blobdb.storage import BlobdbStorage, MetadataFile
 
 import logging
@@ -236,54 +235,6 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
         if not rows:
             return [], None
         return [row[1:] for row in rows], rows[-1][0]
-
-
-def backfill_stored_objects(start_after_pk=0, batch_size=5000):
-    """Index one batch of pre-existing blobs as StoredObject rows"""
-
-    rows = list(
-        Blob.objects
-        .filter(pk__gt=start_after_pk, bucket__in=settings.ARTIFACT_STORAGE_NAMES)
-        .order_by('pk')
-        .annotate(object_size=Length('content'))
-        .values_list('pk', 'bucket', 'name', 'checksum', 'object_size', 'modified')
-        [:batch_size]
-    )
-    if not rows:
-        return None
-
-    existing = set()
-    for bucket in {row[1] for row in rows}:
-        names = [row[2] for row in rows if row[1] == bucket]
-        existing.update(
-            StoredObject.objects
-            .filter(store=bucket, name__in=names)
-            .values_list('store', 'name')
-        )
-
-    records = [
-        StoredObject(
-            store=bucket,
-            name=name,
-            sha384=checksum,
-            len=object_size,
-            store_created=modified,
-            created=modified,
-            modified=modified,
-        )
-        for _, bucket, name, checksum, object_size, modified in rows
-        if (bucket, name) not in existing
-    ]
-    # ignore_conflicts covers a row written by the storage between the existence
-    # check and the insert; the explicit batch_size keeps each INSERT within the
-    # Postgres parameter limit regardless of the caller's batch size.
-    StoredObject.objects.bulk_create(records, batch_size=1000, ignore_conflicts=True)
-
-    return {
-        'last_pk': rows[-1][0],
-        'created': len(records),
-        'skipped': len(rows) - len(records),
-    }
 
 
 # --------------------------------------------------

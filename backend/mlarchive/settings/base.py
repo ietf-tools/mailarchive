@@ -169,9 +169,12 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'django.contrib.sites',
     'django.contrib.sitemaps',
-    'mozilla_django_oidc',
+    # External apps
     'django_bootstrap5',
     'django_celery_beat',
+    'mozilla_django_oidc',
+    'rangefilter',
+    # IETF apps
     'mlarchive.archive.apps.ArchiveConfig',
     'mlarchive.blobdb',
 ]

@@ -5,7 +5,7 @@ import json
 import mailbox
 import pytest
 import requests
-from factories import EmailListFactory, MessageFactory, UserFactory
+from factories import EmailListFactory, MessageFactory, UserFactory, store_message_blob
 from mock import patch
 import os
 import subprocess   # noqa
@@ -23,13 +23,15 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     update_mbox_files, _export_lists, move_list, remove_selected, mark_not_spam,
     is_duplicate_message, is_mailman_footer, import_message_blob,
     strip_mailman_footer, get_footer_tokens,
-    create_cf_worker_templates, rebuild_json_blobs, _get_removed_message)
+    create_cf_worker_templates, rebuild_json_blobs, _get_removed_message,
+    audit_list_objects, reconcile_stored_objects)
 from mlarchive.archive.models import User, Message, Redirect, MailmanMember, UserEmail
 from mlarchive.archive.mail import make_hash, archive_message, MessageWrapper
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.backends.elasticsearch import search_from_form
+from mlarchive.archive.models import StoredObject
 from mlarchive.archive.storage_utils import (store_file, get_unique_blob_name,
-    exists_in_storage)
+    exists_in_storage, store_str)
 from mlarchive.blobdb.models import Blob
 from factories import EmailListFactory
 
@@ -874,3 +876,91 @@ def test_get_removed_message_returns_email_object(tmp_path):
 
     assert result is not None
     assert result["Message-ID"] == "<abc@example.com>"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_audit_list_objects():
+    elist = EmailListFactory.create(name='acme')
+    stored = MessageFactory.create(email_list=elist)
+    store_message_blob(stored, b'stored message')
+    lost = MessageFactory.create(email_list=elist)
+    other = EmailListFactory.create(name='acme-wg')
+    MessageFactory.create(email_list=other, hashcode=lost.hashcode)
+    store_str('ml-messages', 'acme/orphanhash', content='no message owns me')
+    store_str('ml-messages', 'acme-wg/otherorphan', content='different list')
+    store_str('ml-messages-removed', 'acme/removedhash', content='different bucket')
+
+    only_messages, only_objects = audit_list_objects(elist)
+
+    assert only_messages == {lost.hashcode.rstrip('=')}
+    assert only_objects == {'orphanhash'}
+
+
+@pytest.mark.django_db(transaction=True)
+def test_audit_list_objects_private_list():
+    elist = EmailListFactory.create(name='secret', private=True)
+    message = MessageFactory.create(email_list=elist)
+    store_message_blob(message, b'private message')
+    store_str('ml-messages', 'secret/publicorphan', content='wrong bucket')
+
+    assert audit_list_objects(elist) == (set(), set())
+
+
+@pytest.mark.django_db(transaction=True)
+def test_reconcile_stored_objects():
+    public = EmailListFactory.create(name='acme')
+    private = EmailListFactory.create(name='secret', private=True)
+    for elist in (public, private):
+        message = MessageFactory.create(email_list=elist)
+        store_message_blob(message, b'stored message')
+    lost = MessageFactory.create(email_list=public)
+    store_str('ml-messages', 'acme/orphan', content='no message')
+    # bytes written behind the storage's back, in a bucket no list uses
+    Blob.objects.update_or_create(
+        bucket='ml-messages-spam', name='acme/spam', defaults={'content': b'spam'})
+
+    stats = reconcile_stored_objects()
+
+    assert stats['rows'] == 3
+    assert stats['objects'] == 4
+    assert stats['untracked'] == 1
+    assert stats['repaired'] == 0
+    assert stats['lists'] == 2
+    assert stats['list_mismatches'] == 1
+    assert stats['only_messages'] == 1
+    assert stats['only_objects'] == 1
+    assert not StoredObject.objects.filter(store='ml-messages-spam').exists()
+
+    stats = reconcile_stored_objects(repair=True)
+    assert stats['untracked'] == 1
+    assert stats['repaired'] == 1
+    assert StoredObject.objects.get(store='ml-messages-spam', name='acme/spam').deleted is None
+
+    stats = reconcile_stored_objects()
+    assert stats['rows'] == 4
+    assert stats['untracked'] == 0
+    assert stats['only_messages'] == 1
+    assert lost.hashcode.rstrip('=') not in [
+        name.split('/')[1] for name in StoredObject.objects.values_list('name', flat=True)]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_reconcile_stored_objects_single_bucket():
+    public = EmailListFactory.create(name='acme')
+    private = EmailListFactory.create(name='secret', private=True)
+    MessageFactory.create(email_list=public)
+    MessageFactory.create(email_list=private)
+    store_str('ml-messages-private', 'secret/orphan', content='x')
+
+    stats = reconcile_stored_objects(bucket='ml-messages-private')
+    assert stats['rows'] == 1
+    assert stats['lists'] == 1
+    assert stats['only_messages'] == 1
+    assert stats['only_objects'] == 1
+
+    stats = reconcile_stored_objects(bucket='ml-messages-json')
+    assert stats['rows'] == 0
+    assert stats['lists'] == 0
+
+    with pytest.raises(ValueError):
+        reconcile_stored_objects(bucket='ml-nonsense')

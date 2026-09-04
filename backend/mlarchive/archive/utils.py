@@ -15,7 +15,7 @@ import shutil
 import subprocess
 import sys
 import time
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 import mailmanclient
@@ -33,8 +33,10 @@ from django.urls import reverse
 from mlarchive.archive.models import (EmailList, Subscriber, Redirect, MailmanMember,
     User, Message)
 from mlarchive.archive.mail import MessageWrapper, archive_message
+from mlarchive.archive.storage import (DriftReport, RECONCILE_MAX_MISSING_REPAIRS,
+    reconcile_bucket)
 from mlarchive.archive.storage_utils import (retrieve_bytes, store_bytes, exists_in_storage,
-    remove_from_storage)
+    remove_from_storage, list_names)
 from mlarchive.archive.inspectors import is_no_archive
 from mlarchive.blobdb.models import Blob
 
@@ -1470,13 +1472,72 @@ def create_cf_worker_templates():
     path.write_text(html, encoding='utf-8')
 
 
-def audit_blobdb():
+def audit_list_objects(elist):
+    """Compare the messages of elist with the live stored objects under its prefix.
+
+    Every Message should have an object named after it in the list's bucket, and every
+    object there should belong to a Message. Returns two sets of hashcodes, as they
+    appear in object names (padding stripped): those with a message but no object,
+    and those with an object but no message. Either being non-empty is logged with a
+    sample of the hashcodes. Nothing is repaired: a message without bytes cannot be
+    reconstructed here, and an object without a message is for a person to judge.
+    """
+    prefix = f'{elist.name}/'
+    object_hashes = {
+        name[len(prefix):] for name in list_names(elist.blob_bucket, prefix=prefix)}
+    message_hashes = {
+        hashcode.rstrip('=')
+        for hashcode in Message.objects.filter(email_list=elist)
+        .values_list('hashcode', flat=True).iterator(chunk_size=5000)
+    }
+    only_messages = message_hashes - object_hashes
+    only_objects = object_hashes - message_hashes
+    if only_messages or only_objects:
+        drift = DriftReport(f'list {elist.name}')
+        drift.add('messages with no stored object', sorted(only_messages))
+        drift.add('stored objects with no message', sorted(only_objects))
+        drift.log()
+    return only_messages, only_objects
+
+
+def reconcile_stored_objects(bucket=None, repair=False, batch_size=5000,
+                             max_missing_repairs=RECONCILE_MAX_MISSING_REPAIRS):
+    """Check the StoredObject index against blob storage and the message table.
+
+    First each artifact storage, or just bucket if given, is diffed against its blobs
+    by reconcile_bucket, which repairs the index when repair is set, except that live
+    rows without bytes are repaired only up to max_missing_repairs per bucket, since
+    they mean bytes were lost (see reconcile_bucket). Then every list
+    whose messages live in one of those buckets is audited by audit_list_objects,
+    which only reports. The order matters: the list audit reads the index, so it is
+    trustworthy only once the index agrees with the bytes.
+
+    Returns a dict of counts: the per-bucket counts summed across buckets (see
+    reconcile_bucket), plus the lists audited, how many of them showed a mismatch,
+    and the total hashcodes found on only one side.
+    """
+    buckets = list(settings.ARTIFACT_STORAGE_NAMES)
+    if bucket is not None:
+        if bucket not in buckets:
+            raise ValueError(f'{bucket} is not an artifact storage')
+        buckets = [bucket]
+
+    stats = Counter()
+    for name in buckets:
+        stats.update(reconcile_bucket(
+            name, repair=repair, batch_size=batch_size,
+            max_missing_repairs=max_missing_repairs))
+
+    stats.update(lists=0, list_mismatches=0, only_messages=0, only_objects=0)
     for elist in EmailList.objects.order_by('name'):
-        bucket = elist.blob_bucket
-        messages = Message.objects.filter(email_list=elist)
-        blobs = Blob.objects.filter(bucket=bucket, name__startswith=f'{elist.name}/')
-        if messages.count() != blobs.count():
-            print(f'{elist.name}    messages:{messages.count()}  blobs:{blobs.count()}')
-            message_hashes = set([x.hashcode.strip('=') for x in messages])
-            blob_hashes = set([x.name.split('/')[1] for x in blobs])
-            print(blob_hashes - message_hashes)
+        if elist.blob_bucket not in buckets:
+            continue
+        only_messages, only_objects = audit_list_objects(elist)
+        stats['lists'] += 1
+        if only_messages or only_objects:
+            stats['list_mismatches'] += 1
+        stats['only_messages'] += len(only_messages)
+        stats['only_objects'] += len(only_objects)
+
+    logger.info(f'reconcile_stored_objects: {dict(stats)}')
+    return dict(stats)

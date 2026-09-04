@@ -21,8 +21,9 @@ This Cloudflare Worker processes requests for archive message details. It does t
 - /arch/ajax/msg/* (future)
 
 ## Bindings
-- R2 ml-templates
 - R2 ml-messages-json
+- R2 ml-templates (reserved for runtime template loading; not read today, the template is
+  bundled from `templates/message-detail.html` at build time)
 
 ## Development
 
@@ -36,7 +37,9 @@ Use the command `npm run dev` to start the dev server.
 
 Use a command like this to upload file to local R2 
 npx wrangler r2 object put ml-messages-json/dnsop/PxDc-GHOEmUhxElwrT49dqcRyag --file=test-data.json --local
-npx wrangler r2 object put ml-templates/message-detail.html --file=sample-template.html --local
+
+The template is not loaded from R2; edit `templates/message-detail.html` (or regenerate it
+with `create_cf_worker_templates()` on the Django side) and restart the dev server.
 
 ### Deployment
 

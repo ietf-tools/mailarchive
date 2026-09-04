@@ -27,7 +27,8 @@ from mlarchive.archive.utils import import_message_blob
 from mlarchive.archive.utils import load_hidden_messages
 from mlarchive.archive.models import EmailList, Message, User
 from mlarchive.archive.mail import Loader
-from mlarchive.archive.storage import backfill_stored_objects
+# Registers the one-time backfill task; autodiscovery only scans <app>.tasks.
+from mlarchive.archive.stored_object_backfill import backfill_stored_objects_task  # noqa: F401
 
 logger = logging.getLogger(__name__)
 

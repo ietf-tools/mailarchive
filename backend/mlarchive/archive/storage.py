@@ -7,7 +7,6 @@ from contextlib import contextmanager
 from storages.backends.s3 import S3Storage
 
 from django.core.files.base import File
-
 from django.utils import timezone
 
 from mlarchive.archive.models import StoredObject

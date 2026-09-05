@@ -5,7 +5,7 @@ import json
 import mailbox
 import pytest
 import requests
-from factories import EmailListFactory, MessageFactory, UserFactory
+from factories import EmailListFactory, MessageFactory, UserFactory, store_message_blob
 from mock import patch
 import os
 import subprocess   # noqa
@@ -23,13 +23,15 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     update_mbox_files, _export_lists, move_list, remove_selected, mark_not_spam,
     is_duplicate_message, is_mailman_footer, import_message_blob,
     strip_mailman_footer, get_footer_tokens,
-    create_cf_worker_templates, rebuild_json_blobs, _get_removed_message)
+    create_cf_worker_templates, _get_removed_message,
+    audit_list_objects, reconcile_stored_objects)
 from mlarchive.archive.models import User, Message, Redirect, MailmanMember, UserEmail
 from mlarchive.archive.mail import make_hash, archive_message, MessageWrapper
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.backends.elasticsearch import search_from_form
+from mlarchive.archive.models import StoredObject
 from mlarchive.archive.storage_utils import (store_file, get_unique_blob_name,
-    exists_in_storage)
+    exists_in_storage, store_str, list_names, remove_from_storage)
 from mlarchive.blobdb.models import Blob
 from factories import EmailListFactory
 
@@ -421,70 +423,94 @@ def test_purge_incoming(settings):
     with open(path, 'rb') as f:
         message_bytes = f.read()
 
-    # Case 1: old blob whose message was successfully archived → should be purged
+    def store_old(prefix, content):
+        """Store content in the incoming bucket and age its index row past the cutoff."""
+        name = get_unique_blob_name(prefix=prefix, bucket=bucket)
+        store_file(bucket, name, io.BytesIO(content), content_type='message/rfc822')
+        StoredObject.objects.filter(store=bucket, name=name).update(modified=old_time)
+        return name
+
+    # Case 1: old object whose message was successfully archived → should be purged
     archive_message(data=message_bytes, listname='apple', private=False)
-    archived_blob_name = get_unique_blob_name(prefix='apple.public.', bucket=bucket)
-    store_file(bucket, archived_blob_name, io.BytesIO(message_bytes), content_type='message/rfc822')
-    archived_blob = Blob.objects.get(bucket=bucket, name=archived_blob_name)
-    archived_blob.modified = old_time
-    archived_blob.save()
+    archived_name = store_old('apple.public.', message_bytes)
 
-    # Case 2: old blob whose content exists in no other bucket → should NOT be purged.
-    # Perturb the bytes so its checksum differs from every stored blob (content-based match).
+    # Case 2: old object whose content exists in no other bucket → should NOT be purged.
+    # Perturb the bytes so its digest differs from every stored object (content-based match).
     unverified_bytes = message_bytes + b'\nmake-content-unique\n'
-    unverified_blob_name = get_unique_blob_name(prefix='cherry.public.', bucket=bucket)
-    store_file(bucket, unverified_blob_name, io.BytesIO(unverified_bytes), content_type='message/rfc822')
-    unverified_blob = Blob.objects.get(bucket=bucket, name=unverified_blob_name)
-    unverified_blob.modified = old_time
-    unverified_blob.save()
+    unverified_name = store_old('cherry.public.', unverified_bytes)
 
-    # Case 3: recent blob (within cutoff) → should NOT be purged
-    recent_blob_name = get_unique_blob_name(prefix='apple.public.', bucket=bucket)
-    store_file(bucket, recent_blob_name, io.BytesIO(message_bytes), content_type='message/rfc822')
+    # Case 3: recent object (within cutoff) → should NOT be purged
+    recent_name = get_unique_blob_name(prefix='apple.public.', bucket=bucket)
+    store_file(bucket, recent_name, io.BytesIO(message_bytes), content_type='message/rfc822')
 
-    # Case 4: old blob whose message exists in the removed bucket → should be purged
+    # Case 4: old object whose message exists in the removed bucket → should be purged
     path2 = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.2')
     with open(path2, 'rb') as f:
         removed_message_bytes = f.read()
     removed_mw = MessageWrapper.from_bytes(bytes=removed_message_bytes, listname='banana', private=False)
-    removed_blob_name_incoming = get_unique_blob_name(prefix='banana.public.', bucket=bucket)
-    store_file(bucket, removed_blob_name_incoming, io.BytesIO(removed_message_bytes), content_type='message/rfc822')
-    removed_blob = Blob.objects.get(bucket=bucket, name=removed_blob_name_incoming)
-    removed_blob.modified = old_time
-    removed_blob.save()
+    removed_name_incoming = store_old('banana.public.', removed_message_bytes)
     removed_bucket_name = f'banana/{removed_mw.get_hash()}'.rstrip('=')
     store_file('ml-messages-removed', removed_bucket_name, io.BytesIO(removed_message_bytes), content_type='message/rfc822')
 
-    # Case 5: old no-archive blob with no stored copy → should be purged (dropped, not archived)
+    # Case 5: old no-archive object with no stored copy → should be purged (dropped, not archived)
     noarchive_bytes = b'X-No-Archive: yes\n' + message_bytes
-    noarchive_blob_name = get_unique_blob_name(prefix='date.public.', bucket=bucket)
-    store_file(bucket, noarchive_blob_name, io.BytesIO(noarchive_bytes), content_type='message/rfc822')
-    noarchive_blob = Blob.objects.get(bucket=bucket, name=noarchive_blob_name)
-    noarchive_blob.modified = old_time
-    noarchive_blob.save()
+    noarchive_name = store_old('date.public.', noarchive_bytes)
 
-    # Case 6: old blob holding a redelivery of the message archived in case 1 → should be
-    # purged. The extra header makes the bytes, and so the checksum, differ from the
-    # archived copy, so no blob matches it. It is dropped as a redelivery without a copy
+    # Case 6: old object holding a redelivery of the message archived in case 1 → should be
+    # purged. The extra header makes the bytes, and so the digest, differ from the
+    # archived copy, so no object matches it. It is dropped as a redelivery without a copy
     # being stored anywhere, so purge_incoming() identifies it with the same check.
     redelivery_bytes = b'Received: from example.com by example.net\n' + message_bytes
     archive_message(data=redelivery_bytes, listname='apple', private=False)
-    redelivery_blob_name = get_unique_blob_name(prefix='apple.public.', bucket=bucket)
-    store_file(bucket, redelivery_blob_name, io.BytesIO(redelivery_bytes), content_type='message/rfc822')
-    redelivery_blob = Blob.objects.get(bucket=bucket, name=redelivery_blob_name)
-    redelivery_blob.modified = old_time
-    redelivery_blob.save()
+    redelivery_name = store_old('apple.public.', redelivery_bytes)
 
-    purge_incoming()
+    # Case 7: old object whose match is a tombstoned row → the match does not count,
+    # and with no copy anywhere it is left in place
+    tombstoned_bytes = message_bytes + b'\ntombstoned-copy\n'
+    tombstoned_name = store_old('elder.public.', tombstoned_bytes)
+    store_file('ml-messages-removed', 'elder/gone', io.BytesIO(tombstoned_bytes), content_type='message/rfc822')
+    remove_from_storage('ml-messages-removed', 'elder/gone')
 
-    assert not Blob.objects.filter(bucket=bucket, name=archived_blob_name).exists()
-    assert Blob.objects.filter(bucket=bucket, name=unverified_blob_name).exists()
-    assert Blob.objects.filter(bucket=bucket, name=recent_blob_name).exists()
-    assert not Blob.objects.filter(bucket=bucket, name=removed_blob_name_incoming).exists()
-    assert not Blob.objects.filter(bucket=bucket, name=noarchive_blob_name).exists()
-    assert not Blob.objects.filter(bucket=bucket, name=redelivery_blob_name).exists()
+    stats = purge_incoming()
+
+    assert stats == {'purged': 4, 'skipped': 2, 'errors': 0}
+    assert not exists_in_storage(bucket, archived_name)
+    assert exists_in_storage(bucket, unverified_name)
+    assert exists_in_storage(bucket, recent_name)
+    assert not exists_in_storage(bucket, removed_name_incoming)
+    assert not exists_in_storage(bucket, noarchive_name)
+    assert not exists_in_storage(bucket, redelivery_name)
+    assert exists_in_storage(bucket, tombstoned_name)
+    # the deletes went through the storage, so the index followed
+    assert not StoredObject.objects.filter(store=bucket, name=archived_name).exclude_deleted().exists()
+    assert StoredObject.objects.filter(store=bucket, name=unverified_name).exclude_deleted().exists()
     # dropped without a copy, so nothing was written to the dupes bucket
-    assert not Blob.objects.filter(bucket='ml-messages-dupes').exists()
+    assert list(list_names('ml-messages-dupes')) == []
+
+
+@pytest.mark.django_db(transaction=True)
+def test_purge_incoming_survives_bad_object(settings, caplog):
+    """An index row whose bytes are gone is logged and skipped, not fatal to the run."""
+    bucket = 'ml-messages-incoming'
+    old_time = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=100)
+    path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mail.1')
+    with open(path, 'rb') as f:
+        message_bytes = f.read()
+
+    orphan = get_unique_blob_name(prefix='apple.public.', bucket=bucket)
+    store_file(bucket, orphan, io.BytesIO(b'bytes that will vanish'), content_type='message/rfc822')
+    Blob.objects.get(bucket=bucket, name=orphan).delete()
+
+    archive_message(data=message_bytes, listname='apple', private=False)
+    archived = get_unique_blob_name(prefix='apple.public.', bucket=bucket)
+    store_file(bucket, archived, io.BytesIO(message_bytes), content_type='message/rfc822')
+    StoredObject.objects.filter(store=bucket).update(modified=old_time)
+
+    stats = purge_incoming()
+
+    assert stats == {'purged': 1, 'skipped': 0, 'errors': 1}
+    assert not exists_in_storage(bucket, archived)
+    assert f'purge_incoming: error processing {bucket}:{orphan}' in caplog.text
 
 
 def list_only_files(directory):
@@ -827,34 +853,6 @@ def test_create_cf_worker_templates():
 
 
 @pytest.mark.django_db(transaction=True)
-def test_rebuild_json_blobs():
-    from mock import patch
-
-    public = EmailListFactory(name='rebuild-test', private=False)
-    msg1 = MessageFactory.create(email_list=public)
-    msg2 = MessageFactory.create(email_list=public)
-    messages = [msg1, msg2]
-    names = [m.get_blob_name() for m in messages]
-
-    # JSON blobs are written by MessageWrapper.save(), not on Message save,
-    # so messages created directly have none
-    assert Blob.objects.filter(bucket='ml-messages-json', name__in=names).count() == 0
-
-    # create path: missing blobs get created
-    with patch('mlarchive.archive.utils.replicate_batch', return_value=[]):
-        failures = rebuild_json_blobs(messages)
-
-    assert failures == []
-    assert Blob.objects.filter(bucket='ml-messages-json', name__in=names).count() == 2
-
-    # update path: existing blobs get re-written
-    with patch('mlarchive.archive.utils.replicate_batch', return_value=[]):
-        failures = rebuild_json_blobs(messages)
-
-    assert failures == []
-    assert Blob.objects.filter(bucket='ml-messages-json', name__in=names).count() == 2
-
-
 # Tests for _get_removed_message
 # --------------------------------------------------
 
@@ -874,3 +872,91 @@ def test_get_removed_message_returns_email_object(tmp_path):
 
     assert result is not None
     assert result["Message-ID"] == "<abc@example.com>"
+
+
+@pytest.mark.django_db(transaction=True)
+def test_audit_list_objects():
+    elist = EmailListFactory.create(name='acme')
+    stored = MessageFactory.create(email_list=elist)
+    store_message_blob(stored, b'stored message')
+    lost = MessageFactory.create(email_list=elist)
+    other = EmailListFactory.create(name='acme-wg')
+    MessageFactory.create(email_list=other, hashcode=lost.hashcode)
+    store_str('ml-messages', 'acme/orphanhash', content='no message owns me')
+    store_str('ml-messages', 'acme-wg/otherorphan', content='different list')
+    store_str('ml-messages-removed', 'acme/removedhash', content='different bucket')
+
+    only_messages, only_objects = audit_list_objects(elist)
+
+    assert only_messages == {lost.hashcode.rstrip('=')}
+    assert only_objects == {'orphanhash'}
+
+
+@pytest.mark.django_db(transaction=True)
+def test_audit_list_objects_private_list():
+    elist = EmailListFactory.create(name='secret', private=True)
+    message = MessageFactory.create(email_list=elist)
+    store_message_blob(message, b'private message')
+    store_str('ml-messages', 'secret/publicorphan', content='wrong bucket')
+
+    assert audit_list_objects(elist) == (set(), set())
+
+
+@pytest.mark.django_db(transaction=True)
+def test_reconcile_stored_objects():
+    public = EmailListFactory.create(name='acme')
+    private = EmailListFactory.create(name='secret', private=True)
+    for elist in (public, private):
+        message = MessageFactory.create(email_list=elist)
+        store_message_blob(message, b'stored message')
+    lost = MessageFactory.create(email_list=public)
+    store_str('ml-messages', 'acme/orphan', content='no message')
+    # bytes written behind the storage's back, in a bucket no list uses
+    Blob.objects.update_or_create(
+        bucket='ml-messages-spam', name='acme/spam', defaults={'content': b'spam'})
+
+    stats = reconcile_stored_objects()
+
+    assert stats['rows'] == 3
+    assert stats['objects'] == 4
+    assert stats['untracked'] == 1
+    assert stats['repaired'] == 0
+    assert stats['lists'] == 2
+    assert stats['list_mismatches'] == 1
+    assert stats['only_messages'] == 1
+    assert stats['only_objects'] == 1
+    assert not StoredObject.objects.filter(store='ml-messages-spam').exists()
+
+    stats = reconcile_stored_objects(repair=True)
+    assert stats['untracked'] == 1
+    assert stats['repaired'] == 1
+    assert StoredObject.objects.get(store='ml-messages-spam', name='acme/spam').deleted is None
+
+    stats = reconcile_stored_objects()
+    assert stats['rows'] == 4
+    assert stats['untracked'] == 0
+    assert stats['only_messages'] == 1
+    assert lost.hashcode.rstrip('=') not in [
+        name.split('/')[1] for name in StoredObject.objects.values_list('name', flat=True)]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_reconcile_stored_objects_single_bucket():
+    public = EmailListFactory.create(name='acme')
+    private = EmailListFactory.create(name='secret', private=True)
+    MessageFactory.create(email_list=public)
+    MessageFactory.create(email_list=private)
+    store_str('ml-messages-private', 'secret/orphan', content='x')
+
+    stats = reconcile_stored_objects(bucket='ml-messages-private')
+    assert stats['rows'] == 1
+    assert stats['lists'] == 1
+    assert stats['only_messages'] == 1
+    assert stats['only_objects'] == 1
+
+    stats = reconcile_stored_objects(bucket='ml-messages-json')
+    assert stats['rows'] == 0
+    assert stats['lists'] == 0
+
+    with pytest.raises(ValueError):
+        reconcile_stored_objects(bucket='ml-nonsense')

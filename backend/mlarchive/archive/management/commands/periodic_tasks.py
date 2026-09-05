@@ -1,5 +1,7 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 
+import json
+
 from django_celery_beat.models import CrontabSchedule, PeriodicTask
 from django.core.management.base import BaseCommand
 
@@ -102,6 +104,18 @@ class Command(BaseCommand):
             ),
         )
 
+        # Weekly because a full pass touches every StoredObject row. For a tighter
+        # loop, add a second entry limited to recent rows and keep this sweep weekly.
+        PeriodicTask.objects.get_or_create(
+            name="Reconcile stored objects",
+            task="mlarchive.archive.tasks.reconcile_stored_objects_task",
+            defaults=dict(
+                enabled=False,
+                crontab=self.crontabs["weekly"],
+                kwargs=json.dumps({"repair": True}),
+                description="Check the StoredObject index against blob storage and repair drift"
+            ),
+        )
 
     def show_tasks(self):
         for label, crontab in self.crontabs.items():

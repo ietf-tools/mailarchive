@@ -7,6 +7,7 @@ import requests
 from celery import Task, shared_task
 from django.apps import apps
 from django.conf import settings
+from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.core.management import call_command
 

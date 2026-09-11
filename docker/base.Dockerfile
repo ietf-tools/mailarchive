@@ -35,7 +35,6 @@ RUN apt-get update --fix-missing && apt-get install -qy \
     postgresql-client-17 \
     memcached \
     netcat-openbsd \
-    nodejs \
     rsync \
     rsyslog \
     strace \

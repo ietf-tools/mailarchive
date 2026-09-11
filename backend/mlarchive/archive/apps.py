@@ -14,6 +14,7 @@ class ArchiveConfig(AppConfig):
         import mlarchive.archive.signals    # noqa
 
         self.check_inspectors()
+        self.check_artifact_storages()
 
         # Setup the signal processor.
         if not self.signal_processor:
@@ -34,6 +35,30 @@ class ArchiveConfig(AppConfig):
             raise ImproperlyConfigured(
                 'settings.INSPECTORS contains unknown inspectors: {}'.format(
                     ', '.join(unknown)))
+
+    def check_artifact_storages(self):
+        """Ensure every artifact storage alias equals its bucket_name.
+
+        StoredObject.store and Blob.bucket hold the storage's bucket_name, while the
+        rest of the code passes the STORAGES alias around as the kind, the bucket and
+        the list's blob_bucket, and queries the index with it. That only works while
+        the two names are the same, so fail at startup if a configuration ever makes
+        them differ, instead of letting listings quietly come back empty.
+        """
+        from django.core.files.storage import storages, InvalidStorageError
+
+        mismatched = []
+        for name in settings.ARTIFACT_STORAGE_NAMES:
+            try:
+                bucket_name = getattr(storages[name], 'bucket_name', None)
+            except InvalidStorageError:
+                bucket_name = None
+            if bucket_name != name:
+                mismatched.append(f'{name} (bucket_name={bucket_name!r})')
+        if mismatched:
+            raise ImproperlyConfigured(
+                'Every entry in settings.ARTIFACT_STORAGE_NAMES must name a STORAGES '
+                'alias whose bucket_name equals the alias: {}'.format(', '.join(mismatched)))
 
     def import_class(self, path):
         path_bits = path.split('.')

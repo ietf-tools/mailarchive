@@ -180,14 +180,17 @@ def list_names(kind: str, prefix: Optional[str] = None) -> Iterator[str]:
     the index, which the reconcile task keeps in step with the bytes. With prefix,
     only names starting with it are returned.
     """
+    # Validate the arguments before consulting the kill switch, so that a misspelled
+    # kind or an empty prefix is an error whether or not storage is switched on.
+    _get_storage(kind)
+    if prefix is not None and not prefix:
+        raise ValueError("prefix must be non-empty")
     if not settings.ENABLE_BLOBSTORAGE:
         return iter(())
-    storage = _get_storage(kind)
-    store = getattr(storage, "bucket_name", kind)
-    queryset = StoredObject.objects.filter(store=store).exclude_deleted()
+    # kind is the STORAGES alias and StoredObject.store holds the storage's
+    # bucket_name; ArchiveConfig.check_artifact_storages guarantees they are equal.
+    queryset = StoredObject.objects.filter(store=kind).exclude_deleted()
     if prefix is not None:
-        if not prefix:
-            raise ValueError("prefix must be non-empty")
         queryset = queryset.filter(name__startswith=prefix)
     return queryset.order_by("name").values_list("name", flat=True).iterator(chunk_size=5000)
 

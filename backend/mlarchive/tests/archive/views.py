@@ -10,6 +10,7 @@ from dateutil.relativedelta import relativedelta
 from urllib import parse
 from pyquery import PyQuery
 
+from django.conf import settings
 from django.contrib.auth import SESSION_KEY
 from django.contrib.auth.models import User
 from django.test import RequestFactory, override_settings
@@ -19,7 +20,7 @@ from django.utils.encoding import smart_str
 from factories import (EmailListFactory, MessageFactory, UserFactory, SubscriberFactory,
     store_message_blob, ThreadFactory)
 from mlarchive.archive.models import Message, Attachment, Redirect, EmailList
-from mlarchive.archive.storage_utils import exists_in_storage, remove_from_storage
+from mlarchive.archive.storage_utils import exists_in_storage, remove_from_storage, store_bytes
 from mlarchive.archive.views import (TimePeriod, add_nav_urls, is_small_year,
     get_this_next_periods, get_date_endpoints, get_thread_endpoints, DateStaticIndexView,
     CustomBrowseView)
@@ -212,8 +213,142 @@ def test_admin_blob(client, admin_client):
     assert response.status_code == 403
     response = admin_client.get(url)
     assert response.status_code == 200
-    assert 'id_bucket' in smart_str(response.content)
-    assert 'id_name' in smart_str(response.content)
+    content = smart_str(response.content)
+    assert 'id_bucket' in content
+    assert 'id_name' in content
+    assert 'id_text' in content
+    # no search yet, no results heading
+    assert 'Results' not in content
+    # short page, the footer is pinned to the bottom of the viewport rather than
+    # sitting under the form
+    assert PyQuery(content)('body').has_class('sticky-footer')
+    # the help text states the limits in force
+    help_text = PyQuery(content)('#blob-search-help').text()
+    assert str(settings.BLOB_SEARCH_MAX_RESULTS) in help_text
+    for bucket in settings.BLOB_SEARCH_NAME_REQUIRED_BUCKETS:
+        assert bucket in help_text
+
+
+def store_blob(bucket, name, content):
+    store_bytes(bucket, name, content, allow_overwrite=True, content_type='message/rfc822')
+
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_blob_search_by_name_prefix(admin_client):
+    store_blob('ml-messages-incoming', 'apple.public.aaa', b'Message-ID: <a@example.com>\n\nA\n')
+    store_blob('ml-messages-incoming', 'apple.public.bbb', b'Message-ID: <b@example.com>\n\nB\n')
+    store_blob('ml-messages-incoming', 'banana.public.ccc', b'Message-ID: <c@example.com>\n\nC\n')
+    # same name, different bucket, must not appear
+    store_blob('ml-messages-spam', 'apple.public.ddd', b'Message-ID: <d@example.com>\n\nD\n')
+    url = reverse('archive_admin_blob') + '?' + urlencode({
+        'bucket': 'ml-messages-incoming',
+        'name': 'apple.'})
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    content = smart_str(response.content)
+    assert 'Results (2)' in content
+    assert 'apple.public.aaa' in content
+    assert 'apple.public.bbb' in content
+    assert 'banana.public.ccc' not in content
+    # a long result list must push the footer down, not float it over the rows
+    assert PyQuery(content)('.footer').has_class('scrolling')
+    assert 'apple.public.ddd' not in content
+    # each result links to the viewer for that blob
+    assert_href(content, '.blob-results tbody tr:first-child td:nth-child(2) a',
+                reverse('archive_admin_blob_view') + '?' + urlencode({
+                    'bucket': 'ml-messages-incoming', 'name': 'apple.public.bbb'}))
+    assert_href(content, '.blob-results tbody tr:first-child td:nth-child(5) a',
+                reverse('archive_admin_blob_view') + '?' + urlencode({
+                    'bucket': 'ml-messages-incoming', 'name': 'apple.public.bbb', 'raw': 1}))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_blob_search_by_text(admin_client):
+    store_blob('ml-messages-incoming', 'apple.public.aaa', b'Message-ID: <needle@example.com>\n\nA\n')
+    store_blob('ml-messages-incoming', 'apple.public.bbb', b'Message-ID: <other@example.com>\n\nB\n')
+    url = reverse('archive_admin_blob') + '?' + urlencode({
+        'bucket': 'ml-messages-incoming',
+        'text': '<needle@example.com>'})
+    response = admin_client.get(url)
+    assert response.status_code == 200
+    content = smart_str(response.content)
+    assert 'Results (1)' in content
+    assert 'apple.public.aaa' in content
+    assert 'apple.public.bbb' not in content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_blob_search_by_name_and_text(admin_client):
+    store_blob('ml-messages-incoming', 'apple.public.aaa', b'Message-ID: <needle@example.com>\n\nA\n')
+    store_blob('ml-messages-incoming', 'banana.public.bbb', b'Message-ID: <needle@example.com>\n\nB\n')
+    url = reverse('archive_admin_blob') + '?' + urlencode({
+        'bucket': 'ml-messages-incoming',
+        'name': 'apple.',
+        'text': 'needle'})
+    response = admin_client.get(url)
+    content = smart_str(response.content)
+    assert 'Results (1)' in content
+    assert 'apple.public.aaa' in content
+    assert 'banana.public.bbb' not in content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_blob_search_no_results(admin_client):
+    url = reverse('archive_admin_blob') + '?' + urlencode({
+        'bucket': 'ml-messages-incoming',
+        'name': 'nothing.'})
+    response = admin_client.get(url)
+    content = smart_str(response.content)
+    assert 'Results (0)' in content
+    assert 'No Results' in content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_blob_search_requires_name_or_text(admin_client):
+    """A bare bucket would scan the whole bucket, refuse it"""
+    store_blob('ml-messages-incoming', 'apple.public.aaa', b'A\n')
+    url = reverse('archive_admin_blob') + '?' + urlencode({'bucket': 'ml-messages-incoming'})
+    response = admin_client.get(url)
+    content = smart_str(response.content)
+    assert 'Enter a name or text' in content
+    assert 'apple.public.aaa' not in content
+
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_blob_search_text_requires_name_in_archive_buckets(admin_client):
+    """A text-only search would scan the whole archive, refuse it there but allow it
+    in the small staging buckets"""
+    store_blob('ml-messages', 'public/aaa', b'Message-ID: <needle@example.com>\n\nA\n')
+    for bucket in settings.BLOB_SEARCH_NAME_REQUIRED_BUCKETS:
+        url = reverse('archive_admin_blob') + '?' + urlencode({'bucket': bucket, 'text': 'needle'})
+        content = smart_str(admin_client.get(url).content)
+        assert 'must be narrowed by a name prefix' in content
+        assert 'Results' not in content
+    # a name prefix makes it acceptable
+    url = reverse('archive_admin_blob') + '?' + urlencode({
+        'bucket': 'ml-messages', 'name': 'public/', 'text': 'needle'})
+    content = smart_str(admin_client.get(url).content)
+    assert 'Results (1)' in content
+    assert 'public/aaa' in content
+    # incoming is small and transient, text alone is fine there
+    url = reverse('archive_admin_blob') + '?' + urlencode({
+        'bucket': 'ml-messages-incoming', 'text': 'needle'})
+    content = smart_str(admin_client.get(url).content)
+    assert 'Results (0)' in content
+
+
+@pytest.mark.django_db(transaction=True)
+@override_settings(BLOB_SEARCH_MAX_RESULTS=2)
+def test_admin_blob_search_capped(admin_client):
+    for i in range(3):
+        store_blob('ml-messages-incoming', 'apple.public.{}'.format(i), b'A\n')
+    url = reverse('archive_admin_blob') + '?' + urlencode({
+        'bucket': 'ml-messages-incoming',
+        'name': 'apple.'})
+    response = admin_client.get(url)
+    content = smart_str(response.content)
+    assert 'Results (2)' in content
+    assert 'Showing the newest 2 blobs' in content
 
 
 @pytest.mark.django_db(transaction=True)
@@ -228,7 +363,7 @@ def test_admin_blob_message(admin_client):
         b'Message-ID: <blob-test@example.com>\n'
         b'\n'
         b'This is the blob body.\n'))
-    url = reverse('archive_admin_blob') + '?' + urlencode({
+    url = reverse('archive_admin_blob_view') + '?' + urlencode({
         'bucket': message.get_blob_bucket(),
         'name': message.get_blob_name()})
     response = admin_client.get(url)
@@ -237,8 +372,9 @@ def test_admin_blob_message(admin_client):
     assert 'This is the blob body.' in content
     assert 'Blob Test' in content
     assert 'id="msg-header"' in content
+    assert PyQuery(content)('.footer').has_class('scrolling')
     # toggle to the raw source view
-    assert_href(content, '.btn-group a:last-child', reverse('archive_admin_blob') + '?' + urlencode({
+    assert_href(content, '.btn-group a:last-child', reverse('archive_admin_blob_view') + '?' + urlencode({
         'bucket': message.get_blob_bucket(),
         'name': message.get_blob_name(),
         'raw': 1}))
@@ -252,7 +388,7 @@ def test_admin_blob_raw(admin_client):
     params = {
         'bucket': message.get_blob_bucket(),
         'name': message.get_blob_name()}
-    url = reverse('archive_admin_blob') + '?' + urlencode(dict(params, raw=1))
+    url = reverse('archive_admin_blob_view') + '?' + urlencode(dict(params, raw=1))
     response = admin_client.get(url)
     assert response.status_code == 200
     content = smart_str(response.content)
@@ -261,7 +397,7 @@ def test_admin_blob_raw(admin_client):
     assert 'Raw body.' in content
     assert 'id="msg-body"' not in content
     # toggle back to the rendered view
-    assert_href(content, '.btn-group a:first-child', reverse('archive_admin_blob') + '?' + urlencode(params))
+    assert_href(content, '.btn-group a:first-child', reverse('archive_admin_blob_view') + '?' + urlencode(params))
 
 
 @pytest.mark.django_db(transaction=True)
@@ -277,7 +413,7 @@ def test_admin_blob_raw_too_large(admin_client):
     params = {
         'bucket': message.get_blob_bucket(),
         'name': message.get_blob_name()}
-    url = reverse('archive_admin_blob') + '?' + urlencode(dict(params, raw=1))
+    url = reverse('archive_admin_blob_view') + '?' + urlencode(dict(params, raw=1))
     response = admin_client.get(url)
     assert response.status_code == 200
     content = smart_str(response.content)
@@ -295,7 +431,7 @@ def test_admin_blob_raw_too_large_no_separator(admin_client):
     elist = EmailListFactory.create(name='public')
     message = MessageFactory.create(email_list=elist)
     store_message_blob(message, b'Subject: Truncated Test\n' + b'y' * 500)
-    url = reverse('archive_admin_blob') + '?' + urlencode({
+    url = reverse('archive_admin_blob_view') + '?' + urlencode({
         'bucket': message.get_blob_bucket(),
         'name': message.get_blob_name(),
         'raw': 1})
@@ -337,13 +473,22 @@ def test_admin_blob_download_not_found(admin_client):
 
 
 @pytest.mark.django_db(transaction=True)
-def test_admin_blob_not_found(admin_client):
-    url = reverse('archive_admin_blob') + '?' + urlencode({
+def test_admin_blob_not_found(client, admin_client):
+    url = reverse('archive_admin_blob_view') + '?' + urlencode({
         'bucket': 'ml-messages',
         'name': 'public/bogus'})
+    response = client.get(url)
+    assert response.status_code == 403
     response = admin_client.get(url)
     assert response.status_code == 200
     assert 'Blob not found' in smart_str(response.content)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_admin_blob_view_invalid(admin_client):
+    response = admin_client.get(reverse('archive_admin_blob_view'))
+    assert response.status_code == 200
+    assert 'Invalid blob bucket or name' in smart_str(response.content)
 
 
 @pytest.mark.django_db(transaction=True)

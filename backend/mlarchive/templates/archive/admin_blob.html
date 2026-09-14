@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 {% load static django_bootstrap5 %}
 
-{% block title %}Mail Archive - View Blobs{% endblock %}
+{% block title %}Mail Archive - Search Blobs{% endblock %}
 
-{% block header %}{{ block.super }} - View Blobs{% endblock %}
+{% block header %}{{ block.super }} - Search Blobs{% endblock %}
+
+{% block body_class %}sticky-footer{% endblock %}
 
 {% block content %}
 
@@ -11,56 +13,90 @@
   <div class="mt-4">
     <form id="id_blob_form" name="blob-form" action="." method="get">
       <div class="row mb-3">
-        <div class="col-md-3 offset-md-2">
-          {% bootstrap_field form.bucket show_label=False wrapper_class="" %}
+        <div class="col-md-3 offset-md-1">
+          {% bootstrap_field form.bucket show_label=False wrapper_class="" server_side_validation=False %}
         </div>
-        <div class="col-md-4">
-          {% bootstrap_field form.name placeholder="Blob Name (listname/hashcode)" show_label=False wrapper_class="" show_help=False %}
+        <div class="col-md-3">
+          {% bootstrap_field form.name placeholder="Name starts with (listname/hashcode)" show_label=False wrapper_class="" server_side_validation=False show_help=False %}
+        </div>
+        <div class="col-md-3">
+          {% bootstrap_field form.text placeholder="Text in message (Message-ID)" show_label=False wrapper_class="" server_side_validation=False show_help=False %}
         </div>
         <div class="col-md-1">
-          <button class="btn btn-secondary" type="submit">View</button>
+          <button class="btn btn-secondary" type="submit">Search</button>
         </div>
       </div>
+      {% if form.non_field_errors %}
+      <div class="row">
+        <div class="col-md-10 offset-md-1">
+          {% bootstrap_form_errors form type="non_fields" %}
+        </div>
+      </div>
+      {% endif %}
     </form>
+    <div class="row">
+      <div class="col-md-10 offset-md-1">
+        <ul id="blob-search-help" class="small text-muted ps-3 mb-0">
+          <li>Enter a name, text, or both. Name matches the start of the blob name, so
+            <code>listname/</code> finds every blob for a list and <code>listname/hashcode</code>
+            finds one. Message blobs are named <code>listname/hashcode</code>, incoming blobs
+            <code>listname.public.id</code>.</li>
+          <li>Text is matched byte for byte against the raw message, headers included. It is
+            case sensitive and does not decode encoded bodies or headers. A Message-ID with its
+            angle brackets is the most reliable search.</li>
+          <li>A text search reads every blob in the bucket that matches the name, so in
+            {% for bucket in name_required_buckets %}<code>{{ bucket }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}
+            it must be narrowed by a name prefix.</li>
+          <li>At most {{ max_results }} results are shown, newest first.</li>
+        </ul>
+      </div>
+    </div>
   </div>
 
-  {% if msg %}
-  <div class="row">
-    <div class="msg-detail col-md-8 offset-md-2 pt-3">
-
-      <div class="btn-group mb-3" role="group" aria-label="Blob view mode">
-        <a class="btn btn-outline-secondary{% if not show_raw %} active{% endif %}"
-           href="{{ message_url }}"{% if not show_raw %} aria-current="true"{% endif %}>Message</a>
-        <a class="btn btn-outline-secondary{% if show_raw %} active{% endif %}"
-           href="{{ raw_url }}"{% if show_raw %} aria-current="true"{% endif %}>Raw Source</a>
-      </div>
-
-      {% if show_raw %}
-        {% if msg.is_raw_too_large %}
-          <div class="alert alert-warning" role="alert">
-            This message is {{ msg.size|filesizeformat }}, too large to display.
-            Showing headers only.
-            <a href="{{ msg.get_blob_download_url }}" rel="nofollow">Download the raw message</a>.
-          </div>
-          <pre class="raw-source wordwrap">{{ msg.get_raw_headers }}</pre>
-        {% else %}
-          <pre class="raw-source wordwrap">{{ msg.get_raw_source }}</pre>
+  {% if results is not None %}
+  <div id="result-list" class="section mt-4">
+    <h3>Results ({{ results|length }})</h3>
+    <div class="row">
+      <div class="col-md-10 offset-md-1">
+        {% if results|length == max_results %}
+        <div class="alert alert-warning" role="alert">
+          Showing the newest {{ max_results }} blobs. Narrow the search to see others.
+        </div>
         {% endif %}
-      {% else %}
-        {{ msg.get_body_html|safe }}
-      {% endif %}
-
-    </div> <!-- msg-detail -->
-  </div> <!-- row -->
+        <table class="table table-striped table-hover align-middle blob-results">
+          <thead>
+            <tr>
+              <th class="col-num">#</th>
+              <th>Name</th>
+              <th class="col-modified">Modified</th>
+              <th class="col-size text-end">Size</th>
+              <th class="col-raw"></th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for blob in results %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td class="name"><a href="{{ blob.url }}">{{ blob.name }}</a></td>
+              <td class="text-nowrap">{{ blob.modified|date:"Y-m-d H:i" }}</td>
+              <td class="text-end text-nowrap">{{ blob.size|filesizeformat }}</td>
+              <td><a href="{{ blob.raw_url }}">Raw</a></td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5" class="text-center text-muted py-4">No Results</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div> <!-- row -->
+  </div> <!-- result-list -->
   {% endif %}
 </div> <!-- blob-page -->
 
 {% endblock %}
 
 {% block footer %}
-  {% include "includes/footer.html" %}
-{% endblock %}
-
-{% block js %}
-<script type="text/javascript" src="{% static 'mlarchive/js/blob.js' %}"></script>
+  {% with extra_class="scrolling" %}
+    {% include "includes/footer.html" %}
+  {% endwith %}
 {% endblock %}

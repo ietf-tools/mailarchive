@@ -365,23 +365,7 @@ def get_footer_tokens(message):
     return tokens
 
 
-def strip_mailman_footer(data, message=None):
-    """Returns data with a trailing Mailman footer removed, or data unchanged.
-
-    Only the last separator line is considered, and the block below it is removed only
-    if it is small enough to be a footer and is identifiable as one, either by the
-    wording Mailman 2 or 3 uses or by an address taken from the message's List-*
-    headers. Everything else is left alone. Removing real content would make two
-    different messages compare equal in is_duplicate_message(), which drops a message
-    that should have been archived, so the bias here is to strip nothing when unsure.
-
-    Args:
-        data: the decoded payload, as bytes, with line endings already normalised
-        message: the message the payload came from, used for its List-* headers
-
-    Returns:
-        bytes: data, with any trailing Mailman footer removed
-    """
+def _strip_one_mailman_footer(data, message=None):
     matches = list(_MAILMAN_FOOTER_SEP_RE.finditer(data))
     if not matches:
         return data
@@ -397,6 +381,23 @@ def strip_mailman_footer(data, message=None):
         return data
 
     return data[:separator.start()]
+
+
+def strip_mailman_footer(data, message=None):
+    """Return data with trailing Mailman footers removed.
+
+    Footers stack when a message is relayed through several lists, so they are
+    stripped from the end one at a time. A block is removed only if it is small and
+    identifiable as a footer, by Mailman wording or by an address from the message's
+    List-* headers. Stripping real content would make two different messages compare
+    equal in is_duplicate_message() and drop one that should have been archived, so
+    when unsure nothing is stripped. Line endings in data must already be normalised.
+    """
+    while True:
+        stripped = _strip_one_mailman_footer(data, message)
+        if stripped == data:
+            return data
+        data = stripped
 
 
 def is_mailman_footer(part, message=None):

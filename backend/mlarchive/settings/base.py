@@ -468,6 +468,10 @@ IMPORT_MBOX_MAX_SIZE = 1_800_000_000  # 1.8 GB
 # admin blob viewer settings.  Raw source larger than this is not rendered
 # inline, the headers are shown with a link to download the blob instead
 BLOB_RAW_DISPLAY_MAX_SIZE = 1_048_576  # 1 MB
+BLOB_SEARCH_MAX_RESULTS = 100
+# a text search scans every blob in the bucket, so in the full-archive buckets it must be
+# narrowed by a name prefix
+BLOB_SEARCH_NAME_REQUIRED_BUCKETS = ['ml-messages', 'ml-messages-json', 'ml-messages-private']
 
 # API KEYS: key=endpoint, value=[api-key,]
 _APP_API_KEYS_JSON = base64.b64decode(

@@ -19,6 +19,8 @@ from mlarchive.archive.utils import purge_incoming
 from mlarchive.archive.utils import update_mbox_files
 from mlarchive.archive.utils import init_private_list_members
 from mlarchive.archive.utils import remove_selected
+from mlarchive.archive.stored_object_reconciliation import (
+    RECONCILE_MAX_MISSING_REPAIRS, reconcile_stored_objects)
 from mlarchive.archive.utils import mark_not_spam
 from mlarchive.archive.utils import purge_confirmed_dupes
 from mlarchive.archive.utils import import_message_blob
@@ -253,6 +255,25 @@ def purge_incoming_task():
         purge_incoming()
     except Exception as err:
         logger.error(f"Error in purge_incoming_task: {err}")
+
+
+@shared_task
+def reconcile_stored_objects_task(bucket=None, repair=False, batch_size=5000,
+                                  max_missing_repairs=RECONCILE_MAX_MISSING_REPAIRS):
+    """Check the StoredObject index against storage, repairing drift if repair is set.
+
+    A thin wrapper that forwards every argument to reconcile_stored_objects, so a
+    scheduled entry or a manual call can set them through the task's kwargs. The
+    index is only trustworthy because this task keeps it so, and every repair moves a
+    row towards the bytes, never the other way. Run with the default for a report
+    only.
+    """
+    try:
+        reconcile_stored_objects(
+            bucket=bucket, repair=repair, batch_size=batch_size,
+            max_missing_repairs=max_missing_repairs)
+    except Exception as err:
+        logger.error(f"Error in reconcile_stored_objects_task: {err}")
 
 
 @shared_task

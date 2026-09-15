@@ -14,10 +14,8 @@ from celery import shared_task
 from django.conf import settings
 from django.core.cache import cache
 from django.db.models.functions import Length
-from django.utils.module_loading import import_string
 
 from mlarchive.archive.models import StoredObject
-from mlarchive.archive.storage import StoredObjectBlobdbStorage
 from mlarchive.blobdb.models import Blob
 
 logger = logging.getLogger(__name__)
@@ -25,22 +23,12 @@ logger = logging.getLogger(__name__)
 BACKFILL_STORED_OBJECTS_STOP_KEY = 'backfill_stored_objects_stop'
 
 
-def tracked_buckets():
-    """Return the blobdb bucket names whose storage records StoredObject rows."""
-    buckets = []
-    for config in settings.STORAGES.values():
-        backend = import_string(config['BACKEND'])
-        if issubclass(backend, StoredObjectBlobdbStorage):
-            buckets.append(config['OPTIONS']['bucket_name'])
-    return buckets
-
-
 def backfill_stored_objects(start_after_pk=0, batch_size=5000):
     """Index one batch of pre-existing blobs as StoredObject rows."""
 
     rows = list(
         Blob.objects
-        .filter(pk__gt=start_after_pk, bucket__in=tracked_buckets())
+        .filter(pk__gt=start_after_pk, bucket__in=settings.ARTIFACT_STORAGE_NAMES)
         .order_by('pk')
         .annotate(object_size=Length('content'))
         .values_list('pk', 'bucket', 'name', 'checksum', 'object_size', 'modified')

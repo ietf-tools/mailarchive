@@ -183,3 +183,43 @@ def test_move_object_tombstones_source_and_records_target():
     moved = StoredObject.objects.get(store=target, name=key)
     assert moved.deleted is None
     assert moved.sha384 == digest(b'This is a test')
+
+
+def make_untracked_blob(bucket, name, content=CONTENT, modified=None):
+    """Create a Blob directly, bypassing the storage, as the historical corpus did."""
+    defaults = {'content': content}
+    if modified is not None:
+        defaults['modified'] = modified
+    blob, _ = Blob.objects.update_or_create(bucket=bucket, name=name, defaults=defaults)
+    return blob
+
+
+@pytest.mark.django_db
+def test_exists_many_returns_present_subset():
+    storage = storages[BUCKET]
+    storage.save('acme/one', BlobFile(content=CONTENT))
+    storage.save('acme/two', BlobFile(content=CONTENT))
+    storages['ml-messages-removed'].save('acme/three', BlobFile(content=CONTENT))
+
+    assert storage.exists_many(['acme/one', 'acme/two', 'acme/three', 'acme/none']) == {
+        'acme/one', 'acme/two'}
+    assert storage.exists_many([]) == set()
+
+
+@pytest.mark.django_db
+def test_inventory_pages_through_store_without_byte_reads():
+    storage = storages[BUCKET]
+    modified = datetime.datetime(2021, 1, 1, tzinfo=datetime.timezone.utc)
+    make_untracked_blob(BUCKET, 'acme/one', modified=modified)
+    second = make_untracked_blob(BUCKET, 'acme/two', content=b'other bytes')
+    make_untracked_blob('ml-messages-removed', 'acme/elsewhere')
+
+    page, cursor = storage.inventory(limit=1)
+    assert page == [('acme/one', digest(CONTENT), len(CONTENT), modified)]
+    assert cursor == 'acme/one'
+
+    page, cursor = storage.inventory(after=cursor, limit=1)
+    assert page == [('acme/two', digest(b'other bytes'), len(b'other bytes'), second.modified)]
+    assert cursor == 'acme/two'
+
+    assert storage.inventory(after=cursor, limit=1) == ([], None)

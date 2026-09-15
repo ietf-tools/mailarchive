@@ -1468,15 +1468,3 @@ def create_cf_worker_templates():
     request.user = AnonymousUser()
     html = render_to_string('archive/detail.html', context, request=request)
     path.write_text(html, encoding='utf-8')
-
-
-def audit_blobdb():
-    for elist in EmailList.objects.order_by('name'):
-        bucket = elist.blob_bucket
-        messages = Message.objects.filter(email_list=elist)
-        blobs = Blob.objects.filter(bucket=bucket, name__startswith=f'{elist.name}/')
-        if messages.count() != blobs.count():
-            print(f'{elist.name}    messages:{messages.count()}  blobs:{blobs.count()}')
-            message_hashes = set([x.hashcode.strip('=') for x in messages])
-            blob_hashes = set([x.name.split('/')[1] for x in blobs])
-            print(blob_hashes - message_hashes)

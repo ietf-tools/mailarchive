@@ -2,13 +2,14 @@
 import datetime
 import secrets
 from io import BufferedReader
-from typing import Optional, Union
+from typing import Iterator, Optional, Union
 
 # import debug  # pyflakes ignore
 
 from django.conf import settings
 from django.core.files.base import ContentFile, File
 from django.core.files.storage import storages, Storage
+from mlarchive.archive.models import StoredObject
 from mlarchive.blobdb.storage import BlobFile
 from mlarchive.blobdb.replication import destination_storage_for
 
@@ -169,6 +170,29 @@ def retrieve_str(kind: str, name: str) -> str:
             logger.error(f"Blobstore Error: Failed to read string from {kind}:{name}: {repr(err)}")
             raise
     return content
+
+
+def list_names(kind: str, prefix: Optional[str] = None) -> Iterator[str]:
+    """Iterate, in name order, over the names of the live objects held in kind.
+
+    The Storage API has no listing operation, so this is answered from the
+    StoredObject index rather than from the storage itself. It is only as complete as
+    the index, which the reconcile task keeps in step with the bytes. With prefix,
+    only names starting with it are returned.
+    """
+    # Validate the arguments before consulting the kill switch, so that a misspelled
+    # kind or an empty prefix is an error whether or not storage is switched on.
+    _get_storage(kind)
+    if prefix is not None and not prefix:
+        raise ValueError("prefix must be non-empty")
+    if not settings.ENABLE_BLOBSTORAGE:
+        return iter(())
+    # kind is the STORAGES alias and StoredObject.store holds the storage's
+    # bucket_name; ArchiveConfig.check_artifact_storages guarantees they are equal.
+    queryset = StoredObject.objects.filter(store=kind).exclude_deleted()
+    if prefix is not None:
+        queryset = queryset.filter(name__startswith=prefix)
+    return queryset.order_by("name").values_list("name", flat=True).iterator(chunk_size=5000)
 
 
 def get_unique_blob_name(prefix, bucket):

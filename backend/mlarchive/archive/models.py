@@ -641,7 +641,11 @@ class StoredObject(models.Model):
     objects = StoredObjectQuerySet.as_manager()
 
     store = models.CharField(max_length=256)
-    name = models.CharField(max_length=1024)
+    # Object names compare and sort bytewise, as object store keys do. That is also
+    # what lets the (store, name) index serve prefix listings: Postgres turns
+    # LIKE 'prefix%' into an index range only for bytewise comparison, so under the
+    # database's default en_US collation list_names() would scan the whole store.
+    name = models.CharField(max_length=1024, db_collation='C')
     sha384 = models.CharField(max_length=96)
     len = models.PositiveBigIntegerField()
     store_created = models.DateTimeField(

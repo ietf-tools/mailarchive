@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from storages.backends.s3 import S3Storage
 
 from django.core.files.base import File
+from django.db.models.functions import Length
 from django.utils import timezone
 
 from mlarchive.archive.models import StoredObject
@@ -104,6 +105,11 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
     - Deleting tombstones the metadata first. If that fails the bytes are left alone
       and the exception propagates, because continuing would leave a live row
       describing content that no longer exists.
+
+    The storage also answers the two questions the reconcile needs and the Storage API
+    cannot: exists_many() and inventory(). They are the only place the reconcile
+    touches the backend, so a storage over a different backend implements those two
+    and the reconcile works unchanged.
     """
 
     def _metadata_for(self, name, content):
@@ -198,3 +204,33 @@ class StoredObjectBlobdbStorage(BlobdbStorage):
     def delete(self, name):
         self._delete_stored_object(name)
         super().delete(name)
+
+    def exists_many(self, names):
+        """Return the subset of names that have bytes in this store.
+
+        One query per call, where Storage.exists() would be one per name.
+        """
+        return set(
+            self.get_queryset().filter(name__in=list(names)).values_list('name', flat=True))
+
+    def inventory(self, after=None, limit=5000):
+        """Return one page of the store's contents and a cursor for the next page.
+
+        The page is a list of (name, sha384, len, modified) tuples describing objects
+        in name order, with no byte reads: the digest is the Blob's stored checksum
+        and the length is computed in the database. The cursor is the last name on
+        the page; pass it back as after to continue. Paging by name keeps every page
+        a bounded range scan of the (bucket, name) index. An empty page means the
+        store is exhausted.
+        """
+        rows = list(
+            self.get_queryset()
+            .filter(name__gt=after or '')
+            .order_by('name')
+            .annotate(object_size=Length('content'))
+            .values_list('name', 'checksum', 'object_size', 'modified')
+            [:limit]
+        )
+        if not rows:
+            return [], None
+        return rows, rows[-1][0]

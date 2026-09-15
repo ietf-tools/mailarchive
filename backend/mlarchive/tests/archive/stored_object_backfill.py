@@ -89,9 +89,9 @@ def test_backfill_is_idempotent():
 def test_backfill_resumes_by_pk_cursor():
     """Each call returns a cursor the next call continues from, across buckets."""
     first = make_untracked_blob(BUCKET, 'acme/one')
-    make_untracked_blob('ml-templates', 'skipped.html')
+    make_untracked_blob('not-a-storage', 'skipped.bin')
     second = make_untracked_blob('ml-messages-private', 'secret/two')
-    third = make_untracked_blob(BUCKET, 'acme/three')
+    third = make_untracked_blob('ml-templates', 'message-detail.html')
 
     result = backfill_stored_objects(batch_size=1)
     assert result == {'last_pk': first.pk, 'created': 1, 'skipped': 0}
@@ -105,6 +105,8 @@ def test_backfill_resumes_by_pk_cursor():
     assert backfill_stored_objects(start_after_pk=result['last_pk'], batch_size=1) is None
     assert StoredObject.objects.count() == 3
     assert StoredObject.objects.get(store='ml-messages-private', name='secret/two')
+    assert StoredObject.objects.get(store='ml-templates', name='message-detail.html')
+    assert not StoredObject.objects.filter(store='not-a-storage').exists()
 
 
 @pytest.mark.django_db

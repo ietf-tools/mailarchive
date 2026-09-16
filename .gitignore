@@ -16,6 +16,7 @@
 *.rej
 *~
 *.#*
+/.claude
 /.env
 /.pytest_cache
 /.parcel-cache

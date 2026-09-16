@@ -120,3 +120,16 @@ def test_find_by_checksum():
         ('ml-messages-removed', 'banana/hash2'),
     ]
     assert find_by_checksum(sha384(b'nothing has this').hexdigest()) == []
+
+
+@pytest.mark.django_db
+def test_list_names_validates_arguments_with_blobstorage_disabled(settings):
+    """The kill switch empties the listing but does not hide a bad kind or prefix."""
+    store_str('ml-messages', 'acme/kept', content='x')
+    settings.ENABLE_BLOBSTORAGE = False
+
+    assert list(list_names('ml-messages')) == []
+    with pytest.raises(NotImplementedError):
+        list_names('ml-nonsense')
+    with pytest.raises(ValueError):
+        list_names('ml-messages', prefix='')

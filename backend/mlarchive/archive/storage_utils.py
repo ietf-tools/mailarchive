@@ -201,8 +201,15 @@ def list_names(
     only names starting with it are returned; with modified_before, only objects last
     modified before that instant.
     """
+    # Validate the arguments before consulting the kill switch, so that a misspelled
+    # kind or an empty prefix is an error whether or not storage is switched on.
+    _get_storage(kind)
+    if prefix is not None and not prefix:
+        raise ValueError("prefix must be non-empty")
     if not settings.ENABLE_BLOBSTORAGE:
         return iter(())
+    # kind is the STORAGES alias and StoredObject.store holds the storage's
+    # bucket_name; ArchiveConfig.check_artifact_storages guarantees they are equal.
     queryset = StoredObject.objects.filter(store=_store_for(kind)).exclude_deleted()
     if prefix is not None:
         if not prefix:

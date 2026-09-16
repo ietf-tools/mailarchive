@@ -367,23 +367,7 @@ def get_footer_tokens(message):
     return tokens
 
 
-def strip_mailman_footer(data, message=None):
-    """Returns data with a trailing Mailman footer removed, or data unchanged.
-
-    Only the last separator line is considered, and the block below it is removed only
-    if it is small enough to be a footer and is identifiable as one, either by the
-    wording Mailman 2 or 3 uses or by an address taken from the message's List-*
-    headers. Everything else is left alone. Removing real content would make two
-    different messages compare equal in is_duplicate_message(), which drops a message
-    that should have been archived, so the bias here is to strip nothing when unsure.
-
-    Args:
-        data: the decoded payload, as bytes, with line endings already normalised
-        message: the message the payload came from, used for its List-* headers
-
-    Returns:
-        bytes: data, with any trailing Mailman footer removed
-    """
+def _strip_one_mailman_footer(data, message=None):
     matches = list(_MAILMAN_FOOTER_SEP_RE.finditer(data))
     if not matches:
         return data
@@ -399,6 +383,23 @@ def strip_mailman_footer(data, message=None):
         return data
 
     return data[:separator.start()]
+
+
+def strip_mailman_footer(data, message=None):
+    """Return data with trailing Mailman footers removed.
+
+    Footers stack when a message is relayed through several lists, so they are
+    stripped from the end one at a time. A block is removed only if it is small and
+    identifiable as a footer, by Mailman wording or by an address from the message's
+    List-* headers. Stripping real content would make two different messages compare
+    equal in is_duplicate_message() and drop one that should have been archived, so
+    when unsure nothing is stripped. Line endings in data must already be normalised.
+    """
+    while True:
+        stripped = _strip_one_mailman_footer(data, message)
+        if stripped == data:
+            return data
+        data = stripped
 
 
 def is_mailman_footer(part, message=None):
@@ -1491,74 +1492,3 @@ def create_cf_worker_templates():
     request.user = AnonymousUser()
     html = render_to_string('archive/detail.html', context, request=request)
     path.write_text(html, encoding='utf-8')
-
-
-def audit_list_objects(elist):
-    """Compare the messages of elist with the live stored objects under its prefix.
-
-    Every Message should have an object named after it in the list's bucket, and every
-    object there should belong to a Message. Returns two sets of hashcodes, as they
-    appear in object names (padding stripped): those with a message but no object,
-    and those with an object but no message. Either being non-empty is logged with a
-    sample of the hashcodes. Nothing is repaired: a message without bytes cannot be
-    reconstructed here, and an object without a message is for a person to judge.
-    """
-    prefix = f'{elist.name}/'
-    object_hashes = {
-        name[len(prefix):] for name in list_names(elist.blob_bucket, prefix=prefix)}
-    message_hashes = {
-        hashcode.rstrip('=')
-        for hashcode in Message.objects.filter(email_list=elist)
-        .values_list('hashcode', flat=True).iterator(chunk_size=5000)
-    }
-    only_messages = message_hashes - object_hashes
-    only_objects = object_hashes - message_hashes
-    if only_messages or only_objects:
-        drift = DriftReport(f'list {elist.name}')
-        drift.add('messages with no stored object', sorted(only_messages))
-        drift.add('stored objects with no message', sorted(only_objects))
-        drift.log()
-    return only_messages, only_objects
-
-
-def reconcile_stored_objects(bucket=None, repair=False, batch_size=5000,
-                             max_missing_repairs=RECONCILE_MAX_MISSING_REPAIRS):
-    """Check the StoredObject index against blob storage and the message table.
-
-    First each artifact storage, or just bucket if given, is diffed against its blobs
-    by reconcile_bucket, which repairs the index when repair is set, except that live
-    rows without bytes are repaired only up to max_missing_repairs per bucket, since
-    they mean bytes were lost (see reconcile_bucket). Then every list
-    whose messages live in one of those buckets is audited by audit_list_objects,
-    which only reports. The order matters: the list audit reads the index, so it is
-    trustworthy only once the index agrees with the bytes.
-
-    Returns a dict of counts: the per-bucket counts summed across buckets (see
-    reconcile_bucket), plus the lists audited, how many of them showed a mismatch,
-    and the total hashcodes found on only one side.
-    """
-    buckets = list(settings.ARTIFACT_STORAGE_NAMES)
-    if bucket is not None:
-        if bucket not in buckets:
-            raise ValueError(f'{bucket} is not an artifact storage')
-        buckets = [bucket]
-
-    stats = Counter()
-    for name in buckets:
-        stats.update(reconcile_bucket(
-            name, repair=repair, batch_size=batch_size,
-            max_missing_repairs=max_missing_repairs))
-
-    stats.update(lists=0, list_mismatches=0, only_messages=0, only_objects=0)
-    for elist in EmailList.objects.order_by('name'):
-        if elist.blob_bucket not in buckets:
-            continue
-        only_messages, only_objects = audit_list_objects(elist)
-        stats['lists'] += 1
-        if only_messages or only_objects:
-            stats['list_mismatches'] += 1
-        stats['only_messages'] += len(only_messages)
-        stats['only_objects'] += len(only_objects)
-
-    logger.info(f'reconcile_stored_objects: {dict(stats)}')
-    return dict(stats)

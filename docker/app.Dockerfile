@@ -22,6 +22,18 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     # Syntax: ./docker-setup-debian.sh [install zsh flag] [username] [user UID] [user GID] [upgrade packages flag] [install Oh My Zsh! flag] [Add non-free packages]
     && bash /tmp/library-scripts/docker-setup-debian.sh "true" "${USERNAME}" "${USER_UID}" "${USER_GID}" "false" "true" "true"
 
+# Install Node.js from NodeSource (dev only; production image does not need Node).
+# Debian's nodejs package is Node 18 without npm, so use NodeSource and pin it
+# so the Debian package can never take precedence.
+ARG NODE_MAJOR=24
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl gnupg \
+    && mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+    && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_MAJOR}.x nodistro main" > /etc/apt/sources.list.d/nodesource.list \
+    && printf 'Package: nodejs\nPin: origin deb.nodesource.com\nPin-Priority: 1001\n' > /etc/apt/preferences.d/nodesource \
+    && apt-get update && apt-get install -y --no-install-recommends nodejs \
+    && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+
 # Setup default python tools in a venv via pipx to avoid conflicts
 ENV PIPX_HOME=/usr/local/py-utils \
     PIPX_BIN_DIR=/usr/local/py-utils/bin

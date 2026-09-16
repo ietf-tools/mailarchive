@@ -786,6 +786,31 @@ def test_strip_mailman_footer_last_separator_only():
     assert strip_mailman_footer(body) == b'Hello.\n____________________\nstill body\n\n'
 
 
+def test_strip_mailman_footer_stacked():
+    """A message relayed through several lists carries one footer per list, each appended
+    below the last. All of them are stripped, the body is left alone
+    """
+    other_footer = MM3_FOOTER.replace(b'testlist', b'otherlist')
+    assert strip_mailman_footer(b'Hello.\n\n' + other_footer + MM3_FOOTER) == b'Hello.\n\n'
+    assert strip_mailman_footer(b'Hello.\n\n' + MM2_FOOTER + MM3_FOOTER) == b'Hello.\n\n'
+
+
+def test_is_duplicate_message_stacked_footers():
+    """Two copies of one message that reached the list by different routes: one through
+    another list, so it carries that list's footer as well, one direct
+    """
+    body = (b'Hello.\n\n'
+            b'> quoted reply\n'
+            b'> _______________________________________________\n'
+            b'> testlist mailing list -- testlist@ietf.org\n'
+            b'> To unsubscribe send an email to testlist-leave@ietf.org\n')
+    other_footer = MM3_FOOTER.replace(b'testlist', b'otherlist')
+    msg1 = build_message(body + other_footer + MM3_FOOTER)
+    msg2 = build_message(body + MM3_FOOTER)
+    assert msg1.get_payload(decode=True) != msg2.get_payload(decode=True)
+    assert is_duplicate_message(msg1, msg2) is True
+
+
 def test_strip_mailman_footer_size_bound():
     """A large block below a separator is content, whatever wording it contains"""
     body = b'Hello.\n' + b'_' * 47 + b'\n' + b'x' * 600 + b'\n/listinfo/testlist\n'

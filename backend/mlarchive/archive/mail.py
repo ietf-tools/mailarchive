@@ -117,8 +117,9 @@ class DateError(ArchiveFailure):
     pass
 
 
-class DuplicateMessageId(NotArchived):
-    # Message-id already used on this list by a message with differing content
+class UnverifiableDuplicate(NotArchived):
+    # Message-id already used on this list but an archived copy is unreadable, so
+    # a redelivery cannot be ruled out. A copy was saved to dupes for review
     pass
 
 
@@ -172,7 +173,7 @@ def archive_message(data, listname, private=False, save_failed=True):
         logger.info('Message not archived [{0}]'.format(error.args))
         return 0
     except NotArchived as error:
-        # message intentionally not archived, ie. duplicate message-id, a copy has been saved
+        # message intentionally not archived, a copy has been saved to dupes for review
         logger.error('Message not archived [{0}]'.format(error.args))
         return 0
     except ArchiveFailure as error:
@@ -498,18 +499,31 @@ def get_message_from_bytes(b, policy):
         return email.message_from_bytes(b, policy=email_policy.compat32)
 
 
-def make_hash(msgid, listname):
+def make_hash(msgid, listname, content_digest=None):
     """
     Returns the message hashcode, a SHA-1 digest of the Message-ID and listname.
     Similar to the popular Web Email Archive, mail-archive.com
     see: https://www.mail-archive.com/faq.html#msgid
+
+    content_digest, from content_digest(), is set only when the message-id is already
+    used on the list by a message with different content. It keeps the two hashcodes,
+    hence URLs and blob keys, distinct. Without it the value is unchanged.
     """
     msgid_bytes = msgid.encode('utf8')
     listname_bytes = listname.encode('utf8')
     sha = hashlib.sha1(msgid_bytes)
     sha.update(listname_bytes)
+    if content_digest:
+        sha.update(content_digest.encode('utf8'))
     b64 = base64.urlsafe_b64encode(sha.digest())
     return b64.decode('utf8')
+
+
+def content_digest(data):
+    """
+    Returns the hex SHA-256 of the raw message bytes, the salt for make_hash().
+    """
+    return hashlib.sha256(data).hexdigest()
 
 # --------------------------------------------------
 # Classes
@@ -723,6 +737,7 @@ class MessageWrapper(object):
             self.bytes = message.as_bytes(policy=NO_REFOLD_POLICY)
             self.email_message = message
         self.hashcode = None
+        self.content_digest = None
         self.listname = listname
         self.private = private
         self.spam_score = 0
@@ -813,7 +828,8 @@ class MessageWrapper(object):
 
     def get_hash(self):
         """Returns the message hashcode"""
-        return make_hash(msgid=self.msgid, listname=self.listname)
+        return make_hash(msgid=self.msgid, listname=self.listname,
+                         content_digest=self.content_digest)
 
     def get_msgid(self):
         msgid = self.normalize(self.email_message.get('Message-ID', ''))
@@ -1010,12 +1026,18 @@ class MessageWrapper(object):
         """Raises Redelivery if this message is a redelivery of one already archived on
         this list, meaning it can be dropped. A redelivery is a known duplicate that
         needs no review, so no copy is kept, utils.purge_incoming() identifies the
-        incoming copy the same way and purges it. If the message-id is in use by a
-        message with differing content a copy is saved to dupes and DuplicateMessageId
-        is raised.
+        incoming copy the same way and purges it.
+
+        A message reusing a message-id on this list with different content is
+        archived as a distinct message: content_digest is set so make_hash() gives
+        it its own hashcode. The message archived first keeps the plain hashcode.
+
+        Raises UnverifiableDuplicate, after saving a copy to dupes, if an archived
+        copy with the message-id cannot be read, since a redelivery cannot then be
+        ruled out.
         """
-        if not Message.objects.filter(
-                msgid=self.msgid, email_list__name=self.listname).exists():
+        existing = Message.objects.filter(msgid=self.msgid, email_list__name=self.listname)
+        if not existing.exists():
             return
 
         if self.find_duplicate():
@@ -1023,10 +1045,16 @@ class MessageWrapper(object):
                 'Redelivery of an archived message. list:{} msgid:{}'.format(
                     self.listname, self.msgid))
 
-        blob_path = self.write_msg(subdir='_dupes')
-        raise DuplicateMessageId(
-            'Duplicate msgid with differing content. list:{} msgid:{} dupes:{}'.format(
-                self.listname, self.msgid, blob_path))
+        if any(message.pymsg is None for message in existing):
+            blob_path = self.write_msg(subdir='_dupes')
+            raise UnverifiableDuplicate(
+                'Duplicate msgid, archived copy unreadable. list:{} msgid:{} dupes:{}'.format(
+                    self.listname, self.msgid, blob_path))
+
+        self.content_digest = content_digest(self.bytes)
+        logger.info(
+            'Duplicate msgid with differing content, archiving with salted hashcode. '
+            'list:{} msgid:{}'.format(self.listname, self.msgid))
 
     def check_hashcode_collision(self):
         """Raises HashcodeCollision if a different message-id on this list hashes to

@@ -26,9 +26,9 @@ from mlarchive.archive.mail import (archive_message, clean_spaces, CustomMMDF,
     MessageWrapper, get_base_subject, get_envelope_date, get_from,
     get_header_date, get_mb, get_received_date, parsedate_to_datetime,
     subject_is_reply, lookup_extension, get_message_from_bytes, make_hash,
-    NotArchived, Redelivery, UnknownFormat)
+    content_digest, NotArchived, Redelivery, UnknownFormat, UnverifiableDuplicate)
 from mlarchive.archive.storage_utils import (exists_in_storage, retrieve_bytes,
-    retrieve_str)
+    retrieve_str, remove_from_storage)
 from mlarchive.archive.utils import is_redelivery_of_archived
 from mlarchive.blobdb.models import Blob
 from mlarchive.utils.test_utils import message_from_file, is_email_message, is_json
@@ -237,21 +237,108 @@ def test_archive_message_duplicate_differing_bytes(client):
 
 @pytest.mark.django_db(transaction=True)
 def test_archive_message_duplicate_msgid_different_content(client):
-    '''A message reusing a msgid already on this list, with different content,
-    gets saved to the dupes bucket for review'''
+    """A message reusing a msgid on this list with different content is archived.
+
+    Its hashcode is salted with a content digest so it does not collide with the
+    existing message in storage or in the URL, and the real msgid is kept.
+    """
     assert archive_message(SIMPLE_MESSAGE_BYTES, 'test', private=False) == 0
     assert Message.objects.all().count() == 1
     other = SIMPLE_MESSAGE_BYTES.replace(b'This is a test email.', b'This is a different email.')
 
     assert archive_message(other, 'test', private=False) == 0
-    # message not archived, saved to the dupes bucket
+    assert Message.objects.all().count() == 2
+    assert not Blob.objects.filter(bucket='ml-messages-dupes').exists()
+
+    plain_hash = make_hash('0000000002@example.com', 'test')
+    salted_hash = make_hash('0000000002@example.com', 'test', content_digest=content_digest(other))
+    assert salted_hash != plain_hash
+    first = Message.objects.get(hashcode=plain_hash)
+    variant = Message.objects.get(hashcode=salted_hash)
+    assert first.msgid == variant.msgid == '0000000002@example.com'
+    assert first.spam_score == variant.spam_score == 0
+    assert first.get_absolute_url() != variant.get_absolute_url()
+
+    # both archived byte for byte with their own JSON blob
+    assert retrieve_bytes('ml-messages', first.get_blob_name()) == SIMPLE_MESSAGE_BYTES
+    assert retrieve_bytes('ml-messages', variant.get_blob_name()) == other
+    assert exists_in_storage('ml-messages-json', first.get_blob_name())
+    assert exists_in_storage('ml-messages-json', variant.get_blob_name())
+    assert variant.get_body() == 'Hello,\n\nThis is a different email.  database\n'
+
+    # both reachable in the detail view, the browse index and search
+    response = client.get(variant.get_absolute_url())
+    assert response.status_code == 200
+    assert b'This is a different email.' in response.content
+    response = client.get(first.get_absolute_url())
+    assert response.status_code == 200
+    assert b'This is a test email.' in response.content
+    response = client.get(reverse('archive_browse_list', kwargs={'list_name': 'test'}))
+    assert response.status_code == 200
+    assert response.content.count(b'/arch/msg/test/') >= 2
+    response = client.get(reverse('archive_search') + '?q=database&email_list=test')
+    assert response.status_code == 200
+    urls = {r.url for r in response.context['results']}
+    assert urls == {first.get_absolute_url(), variant.get_absolute_url()}
+
+
+@pytest.mark.django_db(transaction=True)
+def test_archive_message_duplicate_msgid_variant_reimport(client):
+    """A re-import of the salted message is a redelivery, a third variant is distinct.
+
+    The redelivery is recognised by content, even with different bytes, and dropped
+    rather than archived a second time. The third message, with the same msgid and
+    yet other content, gets its own hashcode.
+    """
+    assert archive_message(SIMPLE_MESSAGE_BYTES, 'test', private=False) == 0
+    variant = SIMPLE_MESSAGE_BYTES.replace(b'This is a test email.', b'This is a different email.')
+    assert archive_message(variant, 'test', private=False) == 0
+    assert Message.objects.all().count() == 2
+
+    # re-import of the variant, with a header is_duplicate_message() ignores
+    redelivery = b'Received: from example.com by example.net\n' + variant
+    assert archive_message(redelivery, 'test', private=False) == 0
+    assert Message.objects.all().count() == 2
+    assert is_redelivery_of_archived(redelivery, 'test.public.aaaaaaaaaaaaaaaa')
+    mw = MessageWrapper.from_bytes(variant, 'test')
+    with pytest.raises(Redelivery):
+        mw.save()
+
+    third = SIMPLE_MESSAGE_BYTES.replace(b'This is a test email.', b'This is a third email.')
+    assert archive_message(third, 'test', private=False) == 0
+    assert Message.objects.all().count() == 3
+    assert Message.objects.filter(msgid='0000000002@example.com').count() == 3
+    assert Message.objects.values_list('hashcode', flat=True).distinct().count() == 3
+    assert not Blob.objects.filter(bucket='ml-messages-dupes').exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_archive_message_duplicate_msgid_unreadable_archived_copy(client):
+    """An unreadable archived copy sends the message to the dupes bucket.
+
+    Without the archived copy the content cannot be compared, so the message is saved
+    for review instead of being archived as a distinct message.
+    """
+    assert archive_message(SIMPLE_MESSAGE_BYTES, 'test', private=False) == 0
+    first = Message.objects.get()
+    remove_from_storage('ml-messages', first.get_blob_name())
+    assert first.pymsg is None
+
+    assert archive_message(SIMPLE_MESSAGE_BYTES, 'test', private=False) == 0
     assert Message.objects.all().count() == 1
     blobs = Blob.objects.filter(bucket='ml-messages-dupes')
     assert blobs.count() == 1
     assert blobs.first().name.startswith('test/')
-    # this path leaves the hashcode unset, so the copy is uuid named and cannot
-    # collide with the hashcode named copy a redelivery saves
+    # this path leaves the hashcode unset, so the copy is uuid named
     assert blobs.first().name != f'test/{make_hash("0000000002@example.com", "test")}'.rstrip('=')
+
+    # not a Redelivery, that needs a readable copy to compare against, but still a
+    # NotArchived, which is why archive_message() reported success above
+    mw = MessageWrapper.from_bytes(SIMPLE_MESSAGE_BYTES, 'test')
+    with pytest.raises(UnverifiableDuplicate):
+        mw.save()
+    assert isinstance(UnverifiableDuplicate(), NotArchived)
+    assert Blob.objects.filter(bucket='ml-messages-dupes').count() == 2
 
 
 @pytest.mark.django_db(transaction=True)

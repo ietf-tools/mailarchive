@@ -25,7 +25,7 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     strip_mailman_footer, get_footer_tokens,
     create_cf_worker_templates, rebuild_json_blobs, _get_removed_message)
 from mlarchive.archive.models import User, Message, Redirect, MailmanMember, UserEmail
-from mlarchive.archive.mail import make_hash, archive_message, MessageWrapper
+from mlarchive.archive.mail import make_hash, archive_message, MessageWrapper, content_digest
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.backends.elasticsearch import search_from_form
 from mlarchive.archive.storage_utils import (store_file, get_unique_blob_name,
@@ -685,6 +685,44 @@ def test_is_duplicate_message_different_message_id():
     msg7 = email.message_from_bytes(bytes(mbox[6]))  # Same content, different Message-ID
     assert is_duplicate_message(msg1, msg7) is False
     mbox.close()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_move_list_keeps_content_digest(client):
+    """A content salted hashcode survives a list move.
+
+    Both messages sharing the msgid move, so the salt must be recomputed for the new
+    list or they would collide there.
+    """
+    data = b'''From: Joe <joe@example.com>
+To: Joe <joe@example.com>
+Date: Thu, 7 Nov 2013 17:54:55 +0000
+Message-ID: <0000000002@example.com>
+Content-Type: text/plain; charset="us-ascii"
+Subject: This is a test
+
+Hello,
+
+This is a test email.  database
+'''
+    variant = data.replace(b'This is a test email.', b'This is a different email.')
+    assert archive_message(data, 'acme', private=False) == 0
+    assert archive_message(variant, 'acme', private=False) == 0
+    assert Message.objects.filter(email_list__name='acme').count() == 2
+    digest = content_digest(variant)
+
+    move_list('acme', 'acme-archived')
+
+    moved = Message.objects.filter(email_list__name='acme-archived')
+    assert moved.count() == 2
+    assert Message.objects.filter(email_list__name='acme').count() == 0
+    first = moved.get(hashcode=make_hash('0000000002@example.com', 'acme-archived'))
+    moved_variant = moved.get(
+        hashcode=make_hash('0000000002@example.com', 'acme-archived', content_digest=digest))
+    assert first.get_raw_message() == data
+    assert moved_variant.get_raw_message() == variant
+    assert exists_in_storage('ml-messages', first.get_blob_name())
+    assert exists_in_storage('ml-messages', moved_variant.get_blob_name())
 
 
 def test_is_mailman_footer_detection():

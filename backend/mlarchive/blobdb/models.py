@@ -100,9 +100,20 @@ class Blob(models.Model):
         return f'{self.bucket}:{self.name}'
 
     def save(self, **kwargs):
+        """Save the blob, keeping checksum in step with content.
+
+        QuerySet.update_or_create() saves with update_fields limited to the fields it
+        was handed, which never include checksum since it is computed here. A save
+        that writes content must write checksum too, or an overwrite leaves the old
+        digest beside the new bytes.
+        """
         db = get_blobdb()
+        update_fields = kwargs.get('update_fields')
         with transaction.atomic(using=db):
-            self.checksum = sha384(self.content, usedforsecurity=False).hexdigest()
+            if update_fields is None or 'content' in update_fields:
+                self.checksum = sha384(self.content, usedforsecurity=False).hexdigest()
+                if update_fields is not None:
+                    kwargs['update_fields'] = {*update_fields, 'checksum'}
             super().save(**kwargs)
             self._emit_blob_change_event(using=db)
 

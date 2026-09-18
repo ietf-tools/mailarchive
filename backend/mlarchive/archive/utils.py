@@ -31,10 +31,10 @@ from django.test import RequestFactory
 from django.urls import reverse
 
 from mlarchive.archive.models import (EmailList, Subscriber, Redirect, MailmanMember,
-    User, Message)
+    User, Message, StoredObject)
 from mlarchive.archive.mail import MessageWrapper, archive_message
 from mlarchive.archive.storage_utils import (retrieve_bytes, store_bytes, exists_in_storage,
-    remove_from_storage, list_names, get_metadata, find_by_checksum)
+    remove_from_storage, get_metadata, find_by_checksum)
 from mlarchive.archive.inspectors import is_no_archive
 from mlarchive.blobdb.models import Blob
 
@@ -1090,7 +1090,12 @@ def purge_incoming():
     kind = 'ml-messages-incoming'
     cutoff_date = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=settings.INCOMING_DAYS_TO_KEEP)
     stats = {'purged': 0, 'skipped': 0, 'errors': 0}
-    for name in list(list_names(kind, modified_before=cutoff_date)):
+    # kind is the STORAGES alias and StoredObject.store holds the storage's bucket_name;
+    # ArchiveConfig.check_artifact_storages guarantees they are equal.
+    names = list(
+        StoredObject.objects.filter(store=kind, modified__lt=cutoff_date)
+        .exclude_deleted().values_list('name', flat=True))
+    for name in names:
         try:
             metadata = get_metadata(kind, name)
             if metadata is None:

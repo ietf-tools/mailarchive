@@ -30,7 +30,7 @@ from mlarchive.archive.mail import make_hash, archive_message, MessageWrapper
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.backends.elasticsearch import search_from_form
 from mlarchive.archive.storage_utils import (store_file, get_unique_blob_name,
-    exists_in_storage, list_names, remove_from_storage)
+    exists_in_storage, remove_from_storage)
 from mlarchive.blobdb.models import Blob
 from factories import EmailListFactory
 
@@ -484,7 +484,7 @@ def test_purge_incoming(settings):
     assert not StoredObject.objects.filter(store=bucket, name=archived_name).exclude_deleted().exists()
     assert StoredObject.objects.filter(store=bucket, name=unverified_name).exclude_deleted().exists()
     # dropped without a copy, so nothing was written to the dupes bucket
-    assert list(list_names('ml-messages-dupes')) == []
+    assert not StoredObject.objects.filter(store='ml-messages-dupes').exclude_deleted().exists()
 
 
 @pytest.mark.django_db(transaction=True)

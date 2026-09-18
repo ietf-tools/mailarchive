@@ -17,7 +17,6 @@ from django.core.files.storage import storages
 from django.utils import timezone
 
 from mlarchive.archive.models import EmailList, Message, StoredObject
-from mlarchive.archive.storage_utils import list_names
 
 import logging
 logger = logging.getLogger(__name__)
@@ -289,7 +288,9 @@ def audit_list_objects(elist):
     """
     prefix = f'{elist.name}/'
     object_hashes = {
-        name[len(prefix):] for name in list_names(elist.blob_bucket, prefix=prefix)}
+        name[len(prefix):] for name in
+        StoredObject.objects.filter(store=elist.blob_bucket, name__startswith=prefix)
+        .exclude_deleted().values_list('name', flat=True).iterator(chunk_size=5000)}
     message_hashes = {
         hashcode.rstrip('=')
         for hashcode in Message.objects.filter(email_list=elist)

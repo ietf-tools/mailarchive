@@ -2,7 +2,7 @@
 import datetime
 import secrets
 from io import BufferedReader
-from typing import Iterator, NamedTuple, Optional, Union
+from typing import NamedTuple, Optional, Union
 
 # import debug  # pyflakes ignore
 
@@ -181,36 +181,6 @@ class StoredObjectMetadata(NamedTuple):
     len: int
     store_created: datetime.datetime
     modified: datetime.datetime
-
-
-def list_names(
-    kind: str,
-    prefix: Optional[str] = None,
-    modified_before: Optional[datetime.datetime] = None,
-) -> Iterator[str]:
-    """Iterate, in name order, over the names of the live objects held in kind.
-
-    The Storage API has no listing operation, so this is answered from the
-    StoredObject index rather than from the storage itself. It is only as complete as
-    the index, which the reconcile task keeps in step with the bytes. With prefix,
-    only names starting with it are returned; with modified_before, only objects last
-    modified before that instant.
-    """
-    # Validate the arguments before consulting the kill switch, so that a misspelled
-    # kind or an empty prefix is an error whether or not storage is switched on.
-    _get_storage(kind)
-    if prefix is not None and not prefix:
-        raise ValueError("prefix must be non-empty")
-    if not settings.ENABLE_BLOBSTORAGE:
-        return iter(())
-    # kind is the STORAGES alias and StoredObject.store holds the storage's
-    # bucket_name; ArchiveConfig.check_artifact_storages guarantees they are equal.
-    queryset = StoredObject.objects.filter(store=kind).exclude_deleted()
-    if prefix is not None:
-        queryset = queryset.filter(name__startswith=prefix)
-    if modified_before is not None:
-        queryset = queryset.filter(modified__lt=modified_before)
-    return queryset.order_by("name").values_list("name", flat=True).iterator(chunk_size=5000)
 
 
 def get_metadata(kind: str, name: str) -> Optional[StoredObjectMetadata]:

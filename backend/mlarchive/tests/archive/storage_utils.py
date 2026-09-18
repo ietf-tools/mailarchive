@@ -7,7 +7,7 @@ from django.core.files.storage import storages
 
 from mlarchive.archive.models import StoredObject
 from mlarchive.archive.storage_utils import (get_unique_blob_name, store_str, move_object,
-    exists_in_storage, list_names, remove_from_storage, get_metadata, find_by_checksum,
+    exists_in_storage, remove_from_storage, get_metadata, find_by_checksum,
     StoredObjectMetadata)
 
 
@@ -32,69 +32,6 @@ def test_move_object(client):
     move_object(key, source, target)
     assert not exists_in_storage(source, key)
     assert exists_in_storage(target, key)
-
-
-@pytest.mark.django_db
-def test_list_names_prefix_is_exact():
-    """Neighbouring lists that share a prefix stay out: dns/ is not dns-x/ or dnsop/."""
-    for name in ['dns/a', 'dns/b', 'dns-x/a', 'dnsop/a', 'dn/a', 'dns0/a']:
-        store_str('ml-messages', name, content='x')
-    store_str('ml-messages-private', 'dns/private', content='x')
-
-    assert list(list_names('ml-messages', prefix='dns/')) == ['dns/a', 'dns/b']
-    assert list(list_names('ml-messages', prefix='dns')) == [
-        'dns-x/a', 'dns/a', 'dns/b', 'dns0/a', 'dnsop/a']
-    assert list(list_names('ml-messages-private', prefix='dns/')) == ['dns/private']
-    assert list(list_names('ml-messages', prefix='nothing/')) == []
-
-
-@pytest.mark.django_db
-def test_list_names_skips_deleted_and_other_stores():
-    store_str('ml-messages', 'acme/kept', content='x')
-    store_str('ml-messages', 'acme/gone', content='x')
-    remove_from_storage('ml-messages', 'acme/gone')
-    store_str('ml-messages-removed', 'acme/removed', content='x')
-
-    assert list(list_names('ml-messages')) == ['acme/kept']
-    assert list(list_names('ml-messages-removed')) == ['acme/removed']
-
-
-def test_list_names_rejects_unknown_kind():
-    with pytest.raises(NotImplementedError):
-        list_names('ml-nonsense')
-
-
-def test_list_names_rejects_empty_prefix():
-    with pytest.raises(ValueError):
-        list_names('ml-messages', prefix='')
-
-
-@pytest.mark.django_db
-def test_list_names_validates_arguments_with_blobstorage_disabled(settings):
-    """The kill switch empties the listing but does not hide a bad kind or prefix."""
-    store_str('ml-messages', 'acme/kept', content='x')
-    settings.ENABLE_BLOBSTORAGE = False
-
-    assert list(list_names('ml-messages')) == []
-    with pytest.raises(NotImplementedError):
-        list_names('ml-nonsense')
-    with pytest.raises(ValueError):
-        list_names('ml-messages', prefix='')
-
-
-@pytest.mark.django_db
-def test_list_names_modified_before():
-    cutoff = datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc)
-    store_str('ml-messages', 'acme/old', content='x')
-    store_str('ml-messages', 'acme/new', content='x')
-    store_str('ml-messages', 'acme/old-gone', content='x')
-    StoredObject.objects.filter(name__in=['acme/old', 'acme/old-gone']).update(
-        modified=cutoff - datetime.timedelta(days=1))
-    remove_from_storage('ml-messages', 'acme/old-gone')
-
-    assert list(list_names('ml-messages', modified_before=cutoff)) == ['acme/old']
-    assert list(list_names('ml-messages', prefix='acme/', modified_before=cutoff)) == ['acme/old']
-    assert list(list_names('ml-messages')) == ['acme/new', 'acme/old']
 
 
 @pytest.mark.django_db

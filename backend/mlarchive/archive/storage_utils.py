@@ -2,7 +2,7 @@
 import datetime
 import secrets
 from io import BufferedReader
-from typing import Iterator, Optional, Union
+from typing import NamedTuple, Optional, Union
 
 # import debug  # pyflakes ignore
 
@@ -172,27 +172,53 @@ def retrieve_str(kind: str, name: str) -> str:
     return content
 
 
-def list_names(kind: str, prefix: Optional[str] = None) -> Iterator[str]:
-    """Iterate, in name order, over the names of the live objects held in kind.
+class StoredObjectMetadata(NamedTuple):
+    """What the index records about one live object."""
 
-    The Storage API has no listing operation, so this is answered from the
-    StoredObject index rather than from the storage itself. It is only as complete as
-    the index, which the reconcile task keeps in step with the bytes. With prefix,
-    only names starting with it are returned.
+    store: str
+    name: str
+    sha384: str
+    len: int
+    store_created: datetime.datetime
+    modified: datetime.datetime
+
+
+def get_metadata(kind: str, name: str) -> Optional[StoredObjectMetadata]:
+    """Return what the index records about the live object name in kind, or None.
+
+    None means the index has no live row: the object was never indexed, or has been
+    deleted. It does not by itself prove the bytes are absent; exists_in_storage
+    asks the storage that question.
     """
-    # Validate the arguments before consulting the kill switch, so that a misspelled
-    # kind or an empty prefix is an error whether or not storage is switched on.
     _get_storage(kind)
-    if prefix is not None and not prefix:
-        raise ValueError("prefix must be non-empty")
     if not settings.ENABLE_BLOBSTORAGE:
-        return iter(())
-    # kind is the STORAGES alias and StoredObject.store holds the storage's
-    # bucket_name; ArchiveConfig.check_artifact_storages guarantees they are equal.
-    queryset = StoredObject.objects.filter(store=kind).exclude_deleted()
-    if prefix is not None:
-        queryset = queryset.filter(name__startswith=prefix)
-    return queryset.order_by("name").values_list("name", flat=True).iterator(chunk_size=5000)
+        return None
+    row = (
+        StoredObject.objects
+        .filter(store=kind, name=name)
+        .exclude_deleted()
+        .values_list("store", "name", "sha384", "len", "store_created", "modified")
+        .first()
+    )
+    return None if row is None else StoredObjectMetadata(*row)
+
+
+def find_by_checksum(sha384: str, exclude_kinds: tuple[str, ...] = ()) -> list[tuple[str, str]]:
+    """Return the (store, name) of every live object whose content has this digest.
+
+    This is the cross-store question the Storage API cannot ask at all: the same bytes
+    stored under any name in any store. Stores named in exclude_kinds are left out.
+    Trusting the digest as proof of identical content is deliberate; it is why the
+    digest is indexed.
+    """
+    for kind in exclude_kinds:
+        _get_storage(kind)
+    if not settings.ENABLE_BLOBSTORAGE:
+        return []
+    queryset = StoredObject.objects.filter(sha384=sha384).exclude_deleted()
+    if exclude_kinds:
+        queryset = queryset.exclude(store__in=list(exclude_kinds))
+    return list(queryset.order_by("store", "name").values_list("store", "name"))
 
 
 def get_unique_blob_name(prefix, bucket):

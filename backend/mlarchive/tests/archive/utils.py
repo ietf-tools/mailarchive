@@ -24,7 +24,7 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     is_duplicate_message, is_mailman_footer, import_message_blob,
     strip_mailman_footer, get_footer_tokens,
     create_cf_worker_templates, rebuild_json_blobs, _get_removed_message)
-from mlarchive.archive.models import User, Message, Redirect, MailmanMember, UserEmail
+from mlarchive.archive.models import User, Message, Redirect, MailmanMember, UserEmail, StoredObject
 from mlarchive.archive.mail import make_hash, archive_message, MessageWrapper, make_content_digest
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.backends.elasticsearch import search_from_form

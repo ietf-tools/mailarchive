@@ -26,7 +26,7 @@ from mlarchive.archive.mail import (archive_message, clean_spaces, CustomMMDF,
     MessageWrapper, get_base_subject, get_envelope_date, get_from,
     get_header_date, get_mb, get_received_date, parsedate_to_datetime,
     subject_is_reply, lookup_extension, get_message_from_bytes, make_hash,
-    content_digest, NotArchived, Redelivery, UnknownFormat, UnverifiableDuplicate)
+    make_content_digest, NotArchived, Redelivery, UnknownFormat, UnverifiableDuplicate)
 from mlarchive.archive.storage_utils import (exists_in_storage, retrieve_bytes,
     retrieve_str, remove_from_storage)
 from mlarchive.archive.utils import is_redelivery_of_archived
@@ -251,7 +251,7 @@ def test_archive_message_duplicate_msgid_different_content(client):
     assert not Blob.objects.filter(bucket='ml-messages-dupes').exists()
 
     plain_hash = make_hash('0000000002@example.com', 'test')
-    salted_hash = make_hash('0000000002@example.com', 'test', content_digest=content_digest(other))
+    salted_hash = make_hash('0000000002@example.com', 'test', content_digest=make_content_digest(other))
     assert salted_hash != plain_hash
     first = Message.objects.get(hashcode=plain_hash)
     variant = Message.objects.get(hashcode=salted_hash)

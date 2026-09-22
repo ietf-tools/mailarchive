@@ -32,7 +32,7 @@ from django.urls import reverse
 
 from mlarchive.archive.models import (EmailList, Subscriber, Redirect, MailmanMember,
     User, Message)
-from mlarchive.archive.mail import MessageWrapper, archive_message, content_digest, make_hash
+from mlarchive.archive.mail import MessageWrapper, archive_message, make_content_digest, make_hash
 from mlarchive.archive.storage_utils import (retrieve_bytes, store_bytes, exists_in_storage,
     remove_from_storage)
 from mlarchive.archive.inspectors import is_no_archive
@@ -1149,7 +1149,7 @@ def move_list(source, target):
         if msg.hashcode != make_hash(msg.msgid, source):
             # salted with a content digest, it shares its msgid with another message
             # on the list. Recomputed so the two stay distinct on the target list
-            mw.content_digest = content_digest(content)
+            mw.content_digest = make_content_digest(content)
         hashcode = mw.get_hash()
         msg.hashcode = hashcode
         msg.email_list = target_list

@@ -25,7 +25,7 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     strip_mailman_footer, get_footer_tokens,
     create_cf_worker_templates, rebuild_json_blobs, _get_removed_message)
 from mlarchive.archive.models import User, Message, Redirect, MailmanMember, UserEmail
-from mlarchive.archive.mail import make_hash, archive_message, MessageWrapper, content_digest
+from mlarchive.archive.mail import make_hash, archive_message, MessageWrapper, make_content_digest
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.backends.elasticsearch import search_from_form
 from mlarchive.archive.storage_utils import (store_file, get_unique_blob_name,
@@ -709,7 +709,7 @@ This is a test email.  database
     assert archive_message(data, 'acme', private=False) == 0
     assert archive_message(variant, 'acme', private=False) == 0
     assert Message.objects.filter(email_list__name='acme').count() == 2
-    digest = content_digest(variant)
+    digest = make_content_digest(variant)
 
     move_list('acme', 'acme-archived')
 

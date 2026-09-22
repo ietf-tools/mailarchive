@@ -519,11 +519,11 @@ def make_hash(msgid, listname, content_digest=None):
     return b64.decode('utf8')
 
 
-def content_digest(data):
+def make_content_digest(data):
     """
-    Returns the hex SHA-256 of the raw message bytes, the salt for make_hash().
+    Returns the hex SHA1 of the raw message bytes, the salt for make_hash().
     """
-    return hashlib.sha256(data).hexdigest()
+    return hashlib.sha1(data).hexdigest()
 
 # --------------------------------------------------
 # Classes
@@ -1051,7 +1051,7 @@ class MessageWrapper(object):
                 'Duplicate msgid, archived copy unreadable. list:{} msgid:{} dupes:{}'.format(
                     self.listname, self.msgid, blob_path))
 
-        self.content_digest = content_digest(self.bytes)
+        self.content_digest = make_content_digest(self.bytes)
         logger.info(
             'Duplicate msgid with differing content, archiving with salted hashcode. '
             'list:{} msgid:{}'.format(self.listname, self.msgid))

@@ -31,7 +31,7 @@ from django.test import RequestFactory
 from django.urls import reverse
 
 from mlarchive.archive.models import (EmailList, Subscriber, Redirect, MailmanMember,
-    User, Message)
+    User, Message, StoredObject)
 from mlarchive.archive.mail import MessageWrapper, archive_message, make_content_digest, make_hash
 from mlarchive.archive.storage_utils import (retrieve_bytes, store_bytes, exists_in_storage,
     remove_from_storage, get_metadata, find_by_checksum)

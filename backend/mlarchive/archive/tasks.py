@@ -22,6 +22,7 @@ from mlarchive.archive.utils import init_private_list_members
 from mlarchive.archive.utils import remove_selected
 from mlarchive.archive.stored_object_reconciliation import (
     RECONCILE_MAX_MISSING_REPAIRS, reconcile_bucket, reconcile_stored_objects)
+from mlarchive.archive.blob_checksum_repair import recompute_stale_checksums
 from mlarchive.archive.utils import mark_not_spam
 from mlarchive.archive.utils import purge_confirmed_dupes
 from mlarchive.archive.utils import import_message_blob
@@ -280,6 +281,22 @@ def reconcile_stored_objects_task(bucket=None, repair=False, batch_size=5000,
             max_missing_repairs=max_missing_repairs)
     except Exception as err:
         logger.error(f"Error in reconcile_stored_objects_task: {err}")
+
+
+@shared_task
+def recompute_stale_checksums_task(bucket=None, batch_size=1000, dry_run=False, replicate=True):
+    """Recompute Blob checksums that disagree with their content, then re-replicate them.
+
+    A thin wrapper that forwards every argument to recompute_stale_checksums. Run
+    with dry_run=True for a count only. Follow a real run with
+    reconcile_stored_objects_task(repair=True), which brings the StoredObject rows
+    into line with the corrected checksums.
+    """
+    try:
+        recompute_stale_checksums(
+            bucket=bucket, batch_size=batch_size, dry_run=dry_run, replicate=replicate)
+    except Exception as err:
+        logger.error(f"Error in recompute_stale_checksums_task: {err}")
 
 
 @shared_task

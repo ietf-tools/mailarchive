@@ -89,6 +89,25 @@ def test_resave_changed_content_updates_record():
 
 
 @pytest.mark.django_db
+def test_resave_changed_content_updates_blob_checksum():
+    """An overwrite must leave the Blob checksum matching its new content.
+
+    The storage overwrites through update_or_create(), which saves with update_fields.
+    Blob.save() has to add checksum to that set or the old digest survives beside
+    the new bytes, and the reconcile then reads the row as drifted.
+    """
+    storage = storages[BUCKET]
+    storage.save('acme/abc123', BlobFile(content=CONTENT))
+
+    changed = b'These are different bytes entirely.'
+    storage.save('acme/abc123', BlobFile(content=changed))
+    blob = Blob.objects.get(bucket=BUCKET, name='acme/abc123')
+    assert bytes(blob.content) == changed
+    assert blob.checksum == digest(changed)
+    assert blob.checksum == StoredObject.objects.get(store=BUCKET, name='acme/abc123').sha384
+
+
+@pytest.mark.django_db
 def test_delete_tombstones_record():
     storage = storages[BUCKET]
     storage.save('acme/abc123', BlobFile(content=CONTENT))

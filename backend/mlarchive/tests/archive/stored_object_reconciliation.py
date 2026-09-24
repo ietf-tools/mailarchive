@@ -177,6 +177,25 @@ def test_reconcile_refreshes_mismatched_row():
 
 
 @pytest.mark.django_db
+def test_reconcile_finds_no_drift_after_overwrite_through_storage():
+    """Rewriting an object through the storage is not drift.
+
+    ml-messages-json blobs are overwritten on every neighbouring import, so if the
+    checksum column lagged the content the reconcile would report the whole day's
+    imports as mismatched rows and, on repair, copy the stale digests into them.
+    """
+    storage = storages[BUCKET]
+    storage.save('acme/one', BlobFile(content=CONTENT))
+    changed = b'These bytes were rewritten through the storage.'
+    storage.save('acme/one', BlobFile(content=changed))
+
+    assert reconcile_bucket(BUCKET) == CLEAN | {'rows': 1, 'objects': 1}
+    record = StoredObject.objects.get(store=BUCKET, name='acme/one')
+    assert record.sha384 == digest(changed)
+    assert record.len == len(changed)
+
+
+@pytest.mark.django_db
 def test_reconcile_revives_tombstone_when_bytes_were_rewritten():
     storage = storages[BUCKET]
     storage.save('acme/one', BlobFile(content=CONTENT))

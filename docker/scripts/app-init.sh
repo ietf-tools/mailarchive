@@ -10,7 +10,7 @@ sudo chown -R dev:dev "$WORKSPACEDIR/.parcel-cache"
 sudo chown -R dev:dev "$WORKSPACEDIR/__pycache__"
 sudo chown dev:dev "/data"
 
-echo "Fix chromedriver /dev/shm permissions..."
+echo "Fix /dev/shm permissions for headless Chromium..."
 sudo chmod 1777 /dev/shm
 
 # Build node packages that requrie native compilation

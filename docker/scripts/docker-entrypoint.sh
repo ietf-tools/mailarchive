@@ -15,7 +15,7 @@ echo "Fixing volumes ownership..."
 sudo chown -R dev:dev "$WORKSPACEDIR"
 sudo chown dev:dev "/data"
 
-echo "Fix chromedriver /dev/shm permissions..."
+echo "Fix /dev/shm permissions for headless Chromium..."
 sudo chmod 1777 /dev/shm
 
 # Create data directories

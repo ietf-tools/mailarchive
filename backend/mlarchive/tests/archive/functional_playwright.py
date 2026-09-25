@@ -244,19 +244,19 @@ class TestSearchInfiniteScroll:
 
 
 def force_login_playwright(user, page: Page, base_url: str):
-    """
-    Helper to force login a user by setting session cookie directly.
-    Playwright version of the Selenium force_login helper.
+    """Force login a user by setting the session cookie directly.
+
+    Loads a page first so the browser context has the live server domain,
+    then adds a session cookie for the user and reloads.
     """
     from importlib import import_module
     from django.conf import settings
     from django.contrib.auth import SESSION_KEY, BACKEND_SESSION_KEY, HASH_SESSION_KEY
 
     SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
-    selenium_login_start_page = getattr(settings, 'SELENIUM_LOGIN_START_PAGE', '/page_404/')
 
     # Navigate to a page first to set domain
-    page.goto(f'{base_url}{selenium_login_start_page}')
+    page.goto(f'{base_url}/page_404/')
 
     # Create session
     session = SessionStore()

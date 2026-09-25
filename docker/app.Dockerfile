@@ -60,6 +60,9 @@ USER dev:dev
 COPY requirements.txt /tmp/pip-tmp/
 RUN pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location -r /tmp/pip-tmp/requirements.txt
 RUN pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location pylint pylint-common pylint-django
+
+# Install the Chromium build used by the Playwright tests (dev only; production image does not need it)
+RUN /home/dev/.local/bin/playwright install chromium
 RUN sudo rm -rf /tmp/pip-tmp
 
 # VOLUME [ "/assets" ]

@@ -8,11 +8,6 @@ on:
         default: false
         required: true
         type: boolean
-      skipSelenium:
-        description: 'Skip Selenium Tests'
-        default: false
-        required: false
-        type: boolean
       targetBaseVersion:
         description: 'Target Base Image Version'
         default: latest
@@ -62,12 +57,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-
-      - name: Setup ChromeDriver
-        uses: browser-actions/setup-chrome@v2
-        with:
-          chrome-version: stable
-          install-chromedriver: true
 
       - name: Prepare for tests
         run: |

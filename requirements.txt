@@ -29,6 +29,7 @@ mailmanclient==3.3.5
 mock>=5.2.0
 mozilla-django-oidc==5.0.2
 passlib==1.7.4
+playwright==1.62.0
 psycopg==3.3.5
 pymemcache==4.0.0
 python-json-logger>=4.2.0
@@ -42,4 +43,3 @@ pytest-django>=4.14.0
 pytest-playwright==0.9.0
 python-dateutil>=2.9.0.post0
 scout-apm>=3.5.3
-selenium

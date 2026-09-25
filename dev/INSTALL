@@ -68,11 +68,7 @@ Email Archive Installation Instructions
 Prerequisites
 -------------
 - Python 3.9
-- Chromedriver *
 - Docker & Docker Compose
-
-* required for selenium tests
-  https://sites.google.com/a/chromium.org/chromedriver/home
 
 
 1. Download source from github:

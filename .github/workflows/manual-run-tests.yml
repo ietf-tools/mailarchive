@@ -8,11 +8,6 @@ on:
         default: false
         required: true
         type: boolean
-      skipSelenium:
-        description: 'Skip Selenium Tests'
-        default: false
-        required: false
-        type: boolean
       targetBaseVersion:
         description: 'Target Base Image Version'
         default: latest
@@ -24,5 +19,4 @@ jobs:
     uses: ./.github/workflows/tests.yml
     with:
       ignoreLowerCoverage: ${{ inputs.ignoreLowerCoverage }}
-      skipSelenium: ${{ inputs.skipSelenium }}
       targetBaseVersion: ${{ inputs.targetBaseVersion }}

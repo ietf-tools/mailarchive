@@ -121,7 +121,7 @@ def test_archive_message_json_neighbors():
 
     A new message invalidates the navigation links of its thread siblings and
     of the message before it in list order, so their JSON blobs are rewritten
-    too.  See write_message_json().
+    too.  See archive.derived.
 
     The third message replies to the first, but follows the second in list
     order, so each of the two refresh paths updates a different blob.
@@ -155,6 +155,31 @@ def test_archive_message_json_neighbors():
     assert get_json(first)['next_in_thread'] == third.get_absolute_url()
     # previous message in list order refreshed, though it is in another thread
     assert get_json(second)['next_in_list'] == third.get_absolute_url()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_remove_message_json():
+    """Test removing a message deletes its JSON blob and refreshes the
+    blobs that linked to it.
+    """
+    def make(msgid, day):
+        return (f'From: Joe <joe@example.com>\nTo: list@example.com\n'
+                f'Date: Thu, {day} Nov 2013 17:54:55 +0000\nMessage-ID: <{msgid}>\n'
+                f'Subject: Message {day}\n\nbody\n').encode('ASCII')
+
+    for day in (7, 8, 9):
+        assert archive_message(make(f'{day}@example.com', day), 'test') == 0
+    first, second, third = Message.objects.order_by('date')
+    name = second.get_blob_name()
+    assert exists_in_storage('ml-messages-json', name)
+
+    second.delete()
+
+    assert not exists_in_storage('ml-messages-json', name)
+    first_json = json.loads(retrieve_str('ml-messages-json', first.get_blob_name()))
+    assert first_json['next_in_list'] == third.get_absolute_url()
+    third_json = json.loads(retrieve_str('ml-messages-json', third.get_blob_name()))
+    assert third_json['previous_in_list'] == first.get_absolute_url()
 
 
 @pytest.mark.django_db(transaction=True)

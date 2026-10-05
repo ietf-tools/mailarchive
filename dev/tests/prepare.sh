@@ -6,9 +6,6 @@ docker ps -a
 echo "Fixing permissions..."
 chmod -R 777 ./
 
-echo "Copying config files..."
-cp ./dev/tests/test.py ./backend/mlarchive/settings/test.py
-
 echo "Ensure all requirements.txt packages are installed..."
 pip --disable-pip-version-check --no-cache-dir install -r requirements.txt
 

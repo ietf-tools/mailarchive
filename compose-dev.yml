@@ -198,7 +198,6 @@ services:
 
   typesense:
     image: typesense/typesense:30.1
-    platform: linux/arm64  # Explicitly tells Docker to use the ARM version
     container_name: typesense
     restart: on-failure
     ports:
@@ -210,7 +209,12 @@ services:
       - TYPESENSE_DATA_DIR=/data
       - TYPESENSE_ENABLE_CORS=true
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8108/health"]
+      # the image has no curl, so probe /health with bash's /dev/tcp
+      test:
+        - CMD
+        - bash
+        - -c
+        - "exec 3<>/dev/tcp/127.0.0.1/8108 && printf 'GET /health HTTP/1.0\r\n\r\n' >&3 && grep -q '\"ok\":true' <&3"
       interval: 10s
       timeout: 5s
       retries: 3

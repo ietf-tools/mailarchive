@@ -14,7 +14,6 @@ import tarfile
 import tempfile
 from email.utils import parsedate_to_datetime
 from io import BytesIO
-from io import StringIO
 
 from django.conf import settings
 from django.contrib import messages
@@ -224,7 +223,7 @@ def initialize_formsets(query):
                 ninitial.append(d)
             else:
                 qinitial.append(d)
-            query, n = re.subn(contain_pattern, '', query, 1)
+            query, n = re.subn(contain_pattern, '', query, count=1)
         elif re.search(exact_pattern, query):
             match = re.search(exact_pattern, query)
             d = {'field': match.groupdict()['field'],
@@ -234,7 +233,7 @@ def initialize_formsets(query):
                 ninitial.append(d)
             else:
                 qinitial.append(d)
-            query, n = re.subn(exact_pattern, '', query, 1)
+            query, n = re.subn(exact_pattern, '', query, count=1)
         else:
             query = query[1:]
 

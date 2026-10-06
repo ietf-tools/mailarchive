@@ -40,5 +40,5 @@ jobs:
         platforms: linux/amd64,linux/arm64
         push: true
         tags: |
-          ghcr.io/ietf-tools/mailarchive-app-base:py312
+          ghcr.io/ietf-tools/mailarchive-app-base:py314
           ${{ github.ref == 'refs/heads/main' && 'ghcr.io/ietf-tools/mailarchive-app-base:latest' || '' }}

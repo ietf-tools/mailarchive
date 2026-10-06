@@ -1,7 +1,7 @@
-# FROM --platform=linux/amd64 ghcr.io/ietf-tools/mailarchive-app-base:py312
-# FROM --platform=linux/arm64/v8 ghcr.io/ietf-tools/mailarchive-app-base:py312
-# FROM ghcr.io/ietf-tools/mailarchive-app-base:py312
-FROM ghcr.io/ietf-tools/mailarchive-app-base:py312
+# FROM --platform=linux/amd64 ghcr.io/ietf-tools/mailarchive-app-base:py314
+# FROM --platform=linux/arm64/v8 ghcr.io/ietf-tools/mailarchive-app-base:py314
+# FROM ghcr.io/ietf-tools/mailarchive-app-base:py314
+FROM ghcr.io/ietf-tools/mailarchive-app-base:py314
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -61,8 +61,13 @@ COPY requirements.txt /tmp/pip-tmp/
 RUN pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location -r /tmp/pip-tmp/requirements.txt
 RUN pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location pylint pylint-common pylint-django
 
-# Install the Chromium build used by the Playwright tests (dev only; production image does not need it)
-RUN /home/dev/.local/bin/playwright install chromium
+# Install the Chromium build used by the Playwright tests and the system libraries
+# it needs (dev only; production image does not need it). Playwright runs apt through sudo.
+RUN /home/dev/.local/bin/playwright install --with-deps chromium \
+    && sudo rm -rf /var/lib/apt/lists/*
 RUN sudo rm -rf /tmp/pip-tmp
+
+# "fake" dbus address to prevent headless Chromium errors
+ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
 
 # VOLUME [ "/assets" ]

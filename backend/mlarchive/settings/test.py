@@ -1,8 +1,16 @@
 # settings/test.py
+#
+# The only test settings, used in the dev container and in CI. Values that
+# differ between those environments (database password, Elasticsearch host)
+# come from environment variables, read here or in base.py; CI sets them in
+# .github/workflows/tests.yml. Everything that affects behaviour is fixed
+# here, so tests behave the same everywhere.
 import os
 from .base import *
 
+# not env('DATA_ROOT'): a developer's .env points it at real data
 DATA_ROOT = '/tmp/mailarch/data'
+SECRET_KEY = SECRET_KEY or 'fake-key'
 
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
@@ -16,13 +24,20 @@ DATABASES = {
         'NAME': 'mailarchive',
         'ENGINE': 'django.db.backends.postgresql',
         'USER': 'mailarchive',
-        'PASSWORD': 'franticmarble',
+        'PASSWORD': env('DATABASES_PASSWORD'),
     },
 }
 
 AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
 
-# Blob replication storage for dev
+# BLOBDB
+BLOBDB_DATABASE = 'default'
+
+# Off so blob writes never queue a Celery task: there is no broker in CI, and
+# locally .env points at a real one
+BLOBDB_REPLICATION['ENABLED'] = False
+
+# Blob replication storage for testing
 import botocore.config
 for storagename in ARTIFACT_STORAGE_NAMES:
     replica_storagename = f"r2-{storagename}"
@@ -47,14 +62,10 @@ for storagename in ARTIFACT_STORAGE_NAMES:
     }
 
 # ELASTICSEARCH SETTINGS
+# base.py builds the connection from ELASTICSEARCH_HOST and ELASTICSEARCH_PASSWORD
 ELASTICSEARCH_INDEX_NAME = 'test-mail-archive'
 ELASTICSEARCH_SILENTLY_FAIL = True
-ES_URL = 'http://{}:9200/'.format(env('ELASTICSEARCH_HOST'))
-ELASTICSEARCH_CONNECTION = {
-    'URL': ES_URL,
-    'INDEX_NAME': 'test-mail-archive',
-    'http_auth': ('elastic', 'changeme'),
-}
+ELASTICSEARCH_CONNECTION = {**ELASTICSEARCH_CONNECTION, 'INDEX_NAME': ELASTICSEARCH_INDEX_NAME}
 ELASTICSEARCH_SIGNAL_PROCESSOR = 'mlarchive.archive.signals.RealtimeSignalProcessor'
 
 # use standard default of 20 as it's easier to test
@@ -65,20 +76,19 @@ SEARCH_SCROLL_BUFFER_SIZE = SEARCH_RESULTS_PER_PAGE
 # ARCHIVE SETTINGS
 ARCHIVE_DIR = os.path.join(DATA_ROOT, 'archive')
 STATIC_INDEX_DIR = os.path.join(DATA_ROOT, 'static')
-LOG_FILE = os.path.join(BASE_DIR, 'tests/tmp', 'mlarchive.log')
 
 SERVER_MODE = 'development'
 
-LOGGING['handlers']['mlarchive']['filename'] = LOG_FILE
+# log to the console, which pytest captures, rather than to a file
+LOGGING['loggers']['mlarchive']['handlers'] = ['console']
+del(LOGGING['loggers']['mlarchive.custom'])
+del(LOGGING['handlers']['mlarchive'])
 
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
     }
 }
-
-# BLOBDB
-BLOBDB_DATABASE = 'default'
 
 # IMAP Interface
 EXPORT_DIR = os.path.join(DATA_ROOT, 'export')

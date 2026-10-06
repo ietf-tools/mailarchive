@@ -19,6 +19,10 @@ jobs:
     name: Python Tests
     runs-on: ubuntu-latest
     container: ghcr.io/ietf-tools/mailarchive-app-base:${{ inputs.targetBaseVersion }}
+    env:
+      # environment-specific values read by backend/mlarchive/settings/test.py
+      DATABASES_PASSWORD: RkTkDPFnKpko
+      ELASTICSEARCH_HOST: elasticsearch
 
     services:
       elasticsearch:

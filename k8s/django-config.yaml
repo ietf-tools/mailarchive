@@ -74,6 +74,13 @@ data:
   # OIDC Relying Party Client Secret
   # OIDC_RP_CLIENT_SECRET: ""  # secret
 
+  # OIDC Provider endpoints
+  OIDC_OP_AUTHORIZATION_ENDPOINT: "https://account.ietf.org/application/o/authorize/"
+  OIDC_OP_TOKEN_ENDPOINT: "https://account.ietf.org/application/o/token/"
+  OIDC_OP_USER_ENDPOINT: "https://account.ietf.org/application/o/userinfo/"
+  # OIDC_OP_X_END_SESSION_ENDPOINT: "https://account.ietf.org/application/o/end-session/"
+  # OIDC_OP_JWKS_ENDPOINT: "https://account.ietf.org/application/o/jwks/"
+
   # Memcached Host
   MEMCACHED_SERVICE_HOST: "mailarchive-memcached"
 

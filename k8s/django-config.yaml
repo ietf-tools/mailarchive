@@ -74,6 +74,9 @@ data:
   # OIDC Relying Party Client Secret
   # OIDC_RP_CLIENT_SECRET: ""  # secret
 
+  # OIDC Relying Party ID token signing algorithm
+  OIDC_RP_SIGN_ALGO: "ES256"
+
   # OIDC Provider endpoints
   OIDC_OP_AUTHORIZATION_ENDPOINT: "https://account.ietf.org/application/o/authorize/"
   OIDC_OP_TOKEN_ENDPOINT: "https://account.ietf.org/application/o/token/"

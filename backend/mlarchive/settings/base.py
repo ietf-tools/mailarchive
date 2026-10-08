@@ -98,6 +98,7 @@ env = environ.Env(
     OIDC_OP_X_END_SESSION_ENDPOINT=(str, ''),
     OIDC_RP_CLIENT_ID=(str, ''),
     OIDC_RP_CLIENT_SECRET=(str, ''),
+    OIDC_RP_SIGN_ALGO=(str, ''),
     SCOUT_MONITOR=(bool, False),
     SCOUT_KEY=(str, ''),
     SCOUT_NAME=(str, 'Mailarchive'),
@@ -580,7 +581,7 @@ CF_WORKER_TEMPLATE_DIR = os.path.join(ROOT_DIR, 'workers/messages/templates')
 # OIDC SETTINGS
 OIDC_RP_CLIENT_ID = env('OIDC_RP_CLIENT_ID')
 OIDC_RP_CLIENT_SECRET = env('OIDC_RP_CLIENT_SECRET')
-OIDC_RP_SIGN_ALGO = 'RS256'
+OIDC_RP_SIGN_ALGO = env('OIDC_RP_SIGN_ALGO')
 OIDC_RP_SCOPES = 'openid email profile'
 # OIDC_RP_IDP_SIGN_KEY = ''
 # OIDC_CREATE_USER = False

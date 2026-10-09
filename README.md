@@ -6,7 +6,7 @@
 
 [![Release](https://img.shields.io/github/release/ietf-tools/mailarchive.svg?style=flat&maxAge=300)](https://github.com/ietf-tools/mailarchive/releases)
 [![License](https://img.shields.io/github/license/ietf-tools/mailarchive?maxAge=3600)](https://github.com/ietf-tools/mailarchive/blob/main/LICENSE)
-[![Python Version](https://img.shields.io/badge/python-3.12-blue?logo=python&logoColor=white)](#tech-stack)
+[![Python Version](https://img.shields.io/badge/python-3.14-blue?logo=python&logoColor=white)](#tech-stack)
 [![Django Version](https://img.shields.io/badge/django-5.2-blue?logo=django&logoColor=white)](#tech-stack)
 [![PostgreSQL Version](https://img.shields.io/badge/postgres-17-blue?logo=postgresql&logoColor=white)](#tech-stack)
 [![Elasticsearch Version](https://img.shields.io/badge/elasticsearch-7.17-blue?logo=elasticsearch&logoColor=white)](#tech-stack)
@@ -45,7 +45,7 @@ API.
 
 | Layer | Technology |
 |-------|------------|
-| Application | Python 3.12, Django 5.2, Gunicorn |
+| Application | Python 3.14, Django 5.2, Gunicorn |
 | Databases | PostgreSQL 17 (two databases: application data and message blobs) |
 | Search | Elasticsearch 7.17 via `elasticsearch-dsl` |
 | Async work | Celery with RabbitMQ, Celery Beat for scheduled jobs |

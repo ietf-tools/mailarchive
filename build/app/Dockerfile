@@ -1,8 +1,8 @@
-FROM ghcr.io/ietf-tools/mailarchive-app-base:py312
+FROM ghcr.io/ietf-tools/mailarchive-app-base:py314
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 # set python path
-ENV PYTHONPATH "${PYTHONPATH}:/workspace/backend"
+ENV PYTHONPATH="${PYTHONPATH}:/workspace/backend"
 ENV DJANGO_SETTINGS_MODULE="mlarchive.settings.settings"
 
 # install dependencies first for image layer reuse

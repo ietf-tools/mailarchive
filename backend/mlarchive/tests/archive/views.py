@@ -1141,3 +1141,13 @@ def test_message_download_private(client):
     url = reverse('archive_message_download', kwargs={'list_name': 'private', 'id': msg.hashcode})
     response = client.get(url)
     assert response.status_code == 403
+
+
+@pytest.mark.django_db(transaction=True)
+def test_sitemap(client):
+    # literal path, not reverse(), so a route that resolves only to a mangled URL is caught
+    load_message('mail_normal.1', listname='public')
+    msg = Message.objects.first()
+    response = client.get('/sitemap.xml')
+    assert response.status_code == 200
+    assert msg.get_static_date_page_url() in smart_str(response.content)

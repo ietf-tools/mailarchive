@@ -46,7 +46,7 @@ from django.db import transaction
 from django.urls import reverse
 
 from mlarchive.archive.message_json import store_message_json
-from mlarchive.archive.models import EmailList, Message, is_small_year
+from mlarchive.archive.models import EmailList, Message, Thread, is_small_year
 from mlarchive.archive.storage_utils import remove_from_storage
 
 logger = logging.getLogger(__name__)
@@ -169,14 +169,25 @@ def global_artifacts():
 
 
 def _dependent_messages(message):
-    """Returns the messages whose derived artifacts show this message: every
-    message in its thread (navigation links, thread snippet) and the messages
-    before and after it in list order (next/previous links).
+    """Returns the messages whose derived artifacts show this message.
+
+    These are every message in its thread (navigation links, thread snippet),
+    the messages before and after it in list order (next/previous in list),
+    the last message of the previous thread and the first message of the
+    next thread (next/previous in thread cross thread boundaries, see
+    Message.next_in_thread()).
     """
-    messages = list(message.thread.message_set.select_related('email_list', 'thread'))
-    for neighbor in (message.previous_in_list(), message.next_in_list()):
-        if neighbor:
-            messages.append(neighbor)
+    thread = message.thread
+    messages = list(thread.message_set.select_related('email_list', 'thread'))
+    threads = Thread.objects.filter(email_list=message.email_list)
+    previous_thread = threads.filter(date__lt=thread.date).order_by('date').last()
+    next_thread = threads.filter(date__gt=thread.date).order_by('date').first()
+    neighbors = [message.previous_in_list(), message.next_in_list()]
+    if previous_thread:
+        neighbors.append(previous_thread.message_set.order_by('thread_order').last())
+    if next_thread:
+        neighbors.append(next_thread.message_set.order_by('thread_order').first())
+    messages.extend(neighbor for neighbor in neighbors if neighbor)
     return messages
 
 

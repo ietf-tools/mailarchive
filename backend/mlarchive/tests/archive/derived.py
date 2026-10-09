@@ -8,7 +8,9 @@ from factories import EmailListFactory, ThreadFactory, MessageFactory
 
 from mlarchive.archive import derived
 from mlarchive.archive.derived import (ArtifactRef, MessageAdded,
-    MessageMoved, Rebuild, MESSAGE_JSON, THREAD, MONTH_INDEX, message_json_ref, thread_ref, month_index_ref)
+    MessageMoved, MessageRemoved, Rebuild, MESSAGE_JSON, THREAD, MONTH_INDEX, message_json_ref, thread_ref, month_index_ref)
+from mlarchive.archive.models import Message
+from mlarchive.archive.utils import remove_selected
 
 
 def dt(year, month, day):
@@ -106,6 +108,33 @@ def test_touched_refs_neighbor_threads(two_threads):
 
 
 @pytest.mark.django_db
+def test_touched_refs_adjacent_threads():
+    """The last message of the previous thread and the first message of the
+    next thread are touched, as their next/previous in thread links cross
+    into the new thread, even when they are not list neighbors.
+    """
+    public = EmailListFactory.create(name='public', private=False)
+    athread = ThreadFactory.create(date=dt(2017, 1, 1), email_list=public)
+    bthread = ThreadFactory.create(date=dt(2017, 1, 2), email_list=public)
+    cthread = ThreadFactory.create(date=dt(2017, 1, 3), email_list=public)
+    MessageFactory.create(email_list=public, thread=athread, thread_order=0, date=dt(2017, 1, 1))
+    MessageFactory.create(email_list=public, thread=athread, thread_order=1, thread_depth=1,
+                          date=datetime.datetime(2017, 1, 2, 12, tzinfo=timezone.utc))
+    alast = MessageFactory.create(email_list=public, thread=athread, thread_order=2,
+                                  thread_depth=1, date=dt(2017, 1, 4))
+    new = MessageFactory.create(email_list=public, thread=bthread, thread_order=0,
+                                date=dt(2017, 1, 2))
+    cfirst = MessageFactory.create(email_list=public, thread=cthread, thread_order=0,
+                                   date=dt(2017, 1, 3))
+    assert alast.next_in_thread() == new
+    assert cfirst.previous_in_thread() == new
+    assert {new.previous_in_list(), new.next_in_list()}.isdisjoint({alast, cfirst})
+    refs = derived.touched_refs(MessageAdded(new.pk))
+    assert message_json_ref('public', alast.hashcode) in refs
+    assert message_json_ref('public', cfirst.hashcode) in refs
+
+
+@pytest.mark.django_db
 def test_touched_refs_rebuild(two_threads):
     email_list = two_threads[0].email_list
     assert derived.touched_refs(Rebuild(email_list.pk)) == derived.artifacts_for_list(email_list)
@@ -158,6 +187,31 @@ def test_batch_flushes_when_block_raises(two_threads, recorded, django_capture_o
                 derived.emit(MessageAdded(first.pk))
                 raise RuntimeError('boom')
     assert recorded == [derived.touched_refs(MessageAdded(first.pk))]
+
+
+@pytest.mark.django_db
+def test_remove_selected_applies_removed_refs(two_threads, recorded, admin_user,
+                                              django_capture_on_commit_callbacks, settings):
+    """Messages removed by remove_selected() have their refs applied on commit.
+
+    remove_selected() deletes with queryset.delete(), which still sends
+    pre_delete per row, so each removed message emits MessageRemoved.
+    """
+    first, reply, other = two_threads
+    Message.objects.filter(pk__in=[first.pk, other.pk]).update(
+        spam_score=settings.SPAM_SCORE_TO_REMOVE)
+    expected = derived.touched_refs(MessageRemoved(first.pk)).union(
+        derived.touched_refs(MessageRemoved(other.pk)))
+    with django_capture_on_commit_callbacks() as callbacks:
+        remove_selected(admin_user.id)
+    assert recorded == []
+    for callback in callbacks:
+        callback()
+    applied = set().union(*recorded)
+    assert expected <= applied
+    assert message_json_ref('public', first.hashcode) in applied
+    assert message_json_ref('public', other.hashcode) in applied
+    assert list(Message.objects.all()) == [reply]
 
 
 @pytest.mark.django_db(transaction=True)

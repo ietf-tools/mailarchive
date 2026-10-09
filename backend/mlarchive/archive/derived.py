@@ -34,7 +34,6 @@ import contextlib
 import contextvars
 import dataclasses
 import datetime
-import functools
 import logging
 import requests
 import sys
@@ -246,30 +245,19 @@ class Rebuild:
     list_id: int
 
 
-@functools.singledispatch
 def touched_refs(event):
-    """Returns the set of ArtifactRefs the event may have changed"""
-    raise NotImplementedError(f'touched_refs() is not implemented for {type(event).__name__}')
+    """Returns the set of ArtifactRefs the event may have changed.
 
-
-@touched_refs.register
-def _(event: MessageAdded):
-    return _refs_for_message_change(event.message_id)
-
-
-@touched_refs.register
-def _(event: MessageRemoved):
-    return _refs_for_message_change(event.message_id)
-
-
-@touched_refs.register
-def _(event: ListVisibilityChanged):
-    return artifacts_for_list(EmailList.objects.get(pk=event.list_id))
-
-
-@touched_refs.register
-def _(event: Rebuild):
-    return artifacts_for_list(EmailList.objects.get(pk=event.list_id))
+    Raises NotImplementedError for an event type with no case here.
+    """
+    match event:
+        case MessageAdded(message_id=pk) | MessageRemoved(message_id=pk):
+            return _refs_for_message_change(pk)
+        case ListVisibilityChanged(list_id=pk) | Rebuild(list_id=pk):
+            return artifacts_for_list(EmailList.objects.get(pk=pk))
+        case _:
+            raise NotImplementedError(
+                f'touched_refs() is not implemented for {type(event).__name__}')
 
 
 # --------------------------------------------------

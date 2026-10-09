@@ -134,6 +134,60 @@ def test_touched_refs_adjacent_threads():
     assert message_json_ref('public', cfirst.hashcode) in refs
 
 
+def make_thread(email_list, *days):
+    """Create a thread with one message per day, in thread order.
+
+    Returns the messages. The thread's date and first message are set by the
+    Message post_save receiver, as in ingest.
+    """
+    thread = ThreadFactory.create(date=dt(2017, 1, days[0]), email_list=email_list)
+    return [MessageFactory.create(email_list=email_list, thread=thread, thread_order=n,
+                                  thread_depth=min(n, 1), date=dt(2017, 1, day))
+            for n, day in enumerate(days)]
+
+
+@pytest.mark.django_db
+def test_touched_refs_thread_moved_by_add():
+    """A message dated before its thread's first moves the thread earlier.
+
+    The threads next to its old position are touched too.
+    """
+    public = EmailListFactory.create(name='public', private=False)
+    c1, c2 = make_thread(public, 3, 4)
+    (t1,) = make_thread(public, 5)
+    (d1,) = make_thread(public, 6)
+    new = MessageFactory.create(email_list=public, thread=t1.thread, thread_order=1,
+                                date=dt(2017, 1, 1))
+    t1.thread.refresh_from_db()
+    assert t1.thread.date == dt(2017, 1, 1)
+    assert c2.next_in_thread() == d1
+    assert d1.previous_in_thread() == c1
+    assert {new.previous_in_list(), new.next_in_list()}.isdisjoint({c2, d1})
+    refs = derived.touched_refs(MessageAdded(new.pk))
+    assert message_json_ref('public', c2.hashcode) in refs
+    assert message_json_ref('public', d1.hashcode) in refs
+
+
+@pytest.mark.django_db
+def test_remove_thread_first_touches_threads_at_new_position(
+        recorded, django_capture_on_commit_callbacks):
+    """Removing a thread's first message moves the thread later.
+
+    The threads next to its new position are touched too.
+    """
+    public = EmailListFactory.create(name='public', private=False)
+    t1, t2 = make_thread(public, 1, 5)
+    c1, c2 = make_thread(public, 3, 4)
+    (d1,) = make_thread(public, 6)
+    with django_capture_on_commit_callbacks(execute=True):
+        t1.delete()
+    assert c2.next_in_thread() == t2
+    assert d1.previous_in_thread() == t2
+    applied = set().union(*recorded)
+    assert message_json_ref('public', c2.hashcode) in applied
+    assert message_json_ref('public', d1.hashcode) in applied
+
+
 @pytest.mark.django_db
 def test_touched_refs_rebuild(two_threads):
     email_list = two_threads[0].email_list

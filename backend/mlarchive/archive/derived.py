@@ -167,26 +167,49 @@ def global_artifacts():
     return set()
 
 
-def _dependent_messages(message):
-    """Returns the messages whose derived artifacts show this message.
+def _thread_boundary_messages(thread, date):
+    """Returns the boundary messages of the threads next to thread at date.
 
-    These are every message in its thread (navigation links, thread snippet),
-    the messages before and after it in list order (next/previous in list),
-    the last message of the previous thread and the first message of the
-    next thread (next/previous in thread cross thread boundaries, see
-    Message.next_in_thread()).
+    Their next/previous in thread links cross into thread when it is listed
+    at date. These are the last message of the thread before it and the first message
+    of the thread after it, by thread date. See Message.next_in_thread().
+    """
+    threads = Thread.objects.filter(email_list=thread.email_list).exclude(pk=thread.pk)
+    previous_thread = threads.filter(date__lt=date).order_by('date').last()
+    next_thread = threads.filter(date__gt=date).order_by('date').first()
+    messages = []
+    if previous_thread:
+        messages.append(previous_thread.message_set.order_by('thread_order').last())
+    if next_thread:
+        messages.append(next_thread.message_set.order_by('thread_order').first())
+    return [m for m in messages if m]
+
+
+def _dependent_messages(message):
+    """Returns the messages whose navigation links or thread snippet show it.
+
+    These are every message in its thread, the messages before and after it
+    in list order, and the boundary messages of the threads next to its
+    thread (_thread_boundary_messages()).
+
+    The thread's date is the date of its first message, so adding a message
+    dated before the first, or removing the first, moves the thread in thread
+    order. Adds are emitted after the move and removals before it, so the
+    earliest date among the other messages is the thread's position on the
+    other side of the change, and the threads next to that position are
+    included too.
     """
     thread = message.thread
     messages = list(thread.message_set.select_related('email_list', 'thread'))
-    threads = Thread.objects.filter(email_list=message.email_list)
-    previous_thread = threads.filter(date__lt=thread.date).order_by('date').last()
-    next_thread = threads.filter(date__gt=thread.date).order_by('date').first()
-    neighbors = [message.previous_in_list(), message.next_in_list()]
-    if previous_thread:
-        neighbors.append(previous_thread.message_set.order_by('thread_order').last())
-    if next_thread:
-        neighbors.append(next_thread.message_set.order_by('thread_order').first())
-    messages.extend(neighbor for neighbor in neighbors if neighbor)
+    dates = {thread.date}
+    other_dates = [m.date for m in messages if m.pk != message.pk]
+    if other_dates:
+        dates.add(min(other_dates))
+    for neighbor in (message.previous_in_list(), message.next_in_list()):
+        if neighbor:
+            messages.append(neighbor)
+    for date in dates:
+        messages.extend(_thread_boundary_messages(thread, date))
     return messages
 
 

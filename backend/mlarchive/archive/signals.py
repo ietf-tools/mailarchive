@@ -2,8 +2,6 @@ import logging
 import os
 import shutil
 
-from importlib import import_module
-
 from django.conf import settings
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
@@ -143,8 +141,7 @@ class BaseSignalProcessor(object):
         try:
             self.backend.update([instance])
         except Exception:
-            # TODO: Maybe log it or let the exception bubble?
-            pass
+            logger.exception(f'Failed to update index for {get_identifier(instance)}')
 
     def handle_delete(self, sender, instance, **kwargs):
         """
@@ -153,8 +150,7 @@ class BaseSignalProcessor(object):
         try:
             self.backend.remove(instance)
         except Exception:
-            # TODO: Maybe log it or let the exception bubble?
-            pass
+            logger.exception(f'Failed to remove {get_identifier(instance)} from index')
 
 
 class RealtimeSignalProcessor(BaseSignalProcessor):

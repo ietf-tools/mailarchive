@@ -19,6 +19,7 @@ from io import StringIO
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Count, Exists, OuterRef
+from django.db.models.functions import Length
 from django.forms.formsets import formset_factory
 from django.http import HttpResponse
 from django.shortcuts import redirect
@@ -31,6 +32,7 @@ from mlarchive.archive.generator import Generator
 from mlarchive.archive.models import EmailList, Message, Thread, get_message_from_binary_file
 from mlarchive.archive.storage_utils import retrieve_bytes
 from mlarchive.archive.utils import get_lists_for_user
+from mlarchive.blobdb.models import Blob
 from mlarchive.utils.encoding import custom_policy, decode_safely
 
 import logging
@@ -184,6 +186,22 @@ def apply_objects(hits):
     for hit in hits:
         hit.object = objects.get(int(hit.django_id))
     return hits
+
+
+def search_blobs(bucket, name='', text=''):
+    """Returns blobs in bucket whose name starts with name and whose content contains
+    text, newest first, capped at settings.BLOB_SEARCH_MAX_RESULTS.
+
+    Only name, modified and size are loaded. The content match is a sequential scan of
+    the bucket, so callers should require a name prefix or text, never neither.
+    """
+    blobs = Blob.objects.filter(bucket=bucket)
+    if name:
+        blobs = blobs.filter(name__startswith=name)
+    if text:
+        blobs = blobs.filter(content__bcontains=text.encode('utf-8'))
+    blobs = blobs.annotate(size=Length('content')).order_by('-modified', 'name')
+    return list(blobs.values('name', 'modified', 'size')[:settings.BLOB_SEARCH_MAX_RESULTS])
 
 
 def get_blob_content(bucket, name):

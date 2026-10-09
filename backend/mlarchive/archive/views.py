@@ -41,11 +41,11 @@ from mlarchive.archive.query_utils import (get_qdr_kwargs,
     is_static_on, get_count, CustomPaginator)
 from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_export,
     get_query_neighbors, get_query_string, get_lists_for_user, get_random_token,
-    BlobMessage, get_blob_content, get_thread_page_ids)
+    BlobMessage, get_blob_content, get_thread_page_ids, search_blobs)
 
 from mlarchive.archive.models import (EmailList, Message, Thread, Attachment,
     Subscriber)
-from mlarchive.archive.forms import (AdminForm, AdminActionForm, BlobForm,
+from mlarchive.archive.forms import (AdminForm, AdminActionForm, BlobForm, BlobSearchForm,
     AdvancedSearchForm, BrowseForm, RulesForm, SearchForm, DateForm)
 
 import logging
@@ -677,6 +677,33 @@ def admin(request):
 
 @superuser_only
 def admin_blob(request):
+    """Searches the blob store, listing the blobs in a bucket that match a name prefix
+    and/or contain a byte string, with links to view each one.
+    """
+    results = None
+    form = BlobSearchForm(request.GET) if request.GET else BlobSearchForm()
+
+    if request.GET and form.is_valid():
+        results = search_blobs(
+            form.cleaned_data['bucket'],
+            name=form.cleaned_data['name'],
+            text=form.cleaned_data['text'])
+        view_url = reverse('archive_admin_blob_view')
+        for result in results:
+            params = {'bucket': form.cleaned_data['bucket'], 'name': result['name']}
+            result['url'] = '{}?{}'.format(view_url, urlencode(params))
+            result['raw_url'] = '{}?{}'.format(view_url, urlencode(dict(params, raw=1)))
+
+    return render(request, 'archive/admin_blob.html', {
+        'form': form,
+        'results': results,
+        'max_results': settings.BLOB_SEARCH_MAX_RESULTS,
+        'name_required_buckets': settings.BLOB_SEARCH_NAME_REQUIRED_BUCKETS,
+    })
+
+
+@superuser_only
+def admin_blob_view(request):
     """Displays the message stored in a blob, given its bucket and name.
 
     The message is rendered like the detail view, which allows inspection of
@@ -688,9 +715,9 @@ def admin_blob(request):
     message_url = ''
     raw_url = ''
     show_raw = 'raw' in request.GET
-    form = BlobForm(request.GET) if request.GET else BlobForm()
+    form = BlobForm(request.GET)
 
-    if request.GET and form.is_valid():
+    if form.is_valid():
         bucket = form.cleaned_data['bucket']
         name = form.cleaned_data['name']
         content = get_blob_content(bucket, name)
@@ -698,13 +725,14 @@ def admin_blob(request):
             messages.error(request, 'Blob not found: {}:{}'.format(bucket, name))
         else:
             msg = BlobMessage(bucket, name, content)
-            base_url = reverse('archive_admin_blob')
+            base_url = reverse('archive_admin_blob_view')
             params = {'bucket': bucket, 'name': name}
             message_url = '{}?{}'.format(base_url, urlencode(params))
             raw_url = '{}?{}'.format(base_url, urlencode(dict(params, raw=1)))
+    else:
+        messages.error(request, 'Invalid blob bucket or name')
 
-    return render(request, 'archive/admin_blob.html', {
-        'form': form,
+    return render(request, 'archive/admin_blob_view.html', {
         'msg': msg,
         'show_raw': show_raw,
         'message_url': message_url,

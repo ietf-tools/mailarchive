@@ -11,6 +11,21 @@ from .replication import replication_enabled
 from .tasks import pybob_the_blob_replicator_task
 
 
+@models.BinaryField.register_lookup
+class BinaryContains(models.Lookup):
+    """Byte substring match on a BinaryField, as content__bcontains=b'...'.
+
+    The stock contains lookup casts the column to text, which Postgres renders as hex,
+    and stringifies a bytes pattern, so it never matches binary content.
+    """
+    lookup_name = 'bcontains'
+
+    def as_sql(self, compiler, connection):
+        lhs, lhs_params = self.process_lhs(compiler, connection)
+        rhs, rhs_params = self.process_rhs(compiler, connection)
+        return f'position({rhs} in {lhs}) > 0', rhs_params + lhs_params
+
+
 class BlobQuerySet(models.QuerySet):
     """QuerySet customized for Blob management
 

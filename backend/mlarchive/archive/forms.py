@@ -177,6 +177,39 @@ class BlobForm(forms.Form):
         return self.cleaned_data['name'].strip().rstrip('=')
 
 
+class BlobSearchForm(forms.Form):
+    """Finds blobs in a bucket by name prefix and/or a byte string in the content."""
+    bucket = forms.ChoiceField(
+        choices=[(name, name) for name in settings.ARTIFACT_STORAGE_NAMES])
+    name = forms.CharField(
+        required=False,
+        max_length=255,
+        help_text='Blob name starts with, ie. "listname/" or "listname/hashcode"')
+    text = forms.CharField(
+        required=False,
+        max_length=255,
+        help_text='Text in the raw message, ie. a Message-ID')
+
+    def clean_name(self):
+        return self.cleaned_data['name'].strip()
+
+    def clean_text(self):
+        return self.cleaned_data['text'].strip()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        bucket = cleaned_data.get('bucket')
+        name = cleaned_data.get('name')
+        text = cleaned_data.get('text')
+        if not name and not text:
+            raise forms.ValidationError('Enter a name or text to search for.')
+        if text and not name and bucket in settings.BLOB_SEARCH_NAME_REQUIRED_BUCKETS:
+            raise forms.ValidationError(
+                'A text search in {} must be narrowed by a name prefix, '
+                'ie. "listname/".'.format(bucket))
+        return cleaned_data
+
+
 class LowerCaseModelMultipleChoiceField(forms.ModelMultipleChoiceField):
     def prepare_value(self, value):
         if not value:

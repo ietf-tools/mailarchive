@@ -1286,3 +1286,13 @@ def test_message_download_private(client):
     url = reverse('archive_message_download', kwargs={'list_name': 'private', 'id': msg.hashcode})
     response = client.get(url)
     assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_sitemap(client):
+    message = MessageFactory.create(email_list=EmailListFactory.create(name='public'))
+    response = client.get('/sitemap.xml')
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert reverse('archive') in content
+    assert message.get_static_date_page_url() in content

@@ -5,6 +5,7 @@ import os
 
 import requests
 from celery import Task, shared_task
+from celery.exceptions import MaxRetriesExceededError
 from django.apps import apps
 from django.conf import settings
 from django.core.cache import cache
@@ -31,6 +32,7 @@ from mlarchive.archive.utils import fetch_nav_for_batch
 from mlarchive.archive.models import EmailList, Message, User
 from mlarchive.archive.mail import Loader
 from mlarchive.archive.message_json import store_message_json
+from mlarchive.archive import derived
 # Registers the one-time backfill task; autodiscovery only scans <app>.tasks.
 from mlarchive.archive.stored_object_backfill import backfill_stored_objects_task  # noqa: F401
 
@@ -38,6 +40,8 @@ logger = logging.getLogger(__name__)
 
 REBUILD_JSON_STOP_KEY = 'rebuild_messages_json_stop'
 BLOBDB_QUEUE = 'blobdb'
+DERIVED_MAX_RETRIES = 5
+DERIVED_RETRY_DELAY = 60  # seconds, doubled on each retry
 
 
 class CelerySignalHandler(Task):
@@ -297,6 +301,25 @@ def recompute_stale_checksums_task(bucket=None, batch_size=1000, dry_run=False, 
             bucket=bucket, batch_size=batch_size, dry_run=dry_run, replicate=replicate)
     except Exception as err:
         logger.error(f"Error in recompute_stale_checksums_task: {err}")
+
+
+@shared_task(bind=True, max_retries=DERIVED_MAX_RETRIES, acks_late=True)
+def apply_derived_artifacts_task(self, refs):
+    """Apply serialized derived artifact refs, sent by derived._flush().
+
+    Refs that fail are retried with exponential backoff. Once the retries
+    run out they are left to reconciliation. acks_late, so a chunk whose
+    worker loses its broker connection mid-task is redelivered; applying a
+    ref twice is harmless.
+    """
+    failures = derived.apply_and_purge(derived.deserialize_refs(refs))
+    if not failures:
+        return
+    failed = derived.serialize_refs(ref for ref, _ in failures)
+    try:
+        raise self.retry(args=(failed,), countdown=DERIVED_RETRY_DELAY * 2 ** self.request.retries)
+    except MaxRetriesExceededError:
+        logger.error(f'apply_derived_artifacts_task: giving up on {len(failed)} ref(s): {failed}')
 
 
 @shared_task

@@ -6,6 +6,7 @@ services:
       DATABASES_PASSWORD: franticmarble
       DATABASES_HOST: db
       ELASTICSEARCH_HOST: es
+      TYPESENSE_HOST: typesense
       MEMCACHED_SERVICE_HOST: memcached
       BLOBDB_PASSWORD: abcd1234
       DATA_ROOT: /data
@@ -27,6 +28,7 @@ services:
       - es
       - rabbit
       - blobstore
+      - typesense
 
     ipc: host
     volumes:
@@ -194,6 +196,29 @@ services:
       depends_on:
         - app
 
+  typesense:
+    image: typesense/typesense:30.1
+    container_name: typesense
+    restart: on-failure
+    ports:
+      - "8108:8108"
+    volumes:
+      - ts-data:/data
+    environment:
+      - TYPESENSE_API_KEY=xyz
+      - TYPESENSE_DATA_DIR=/data
+      - TYPESENSE_ENABLE_CORS=true
+    healthcheck:
+      # the image has no curl, so probe /health with bash's /dev/tcp
+      test:
+        - CMD
+        - bash
+        - -c
+        - "exec 3<>/dev/tcp/127.0.0.1/8108 && printf 'GET /health HTTP/1.0\r\n\r\n' >&3 && grep -q '\"ok\":true' <&3"
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
 volumes:
     app-assets:
     app-data:
@@ -201,3 +226,4 @@ volumes:
     es-data:
     minio-data:
     blobdb-data:
+    ts-data:

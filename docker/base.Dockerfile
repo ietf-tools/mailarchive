@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM python:3.14-slim-trixie
 LABEL maintainer="Ryan Cross <rcross@amsl.com>"
 
@@ -8,16 +9,22 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get -qy upgrade \
     && apt-get -y install --no-install-recommends apt-utils dialog 2>&1 \
-    && apt-get -y install --no-install-recommends ca-certificates curl gnupg
+    && apt-get -y install --no-install-recommends ca-certificates curl
 
-# Add Docker Source
-RUN mkdir -p /etc/apt/keyrings \
-    && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list
-
-# Add Postgresql Apt Repository
-RUN curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /etc/apt/keyrings/postgresql.gpg \
-    && echo "deb [signed-by=/etc/apt/keyrings/postgresql.gpg] http://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
+# Add Postgresql Apt Repository (deb822 format, https://www.postgresql.org/download/linux/debian/)
+RUN <<'EOF'
+set -e
+install -d -m 0755 /etc/apt/keyrings
+curl -fsSL -o /etc/apt/keyrings/postgresql.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+. /etc/os-release
+cat > /etc/apt/sources.list.d/pgdg.sources <<SOURCES
+Types: deb
+URIs: https://apt.postgresql.org/pub/repos/apt
+Suites: ${VERSION_CODENAME}-pgdg
+Components: main
+Signed-By: /etc/apt/keyrings/postgresql.asc
+SOURCES
+EOF
 
 # Install the packages we need
 RUN apt-get update --fix-missing && apt-get install -qy \
@@ -26,7 +33,6 @@ RUN apt-get update --fix-missing && apt-get install -qy \
     bash \
     build-essential \
     curl \
-    docker-ce-cli \
     locales \
     postgresql-client-17 \
     memcached \

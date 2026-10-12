@@ -343,6 +343,7 @@ def test_update_mbox_files(tmpdir, settings, latin1_messages):
     assert len(mbox) == 1
     mbox_msg = mbox[0]
     assert mbox_msg['Message-Id'].strip('<>') == msg.msgid
+    mbox.close()
 
 
 @pytest.mark.django_db(transaction=True)

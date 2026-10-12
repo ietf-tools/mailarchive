@@ -549,6 +549,7 @@ Hello.
     path = os.path.join(settings.BASE_DIR, 'tests', 'data', 'mbox.1')
     mb = mailbox.mbox(path)
     assert get_from(mb[0]) == 'internet-drafts@ietf.org  Wed Aug 21 16:20:36 2013'
+    mb.close()
 
 
 def test_get_header_date():
@@ -700,17 +701,19 @@ def test_MessageWrapper_from_line():
     message parsed from raw bytes still carries it.
     """
     EmailListFactory.create(name='acme')
+    mbox = mailbox.mbox(os.path.join(settings.BASE_DIR, 'tests', 'data', 'mbox.1'))
+    mmdf = get_mb(os.path.join(settings.BASE_DIR, 'tests', 'data', 'mmdf.mbox'))
+    mmdf_no_from = get_mb(os.path.join(settings.BASE_DIR, 'tests', 'data', 'mmdf_no_from.mbox'))
     data = [
         # mailbox.mbox, envelope line already stripped by set_from()
-        (mailbox.mbox(os.path.join(settings.BASE_DIR, 'tests', 'data', 'mbox.1'))[0],
-         'internet-drafts@ietf.org Wed Aug 21 16:20:36 2013'),
+        (mbox[0], 'internet-drafts@ietf.org Wed Aug 21 16:20:36 2013'),
         # CustomMMDF, same, see CustomMMDF.get_message()
-        (get_mb(os.path.join(settings.BASE_DIR, 'tests', 'data', 'mmdf.mbox'))[0],
-         'owner-ietf Sat Dec 23 17:35:04 1989'),
+        (mmdf[0], 'owner-ietf Sat Dec 23 17:35:04 1989'),
         # no envelope line at all
-        (get_mb(os.path.join(settings.BASE_DIR, 'tests', 'data', 'mmdf_no_from.mbox'))[0],
-         ''),
+        (mmdf_no_from[0], ''),
     ]
+    for mb in (mbox, mmdf, mmdf_no_from):
+        mb.close()
     for message, expected in data:
         mw = MessageWrapper.from_message(message, 'acme')
         mw.process()

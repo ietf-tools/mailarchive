@@ -26,7 +26,7 @@ from django.core.cache import cache
 from mlarchive.archive.models import (Attachment, EmailList, Legacy, Message,
     Thread, get_in_reply_to_message, is_attachment)
 from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES, UNKNOWN_CONTENT_TYPE
-from mlarchive.archive.message_json import write_message_json
+from mlarchive.archive import derived
 from mlarchive.archive.inspectors import *      # noqa
 from mlarchive.archive.storage_utils import store_file
 from mlarchive.archive.thread import compute_thread, reconcile_thread, parse_message_ids
@@ -1073,8 +1073,8 @@ class MessageWrapper(object):
         """Save the message to the archive.
 
         Runs the message checks (spam, duplicate, etc), saves message metadata
-        to database, saves message to archive, processes attachments and writes
-        the JSON blob.  In test mode the message and JSON blobs are not written.
+        to database, saves message to archive, processes attachments and emits
+        MessageAdded.  In test mode the message and derived artifacts are not written.
         """
         self.run_inspectors()
         self.check_redelivery()
@@ -1097,10 +1097,11 @@ class MessageWrapper(object):
         # now that the archive.Message object is created we can process any attachments
         self.process_attachments(test=test)
 
-        # write the JSON blob last.  It contains the rendered message body,
-        # which includes links to the attachments created above
+        # emit last: post_save runs before reconcile_thread and the attachments,
+        # and the message JSON contains the rendered body, which links to the
+        # attachments created above
         if not test:
-            write_message_json(self.archive_message)
+            derived.emit(derived.MessageAdded(self.archive_message.pk))
 
     def write_msg(self, subdir=None):
         """Write a copy of the original email message to the disk archive.

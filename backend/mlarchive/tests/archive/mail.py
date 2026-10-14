@@ -5,13 +5,13 @@ import email.message
 import json
 from email import policy
 import glob
-import io
 import mailbox
 import os
 import pytest
 import shutil
 import sys
-from io import StringIO, BytesIO
+from io import StringIO
+from unittest.mock import patch
 from dateutil.tz import tzoffset
 from datetime import timezone
 
@@ -121,7 +121,7 @@ def test_archive_message_json_neighbors():
 
     A new message invalidates the navigation links of its thread siblings and
     of the message before it in list order, so their JSON blobs are rewritten
-    too.  See write_message_json().
+    too.  See archive.derived.
 
     The third message replies to the first, but follows the second in list
     order, so each of the two refresh paths updates a different blob.
@@ -158,6 +158,31 @@ def test_archive_message_json_neighbors():
 
 
 @pytest.mark.django_db(transaction=True)
+def test_remove_message_json():
+    """Test removing a message deletes its JSON blob and refreshes the
+    blobs that linked to it.
+    """
+    def make(msgid, day):
+        return (f'From: Joe <joe@example.com>\nTo: list@example.com\n'
+                f'Date: Thu, {day} Nov 2013 17:54:55 +0000\nMessage-ID: <{msgid}>\n'
+                f'Subject: Message {day}\n\nbody\n').encode('ASCII')
+
+    for day in (7, 8, 9):
+        assert archive_message(make(f'{day}@example.com', day), 'test') == 0
+    first, second, third = Message.objects.order_by('date')
+    name = second.get_blob_name()
+    assert exists_in_storage('ml-messages-json', name)
+
+    second.delete()
+
+    assert not exists_in_storage('ml-messages-json', name)
+    first_json = json.loads(retrieve_str('ml-messages-json', first.get_blob_name()))
+    assert first_json['next_in_list'] == third.get_absolute_url()
+    third_json = json.loads(retrieve_str('ml-messages-json', third.get_blob_name()))
+    assert third_json['previous_in_list'] == first.get_absolute_url()
+
+
+@pytest.mark.django_db(transaction=True)
 def test_archive_message_private(client):
     data = '''From: Joe <joe@example.com>
 To: Joe <joe@example.com>
@@ -188,6 +213,34 @@ This is a test email.  database
     assert is_email_message(msg_bytes)
     # ensure message json in blob storage
     assert not exists_in_storage('ml-messages-json', blob_name)
+
+
+@pytest.mark.django_db(transaction=True)
+def test_archive_message_private_json_not_replicated(settings):
+    """A private list message queues no ml-messages-json blob for R2.
+
+    Replication runs with the production bucket rules, and the Celery task that
+    copies a blob to R2 is recorded instead of sent. A public message is
+    archived too, to show the recorder does see a JSON blob when there is one.
+    """
+    settings.BLOBDB_REPLICATION = {**settings.BLOBDB_REPLICATION, 'ENABLED': True}
+
+    def make(msgid):
+        return (f'From: Joe <joe@example.com>\nTo: list@example.com\n'
+                f'Date: Thu, 7 Nov 2013 17:54:55 +0000\nMessage-ID: <{msgid}>\n'
+                f'Subject: Private\n\nbody\n').encode('ASCII')
+
+    with patch('mlarchive.blobdb.models.pybob_the_blob_replicator_task.delay') as delay:
+        assert archive_message(make('private@example.com'), 'private', private=True) == 0
+        assert archive_message(make('public@example.com'), 'public', private=False) == 0
+    replicated = {(body['bucket'], body['name'])
+                  for body in (json.loads(call.args[0]) for call in delay.call_args_list)}
+
+    private = Message.objects.get(email_list__name='private')
+    public = Message.objects.get(email_list__name='public')
+    assert ('ml-messages-json', public.get_blob_name()) in replicated
+    assert not any(name.startswith('private/') for _, name in replicated)
+    assert not exists_in_storage('ml-messages-json', private.get_blob_name())
 
 
 @pytest.mark.django_db(transaction=True)

@@ -1,12 +1,6 @@
 import logging
 import os
-import requests
 import shutil
-import sys
-import traceback
-from cloudflare import Cloudflare, APIError
-
-from importlib import import_module
 
 from django.conf import settings
 from django.core.cache import cache
@@ -17,8 +11,8 @@ from django.db import models, connection, transaction
 
 from mlarchive.archive.models import Message, EmailList
 from mlarchive.archive.backends.elasticsearch import ESBackend, get_identifier
-from mlarchive.archive.storage_utils import (remove_from_storage,
-    move_object, exists_in_storage)
+from mlarchive.archive import derived
+from mlarchive.archive.storage_utils import move_object, exists_in_storage
 from mlarchive.archive.utils import _export_lists
 from mlarchive.celeryapp import app
 
@@ -39,12 +33,16 @@ def _clear_lists_cache(sender, instance, **kwargs):
 
 @receiver(pre_delete, sender=Message)
 def _message_remove(sender, instance, **kwargs):
-    """Move a removed message to the removed bucket and purge the cache.
+    """Move a removed message to the removed bucket and emit MessageRemoved.
 
     The message blob is moved to the "ml-messages-removed" bucket. A copy of
     the message on the filesystem, if there is one, is moved to the list's
     "_removed" directory.
     """
+    # before set_first() below, so the refs include the month the thread is
+    # listed under now, as well as the one it moves to
+    derived.emit(derived.MessageRemoved(instance.pk))
+
     # move file on filesystem, if this message still has one
     path = instance.get_file_path()
     if os.path.exists(path):
@@ -69,20 +67,12 @@ def _message_remove(sender, instance, **kwargs):
         logger.warning('no blob to move for removed message [bucket={},name={}]'.format(
             source_bucket, blob_name))
 
-    # delete blob from ml-messages-json bucket
-    # Ok if it's not there, a private message wouldn't be
-    remove_from_storage(kind='ml-messages-json', name=blob_name, warn_if_missing=False)
-
     # if message is first of many in thread, should reset thread.first before
     # deleting
     if (instance.thread.first == instance and
             instance.thread.message_set.count() > 1):
         next_in_thread = instance.thread.message_set.order_by('date')[1]
         instance.thread.set_first(next_in_thread)
-
-    # handle cache
-    if settings.SERVER_MODE == 'production' and settings.USING_CDN:
-        purge_files_from_cache(instance)
 
 
 @receiver(post_save, sender=Message)
@@ -93,12 +83,6 @@ def _update_thread(sender, instance, **kwargs):
         instance.thread.set_first(instance)
 
 
-@receiver(post_save, sender=Message)
-def _purge_cache(sender, instance, created, **kwargs):
-    if created and settings.SERVER_MODE == 'production' and settings.USING_CDN:
-        purge_files_from_cache(instance)
-
-
 @receiver(post_save, sender=EmailList)
 def _list_save_handler(sender, instance, created, **kwargs):
     if created:
@@ -107,71 +91,6 @@ def _list_save_handler(sender, instance, created, **kwargs):
 # --------------------------------------------------
 # Helpers
 # --------------------------------------------------
-
-
-def get_purge_cache_tags(message):
-    """Returns the list of Cloudflare Cache-Tags to purge when a message is
-    created or deleted.
-
-    Message pages (detail and ajax) are tagged by thread, so purging the
-    message's thread tag invalidates every message in that thread at once.
-    The next and previous messages by list order live in adjacent threads and
-    have stale next/previous links, so their thread tags are purged too. This
-    over-purges those two neighbor threads, which is bounded and correct.
-    """
-    tags = [message.get_cache_tag()]
-    next_in_list = message.next_in_list()
-    if next_in_list:
-        tags.append(next_in_list.get_cache_tag())
-    previous_in_list = message.previous_in_list()
-    if previous_in_list:
-        tags.append(previous_in_list.get_cache_tag())
-    # dedupe
-    return list(set(tags))
-
-
-def get_purge_cache_urls(message, created=True):
-    """Returns a list of absolute urls to purge from cache when a message is
-    created or deleted.
-
-    Only the static index pages are purged by url; the message pages
-    themselves are purged by Cache-Tag (see get_purge_cache_tags).
-    """
-    return message.get_absolute_static_index_urls()
-
-
-def purge_files_from_cache(message, created=True):
-    """Purge a message's cached pages from Cloudflare.
-
-    Message pages are purged by Cache-Tag (whole thread at a time) and the
-    static index pages are purged by url. These are two independent Cloudflare
-    requests - the API does not allow combining ``tags`` and ``files`` in a
-    single call, and keeping them separate means a failure of one does not
-    skip the other.
-
-    2026-07-09 NOTE: if later expanding the set of tags or urls to purge, first
-    consult the Cloudflare limits,
-    https://developers.cloudflare.com/cache/how-to/purge-cache/#availability-and-limits
-    """
-    tags = get_purge_cache_tags(message)
-    urls = get_purge_cache_urls(message, created)
-    with Cloudflare(api_token=settings.CLOUDFLARE_AUTH_KEY) as cf:
-        try:
-            cf.cache.purge(zone_id=settings.CLOUDFLARE_ZONE_ID, tags=tags)
-            logger.info(f'purging cached tags: {tags}')
-        except APIError as e:
-            traceback.print_exc(file=sys.stdout)
-            logger.error(e)
-        except requests.exceptions.HTTPError as e:
-            logger.error(e)
-        try:
-            cf.cache.purge(zone_id=settings.CLOUDFLARE_ZONE_ID, files=urls)
-            logger.info(f'purging cached urls: {urls}')
-        except APIError as e:
-            traceback.print_exc(file=sys.stdout)
-            logger.error(e)
-        except requests.exceptions.HTTPError as e:
-            logger.error(e)
 
 
 def _flush_noauth_cache(email_list):
@@ -222,8 +141,7 @@ class BaseSignalProcessor(object):
         try:
             self.backend.update([instance])
         except Exception:
-            # TODO: Maybe log it or let the exception bubble?
-            pass
+            logger.exception(f'Failed to update index for {get_identifier(instance)}')
 
     def handle_delete(self, sender, instance, **kwargs):
         """
@@ -232,8 +150,7 @@ class BaseSignalProcessor(object):
         try:
             self.backend.remove(instance)
         except Exception:
-            # TODO: Maybe log it or let the exception bubble?
-            pass
+            logger.exception(f'Failed to remove {get_identifier(instance)} from index')
 
 
 class RealtimeSignalProcessor(BaseSignalProcessor):

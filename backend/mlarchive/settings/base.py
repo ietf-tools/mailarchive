@@ -91,8 +91,14 @@ env = environ.Env(
     MAILMAN_CF_ACCESS_CLIENT_SECRET=(str, ''),
     MEMCACHED_SERVICE_HOST=(str, '127.0.0.1'),
     MEMCACHED_SERVICE_PORT=(str, '11211'),
+    OIDC_OP_JWKS_ENDPOINT=(str, ''),
+    OIDC_OP_AUTHORIZATION_ENDPOINT=(str, ''),
+    OIDC_OP_TOKEN_ENDPOINT=(str, ''),
+    OIDC_OP_USER_ENDPOINT=(str, ''),
+    OIDC_OP_X_END_SESSION_ENDPOINT=(str, ''),
     OIDC_RP_CLIENT_ID=(str, ''),
     OIDC_RP_CLIENT_SECRET=(str, ''),
+    OIDC_RP_SIGN_ALGO=(str, ''),
     SCOUT_MONITOR=(bool, False),
     SCOUT_KEY=(str, ''),
     SCOUT_NAME=(str, 'Mailarchive'),
@@ -468,6 +474,10 @@ IMPORT_MBOX_MAX_SIZE = 1_800_000_000  # 1.8 GB
 # admin blob viewer settings.  Raw source larger than this is not rendered
 # inline, the headers are shown with a link to download the blob instead
 BLOB_RAW_DISPLAY_MAX_SIZE = 1_048_576  # 1 MB
+BLOB_SEARCH_MAX_RESULTS = 100
+# a text search scans every blob in the bucket, so in the full-archive buckets it must be
+# narrowed by a name prefix
+BLOB_SEARCH_NAME_REQUIRED_BUCKETS = ['ml-messages', 'ml-messages-json', 'ml-messages-private']
 
 # API KEYS: key=endpoint, value=[api-key,]
 _APP_API_KEYS_JSON = base64.b64decode(
@@ -579,15 +589,15 @@ CF_WORKER_TEMPLATE_DIR = os.path.join(ROOT_DIR, 'workers/messages/templates')
 # OIDC SETTINGS
 OIDC_RP_CLIENT_ID = env('OIDC_RP_CLIENT_ID')
 OIDC_RP_CLIENT_SECRET = env('OIDC_RP_CLIENT_SECRET')
-OIDC_RP_SIGN_ALGO = 'RS256'
-OIDC_RP_SCOPES = 'openid email roles'
+OIDC_RP_SIGN_ALGO = env('OIDC_RP_SIGN_ALGO')
+OIDC_RP_SCOPES = 'openid email profile'
 # OIDC_RP_IDP_SIGN_KEY = ''
 # OIDC_CREATE_USER = False
-OIDC_OP_JWKS_ENDPOINT = 'https://auth.ietf.org/api/openid/jwks/'
-OIDC_OP_AUTHORIZATION_ENDPOINT = 'https://auth.ietf.org/api/openid/authorize/'
-OIDC_OP_TOKEN_ENDPOINT = 'https://auth.ietf.org/api/openid/token/'
-OIDC_OP_USER_ENDPOINT = 'https://auth.ietf.org/api/openid/userinfo/'
-OIDC_OP_X_END_SESSION_ENDPOINT = 'https://auth.ietf.org/api/openid/end-session/'
+OIDC_OP_JWKS_ENDPOINT = env('OIDC_OP_JWKS_ENDPOINT')
+OIDC_OP_AUTHORIZATION_ENDPOINT = env('OIDC_OP_AUTHORIZATION_ENDPOINT')
+OIDC_OP_TOKEN_ENDPOINT = env('OIDC_OP_TOKEN_ENDPOINT')
+OIDC_OP_USER_ENDPOINT = env('OIDC_OP_USER_ENDPOINT')
+OIDC_OP_X_END_SESSION_ENDPOINT = env('OIDC_OP_X_END_SESSION_ENDPOINT')
 OIDC_OP_LOGOUT_URL_METHOD = 'mlarchive.authbackend.oidc.get_logout_url'
 OIDC_STORE_ID_TOKEN = True
 OIDC_USERNAME_ALGO = 'mlarchive.authbackend.oidc.generate_username'

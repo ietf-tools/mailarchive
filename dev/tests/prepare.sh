@@ -1,8 +1,5 @@
 #!/bin/bash
 
-echo "Running containers:"
-docker ps -a
-
 echo "Fixing permissions..."
 chmod -R 777 ./
 

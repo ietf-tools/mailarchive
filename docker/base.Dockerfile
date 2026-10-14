@@ -1,22 +1,30 @@
-FROM python:3.12-bookworm
+# syntax=docker/dockerfile:1
+FROM python:3.14-slim-trixie
 LABEL maintainer="Ryan Cross <rcross@amsl.com>"
 
 # Ensure apt is in non-interactive to avoid prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Update system packages
+# Update system packages. The slim image lacks the tools needed to add apt sources.
 RUN apt-get update \
     && apt-get -qy upgrade \
-    && apt-get -y install --no-install-recommends apt-utils dialog 2>&1
+    && apt-get -y install --no-install-recommends apt-utils dialog 2>&1 \
+    && apt-get -y install --no-install-recommends ca-certificates curl
 
-# Add Docker Source
-RUN mkdir -p /etc/apt/keyrings \
-    && curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list
-
-# Add Postgresql Apt Repository
-RUN echo "deb http://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
-RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+# Add Postgresql Apt Repository (deb822 format, https://www.postgresql.org/download/linux/debian/)
+RUN <<'EOF'
+set -e
+install -d -m 0755 /etc/apt/keyrings
+curl -fsSL -o /etc/apt/keyrings/postgresql.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+. /etc/os-release
+cat > /etc/apt/sources.list.d/pgdg.sources <<SOURCES
+Types: deb
+URIs: https://apt.postgresql.org/pub/repos/apt
+Suites: ${VERSION_CODENAME}-pgdg
+Components: main
+Signed-By: /etc/apt/keyrings/postgresql.asc
+SOURCES
+EOF
 
 # Install the packages we need
 RUN apt-get update --fix-missing && apt-get install -qy \
@@ -25,12 +33,6 @@ RUN apt-get update --fix-missing && apt-get install -qy \
     bash \
     build-essential \
     curl \
-    docker-ce-cli \
-    libgtk-3-0 \
-    libgbm-dev \
-    libasound2 \
-    libnss3 \
-    libxss1 \
     locales \
     postgresql-client-17 \
     memcached \
@@ -47,14 +49,8 @@ RUN apt-get update --fix-missing && apt-get install -qy \
 # netcat: for deploy-to-container wait for elasticsearch
 # rsync: for deploy-to-container load_messages
 
-# purge because of vulnerability (see https://www.cvedetails.com/)
-RUN apt-get purge -y imagemagick imagemagick-6-common
-
 # Get rid of installation files we don't need in the image, to reduce size
 RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/* /var/cache/apt/*
-
-# "fake" dbus address to prevent headless Chromium errors
-ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
 
 # Set locale to en_US.UTF-8
 RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment && \
@@ -63,7 +59,7 @@ RUN echo "LC_ALL=en_US.UTF-8" >> /etc/environment && \
     dpkg-reconfigure locales && \
     locale-gen en_US.UTF-8 && \
     update-locale LC_ALL en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
 
 # Fetch wait-for utility
 ADD https://raw.githubusercontent.com/eficode/wait-for/v2.1.3/wait-for /usr/local/bin/

@@ -142,10 +142,11 @@ def test_get_export_mbox(client, thread_messages, tmpdir):
     tar = tarfile.open(mode="r:gz", fileobj=io.BytesIO(response.content))
     assert len(tar.getmembers()) == 1
     path = tmpdir.mkdir('sub').strpath
-    tar.extractall(path)
+    tar.extractall(path, filter='data')
     mboxs = glob.glob(os.path.join(path, '*', 'acme', '*.mbox'))
     mbox = mailbox.mbox(mboxs[0])
     assert len(mbox) == 4
+    mbox.close()
 
 
 @pytest.mark.django_db(transaction=True)
@@ -197,10 +198,14 @@ def test_build_mbox_tar_from_sorted(tmpdir):
 
     extract_path = str(tmpdir.mkdir('extracted'))
     tar2 = tarfile.open(mode='r:gz', fileobj=tardata)
-    tar2.extractall(extract_path)
+    tar2.extractall(extract_path, filter='data')
 
     mbox_files = glob.glob(os.path.join(extract_path, '**', '*.mbox'), recursive=True)
-    total_messages = sum(len(mailbox.mbox(p)) for p in mbox_files)
+    total_messages = 0
+    for mbox_file in mbox_files:
+        mbox = mailbox.mbox(mbox_file)
+        total_messages += len(mbox)
+        mbox.close()
 
     assert total_messages == 3, (
         f'Expected 3 messages but got {total_messages} — '
@@ -224,10 +229,11 @@ def test_get_export_mbox_latin1(client, latin1_messages, tmpdir):
     assert len(tar.getmembers()) == 1
     path = tmpdir.mkdir('sub').strpath
     print(path)
-    tar.extractall(path)
+    tar.extractall(path, filter='data')
     mboxs = glob.glob(os.path.join(path, '*', 'acme', '*.mbox'))
     mbox = mailbox.mbox(mboxs[0])
     assert len(mbox) == 1
+    mbox.close()
 
 
 @pytest.mark.django_db(transaction=True)
@@ -245,7 +251,7 @@ def test_get_export_maildir(client, thread_messages, tmpdir):
     tar = tarfile.open(mode="r:gz", fileobj=io.BytesIO(response.content))
     assert len(tar.getmembers()) == 4
     path = tmpdir.mkdir('sub').strpath
-    tar.extractall(path)
+    tar.extractall(path, filter='data')
     files = glob.glob(os.path.join(path, '*', 'acme', '*'))
     # print files
     assert len(files) == 4

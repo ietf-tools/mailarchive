@@ -22,6 +22,11 @@ updates:
     ignore:
       - dependency-name: "elasticsearch"
       - dependency-name: "elasticsearch-dsl"
+    groups:
+      boto3-ecosystem:
+        patterns:
+          - "boto3*"
+          - "botocore*"
   - package-ecosystem: "npm"
     directory: "/dev/deploy-to-container"
     schedule:

@@ -8,6 +8,7 @@ from datetime import timezone
 from email.utils import parseaddr
 from dateutil.relativedelta import relativedelta
 from urllib import parse
+from xml.etree import ElementTree
 from pyquery import PyQuery
 
 from django.conf import settings
@@ -1296,3 +1297,25 @@ def test_sitemap(client):
     response = client.get('/sitemap.xml')
     assert response.status_code == 200
     assert msg.get_static_date_page_url() in smart_str(response.content)
+
+
+@pytest.mark.django_db(transaction=True)
+@pytest.mark.parametrize('minimum, page', [(20, '2017-12'), (30, '2017')])
+def test_sitemap_list_pages(client, static_list, settings, minimum, page):
+    # static_list's last year, 2017, has 25 messages
+    settings.STATIC_INDEX_YEAR_MINIMUM = minimum
+    EmailListFactory.create(name='empty')
+    private = EmailListFactory.create(name='private', private=True)
+    MessageFactory.create(email_list=private)
+    response = client.get('/sitemap.xml')
+    assert response.status_code == 200
+    root = ElementTree.fromstring(response.content)
+    ns = {'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
+    locations = [e.text for e in root.findall('sm:url/sm:loc', ns)]
+    assert locations == [
+        'https://example.com' + reverse('archive'),
+        'https://example.com' + reverse('archive_browse'),
+        'https://example.com' + reverse('archive_browse_static_date',
+                                        kwargs={'list_name': 'public', 'date': page})]
+    last_message = static_list.message_set.order_by('date').last()
+    assert locations[2].endswith(last_message.get_static_date_page_url())

@@ -25,6 +25,7 @@ from mlarchive.archive.stored_object_reconciliation import (
     RECONCILE_MAX_MISSING_REPAIRS, reconcile_bucket, reconcile_stored_objects)
 from mlarchive.archive.blob_checksum_repair import recompute_stale_checksums
 from mlarchive.archive.utils import mark_not_spam
+from mlarchive.archive.utils import move_list_blobs
 from mlarchive.archive.utils import purge_confirmed_dupes
 from mlarchive.archive.utils import import_message_blob
 from mlarchive.archive.utils import load_hidden_messages
@@ -162,6 +163,11 @@ def remove_selected_task(user_id):
 @app.task
 def mark_not_spam_task(message_ids):
     mark_not_spam(message_ids)
+
+
+@app.task
+def move_list_blobs_task(list_id, private):
+    move_list_blobs(list_id, private)
 
 
 # --------------------------------------------------

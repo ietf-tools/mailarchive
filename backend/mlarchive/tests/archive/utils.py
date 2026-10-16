@@ -14,6 +14,7 @@ import xml.etree.ElementTree as ET
 
 from django.conf import settings
 from django.core.cache import cache
+from django.db import connections
 from django.contrib.auth.models import AnonymousUser
 from django.http import QueryDict
 from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
@@ -23,7 +24,7 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     update_mbox_files, _export_lists, move_list, remove_selected, mark_not_spam,
     is_duplicate_message, is_mailman_footer, import_message_blob,
     strip_mailman_footer, get_footer_tokens,
-    create_cf_worker_templates, _get_removed_message)
+    create_cf_worker_templates, _get_removed_message, move_list_blobs, MOVE_LIST_BLOBS_LOCK)
 from mlarchive.archive.models import (User, Message, Redirect, MailmanMember, UserEmail,
     StoredObject)
 from mlarchive.archive.mail import make_hash, archive_message, MessageWrapper, make_content_digest
@@ -934,3 +935,129 @@ def test_get_removed_message_returns_email_object(tmp_path):
 
     assert result is not None
     assert result["Message-ID"] == "<abc@example.com>"
+
+
+def make_flip_message(day):
+    return (f'From: Joe <joe@example.com>\nTo: flip@example.com\n'
+            f'Date: Thu, {day} Nov 2013 17:54:55 +0000\nMessage-ID: <flip{day}@example.com>\n'
+            f'Subject: Topic {day}\n\nbody {day}\n').encode('ASCII')
+
+
+@pytest.fixture()
+def flipped_list():
+    """A list with four public messages, then flipped to private by ingest.
+
+    Each message starts its own thread. The fifth message, archived with
+    private=True, flips the list and only touches the JSON of its neighbour,
+    the fourth message, so the first still has public JSON until the move.
+    """
+    for day in (1, 2, 3, 4):
+        assert archive_message(make_flip_message(day), 'flip', private=False) == 0
+    assert archive_message(make_flip_message(5), 'flip', private=True) == 0
+    return EmailList.objects.get(name='flip')
+
+
+@pytest.mark.django_db(transaction=True)
+def test_move_list_blobs_after_ingest_flip(flipped_list):
+    """Older blobs stay public after the ingest flip until the move puts them in the private bucket."""
+    first = Message.objects.get(msgid='flip1@example.com')
+    newest = Message.objects.get(msgid='flip5@example.com')
+    name = first.get_blob_name()
+    assert flipped_list.private
+    assert exists_in_storage('ml-messages', name)
+    assert not exists_in_storage('ml-messages-private', name)
+    assert first.get_raw_message() == b''
+    assert exists_in_storage('ml-messages-json', name)
+    assert exists_in_storage('ml-messages-private', newest.get_blob_name())
+
+    stats = move_list_blobs(flipped_list.pk, private=True)
+
+    assert stats == {'moved': 4, 'missing': 0, 'failed': 0}
+    assert not exists_in_storage('ml-messages', name)
+    assert exists_in_storage('ml-messages-private', name)
+    assert Message.objects.get(pk=first.pk).get_raw_message()
+    assert not exists_in_storage('ml-messages-json', name)
+    live = StoredObject.objects.exclude_deleted()
+    assert not live.filter(store='ml-messages', name__startswith='flip/').exists()
+    assert live.filter(store='ml-messages-private', name__startswith='flip/').count() == 5
+
+
+@pytest.mark.django_db(transaction=True)
+def test_move_list_blobs_rerun_moves_nothing(flipped_list):
+    move_list_blobs(flipped_list.pk, private=True)
+    assert move_list_blobs(flipped_list.pk, private=True) == {'moved': 0, 'missing': 0, 'failed': 0}
+
+
+@pytest.mark.django_db(transaction=True)
+def test_move_list_blobs_to_public(flipped_list):
+    """Moving a list back to public puts its blobs in ml-messages and writes their JSON."""
+    move_list_blobs(flipped_list.pk, private=True)
+    flipped_list.private = False
+    flipped_list.save()
+    first = Message.objects.get(msgid='flip1@example.com')
+
+    assert move_list_blobs(flipped_list.pk, private=False) == {'moved': 5, 'missing': 0, 'failed': 0}
+
+    assert exists_in_storage('ml-messages', first.get_blob_name())
+    assert not exists_in_storage('ml-messages-private', first.get_blob_name())
+    assert exists_in_storage('ml-messages-json', first.get_blob_name())
+
+
+@pytest.mark.django_db(transaction=True)
+def test_move_list_blobs_ignores_stale_visibility(flipped_list):
+    """A move for a visibility the list no longer has does nothing.
+
+    The list is private but the move asks for public, as when an admin queued
+    the move before the list flipped. No blob moves, and the edge objects are
+    left alone because ListVisibilityChanged is not emitted.
+    """
+    first = Message.objects.get(msgid='flip1@example.com')
+
+    assert move_list_blobs(flipped_list.pk, private=False) == {'moved': 0, 'missing': 0, 'failed': 0}
+
+    assert exists_in_storage('ml-messages', first.get_blob_name())
+    assert exists_in_storage('ml-messages-json', first.get_blob_name())
+
+
+@pytest.mark.django_db(transaction=True)
+def test_move_list_blobs_skips_when_already_running(flipped_list):
+    """A run that finds another move of the list holding the lock moves nothing."""
+    other = connections.create_connection('default')
+    try:
+        with other.cursor() as cursor:
+            cursor.execute('SELECT pg_advisory_lock(%s, %s)', [MOVE_LIST_BLOBS_LOCK, flipped_list.pk])
+        assert move_list_blobs(flipped_list.pk, private=True) == {'moved': 0, 'missing': 0, 'failed': 0}
+    finally:
+        other.close()
+    assert move_list_blobs(flipped_list.pk, private=True)['moved'] == 4
+
+
+@pytest.mark.django_db(transaction=True)
+def test_move_list_blobs_counts_missing_and_failed(flipped_list):
+    first = Message.objects.get(msgid='flip1@example.com')
+    second = Message.objects.get(msgid='flip2@example.com')
+    remove_from_storage('ml-messages', first.get_blob_name())
+
+    def move_object(name, source, target):
+        if name == second.get_blob_name():
+            raise OSError(name)
+
+    with patch('mlarchive.archive.utils.move_object', side_effect=move_object):
+        stats = move_list_blobs(flipped_list.pk, private=True)
+
+    assert stats == {'moved': 2, 'missing': 1, 'failed': 1}
+
+
+@pytest.mark.django_db(transaction=True)
+def test_move_list_blobs_deletes_r2_copy(flipped_list, settings):
+    """Moving a blob out of ml-messages queues its replica deletion; the private bucket is never replicated."""
+    settings.BLOBDB_REPLICATION = {**settings.BLOBDB_REPLICATION, 'ENABLED': True}
+    name = Message.objects.get(msgid='flip1@example.com').get_blob_name()
+
+    with patch('mlarchive.blobdb.models.pybob_the_blob_replicator_task.delay') as delay:
+        move_list_blobs(flipped_list.pk, private=True)
+    replicated = {(body['bucket'], body['name'])
+                  for body in (json.loads(call.args[0]) for call in delay.call_args_list)}
+
+    assert ('ml-messages', name) in replicated
+    assert not any(bucket == 'ml-messages-private' for bucket, _ in replicated)

@@ -2,6 +2,7 @@ from builtins import input
 
 import datetime
 import email
+import itertools
 import json
 import logging
 import mailbox
@@ -11,7 +12,7 @@ import requests
 import shutil
 import subprocess
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 import mailmanclient
@@ -21,16 +22,18 @@ from django.core.cache import cache
 from django.db import connection
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
+from django.core.files.storage import storages
 from django.core.validators import validate_email
 from django.template.loader import render_to_string
 from django.test import RequestFactory
 from django.urls import reverse
 
+from mlarchive.archive import derived
 from mlarchive.archive.models import (EmailList, Subscriber, Redirect, MailmanMember,
     User, Message, StoredObject)
 from mlarchive.archive.mail import MessageWrapper, archive_message, make_content_digest, make_hash
 from mlarchive.archive.storage_utils import (retrieve_bytes, store_bytes, exists_in_storage,
-    remove_from_storage, get_metadata, find_by_checksum)
+    remove_from_storage, get_metadata, find_by_checksum, move_object)
 from mlarchive.archive.inspectors import is_no_archive
 
 
@@ -38,6 +41,8 @@ logger = logging.getLogger(__name__)
 THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
 LIST_LISTS_PATTERN = re.compile(r'\s*([\w\-]*) - (.*)$')
 MAILMAN_LISTID_PATTERN = re.compile(r'(.*)\.(ietf|irtf|iab|iesg|rfc-editor)\.org')
+MOVE_LIST_BLOBS_CHUNK_SIZE = 500
+MOVE_LIST_BLOBS_LOCK = 4237  # advisory lock class id, the list id is the object id
 
 # --------------------------------------------------
 # Helper Functions
@@ -1003,6 +1008,67 @@ def move_list(source, target):
         # create redirect
         new_url = msg.get_absolute_url()
         Redirect.objects.create(old=old_url, new=new_url)
+
+
+def move_list_blobs(list_id, private):
+    """Move a list's message blobs into the bucket matching its visibility.
+
+    Changing EmailList.private moves nothing: new messages go to the bucket
+    matching the flag, and older ones stay where they are, unreadable through
+    the list, until an administrator runs this. Moving a blob out of
+    ml-messages deletes its R2 copy through replication. ListVisibilityChanged
+    is emitted at the end, even when nothing moved, so the list's edge objects
+    are written or deleted to match.
+
+    private is the visibility the administrator saw when asking for the move.
+    A run holds a per-list advisory lock, and one that finds the lock taken
+    does nothing: two runs copying the same blob in opposite directions could
+    each delete the other's copy. A run stops at the next chunk once the
+    list's flag no longer matches private; blobs it moved meanwhile go back
+    when the move for the new visibility runs. A blob that fails to move is
+    logged and skipped; running again is safe and moves whatever is left.
+    Returns a Counter of moved, missing (in neither bucket) and failed blobs.
+    """
+    email_list = EmailList.objects.get(pk=list_id)
+    stats = Counter(moved=0, missing=0, failed=0)
+    with connection.cursor() as cursor:
+        cursor.execute('SELECT pg_try_advisory_lock(%s, %s)', [MOVE_LIST_BLOBS_LOCK, list_id])
+        if not cursor.fetchone()[0]:
+            logger.warning(f'move_list_blobs: a move of {email_list.name} is already running')
+            return stats
+        try:
+            _move_list_blobs(email_list, private, stats)
+        finally:
+            cursor.execute('SELECT pg_advisory_unlock(%s, %s)', [MOVE_LIST_BLOBS_LOCK, list_id])
+    return stats
+
+
+def _move_list_blobs(email_list, private, stats):
+    target = 'ml-messages-private' if private else 'ml-messages'
+    source = 'ml-messages' if private else 'ml-messages-private'
+    hashcodes = (Message.objects.filter(email_list=email_list).order_by('pk')
+                 .values_list('hashcode', flat=True).iterator(chunk_size=MOVE_LIST_BLOBS_CHUNK_SIZE))
+    for chunk in itertools.batched(hashcodes, MOVE_LIST_BLOBS_CHUNK_SIZE):
+        if not EmailList.objects.filter(pk=email_list.pk, private=private).exists():
+            logger.warning(f'move_list_blobs: {email_list.name} is no longer '
+                           f'{"private" if private else "public"}, stopping: {dict(stats)}')
+            return
+        # same name Message.get_blob_name() gives
+        names = {f'{email_list.name}/{hashcode}'.rstrip('=') for hashcode in chunk}
+        in_source = storages[source].exists_many(names)
+        not_in_source = names - in_source
+        stats['missing'] += len(not_in_source - storages[target].exists_many(not_in_source))
+        for name in sorted(in_source):
+            try:
+                move_object(name, source, target)
+            except Exception:
+                # already logged by move_object(); the blob is left in source
+                stats['failed'] += 1
+            else:
+                stats['moved'] += 1
+        logger.info(f'move_list_blobs: {email_list.name} {source} => {target}: {dict(stats)}')
+    derived.emit(derived.ListVisibilityChanged(email_list.pk))
+    logger.info(f'move_list_blobs: {email_list.name} done: {dict(stats)}')
 
 
 def get_known_emails(email):

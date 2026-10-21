@@ -29,7 +29,7 @@ mailmanclient==3.3.5
 mock>=5.2.0
 mozilla-django-oidc==5.0.2
 passlib==1.7.4
-playwright==1.63.0
+playwright==1.64.0
 psycopg==3.3.6
 pymemcache==4.0.0
 python-json-logger>=4.2.0

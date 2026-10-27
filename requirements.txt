@@ -22,7 +22,7 @@ factory-boy>=3.3.3
 flower>=2.2.0
 gunicorn==26.2.0
 html5lib==1.1
-jedi==0.20.0
+jedi==0.20.1
 jsonschema[format]>=4.26.0
 lxml-html-clean==0.4.5
 mailmanclient==3.3.5

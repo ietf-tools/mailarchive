@@ -41,5 +41,5 @@ pytest-flakes
 pytest-pycodestyle
 pytest-django>=4.14.0
 pytest-playwright==0.10.0
-python-dateutil>=2.9.0.post0
+python-dateutil>=3.0.0
 scout-apm>=4.0.0

@@ -1,8 +1,9 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
 from mlarchive.archive.models import (Message, EmailList, Attachment, Thread,
     Redirect, UserEmail, MailmanMember, Subscriber, StoredObject)
+from mlarchive.archive.tasks import move_list_blobs_task
 
 
 class MessageAdmin(admin.ModelAdmin):
@@ -14,6 +15,21 @@ class MessageAdmin(admin.ModelAdmin):
 class EmailListAdmin(admin.ModelAdmin):
     ordering = ['name']
     search_fields = ['name']
+    actions = ['move_message_blobs']
+
+    @admin.action(permissions=['change'],
+                  description='Move existing message blobs to match list visibility')
+    def move_message_blobs(self, request, queryset):
+        """Queue a move of each selected list's blobs into the bucket matching its visibility.
+
+        Changing a list's visibility moves nothing, so its older messages stay in the
+        old bucket until this is run. Each list's current visibility is passed along,
+        and a move stops early if the list's visibility changes while it runs.
+        """
+        for email_list in queryset:
+            move_list_blobs_task.delay(list_id=email_list.pk, private=email_list.private)
+        self.message_user(
+            request, f'Queued a blob move for {len(queryset)} list(s)', messages.SUCCESS)
 
 
 class UserEmailAdmin(admin.ModelAdmin):

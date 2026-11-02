@@ -14,7 +14,6 @@ import xml.etree.ElementTree as ET
 
 from django.conf import settings
 from django.core.cache import cache
-from django.db import connections
 from django.contrib.auth.models import AnonymousUser
 from django.http import QueryDict
 from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
@@ -24,9 +23,9 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     update_mbox_files, _export_lists, move_list, remove_selected, mark_not_spam,
     is_duplicate_message, is_mailman_footer, import_message_blob,
     strip_mailman_footer, get_footer_tokens,
-    create_cf_worker_templates, _get_removed_message, move_list_blobs, MOVE_LIST_BLOBS_LOCK)
+    create_cf_worker_templates, _get_removed_message, move_list_blobs, move_list_blobs_lock_name)
 from mlarchive.archive.models import (User, Message, Redirect, MailmanMember, UserEmail,
-    StoredObject)
+    StoredObject, TaskLock)
 from mlarchive.archive.mail import make_hash, archive_message, MessageWrapper, make_content_digest
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.backends.elasticsearch import search_from_form
@@ -1022,14 +1021,26 @@ def test_move_list_blobs_ignores_stale_visibility(flipped_list):
 @pytest.mark.django_db(transaction=True)
 def test_move_list_blobs_skips_when_already_running(flipped_list):
     """A run that finds another move of the list holding the lock moves nothing."""
-    other = connections.create_connection('default')
-    try:
-        with other.cursor() as cursor:
-            cursor.execute('SELECT pg_advisory_lock(%s, %s)', [MOVE_LIST_BLOBS_LOCK, flipped_list.pk])
-        assert move_list_blobs(flipped_list.pk, private=True) == {'moved': 0, 'missing': 0, 'failed': 0}
-    finally:
-        other.close()
+    lock = TaskLock.objects.create(name=move_list_blobs_lock_name(flipped_list.pk))
+    assert move_list_blobs(flipped_list.pk, private=True) == {'moved': 0, 'missing': 0, 'failed': 0}
+    assert TaskLock.objects.filter(pk=lock.pk).exists()
+    lock.delete()
     assert move_list_blobs(flipped_list.pk, private=True)['moved'] == 4
+    assert not TaskLock.objects.exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_move_list_blobs_releases_lock_when_stopped(flipped_list):
+    move_list_blobs(flipped_list.pk, private=False)
+    assert not TaskLock.objects.exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_move_list_blobs_releases_lock_on_error(flipped_list):
+    with patch('mlarchive.archive.utils.derived.emit', side_effect=RuntimeError):
+        with pytest.raises(RuntimeError):
+            move_list_blobs(flipped_list.pk, private=True)
+    assert not TaskLock.objects.exists()
 
 
 @pytest.mark.django_db(transaction=True)

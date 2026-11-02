@@ -19,7 +19,7 @@ import mailmanclient
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
-from django.db import connection
+from django.db import IntegrityError, connection
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.core.files.storage import storages
@@ -30,7 +30,7 @@ from django.urls import reverse
 
 from mlarchive.archive import derived
 from mlarchive.archive.models import (EmailList, Subscriber, Redirect, MailmanMember,
-    User, Message, StoredObject)
+    User, Message, StoredObject, TaskLock)
 from mlarchive.archive.mail import MessageWrapper, archive_message, make_content_digest, make_hash
 from mlarchive.archive.storage_utils import (retrieve_bytes, store_bytes, exists_in_storage,
     remove_from_storage, get_metadata, find_by_checksum, move_object)
@@ -42,7 +42,6 @@ THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
 LIST_LISTS_PATTERN = re.compile(r'\s*([\w\-]*) - (.*)$')
 MAILMAN_LISTID_PATTERN = re.compile(r'(.*)\.(ietf|irtf|iab|iesg|rfc-editor)\.org')
 MOVE_LIST_BLOBS_CHUNK_SIZE = 500
-MOVE_LIST_BLOBS_LOCK = 4237  # advisory lock class id, the list id is the object id
 
 # --------------------------------------------------
 # Helper Functions
@@ -1010,6 +1009,10 @@ def move_list(source, target):
         Redirect.objects.create(old=old_url, new=new_url)
 
 
+def move_list_blobs_lock_name(list_id):
+    return f'move_list_blobs:{list_id}'
+
+
 def move_list_blobs(list_id, private):
     """Move a list's message blobs into the bucket matching its visibility.
 
@@ -1021,25 +1024,26 @@ def move_list_blobs(list_id, private):
     are written or deleted to match.
 
     private is the visibility the administrator saw when asking for the move.
-    A run holds a per-list advisory lock, and one that finds the lock taken
-    does nothing: two runs copying the same blob in opposite directions could
-    each delete the other's copy. A run stops at the next chunk once the
-    list's flag no longer matches private; blobs it moved meanwhile go back
-    when the move for the new visibility runs. A blob that fails to move is
-    logged and skipped; running again is safe and moves whatever is left.
-    Returns a Counter of moved, missing (in neither bucket) and failed blobs.
+    A run holds a per-list TaskLock, and one that finds it held does nothing:
+    two runs copying the same blob in opposite directions could each delete
+    the other's copy. A run stops at the next chunk once the list's flag no
+    longer matches private; blobs it moved meanwhile go back when the move
+    for the new visibility runs. A blob that fails to move is logged and
+    skipped; running again is safe and moves whatever is left. Returns a
+    Counter of moved, missing (in neither bucket) and failed blobs.
     """
     email_list = EmailList.objects.get(pk=list_id)
     stats = Counter(moved=0, missing=0, failed=0)
-    with connection.cursor() as cursor:
-        cursor.execute('SELECT pg_try_advisory_lock(%s, %s)', [MOVE_LIST_BLOBS_LOCK, list_id])
-        if not cursor.fetchone()[0]:
-            logger.warning(f'move_list_blobs: a move of {email_list.name} is already running')
-            return stats
-        try:
-            _move_list_blobs(email_list, private, stats)
-        finally:
-            cursor.execute('SELECT pg_advisory_unlock(%s, %s)', [MOVE_LIST_BLOBS_LOCK, list_id])
+    lock_name = move_list_blobs_lock_name(list_id)
+    try:
+        TaskLock.objects.create(name=lock_name)
+    except IntegrityError:
+        logger.warning(f'move_list_blobs: a move of {email_list.name} is already running')
+        return stats
+    try:
+        _move_list_blobs(email_list, private, stats)
+    finally:
+        TaskLock.objects.filter(name=lock_name).delete()
     return stats
 
 

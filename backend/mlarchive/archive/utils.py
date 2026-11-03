@@ -1059,9 +1059,22 @@ def _move_list_blobs(email_list, private, stats):
             return
         # same name Message.get_blob_name() gives
         names = {f'{email_list.name}/{hashcode}'.rstrip('=') for hashcode in chunk}
-        in_source = storages[source].exists_many(names)
-        not_in_source = names - in_source
-        stats['missing'] += len(not_in_source - storages[target].exists_many(not_in_source))
+        indexed = defaultdict(set)
+        for store, name in (StoredObject.objects.exclude_deleted()
+                            .filter(store__in=[source, target], name__in=names)
+                            .values_list('store', 'name')):
+            indexed[store].add(name)
+        # A live row proves the bytes exist, but bytes can lack a row until the
+        # reconcile repairs it, so those are looked up in storage itself rather
+        # than counted missing and left in the wrong bucket
+        unindexed = names - indexed[source] - indexed[target]
+        if unindexed:
+            logger.warning(f'move_list_blobs: {email_list.name} has {len(unindexed)} '
+                           f'blob(s) without a StoredObject row, checking storage')
+        found_in_source = {name for name in unindexed if storages[source].exists(name)}
+        in_source = indexed[source] | found_in_source
+        stats['missing'] += sum(
+            1 for name in unindexed - found_in_source if not storages[target].exists(name))
         for name in sorted(in_source):
             try:
                 move_object(name, source, target)

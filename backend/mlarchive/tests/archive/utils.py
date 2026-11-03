@@ -14,6 +14,7 @@ import xml.etree.ElementTree as ET
 
 from django.conf import settings
 from django.core.cache import cache
+from django.core.files.storage import storages
 from django.contrib.auth.models import AnonymousUser
 from django.http import QueryDict
 from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
@@ -1057,6 +1058,31 @@ def test_move_list_blobs_counts_missing_and_failed(flipped_list):
         stats = move_list_blobs(flipped_list.pk, private=True)
 
     assert stats == {'moved': 2, 'missing': 1, 'failed': 1}
+
+
+@pytest.mark.django_db(transaction=True)
+def test_move_list_blobs_moves_blob_without_stored_object(flipped_list):
+    """A blob whose StoredObject row is missing is found in storage and moved, and gains a row."""
+    name = Message.objects.get(msgid='flip1@example.com').get_blob_name()
+    StoredObject.objects.filter(store='ml-messages', name=name).delete()
+
+    assert move_list_blobs(flipped_list.pk, private=True)['moved'] == 4
+
+    assert not exists_in_storage('ml-messages', name)
+    assert exists_in_storage('ml-messages-private', name)
+    assert StoredObject.objects.exclude_deleted().filter(store='ml-messages-private', name=name).exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_move_list_blobs_indexed_blobs_skip_storage_lookups(flipped_list):
+    """When every blob has a StoredObject row, no blob is looked up in storage one by one."""
+    with patch('mlarchive.archive.utils.move_object'), \
+            patch.object(storages['ml-messages'], 'exists') as public_exists, \
+            patch.object(storages['ml-messages-private'], 'exists') as private_exists:
+        assert move_list_blobs(flipped_list.pk, private=True)['moved'] == 4
+
+    public_exists.assert_not_called()
+    private_exists.assert_not_called()
 
 
 @pytest.mark.django_db(transaction=True)

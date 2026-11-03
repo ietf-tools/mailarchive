@@ -677,3 +677,13 @@ class StoredObject(models.Model):
 
     def __str__(self):
         return f'{self.store}:{self.name}'
+
+
+class TaskLock(models.Model):
+    """A named lock that keeps two runs of a task from overlapping."""
+
+    name = models.CharField(max_length=255, unique=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.name} since {self.created}'

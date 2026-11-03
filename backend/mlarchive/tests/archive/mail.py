@@ -3,6 +3,7 @@ import datetime
 import email
 import email.message
 import json
+import logging
 from email import policy
 import glob
 import mailbox
@@ -444,7 +445,8 @@ def test_archive_message_bad_order():
 
 
 @pytest.mark.django_db(transaction=True)
-def test_archive_message_change_list_access(messages):
+def test_archive_message_change_list_access(messages, caplog):
+    caplog.set_level(logging.ERROR, logger='mlarchive.archive.mail')
     data = '''From: Joe <joe@example.com>
 To: Joe <joe@example.com>
 Date: Thu, 7 Nov 2013 17:54:55 +0000
@@ -463,6 +465,11 @@ This is a test email.  database
     assert status == 0
     email_list = EmailList.objects.get(name='pubone')
     assert email_list.private is True
+    errors = [r.getMessage() for r in caplog.records
+              if r.levelno == logging.ERROR and 'changed from public to private' in r.getMessage()]
+    assert len(errors) == 1
+    assert f'pubone (id={email_list.pk})' in errors[0]
+    assert 'Move existing message blobs to match list visibility' in errors[0]
     # remove message from index
     # TODO figure out better test index management
     message = Message.objects.get(msgid='0000000002@example.com')

@@ -933,8 +933,14 @@ class MessageWrapper(object):
         self.email_list, created = EmailList.objects.get_or_create(
             name=self.listname, defaults={'description': self.listname, 'private': self.private})
         if not created and self.private is True and self.email_list.private is False:
-            # the list has been changed from public to private
-            logger.info('Email List {} changed from public to private'.format(self.email_list.name))
+            # the list has been changed from public to private. Logged as an error
+            # because the change needs an administrator's follow-up
+            logger.error(
+                f'Email list {self.email_list.name} (id={self.email_list.pk}) changed from public '
+                f'to private at ingest. Its {self.email_list.message_set.count()} existing '
+                f'messages stay in ml-messages, publicly served from R2 and the edge, and '
+                f'unreadable through the list, until an administrator runs "Move existing '
+                f'message blobs to match list visibility" on it in the Django admin')
             self.email_list.private = True
             self.email_list.save()
         self.hashcode = self.get_hash()

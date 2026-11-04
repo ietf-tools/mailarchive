@@ -98,7 +98,7 @@ def check_message(msg, worker_base, app_base, verbose=False, show_worker_respons
 
     Returns (status, info_dict) where status is 'pass', 'fail', or 'skip'.
     """
-    hashcode_url = msg.hashcode.rstrip('=')
+    hashcode_url = msg.short_hashcode
     path = f'/arch/msg/{msg.email_list.name}/{hashcode_url}/'
 
     worker_url = f'{worker_base}{path}'

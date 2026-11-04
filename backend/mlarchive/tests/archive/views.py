@@ -616,7 +616,7 @@ def test_browse_list_sort_subject(client, messages):
 @pytest.mark.django_db(transaction=True)
 def test_browse_index_gbt(client, messages):
     message = messages.get(msgid='a02')
-    url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?gbt=1&index={}'.format(message.hashcode.strip('='))
+    url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?gbt=1&index={}'.format(message.short_hashcode)
     response = client.get(url)
     assert response.status_code == 200
     assert len(response.context['results']) == 5
@@ -629,7 +629,7 @@ def test_browse_index_gbt_query_count(client, messages, django_assert_max_num_qu
     The view does not walk the thread list one thread at a time.
     """
     message = messages.get(msgid='a02')
-    url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?gbt=1&index={}'.format(message.hashcode.strip('='))
+    url = reverse('archive_browse_list', kwargs={'list_name': 'pubone'}) + '?gbt=1&index={}'.format(message.short_hashcode)
     with django_assert_max_num_queries(10):
         response = client.get(url)
     assert response.status_code == 200
@@ -646,7 +646,7 @@ def test_browse_index_gbt_same_thread_date(client):
         MessageFactory.create(email_list=elist, thread=thread, date=date)
         threads.append(thread)
     first = Message.objects.get(thread=threads[0])
-    url = reverse('archive_browse_list', kwargs={'list_name': 'gbtdate'}) + '?gbt=1&index={}'.format(first.hashcode.strip('='))
+    url = reverse('archive_browse_list', kwargs={'list_name': 'gbtdate'}) + '?gbt=1&index={}'.format(first.short_hashcode)
     response = client.get(url)
     assert response.status_code == 200
     assert len(response.context['results']) == 3

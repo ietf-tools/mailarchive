@@ -30,7 +30,7 @@ from django.urls import reverse
 
 from mlarchive.archive import derived
 from mlarchive.archive.models import (EmailList, Subscriber, Redirect, MailmanMember,
-    User, Message, StoredObject, TaskLock)
+    User, Message, StoredObject, TaskLock, shorten_hashcode)
 from mlarchive.archive.mail import MessageWrapper, archive_message, make_content_digest, make_hash
 from mlarchive.archive.storage_utils import (retrieve_bytes, store_bytes, exists_in_storage,
     remove_from_storage, get_metadata, find_by_checksum, move_object)
@@ -106,7 +106,7 @@ WHERE m.id = ANY(%s)
 def _nav_url(hashcode, list_name):
     if hashcode is None:
         return ''
-    return reverse('archive_detail', kwargs={'list_name': list_name, 'id': hashcode.rstrip('=')})
+    return reverse('archive_detail', kwargs={'list_name': list_name, 'id': shorten_hashcode(hashcode)})
 
 
 def fetch_nav_for_batch(messages):
@@ -424,7 +424,7 @@ def purge_confirmed_dupes(listname=None, dry_run=False, exitfirst=False, verbosi
                             )
                     else:
                         os.remove(dupe_file_path)
-                        blob_name = os.path.join(elist.name, filename.rstrip('='))
+                        blob_name = os.path.join(elist.name, shorten_hashcode(filename))
                         if exists_in_storage('ml-messages-dupes', blob_name):
                             remove_from_storage('ml-messages-dupes', blob_name)
                         if verbosity >= 3:
@@ -521,7 +521,7 @@ def load_hidden_messages(directory, listname=None, verbosity=1):
             if not os.path.isfile(file_path):
                 continue
 
-            blob_name = os.path.join(name, filename).rstrip('=')
+            blob_name = os.path.join(name, shorten_hashcode(filename))
 
             try:
                 if exists_in_storage(bucket, blob_name):
@@ -1058,7 +1058,7 @@ def _move_list_blobs(email_list, private, stats):
                            f'{"private" if private else "public"}, stopping: {dict(stats)}')
             return
         # same name Message.get_blob_name() gives
-        names = {f'{email_list.name}/{hashcode}'.rstrip('=') for hashcode in chunk}
+        names = {f'{email_list.name}/{shorten_hashcode(hashcode)}' for hashcode in chunk}
         indexed = defaultdict(set)
         for store, name in (StoredObject.objects.exclude_deleted()
                             .filter(store__in=[source, target], name__in=names)

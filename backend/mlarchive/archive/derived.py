@@ -45,7 +45,7 @@ from django.db import transaction
 from django.urls import reverse
 
 from mlarchive.archive.message_json import store_message_json
-from mlarchive.archive.models import EmailList, Message, Thread, is_small_year
+from mlarchive.archive.models import EmailList, Message, Thread, is_small_year, shorten_hashcode
 from mlarchive.archive.storage_utils import remove_from_storage
 
 logger = logging.getLogger(__name__)
@@ -121,7 +121,8 @@ def build_message_json(key):
         store_message_json(message)
     else:
         # same name Message.get_blob_name() gives
-        remove_from_storage(kind='ml-messages-json', name=key.rstrip('='), warn_if_missing=False)
+        remove_from_storage(kind='ml-messages-json', name=f'{list_name}/{shorten_hashcode(hashcode)}',
+                            warn_if_missing=False)
 
 
 # --------------------------------------------------

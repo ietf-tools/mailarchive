@@ -44,7 +44,7 @@ from mlarchive.archive.view_funcs import (initialize_formsets, get_columns, get_
     BlobMessage, get_blob_content, get_thread_page_ids, search_blobs)
 
 from mlarchive.archive.models import (EmailList, Message, Thread, Attachment,
-    Subscriber)
+    Subscriber, pad_hashcode)
 from mlarchive.archive.forms import (AdminForm, AdminActionForm, BlobForm, BlobSearchForm,
     AdvancedSearchForm, BrowseForm, RulesForm, SearchForm, DateForm)
 
@@ -458,7 +458,7 @@ class CustomBrowseView(CustomSearchView):
         if self.index:
             try:
                 index_message = Message.objects.select_related('thread').get(
-                    email_list=self.email_list, hashcode=self.index + '=')
+                    email_list=self.email_list, hashcode=pad_hashcode(self.index))
             except Message.DoesNotExist:
                 raise Http404("No such message!")
 

@@ -65,7 +65,7 @@ def test_not_logged_browse_private_list(client, messages):
     browse views
     '''
     message = Message.objects.filter(email_list__name='private').first()
-    url = reverse('archive_search') + '?email_list=private&index={}'.format(message.hashcode.strip('='))
+    url = reverse('archive_search') + '?email_list=private&index={}'.format(message.short_hashcode)
     response = client.get(url)
     assert 'No results found' in smart_str(response.content)
 

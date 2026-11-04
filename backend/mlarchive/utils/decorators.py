@@ -7,7 +7,7 @@ from django.http import (Http404, HttpResponse, JsonResponse,
     HttpResponseForbidden)
 from django.shortcuts import get_object_or_404, redirect, render
 from functools import wraps
-from mlarchive.archive.models import Message, EmailList, Redirect
+from mlarchive.archive.models import Message, EmailList, Redirect, pad_hashcode, shorten_hashcode
 from mlarchive.archive.storage_utils import exists_in_storage
 
 import logging
@@ -37,10 +37,9 @@ def check_access(func):
                     return redirect(redir.new, permanent=True)
                 except Redirect.DoesNotExist:
                     pass
-                # look in the removed message bucket. Blob names strip the
-                # trailing '=' padding, matching Message.get_blob_name()
+                # look in the removed message bucket, named as Message.get_blob_name()
                 blob_name = '{}/{}'.format(
-                    kwargs['list_name'], kwargs['id'].rstrip('='))
+                    kwargs['list_name'], shorten_hashcode(kwargs['id']))
                 if exists_in_storage('ml-messages-removed', blob_name):
                     return render(request, 'archive/removed.html', {}, status=410)
                 raise Http404
@@ -123,8 +122,8 @@ def pad_id(func):
     '''
     @wraps(func)
     def wrapper(*args, **kwargs):
-        if 'id' in kwargs and not kwargs['id'].endswith("="):
-            kwargs['id'] = kwargs['id'] + "="
+        if 'id' in kwargs:
+            kwargs['id'] = pad_hashcode(kwargs['id'])
         return func(*args, **kwargs)
     return wrapper
 

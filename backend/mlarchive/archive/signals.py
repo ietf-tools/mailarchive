@@ -40,7 +40,8 @@ def _message_remove(sender, instance, **kwargs):
     "_removed" directory.
     """
     # before set_first() below, so the refs include the month the thread is
-    # listed under now, as well as the one it moves to
+    # listed under now, as well as the one it moves to. It must stay before
+    # it: _dependent_messages() relies on the thread's date not having moved.
     derived.emit(derived.MessageRemoved(instance.pk))
 
     # move file on filesystem, if this message still has one

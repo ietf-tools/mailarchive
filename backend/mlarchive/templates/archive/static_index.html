@@ -14,13 +14,13 @@
         {% for message in queryset %}
             {% if group_by_thread %}
                 <li class="depth-{{ message.thread_depth|max_depth }}">
-                    <a id="{{ message.hashcode|slice:':-1' }}" href="{{ message.get_absolute_url }}">{{ message.subject }}</a>, <em>{{ message.frm_name }}</em>
+                    <a id="{{ message.short_hashcode }}" href="{{ message.get_absolute_url }}">{{ message.subject }}</a>, <em>{{ message.frm_name }}</em>
                 </li>
             {% else %}
                 {% with date=message.date|date:"M d Y" %}
                     {% ifchanged %}<strong>{{ date }}</strong>{% endifchanged %}
                     <li>
-                        <a id="{{ message.hashcode|slice:':-1' }}" href="{{ message.get_absolute_url }}">{{ message.subject }}</a>, <em>{{ message.frm_name }}</em>
+                        <a id="{{ message.short_hashcode }}" href="{{ message.get_absolute_url }}">{{ message.subject }}</a>, <em>{{ message.frm_name }}</em>
                     </li>
                 {% endwith %}
             {% endif %}        

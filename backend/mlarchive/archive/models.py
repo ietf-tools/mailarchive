@@ -163,6 +163,27 @@ class EmailList(models.Model):
         return 'ml-messages-private' if self.private else 'ml-messages'
 
 
+def shorten_hashcode(hashcode):
+    """Return the short form of a hashcode used in URLs and blob names.
+
+    Message.hashcode stores the full base64 value, padding included. URLs,
+    page anchors and blob names drop the trailing '=' padding. pad_hashcode()
+    is the inverse; change the two together. The Cloudflare messages worker
+    (workers/messages/index.js) also hard-codes the 27 character short form.
+    """
+    return hashcode.rstrip('=')
+
+
+def pad_hashcode(hashcode):
+    """Return the stored form of a hashcode given in either form.
+
+    Inverse of shorten_hashcode(). An already padded value is returned
+    unchanged.
+    """
+    short = shorten_hashcode(hashcode)
+    return short + '=' * (-len(short) % 4)
+
+
 class Message(models.Model):
     base_subject = models.CharField(max_length=512, blank=True, db_index=True)
     cc = models.TextField(blank=True, default='')
@@ -304,6 +325,10 @@ class Message(models.Model):
             return self._pymsg
     
     @property
+    def short_hashcode(self):
+        return shorten_hashcode(self.hashcode)
+
+    @property
     def pymsg_error(self):
         '''Any errors trying to get Python message, self.pymsg'''
         if not hasattr(self, '_pymsg_error'):
@@ -311,16 +336,14 @@ class Message(models.Model):
         return self._pymsg_error
     
     def get_absolute_url(self):
-        # strip padding, "=", to shorten URL
         return reverse('archive_detail', kwargs={
             'list_name': self.email_list.name,
-            'id': self.hashcode.rstrip('=')})
+            'id': self.short_hashcode})
 
     def get_absolute_url_with_host(self):
-        # strip padding, "=", to shorten URL
         return settings.ARCHIVE_HOST_URL + reverse('archive_detail', kwargs={
             'list_name': self.email_list.name,
-            'id': self.hashcode.rstrip('=')})
+            'id': self.short_hashcode})
 
     def get_cache_tag(self):
         """Returns the Cloudflare Cache-Tag value for this message's pages.
@@ -376,13 +399,13 @@ class Message(models.Model):
 
     def get_date_index_url(self):
         base = reverse('archive_browse_list', kwargs={'list_name': self.email_list.name})
-        fragment = '?index={}'.format(self.hashcode.rstrip('='))
+        fragment = '?index={}'.format(self.short_hashcode)
         return base + fragment
 
     def get_download_url(self):
         return reverse('archive_message_download', kwargs={
             'list_name': self.email_list.name,
-            'id': self.hashcode.rstrip('=')})
+            'id': self.short_hashcode})
 
     def get_reply_url(self):
         '''Return URL to use in Reply-To link for this message'''
@@ -398,19 +421,19 @@ class Message(models.Model):
 
     def get_thread_index_url(self):
         base = reverse('archive_browse_list', kwargs={'list_name': self.email_list.name})
-        fragment = '?gbt=1&index={}'.format(self.hashcode.rstrip('='))
+        fragment = '?gbt=1&index={}'.format(self.short_hashcode)
         return base + fragment
 
     def get_static_date_index_url(self):
         return '{url}#{fragment}'.format(
             url=self.get_static_date_page_url(),
-            fragment=self.hashcode.rstrip('='),
+            fragment=self.short_hashcode,
         )
 
     def get_static_thread_index_url(self):
         return '{url}#{fragment}'.format(
             url=self.get_static_thread_page_url(),
-            fragment=self.hashcode.rstrip('='),
+            fragment=self.short_hashcode,
         )
 
     def get_static_date_page_url(self):
@@ -437,7 +460,7 @@ class Message(models.Model):
         return self.email_list.blob_bucket
 
     def get_blob_name(self):
-        return f'{self.email_list.name}/{self.hashcode}'.rstrip('=')
+        return f'{self.email_list.name}/{self.short_hashcode}'
 
     def get_file_path(self):
         return os.path.join(
@@ -575,7 +598,7 @@ class Attachment(models.Model):
 
     def get_absolute_url(self):
         return reverse('archive_attachment', kwargs={'list_name': self.message.email_list.name,
-                                                     'id': self.message.hashcode.strip('='),
+                                                     'id': self.message.short_hashcode,
                                                      'sequence': str(self.sequence)})
 
     def get_file_path(self):

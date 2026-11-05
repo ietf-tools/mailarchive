@@ -24,7 +24,7 @@ from django.conf import settings
 from django.core.cache import cache
 
 from mlarchive.archive.models import (Attachment, EmailList, Legacy, Message,
-    Thread, get_in_reply_to_message, is_attachment)
+    Thread, get_in_reply_to_message, is_attachment, shorten_hashcode)
 from mlarchive.archive.management.commands._mimetypes import CONTENT_TYPES, UNKNOWN_CONTENT_TYPE
 from mlarchive.archive import derived
 from mlarchive.archive.inspectors import *      # noqa
@@ -1143,8 +1143,7 @@ class MessageWrapper(object):
         # spam and filtered. The new system uses special buckets in place
         # of subdirectories.
 
-        # strip trailing "=" from filename to match message URL
-        blob_path = os.path.join(self.listname, filename.rstrip('='))
+        blob_path = os.path.join(self.listname, shorten_hashcode(filename))
 
         # store siloed messages
         if subdir:

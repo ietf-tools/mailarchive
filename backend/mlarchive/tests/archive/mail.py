@@ -22,7 +22,7 @@ from django.urls import reverse
 from django.utils.timezone import is_aware
 from factories import EmailListFactory, MessageFactory, ThreadFactory
 
-from mlarchive.archive.models import Message, EmailList
+from mlarchive.archive.models import Message, EmailList, shorten_hashcode
 from mlarchive.archive.mail import (archive_message, clean_spaces, CustomMMDF,
     MessageWrapper, get_base_subject, get_envelope_date, get_from,
     get_header_date, get_mb, get_received_date, parsedate_to_datetime,
@@ -70,7 +70,7 @@ This is a test email.  database
 '''
     data = data.encode('ASCII')
     hashcode = make_hash('0000000002@example.com', 'test')
-    blob_name = f'test/{hashcode}'.rstrip('=')
+    blob_name = f'test/{shorten_hashcode(hashcode)}'
     assert Message.objects.all().count() == 0
     assert not exists_in_storage('ml-messages', blob_name)
     assert not exists_in_storage('ml-messages-json', blob_name)
@@ -198,7 +198,7 @@ This is a test email.  database
 '''
     data = data.encode('ASCII')
     hashcode = make_hash('0000000002@example.com', 'test')
-    blob_name = f'test/{hashcode}'.rstrip('=')
+    blob_name = f'test/{shorten_hashcode(hashcode)}'
     assert Message.objects.all().count() == 0
     assert not exists_in_storage('ml-messages', blob_name)
     assert not exists_in_storage('ml-messages-json', blob_name)
@@ -384,7 +384,7 @@ def test_archive_message_duplicate_msgid_unreadable_archived_copy(client):
     assert blobs.count() == 1
     assert blobs.first().name.startswith('test/')
     # this path leaves the hashcode unset, so the copy is uuid named
-    assert blobs.first().name != f'test/{make_hash("0000000002@example.com", "test")}'.rstrip('=')
+    assert blobs.first().name != f'test/{shorten_hashcode(make_hash("0000000002@example.com", "test"))}'
 
     # not a Redelivery, that needs a readable copy to compare against, but still a
     # NotArchived, which is why archive_message() reported success above

@@ -22,7 +22,7 @@ TimePeriod = namedtuple('TimePeriod', 'year, month')
 def build_msg_pages(elist):
     """Create static message file"""
     for message in elist.message_set.all().order_by('date'):
-        filename = message.hashcode.strip('=') + '.html'
+        filename = message.short_hashcode + '.html'
         path = os.path.join(settings.STATIC_INDEX_DIR, elist.name, filename)
         request = HttpRequest()
         request.method = 'GET'

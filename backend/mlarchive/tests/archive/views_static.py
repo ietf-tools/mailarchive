@@ -72,5 +72,5 @@ def test_build_msg_pages(messages, static_dir):
     message = messages.filter(email_list=email_list).first()
     build_msg_pages(email_list)
     assert 'pubone' in os.listdir(settings.STATIC_INDEX_DIR)
-    assert message.hashcode.strip('=') + '.html' in os.listdir(os.path.join(settings.STATIC_INDEX_DIR, 'pubone'))
+    assert message.short_hashcode + '.html' in os.listdir(os.path.join(settings.STATIC_INDEX_DIR, 'pubone'))
 """

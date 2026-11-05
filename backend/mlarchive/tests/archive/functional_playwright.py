@@ -191,7 +191,7 @@ class TestMyPlaywright:
         expect(page).to_have_title(re.compile(r'.*Date Index.*'))
 
         # Check focused element
-        focused_id = message.hashcode.strip('=')
+        focused_id = message.short_hashcode
         focused_element = page.locator(f'#{focused_id}')
         expect(focused_element).to_be_focused()
 

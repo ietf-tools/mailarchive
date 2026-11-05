@@ -8,7 +8,7 @@ from django.conf import settings
 from django.utils.http import urlencode
 
 from mlarchive.archive.query_utils import get_base_query
-from mlarchive.archive.models import EmailList
+from mlarchive.archive.models import EmailList, shorten_hashcode
 from mlarchive.archive.utils import get_noauth
 
 
@@ -173,8 +173,7 @@ class BlobForm(forms.Form):
         help_text='Blob name, ie. "listname/hashcode"')
 
     def clean_name(self):
-        # blob names are stored with the base64 padding, "=", stripped
-        return self.cleaned_data['name'].strip().rstrip('=')
+        return shorten_hashcode(self.cleaned_data['name'].strip())
 
 
 class BlobSearchForm(forms.Form):

@@ -9,9 +9,32 @@ from factories import EmailListFactory, ThreadFactory, MessageFactory
 from django.urls import reverse
 from django.utils.encoding import smart_str
 from django.utils.http import urlencode
-from mlarchive.archive.models import Message, Attachment, is_attachment, get_message_from_binary_file
+from mlarchive.archive.mail import make_hash
+from mlarchive.archive.models import (Message, Attachment, is_attachment, get_message_from_binary_file,
+    pad_hashcode, shorten_hashcode)
 from mlarchive.utils.test_utils import message_from_file, load_message
 from mlarchive.utils.encoding import get_filename
+
+
+def test_shorten_hashcode():
+    hashcode = make_hash('test@example.com', 'public')
+    assert len(hashcode) == 28
+    assert hashcode.endswith('=')
+    short = shorten_hashcode(hashcode)
+    assert short == hashcode[:-1]
+    assert len(short) == 27
+
+
+def test_pad_hashcode():
+    hashcode = make_hash('test@example.com', 'public')
+    assert pad_hashcode(shorten_hashcode(hashcode)) == hashcode
+    assert pad_hashcode(hashcode) == hashcode
+
+
+@pytest.mark.django_db(transaction=True)
+def test_message_short_hashcode():
+    msg = MessageFactory.create(email_list=EmailListFactory.create())
+    assert msg.short_hashcode == shorten_hashcode(msg.hashcode)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -51,7 +74,7 @@ def test_message_get_date_index_url(client):
     elist = EmailListFactory.create(name='public')
     msg = MessageFactory.create(email_list=elist)
     assert msg.get_date_index_url() == '/arch/browse/public/?index={hashcode}'.format(
-        hashcode=msg.hashcode.strip('='))
+        hashcode=msg.short_hashcode)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -90,7 +113,7 @@ def test_message_get_thread_index_url(client):
     elist = EmailListFactory.create(name='public')
     msg = MessageFactory.create(email_list=elist)
     assert msg.get_thread_index_url() == '/arch/browse/public/?gbt=1&index={hashcode}'.format(
-        hashcode=msg.hashcode.strip('='))
+        hashcode=msg.short_hashcode)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -99,7 +122,7 @@ def test_message_get_static_date_index_url(client):
     elist = EmailListFactory.create(name='public')
     msg = MessageFactory.create(email_list=elist, date=date)
     assert msg.get_static_date_index_url() == '/arch/browse/static/public/2017/#{hashcode}'.format(
-        hashcode=msg.hashcode.strip('='))
+        hashcode=msg.short_hashcode)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -108,7 +131,7 @@ def test_message_get_static_thread_index_url(client):
     elist = EmailListFactory.create(name='public')
     msg = MessageFactory.create(email_list=elist, date=date)
     assert msg.get_static_thread_index_url() == '/arch/browse/static/public/thread/2017/#{hashcode}'.format(
-        hashcode=msg.hashcode.strip('='))
+        hashcode=msg.short_hashcode)
 
 
 @pytest.mark.django_db(transaction=True)

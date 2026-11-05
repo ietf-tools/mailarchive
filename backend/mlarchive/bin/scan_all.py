@@ -143,7 +143,7 @@ def archived_at():
             continue
         # if any archive-at values are ours, one must match
         if any('mailarchive' in s for s in archives):
-            hashcode = message.hashcode.strip('=')
+            hashcode = message.short_hashcode
             for s in archives:
                 if hashcode in s:
                     break
@@ -174,7 +174,7 @@ def archived_at_report(start='2013-01-01', fix=False):
     for message in Message.objects.filter(date__gte=start_date).order_by('-date'):
         msg = parser.parsebytes(message.get_raw_message(), headersonly=True)
         archives = msg.get_all('archived-at')
-        hashcode = message.hashcode.strip('=')
+        hashcode = message.short_hashcode
         # problem messages will have one mailarchive archived-at header that does not match
         if archives and len(archives) == 1 and 'mailarchive' in archives[0] and hashcode not in archives[0]:
             print('{},{},{}'.format(message.date.strftime('%m-%d-%Y'), archives[0], hashcode))

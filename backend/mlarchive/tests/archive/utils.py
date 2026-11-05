@@ -26,7 +26,7 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     strip_mailman_footer, get_footer_tokens,
     create_cf_worker_templates, _get_removed_message, move_list_blobs, move_list_blobs_lock_name)
 from mlarchive.archive.models import (User, Message, Redirect, MailmanMember, UserEmail,
-    StoredObject, TaskLock)
+    StoredObject, TaskLock, shorten_hashcode)
 from mlarchive.archive.mail import make_hash, archive_message, MessageWrapper, make_content_digest
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.backends.elasticsearch import search_from_form
@@ -450,7 +450,7 @@ def test_purge_incoming(settings):
         removed_message_bytes = f.read()
     removed_mw = MessageWrapper.from_bytes(bytes=removed_message_bytes, listname='banana', private=False)
     removed_name_incoming = store_old('banana.public.', removed_message_bytes)
-    removed_bucket_name = f'banana/{removed_mw.get_hash()}'.rstrip('=')
+    removed_bucket_name = f'banana/{shorten_hashcode(removed_mw.get_hash())}'
     store_file('ml-messages-removed', removed_bucket_name, io.BytesIO(removed_message_bytes), content_type='message/rfc822')
 
     # Case 5: old no-archive object with no stored copy → should be purged (dropped, not archived)
@@ -655,7 +655,7 @@ def test_import_message_blob(client):
     assert msg.subject == 'This is a test'
 
     # assert message blob exists in archive storage
-    storage_blob_name = f'apple/{msg.hashcode.strip('=')}'
+    storage_blob_name = f'apple/{msg.short_hashcode}'
     assert exists_in_storage('ml-messages', storage_blob_name)
     assert exists_in_storage('ml-messages-json', storage_blob_name)
 

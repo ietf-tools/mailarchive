@@ -23,6 +23,8 @@ jobs:
       # environment-specific values read by backend/mlarchive/settings/test.py
       DATABASES_PASSWORD: RkTkDPFnKpko
       ELASTICSEARCH_HOST: elasticsearch
+      TYPESENSE_HOST: typesense
+      TYPESENSE_API_KEY: xyz
 
     services:
       elasticsearch:
@@ -59,6 +61,13 @@ jobs:
       blobstore:
         image: ghcr.io/ietf-tools/datatracker-devblobstore:latest
 
+      typesense:
+        image: typesense/typesense:30.1
+        env:
+          TYPESENSE_API_KEY: xyz
+          # the image has no /data and service containers get no volume
+          TYPESENSE_DATA_DIR: /tmp
+
     steps:
       - uses: actions/checkout@v7
 
@@ -66,6 +75,11 @@ jobs:
         run: |
           chmod +x ./dev/tests/prepare.sh
           sh ./dev/tests/prepare.sh
+
+      - name: Wait for Typesense
+        # the image has no curl for a --health-cmd, so poll from the job
+        # container; /health returns 503 until the node is ready
+        run: curl -fsS --retry 30 --retry-delay 2 --retry-all-errors http://typesense:8108/health
 
       - name: Run all tests
         shell: bash

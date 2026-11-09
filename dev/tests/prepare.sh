@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 echo "Fixing permissions..."
 chmod -R 777 ./

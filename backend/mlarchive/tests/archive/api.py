@@ -338,7 +338,7 @@ def test_import_message_integration(client, settings):
     assert msg.subject == 'This is a test'
 
     # assert message blob exists in archive storage
-    storage_blob_name = f'apple/{msg.hashcode.strip('=')}'
+    storage_blob_name = f'apple/{msg.short_hashcode}'
     assert exists_in_storage('ml-messages', storage_blob_name)
     assert exists_in_storage('ml-messages-json', storage_blob_name)
 

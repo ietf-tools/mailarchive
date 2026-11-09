@@ -355,7 +355,7 @@ def test_audit_list_objects():
 
     only_messages, only_objects = audit_list_objects(elist)
 
-    assert only_messages == {lost.hashcode.rstrip('=')}
+    assert only_messages == {lost.short_hashcode}
     assert only_objects == {'orphanhash'}
 
 
@@ -406,7 +406,7 @@ def test_reconcile_stored_objects(caplog):
     assert stats['rows'] == 4
     assert stats['untracked'] == 0
     assert stats['only_messages'] == 1
-    assert lost.hashcode.rstrip('=') not in [
+    assert lost.short_hashcode not in [
         name.split('/')[1] for name in StoredObject.objects.values_list('name', flat=True)]
 
 

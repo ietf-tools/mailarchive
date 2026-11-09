@@ -259,9 +259,10 @@ def test_remove_selected_applies_removed_refs(two_threads, recorded, admin_user,
     with django_capture_on_commit_callbacks() as callbacks:
         remove_selected(admin_user.id)
     assert recorded == []
-    for callback in callbacks:
-        callback()
-    applied = set().union(*recorded)
+    assert len(callbacks) == 1
+    callbacks[0]()
+    assert len(recorded) == 1
+    applied = recorded[0]
     assert expected <= applied
     assert message_json_ref('public', first.hashcode) in applied
     assert message_json_ref('public', other.hashcode) in applied

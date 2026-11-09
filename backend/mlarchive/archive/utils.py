@@ -1331,7 +1331,8 @@ def remove_selected(user_id):
         logger.info('User %s removed message [list=%s,hash=%s,msgid=%s,pk=%s]' %
                     (user, message.email_list, message.hashcode, message.msgid, message.pk))
     mbox_updates = get_mbox_updates(queryset)
-    queryset.delete()
+    with derived.batch():
+        queryset.delete()
     for file in mbox_updates:
         elist = EmailList.objects.get(pk=file[2])
         if not elist.private:

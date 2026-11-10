@@ -5,13 +5,13 @@ import email
 import itertools
 import json
 import logging
-import mailbox
 import os
 import re
 import requests
 import shutil
 import subprocess
 import sys
+import tempfile
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -20,6 +20,7 @@ from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
 from django.db import IntegrityError, connection
+from django.db.models.functions import TruncMonth
 from django.http import HttpResponse
 from django.core.exceptions import ValidationError
 from django.core.files.storage import storages
@@ -27,10 +28,11 @@ from django.core.validators import validate_email
 from django.template.loader import render_to_string
 from django.test import RequestFactory
 from django.urls import reverse
+from django.utils import timezone
 
 from mlarchive.archive import derived
 from mlarchive.archive.models import (EmailList, Subscriber, Redirect, MailmanMember,
-    User, Message, StoredObject, TaskLock, shorten_hashcode)
+    User, Message, StoredObject, TaskLock, Watermark, shorten_hashcode)
 from mlarchive.archive.mail import MessageWrapper, archive_message, make_content_digest, make_hash
 from mlarchive.archive.storage_utils import (retrieve_bytes, store_bytes, exists_in_storage,
     remove_from_storage, get_metadata, find_by_checksum, move_object)
@@ -42,6 +44,13 @@ THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
 LIST_LISTS_PATTERN = re.compile(r'\s*([\w\-]*) - (.*)$')
 MAILMAN_LISTID_PATTERN = re.compile(r'(.*)\.(ietf|irtf|iab|iesg|rfc-editor)\.org')
 MOVE_LIST_BLOBS_CHUNK_SIZE = 500
+MBOX_FROM_PATTERN = re.compile(rb'^From ', re.MULTILINE)
+MONTH_FILES_WATERMARK = 'rebuild_touched_months'
+MONTH_FILES_LOCK = 'rebuild_touched_months'
+# how far before the watermark a run looks, for rows that committed after it was taken
+MONTH_FILES_WATERMARK_OVERLAP = datetime.timedelta(minutes=15)
+# where the first run starts; update_mbox_files_task, which this replaces, ran daily
+MONTH_FILES_INITIAL_LOOKBACK = datetime.timedelta(days=2)
 
 # --------------------------------------------------
 # Helper Functions
@@ -841,27 +850,112 @@ def create_mbox_file(month, year, elist):
         return
     filename = '{:04d}-{:02d}.mail'.format(year, month)
     path = os.path.join(settings.ARCHIVE_MBOX_DIR, 'public', elist.name, filename)
-    messages = elist.message_set.filter(date__month=month, date__year=year)
-    if os.path.exists(path):
-        os.remove(path)
-    if messages.count() == 0:
+    messages = (elist.message_set
+                .filter(date__month=month, date__year=year)
+                .select_related('email_list')
+                .order_by('date', 'id'))
+    if not messages.exists():
+        if os.path.exists(path):
+            os.remove(path)
         return
-    if not os.path.isdir(os.path.dirname(path)):
-        os.makedirs(os.path.dirname(path))
-    mbox = mailbox.mbox(path)
-    for message in messages:
-        mbox.add(email.message_from_bytes(message.get_raw_message()))
-    mbox.close()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    # write beside the target and rename, so an rsync pass never sees a partial file
+    fd, temp_path = tempfile.mkstemp(dir=os.path.dirname(path), prefix='.' + filename)
+    try:
+        with os.fdopen(fd, 'wb') as f:
+            for message in messages.iterator():
+                entry = mbox_entry(message)
+                if entry:
+                    f.write(entry)
+        os.chmod(temp_path, 0o644)
+        os.replace(temp_path, path)
+    except BaseException:
+        os.remove(temp_path)
+        raise
 
 
-def update_mbox_files():
-    '''Update archive mbox files'''
-    yesterday = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=1)
-    month = yesterday.month
-    year = yesterday.year
-    for elist in EmailList.objects.filter(active=True, private=False):
-        if elist.message_set.filter(date__month=month, date__year=year).count() > 0:
-            create_mbox_file(month=month, year=year, elist=elist)
+def mbox_entry(message):
+    """Return message as one mboxo entry: envelope line, raw bytes with body lines
+    starting "From " escaped as ">From ", and a blank separator line.
+
+    The raw blob is written as stored rather than through mailbox.mbox.add(), which
+    re-serializes headers and, since blobs carry no envelope line, stamps every
+    message "From MAILER-DAEMON <build time>", making rebuilds of an unchanged
+    month produce different bytes. Returns b'' if the blob can't be read.
+    """
+    content = message.get_raw_message()
+    if not content:
+        logger.warning(f'mbox_entry: no content for {message.email_list.name}/{message.hashcode}, skipped')
+        return b''
+    if content.startswith(b'From '):
+        from_line, _, content = content.partition(b'\n')
+    else:
+        from_line = message.get_from_line().encode('utf-8', errors='replace')
+    content = MBOX_FROM_PATTERN.sub(b'>From ', content)
+    if not content.endswith(b'\n'):
+        content += b'\n'
+    return from_line + b'\n' + content + b'\n'
+
+
+class TaskLockHeld(Exception):
+    """A run found its TaskLock already held."""
+
+
+class MonthRebuildFailed(Exception):
+    """One or more month files failed to rebuild; the watermark was not advanced."""
+
+
+def rebuild_touched_months():
+    """Rebuild the month files of every public list-month with a message changed
+    since the last run, and return the (list name, 'YYYY-MM') pairs rebuilt.
+    """
+    try:
+        TaskLock.objects.create(name=MONTH_FILES_LOCK)
+    except IntegrityError:
+        lock = TaskLock.objects.filter(name=MONTH_FILES_LOCK).first()
+        since = lock.created if lock else 'unknown'
+        raise TaskLockHeld(
+            f'rebuild_touched_months: TaskLock {MONTH_FILES_LOCK!r} held since {since}. '
+            f'If no run is in progress, delete it in the admin.')
+    try:
+        return _rebuild_touched_months()
+    finally:
+        TaskLock.objects.filter(name=MONTH_FILES_LOCK).delete()
+
+
+def _rebuild_touched_months():
+    watermark, _ = Watermark.objects.get_or_create(
+        name=MONTH_FILES_WATERMARK,
+        defaults={'value': timezone.now() - MONTH_FILES_INITIAL_LOOKBACK})
+    start = timezone.now()
+    since = watermark.value - MONTH_FILES_WATERMARK_OVERLAP
+    touched = list(Message.objects
+                   .filter(updated__gte=since, email_list__private=False)
+                   .annotate(month=TruncMonth('date'))
+                   .values_list('email_list_id', 'month')
+                   .distinct()
+                   .order_by('email_list_id', 'month'))
+    lists = EmailList.objects.in_bulk({list_id for list_id, _ in touched})
+    rebuilt = []
+    failed = []
+    for list_id, month in touched:
+        elist = lists[list_id]
+        label = f'{month.year:04d}-{month.month:02d}'
+        try:
+            create_mbox_file(month=month.month, year=month.year, elist=elist)
+        except Exception:
+            logger.exception(f'rebuild_touched_months: failed to rebuild {elist.name} {label}')
+            failed.append((elist.name, label))
+        else:
+            rebuilt.append((elist.name, label))
+    if failed:
+        raise MonthRebuildFailed(
+            f'rebuild_touched_months: {len(failed)} of {len(touched)} month(s) failed, '
+            f'watermark left at {watermark.value}: {failed}')
+    watermark.value = start
+    watermark.save()
+    logger.info(f'rebuild_touched_months: rebuilt {len(rebuilt)} month(s) changed since {since}')
+    return rebuilt
 
 
 def is_redelivery_of_archived(content, name):

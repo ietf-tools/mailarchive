@@ -5,7 +5,7 @@ import json
 import mailbox
 import pytest
 import requests
-from factories import EmailListFactory, UserFactory
+from factories import EmailListFactory, MessageFactory, UserFactory
 from mock import patch
 import os
 import subprocess   # noqa
@@ -13,6 +13,7 @@ import time
 import xml.etree.ElementTree as ET
 
 from django.conf import settings
+from django.utils import timezone
 from django.core.cache import cache
 from django.core.files.storage import storages
 from django.contrib.auth.models import AnonymousUser
@@ -21,12 +22,14 @@ from mlarchive.archive.utils import (get_noauth, get_lists, get_lists_for_user,
     check_inactive, EmailList, purge_incoming,
     create_mbox_file, _get_lists_as_xml, get_subscribers, Subscriber,
     get_mailman_lists, get_membership, get_subscriber_counts, get_fqdn,
-    update_mbox_files, _export_lists, move_list, remove_selected, mark_not_spam,
+    rebuild_touched_months, MONTH_FILES_WATERMARK, MONTH_FILES_WATERMARK_OVERLAP,
+    MONTH_FILES_INITIAL_LOOKBACK, MONTH_FILES_LOCK, TaskLockHeld,
+    MonthRebuildFailed, _export_lists, move_list, remove_selected, mark_not_spam,
     is_duplicate_message, is_mailman_footer, import_message_blob,
     strip_mailman_footer, get_footer_tokens,
     create_cf_worker_templates, _get_removed_message, move_list_blobs, move_list_blobs_lock_name)
 from mlarchive.archive.models import (User, Message, Redirect, MailmanMember, UserEmail,
-    StoredObject, TaskLock, shorten_hashcode)
+    StoredObject, TaskLock, Watermark, shorten_hashcode)
 from mlarchive.archive.mail import make_hash, archive_message, MessageWrapper, make_content_digest
 from mlarchive.archive.forms import AdvancedSearchForm
 from mlarchive.archive.backends.elasticsearch import search_from_form
@@ -325,26 +328,106 @@ def test_create_mbox_file(tmpdir, settings, latin1_messages):
     assert not os.path.exists(path)
 
 
+def _mbox_path(elist, year, month):
+    return os.path.join(settings.ARCHIVE_MBOX_DIR, 'public', elist.name, f'{year:04d}-{month:02d}.mail')
+
+
 @pytest.mark.django_db(transaction=True)
-def test_update_mbox_files(tmpdir, settings, latin1_messages):
+def test_rebuild_touched_months(tmpdir, settings, latin1_messages):
+    """A changed message rebuilds the month file for its date and advances the watermark"""
     settings.ARCHIVE_MBOX_DIR = str(tmpdir)
-    yesterday = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
-    msg = Message.objects.last()
-    assert msg.email_list.active is True
-    assert msg.email_list.private is False
-    msg.date = yesterday
-    msg.save()
-    assert len(os.listdir(tmpdir)) == 0
-    update_mbox_files()
-    print(str(tmpdir))
-    path = os.path.join(tmpdir, 'public', msg.email_list.name)
-    filename = '{}-{:02}.mail'.format(yesterday.year, yesterday.month)
-    assert os.listdir(path) == [filename]
-    mbox = mailbox.mbox(os.path.join(path, filename))
-    assert len(mbox) == 1
-    mbox_msg = mbox[0]
-    assert mbox_msg['Message-Id'].strip('<>') == msg.msgid
+    msg = Message.objects.get()
+    before = timezone.now()
+    assert rebuild_touched_months() == [('acme', '2013-11')]
+    mbox = mailbox.mbox(_mbox_path(msg.email_list, 2013, 11))
+    assert [m['Message-Id'].strip('<>') for m in mbox] == [msg.msgid]
     mbox.close()
+    watermark = Watermark.objects.get(name=MONTH_FILES_WATERMARK)
+    assert watermark.value >= before
+    # inside the overlap the month is rebuilt again, before it, it isn't
+    assert rebuild_touched_months() == [('acme', '2013-11')]
+    Message.objects.filter(pk=msg.pk).update(
+        updated=watermark.value - MONTH_FILES_WATERMARK_OVERLAP - datetime.timedelta(seconds=1))
+    assert rebuild_touched_months() == []
+    assert Watermark.objects.get(name=MONTH_FILES_WATERMARK).value > watermark.value
+
+
+@pytest.mark.django_db(transaction=True)
+def test_rebuild_touched_months_first_run(tmpdir, settings):
+    settings.ARCHIVE_MBOX_DIR = str(tmpdir)
+    elist = EmailListFactory.create(name='public')
+    MessageFactory.create(email_list=elist, date=datetime.datetime(2020, 1, 5, tzinfo=datetime.UTC))
+    old = MessageFactory.create(email_list=elist, date=datetime.datetime(2019, 6, 5, tzinfo=datetime.UTC))
+    Message.objects.filter(pk=old.pk).update(
+        updated=timezone.now() - MONTH_FILES_INITIAL_LOOKBACK - datetime.timedelta(hours=1))
+    assert rebuild_touched_months() == [('public', '2020-01')]
+    assert os.path.exists(_mbox_path(elist, 2020, 1))
+    assert not os.path.exists(_mbox_path(elist, 2019, 6))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_rebuild_touched_months_lists_and_months(tmpdir, settings):
+    """Each touched public list-month is rebuilt once; private lists are skipped"""
+    settings.ARCHIVE_MBOX_DIR = str(tmpdir)
+    public = EmailListFactory.create(name='public')
+    other = EmailListFactory.create(name='other', active=False)
+    private = EmailListFactory.create(name='private', private=True)
+    for elist, day in [(public, 1), (public, 2), (public, 40), (other, 1), (private, 1)]:
+        MessageFactory.create(
+            email_list=elist,
+            date=datetime.datetime(2020, 1, 1, tzinfo=datetime.UTC) + datetime.timedelta(days=day))
+    assert sorted(rebuild_touched_months()) == [
+        ('other', '2020-01'), ('public', '2020-01'), ('public', '2020-02')]
+    assert not os.path.exists(os.path.join(str(tmpdir), 'public', 'private'))
+
+
+@pytest.mark.django_db(transaction=True)
+def test_rebuild_touched_months_failure(tmpdir, settings, caplog):
+    """The other months are rebuilt, then the run raises without advancing the
+    watermark, and the next run retries the failed month"""
+    settings.ARCHIVE_MBOX_DIR = str(tmpdir)
+    elist = EmailListFactory.create(name='public')
+    MessageFactory.create(email_list=elist, date=datetime.datetime(2020, 1, 5, tzinfo=datetime.UTC))
+    MessageFactory.create(email_list=elist, date=datetime.datetime(2020, 2, 5, tzinfo=datetime.UTC))
+    mark = timezone.now() - datetime.timedelta(days=1)
+    Watermark.objects.create(name=MONTH_FILES_WATERMARK, value=mark)
+
+    def fail_january(month, year, elist):
+        if month == 1:
+            raise OSError('disk full')
+        return create_mbox_file(month=month, year=year, elist=elist)
+
+    with patch('mlarchive.archive.utils.create_mbox_file', side_effect=fail_january):
+        with pytest.raises(MonthRebuildFailed, match=r"1 of 2 month\(s\) failed.*'public', '2020-01'"):
+            rebuild_touched_months()
+    assert 'failed to rebuild public 2020-01' in caplog.text
+    assert os.path.exists(_mbox_path(elist, 2020, 2))
+    assert Watermark.objects.get(name=MONTH_FILES_WATERMARK).value == mark
+    assert not TaskLock.objects.exists()
+    # fixed: the next run covers the same window and the failed month too
+    before = timezone.now()
+    assert rebuild_touched_months() == [('public', '2020-01'), ('public', '2020-02')]
+    assert Watermark.objects.get(name=MONTH_FILES_WATERMARK).value >= before
+
+
+@pytest.mark.django_db(transaction=True)
+def test_rebuild_touched_months_lock_held(tmpdir, settings):
+    """A run that finds the lock held raises, rebuilds nothing and leaves the lock"""
+    settings.ARCHIVE_MBOX_DIR = str(tmpdir)
+    elist = EmailListFactory.create(name='public')
+    MessageFactory.create(email_list=elist, date=datetime.datetime(2020, 1, 5, tzinfo=datetime.UTC))
+    mark = timezone.now() - datetime.timedelta(days=1)
+    Watermark.objects.create(name=MONTH_FILES_WATERMARK, value=mark)
+    lock = TaskLock.objects.create(name=MONTH_FILES_LOCK)
+    with pytest.raises(TaskLockHeld, match='held since'):
+        rebuild_touched_months()
+    assert TaskLock.objects.filter(pk=lock.pk).exists()
+    assert Watermark.objects.get(name=MONTH_FILES_WATERMARK).value == mark
+    assert not os.path.exists(_mbox_path(elist, 2020, 1))
+    # once an administrator deletes the lock, the next run catches up
+    lock.delete()
+    assert rebuild_touched_months() == [('public', '2020-01')]
+    assert not TaskLock.objects.exists()
 
 
 @pytest.mark.django_db(transaction=True)

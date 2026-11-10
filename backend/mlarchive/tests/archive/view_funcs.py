@@ -17,7 +17,7 @@ from django.utils.encoding import smart_str
 
 from mlarchive.archive.view_funcs import (chunks, initialize_formsets, get_columns,
     get_export, get_query_neighbors, apply_objects, build_mbox_tar, get_thread_page_ids)
-from mlarchive.archive.models import EmailList, Thread
+from mlarchive.archive.models import EmailList, Message, Thread
 from mlarchive.utils.test_utils import get_request
 
 from mlarchive.archive.view_funcs import get_message_index
@@ -187,8 +187,9 @@ def test_build_mbox_tar_from_sorted(tmpdir):
         def __init__(self, msg):
             self.object = msg
 
-    # Sorted by frm: Aaron (Jan), Bob (Feb), Charlie (Jan) — months interleaved
-    results = [FakeResult(m1), FakeResult(m2), FakeResult(m3)]
+    # Sorted by frm: Aaron (Jan), Bob (Feb), Charlie (Jan) — months interleaved.
+    # Fetched fresh: the instances cached an empty read from before the blobs existed.
+    results = [FakeResult(Message.objects.get(pk=m.pk)) for m in (m1, m2, m3)]
 
     tardata = io.BytesIO()
     tar = tarfile.open(fileobj=tardata, mode='w:gz')

@@ -5,13 +5,13 @@ import email
 import itertools
 import json
 import logging
-import mailbox
 import os
 import re
 import requests
 import shutil
 import subprocess
 import sys
+import tempfile
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -44,6 +44,7 @@ THREAD_SORT_FIELDS = ('-thread__date', 'thread_id', 'thread_order')
 LIST_LISTS_PATTERN = re.compile(r'\s*([\w\-]*) - (.*)$')
 MAILMAN_LISTID_PATTERN = re.compile(r'(.*)\.(ietf|irtf|iab|iesg|rfc-editor)\.org')
 MOVE_LIST_BLOBS_CHUNK_SIZE = 500
+MBOX_FROM_PATTERN = re.compile(rb'^From ', re.MULTILINE)
 MONTH_FILES_WATERMARK = 'rebuild_touched_months'
 MONTH_FILES_LOCK = 'rebuild_touched_months'
 # how far before the watermark a run looks, for rows that committed after it was taken
@@ -849,17 +850,51 @@ def create_mbox_file(month, year, elist):
         return
     filename = '{:04d}-{:02d}.mail'.format(year, month)
     path = os.path.join(settings.ARCHIVE_MBOX_DIR, 'public', elist.name, filename)
-    messages = elist.message_set.filter(date__month=month, date__year=year)
-    if os.path.exists(path):
-        os.remove(path)
-    if messages.count() == 0:
+    messages = (elist.message_set
+                .filter(date__month=month, date__year=year)
+                .select_related('email_list')
+                .order_by('date', 'id'))
+    if not messages.exists():
+        if os.path.exists(path):
+            os.remove(path)
         return
-    if not os.path.isdir(os.path.dirname(path)):
-        os.makedirs(os.path.dirname(path))
-    mbox = mailbox.mbox(path)
-    for message in messages:
-        mbox.add(email.message_from_bytes(message.get_raw_message()))
-    mbox.close()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    # write beside the target and rename, so an rsync pass never sees a partial file
+    fd, temp_path = tempfile.mkstemp(dir=os.path.dirname(path), prefix='.' + filename)
+    try:
+        with os.fdopen(fd, 'wb') as f:
+            for message in messages.iterator():
+                entry = mbox_entry(message)
+                if entry:
+                    f.write(entry)
+        os.chmod(temp_path, 0o644)
+        os.replace(temp_path, path)
+    except BaseException:
+        os.remove(temp_path)
+        raise
+
+
+def mbox_entry(message):
+    """Return message as one mboxo entry: envelope line, raw bytes with body lines
+    starting "From " escaped as ">From ", and a blank separator line.
+
+    The raw blob is written as stored rather than through mailbox.mbox.add(), which
+    re-serializes headers and, since blobs carry no envelope line, stamps every
+    message "From MAILER-DAEMON <build time>", making rebuilds of an unchanged
+    month produce different bytes. Returns b'' if the blob can't be read.
+    """
+    content = message.get_raw_message()
+    if not content:
+        logger.warning(f'mbox_entry: no content for {message.email_list.name}/{message.hashcode}, skipped')
+        return b''
+    if content.startswith(b'From '):
+        from_line, _, content = content.partition(b'\n')
+    else:
+        from_line = message.get_from_line().encode('utf-8', errors='replace')
+    content = MBOX_FROM_PATTERN.sub(b'>From ', content)
+    if not content.endswith(b'\n'):
+        content += b'\n'
+    return from_line + b'\n' + content + b'\n'
 
 
 class TaskLockHeld(Exception):

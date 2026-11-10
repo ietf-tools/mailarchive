@@ -23,14 +23,13 @@ from django.forms.formsets import formset_factory
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.utils.encoding import smart_bytes
 from django.utils.http import urlencode
 
 from mlarchive.archive.forms import RulesForm
 from mlarchive.archive.generator import Generator
 from mlarchive.archive.models import EmailList, Message, Thread, get_message_from_binary_file
 from mlarchive.archive.storage_utils import retrieve_bytes
-from mlarchive.archive.utils import get_lists_for_user
+from mlarchive.archive.utils import get_lists_for_user, mbox_entry
 from mlarchive.blobdb.models import Blob
 from mlarchive.utils.encoding import custom_policy, decode_safely
 
@@ -405,13 +404,7 @@ def build_mbox_tar(results, tar, basename):
             mbox_date = date
             mbox_list = mlist
 
-        content = result.object.get_raw_message()
-        # add envelope header if missing
-        if not content.startswith(b'From '):
-            from_line = smart_bytes(result.object.get_from_line()) + b'\n'
-            mbox_file.write(from_line)
-        mbox_file.write(content)
-        mbox_file.write(b'\n')
+        mbox_file.write(mbox_entry(result.object))
 
     mbox_file.close()
     tar.add(temp_path, arcname=os.path.join(basename,

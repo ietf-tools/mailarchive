@@ -5,7 +5,7 @@ import json
 import mailbox
 import pytest
 import requests
-from factories import EmailListFactory, MessageFactory, UserFactory
+from factories import EmailListFactory, MessageFactory, UserFactory, store_message_blob
 from mock import patch
 import os
 import subprocess   # noqa
@@ -325,6 +325,56 @@ def test_create_mbox_file(tmpdir, settings, latin1_messages):
     elist.save()
     assert not os.path.exists(path)
     create_mbox_file(month=month, year=year, elist=elist)
+    assert not os.path.exists(path)
+
+
+def _mbox_month_messages():
+    elist = EmailListFactory.create(name='acme')
+    base = datetime.datetime(2024, 3, 4, 10, 30, tzinfo=datetime.UTC)
+    later = MessageFactory.create(
+        email_list=elist, date=base + datetime.timedelta(days=1),
+        from_line='bob@example.com Tue Mar  5 10:30:00 2024', frm='Bob <bob@example.com>')
+    earlier = MessageFactory.create(
+        email_list=elist, date=base, from_line='', frm='Alice <alice@example.com>')
+    store_message_blob(later, b'Subject: later\nMessage-ID: <later@example.com>\n\nlater\n')
+    store_message_blob(
+        earlier,
+        b'Subject: earlier\nMessage-ID: <earlier@example.com>\n\nFrom here on\n>From quoted\nbody')
+    return elist
+
+
+@pytest.mark.django_db(transaction=True)
+def test_create_mbox_file_format(tmpdir, settings):
+    settings.ARCHIVE_MBOX_DIR = str(tmpdir)
+    elist = _mbox_month_messages()
+    create_mbox_file(month=3, year=2024, elist=elist)
+    with open(_mbox_path(elist, 2024, 3), 'rb') as f:
+        data = f.read()
+    assert data == (
+        # ordered by date, not insertion; synthesized envelope from frm_email
+        b'From alice@example.com Mon Mar 04 10:30:00 2024\n'
+        b'Subject: earlier\nMessage-ID: <earlier@example.com>\n\n'
+        b'>From here on\n>From quoted\nbody\n'
+        b'\n'
+        # stored envelope line used verbatim
+        b'From bob@example.com Tue Mar  5 10:30:00 2024\n'
+        b'Subject: later\nMessage-ID: <later@example.com>\n\nlater\n'
+        b'\n')
+    assert b'MAILER-DAEMON' not in data
+    mbox = mailbox.mbox(_mbox_path(elist, 2024, 3))
+    assert [m['Subject'] for m in mbox] == ['earlier', 'later']
+    mbox.close()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_create_mbox_file_removes_empty_month(tmpdir, settings):
+    settings.ARCHIVE_MBOX_DIR = str(tmpdir)
+    elist = _mbox_month_messages()
+    path = _mbox_path(elist, 2024, 3)
+    create_mbox_file(month=3, year=2024, elist=elist)
+    assert os.path.exists(path)
+    elist.message_set.all().delete()
+    create_mbox_file(month=3, year=2024, elist=elist)
     assert not os.path.exists(path)
 
 

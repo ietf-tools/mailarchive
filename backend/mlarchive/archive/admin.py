@@ -2,7 +2,7 @@ from django.contrib import admin, messages
 from rangefilter.filters import DateRangeQuickSelectListFilterBuilder
 
 from mlarchive.archive.models import (Message, EmailList, Attachment, Thread,
-    Redirect, UserEmail, MailmanMember, Subscriber, StoredObject, TaskLock)
+    Redirect, UserEmail, MailmanMember, Subscriber, StoredObject, TaskLock, Watermark)
 from mlarchive.archive.tasks import move_list_blobs_task
 from mlarchive.archive.utils import move_list_blobs_lock_name
 
@@ -72,3 +72,4 @@ admin.site.register(UserEmail, UserEmailAdmin)
 admin.site.register(MailmanMember, MailmanMemberAdmin)
 admin.site.register(StoredObject, StoredObjectAdmin)
 admin.site.register(TaskLock)
+admin.site.register(Watermark)

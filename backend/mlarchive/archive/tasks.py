@@ -18,7 +18,7 @@ from mlarchive.archive.utils import create_mbox_file
 from mlarchive.archive.utils import get_membership
 from mlarchive.archive.utils import get_subscriber_counts
 from mlarchive.archive.utils import purge_incoming
-from mlarchive.archive.utils import update_mbox_files
+from mlarchive.archive.utils import rebuild_touched_months
 from mlarchive.archive.utils import init_private_list_members
 from mlarchive.archive.utils import remove_selected
 from mlarchive.archive.stored_object_reconciliation import (
@@ -329,12 +329,12 @@ def apply_derived_artifacts_task(self, refs):
 
 
 @shared_task
-def update_mbox_files_task():
-    '''Update archive mbox files'''
+def rebuild_touched_months_task():
+    '''Rebuild the month files of messages changed since the last run'''
     try:
-        update_mbox_files()
+        rebuild_touched_months()
     except Exception as err:
-        logger.error(f"Error in update_mbox_files_task: {err}")
+        logger.error(f"Error in rebuild_touched_months_task: {err}")
 
 
 @shared_task

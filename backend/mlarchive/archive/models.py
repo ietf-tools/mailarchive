@@ -710,3 +710,16 @@ class TaskLock(models.Model):
 
     def __str__(self):
         return f'{self.name} since {self.created}'
+
+
+class Watermark(models.Model):
+    """A named point in time up to which a periodic task has processed changes.
+
+    Kept in the database rather than the cache, so an eviction can't reset it.
+    """
+
+    name = models.CharField(max_length=255, unique=True)
+    value = models.DateTimeField()
+
+    def __str__(self):
+        return f'{self.name} at {self.value}'
